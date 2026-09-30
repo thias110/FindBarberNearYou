@@ -81,7 +81,7 @@ export const serviceCreateSchema = z
     priceMinor: z
       .number()
       .int("Le prix doit être un entier (unités mineures).")
-      .min(0, "Le prix ne peut pas être négatif.")
+      .min(LIMITS.servicePriceMinorMin, "Le prix ne peut pas être négatif.")
       .max(LIMITS.servicePriceMinorMax, "Le prix est trop élevé."),
   })
   .strict();
@@ -113,7 +113,7 @@ export const serviceUpdateSchema = z
     priceMinor: z
       .number()
       .int("Le prix doit être un entier (unités mineures).")
-      .min(0, "Le prix ne peut pas être négatif.")
+      .min(LIMITS.servicePriceMinorMin, "Le prix ne peut pas être négatif.")
       .max(LIMITS.servicePriceMinorMax, "Le prix est trop élevé.")
       .optional(),
     isActive: z.boolean().optional(),

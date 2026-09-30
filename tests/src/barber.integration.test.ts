@@ -382,6 +382,90 @@ describe("barber services", () => {
   });
 });
 
+describe("DB constraints on barber_services", () => {
+  async function insertProfileDirectly(email: string) {
+    const user = await registerBarber(email);
+    const [profile] = await db
+      .insert(barberProfiles)
+      .values({
+        id: randomUUID(),
+        userId: user.id,
+        displayName: "Barbier",
+        description: "Description",
+        address: "Rue 1",
+        city: "Genève",
+        postalCode: null,
+        countryCode: "CH",
+        latitude: 46.2,
+        longitude: 6.14,
+        currency: "CHF",
+      })
+      .returning();
+    return profile;
+  }
+
+  function serviceRow(profileId: string, overrides: Record<string, unknown> = {}) {
+    return {
+      id: randomUUID(),
+      barberProfileId: profileId,
+      name: "Service",
+      description: null,
+      durationMinutes: 30,
+      priceMinor: 1000,
+      isActive: true,
+      ...overrides,
+    };
+  }
+
+  it("rejects durations outside 1..480 and accepts boundaries", async () => {
+    const profile = await insertProfileDirectly("db-duration@example.com");
+    await expect(
+      db.insert(barberServices).values(
+        serviceRow(profile.id, { durationMinutes: 0 }),
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.insert(barberServices).values(
+        serviceRow(profile.id, { durationMinutes: 481 }),
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.insert(barberServices).values(
+        serviceRow(profile.id, { durationMinutes: 1 }),
+      ),
+    ).resolves.toBeDefined();
+    await expect(
+      db.insert(barberServices).values(
+        serviceRow(profile.id, { durationMinutes: 480 }),
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it("rejects prices outside 0..1000000 and accepts boundaries", async () => {
+    const profile = await insertProfileDirectly("db-price@example.com");
+    await expect(
+      db.insert(barberServices).values(
+        serviceRow(profile.id, { priceMinor: -1 }),
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.insert(barberServices).values(
+        serviceRow(profile.id, { priceMinor: 1000001 }),
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.insert(barberServices).values(
+        serviceRow(profile.id, { priceMinor: 0 }),
+      ),
+    ).resolves.toBeDefined();
+    await expect(
+      db.insert(barberServices).values(
+        serviceRow(profile.id, { priceMinor: 1000000 }),
+      ),
+    ).resolves.toBeDefined();
+  });
+});
+
 describe("access control", () => {
   it("returns 401 for private routes without authentication", async () => {
     expect((await request(app).get("/api/barber/profile")).status).toBe(401);

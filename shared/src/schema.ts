@@ -11,7 +11,12 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { ROLES, SUPPORTED_CURRENCIES, USER_STATUSES } from "./constants";
+import {
+  LIMITS,
+  ROLES,
+  SUPPORTED_CURRENCIES,
+  USER_STATUSES,
+} from "./constants";
 
 export const userRoleEnum = pgEnum("user_role", [...ROLES]);
 export const userStatusEnum = pgEnum("user_status", [...USER_STATUSES]);
@@ -100,12 +105,16 @@ export const barberServices = pgTable(
       table.isActive,
     ),
     check(
-      "barber_services_duration_positive",
-      sql`${table.durationMinutes} > 0`,
+      "barber_services_duration_range",
+      sql`${table.durationMinutes} BETWEEN ${sql.raw(
+        String(LIMITS.serviceDurationMin),
+      )} AND ${sql.raw(String(LIMITS.serviceDurationMax))}`,
     ),
     check(
-      "barber_services_price_non_negative",
-      sql`${table.priceMinor} >= 0`,
+      "barber_services_price_range",
+      sql`${table.priceMinor} BETWEEN ${sql.raw(
+        String(LIMITS.servicePriceMinorMin),
+      )} AND ${sql.raw(String(LIMITS.servicePriceMinorMax))}`,
     ),
   ],
 );

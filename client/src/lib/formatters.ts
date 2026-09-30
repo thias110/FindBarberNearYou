@@ -1,4 +1,4 @@
-import type { Currency } from "@findbarber/shared/constants";
+import { LIMITS, type Currency } from "@findbarber/shared/constants";
 
 /**
  * Convertit une saisie prix ("25.50" ou "25,50") en unités mineures entières
@@ -13,7 +13,17 @@ export function parsePriceToMinor(input: string): number | null {
   const [whole, fraction = ""] = normalized.split(".");
   const major = Number(whole);
   const minor = Number(fraction.padEnd(2, "0"));
-  return major * 100 + minor;
+  const result = major * 100 + minor;
+  if (!Number.isSafeInteger(result)) {
+    return null;
+  }
+  if (
+    result < LIMITS.servicePriceMinorMin ||
+    result > LIMITS.servicePriceMinorMax
+  ) {
+    return null;
+  }
+  return result;
 }
 
 /** Inverse de `parsePriceToMinor`, sans flottant, pour pré-remplir un champ. */

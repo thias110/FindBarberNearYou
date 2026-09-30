@@ -43,6 +43,18 @@ describe("parsePriceToMinor", () => {
     expect(parsePriceToMinor("abc")).toBeNull();
     expect(parsePriceToMinor("")).toBeNull();
   });
+
+  it("accepts the maximum allowed price", () => {
+    expect(parsePriceToMinor("10000.00")).toBe(1000000);
+  });
+
+  it("rejects a price above the allowed limit", () => {
+    expect(parsePriceToMinor("10000.01")).toBeNull();
+  });
+
+  it("rejects a very long numeric string (not a safe integer)", () => {
+    expect(parsePriceToMinor("9".repeat(30))).toBeNull();
+  });
 });
 
 describe("minorToInputValue", () => {

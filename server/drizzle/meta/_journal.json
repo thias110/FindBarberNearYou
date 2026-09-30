@@ -15,6 +15,13 @@
       "when": 1790792420253,
       "tag": "0001_cynical_mother_askani",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790793583671,
+      "tag": "0002_stale_natasha_romanoff",
+      "breakpoints": true
     }
   ]
 }

@@ -33,5 +33,6 @@ export const LIMITS = {
   serviceDescription: 1000,
   serviceDurationMin: 1,
   serviceDurationMax: 480,
+  servicePriceMinorMin: 0,
   servicePriceMinorMax: 1_000_000,
 } as const;

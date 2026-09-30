@@ -207,3 +207,34 @@ npm audit --omit=dev
 - Commit : `a775c384e8670a6635c2d6667ba52e9fe04e2ccc` (`feat: add international barber profiles and services`), poussé sur `origin/feature/barber-profiles`.
 - `git status --short` après commit : propre (aucune modification restante).
 - Aucun `.env`, secret, ZIP, dossier de build (`dist/`) ou donnée PGlite (`data/`) ajouté. `claude/` conservé.
+
+---
+
+## Suivi — revue lot 2 (corrections avant fusion, non commitées)
+
+État : corrections appliquées localement sur `feature/barber-profiles`. Non commitées (Git géré par l'utilisateur).
+
+### Corrections
+
+1. **Contraintes DB de bornes** : `barber_services` remplace `duration > 0` / `price >= 0` par `duration_minutes BETWEEN 1 AND 480` et `price_minor BETWEEN 0 AND 1000000`, en réutilisant `LIMITS` (via `sql.raw` pour inliner les littéraux). Nouvelle migration `0002_stale_natasha_romanoff.sql`.
+2. **Tests d'insertion directe** : refus en base de `durationMinutes` 0/481 et `priceMinor` -1/1000001, acceptation des bornes 1/480 et 0/1000000.
+3. **DashboardPage** : erreur de chargement distincte du profil absent, avec bouton « Réessayer ».
+4. **parsePriceToMinor** : retourne `null` si le résultat n'est pas un entier sûr ou dépasse les bornes (`LIMITS.servicePriceMinorMin/Max`). Tests ajoutés (prix max, au-dessus de la limite, chaîne très longue).
+
+### Vérifications
+
+| Commande | Résultat |
+|---|---|
+| `npm run db:migrate` | ✅ migration 0002 appliquée |
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm test` | ✅ 69/69 (auth 23 + roles 3 + barber 25 + formatters 18) |
+| `npm run build` | ✅ server 37.87 KB + client |
+
+### Fichiers modifiés (non commités)
+
+- `shared/src/constants.ts`, `shared/src/schema.ts`, `shared/src/validation/barber.ts`
+- `client/src/lib/formatters.ts`, `client/src/pages/barber/DashboardPage.tsx`
+- `tests/src/barber.integration.test.ts`, `tests/src/formatters.test.ts`
+- `server/drizzle/0002_stale_natasha_romanoff.sql` + `server/drizzle/meta/0002_snapshot.json` (nouveaux)
+- `server/drizzle/meta/_journal.json` (entrée 0002)

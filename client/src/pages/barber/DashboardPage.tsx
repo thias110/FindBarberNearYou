@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { OwnBarberProfile } from "@findbarber/shared/types";
 import { useAuth } from "../../app/auth-context";
@@ -12,27 +12,37 @@ export function BarberDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadProfile = useCallback(() => {
+    setLoading(true);
+    setLoadError(null);
+    setProfileMissing(false);
+    setProfile(null);
     barberApi
       .getProfile()
       .then((res) => {
-        if (!cancelled) setProfile(res.profile);
+        setProfile(res.profile);
       })
       .catch((err: unknown) => {
-        if (cancelled) return;
         if (err instanceof ApiError && err.code === "BARBER_PROFILE_NOT_FOUND") {
           setProfileMissing(true);
+        } else {
+          setLoadError(
+            err instanceof Error
+              ? err.message
+              : "Impossible de charger votre profil.",
+          );
         }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   const publicLink = profile
     ? `${window.location.origin}/barbers/${profile.id}`
@@ -96,6 +106,16 @@ export function BarberDashboardPage() {
           <h2 className="font-semibold text-brand-900">Lien public partageable</h2>
           {loading ? (
             <p className="mt-2 text-gray-500">Chargement…</p>
+          ) : loadError ? (
+            <div className="mt-2">
+              <p className="text-sm text-red-700">{loadError}</p>
+              <button
+                onClick={loadProfile}
+                className="mt-2 rounded-lg border border-brand-700 px-4 py-2 text-brand-700"
+              >
+                Réessayer
+              </button>
+            </div>
           ) : profileMissing ? (
             <p className="mt-2 text-gray-700">
               Créez votre profil pour obtenir votre lien public.
