@@ -64,6 +64,26 @@ npm start       # node server/dist/index.js (aucun recours à tsx)
 
 Le serveur compilé répond sur `GET /api/health`.
 
+### Fallback SPA (profil public `/barbers/:id`)
+
+En développement, Vite sert automatiquement `index.html` pour les routes inconnues.
+En production, le serveur API (`server/dist/index.js`) n'expose que `/api/*` : il faut
+servir `client/dist` et réécrire les routes non `/api` vers `index.html` pour que
+l'ouverture directe ou l'actualisation de `/barbers/:barberId` fonctionne, y compris
+en navigation privée. Exemple Nginx :
+
+```nginx
+location /api/ {
+  proxy_pass http://localhost:4000;
+}
+location / {
+  root /app/client/dist;
+  try_files $uri /index.html;
+}
+```
+
+Ne jamais réécrire les routes `/api/*` vers `index.html`.
+
 ## Créer le premier compte ADMIN
 
 L'inscription publique refuse le rôle ADMIN (403). Le premier ADMIN se crée via une
@@ -91,6 +111,11 @@ npm start           # démarre le serveur compilé
 - `POST /api/auth/logout` — déconnexion (requiert le header `X-CSRF-Token`)
 - `GET  /api/auth/me` — utilisateur courant
 - `GET  /api/admin/status` — garde de rôle ADMIN (placeholder)
-- `GET  /api/barber/status` — garde de rôle BARBER (placeholder)
+- `GET  /api/barber/profile` — profil du BARBER connecté (404 si absent)
+- `PUT  /api/barber/profile` — création/modification du profil (BARBER + CSRF)
+- `GET  /api/barber/services` — services actifs/inactifs du BARBER connecté
+- `POST /api/barber/services` — création d'un service (BARBER + CSRF)
+- `PATCH /api/barber/services/:serviceId` — modification/désactivation d'un service (BARBER + CSRF)
+- `GET  /api/barbers/:barberId` — profil public + services actifs (public, `barberId` = `barber_profiles.id`)
 
 Erreurs normalisées : `{ "error": { "code": "...", "message": "..." } }`.

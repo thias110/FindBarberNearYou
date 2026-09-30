@@ -1,4 +1,14 @@
-import type { PublicUser } from "@findbarber/shared/types";
+import type {
+  OwnBarberProfile,
+  OwnBarberService,
+  PublicBarberProfileWithServices,
+  PublicUser,
+} from "@findbarber/shared/types";
+import type {
+  ProfileInput,
+  ServiceCreateInput,
+  ServiceUpdateInput,
+} from "@findbarber/shared/validation";
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:4000";
@@ -98,4 +108,48 @@ export const authApi: AuthApi = {
       body: input,
     }),
   logout: () => apiFetch<void>("/api/auth/logout", { method: "POST" }),
+};
+
+export interface BarberApi {
+  getProfile(): Promise<{ profile: OwnBarberProfile }>;
+  updateProfile(input: ProfileInput): Promise<{ profile: OwnBarberProfile }>;
+  getServices(): Promise<{ services: OwnBarberService[] }>;
+  createService(input: ServiceCreateInput): Promise<{ service: OwnBarberService }>;
+  updateService(
+    serviceId: string,
+    input: ServiceUpdateInput,
+  ): Promise<{ service: OwnBarberService }>;
+}
+
+export const barberApi: BarberApi = {
+  getProfile: () =>
+    apiFetch<{ profile: OwnBarberProfile }>("/api/barber/profile"),
+  updateProfile: (input) =>
+    apiFetch<{ profile: OwnBarberProfile }>("/api/barber/profile", {
+      method: "PUT",
+      body: input,
+    }),
+  getServices: () =>
+    apiFetch<{ services: OwnBarberService[] }>("/api/barber/services"),
+  createService: (input) =>
+    apiFetch<{ service: OwnBarberService }>("/api/barber/services", {
+      method: "POST",
+      body: input,
+    }),
+  updateService: (serviceId, input) =>
+    apiFetch<{ service: OwnBarberService }>(
+      `/api/barber/services/${encodeURIComponent(serviceId)}`,
+      { method: "PATCH", body: input },
+    ),
+};
+
+export interface PublicBarbersApi {
+  getProfile(barberId: string): Promise<PublicBarberProfileWithServices>;
+}
+
+export const barbersApi: PublicBarbersApi = {
+  getProfile: (barberId) =>
+    apiFetch<PublicBarberProfileWithServices>(
+      `/api/barbers/${encodeURIComponent(barberId)}`,
+    ),
 };

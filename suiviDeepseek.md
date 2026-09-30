@@ -133,3 +133,78 @@ Terminé. La branche `feature/authent` est à jour et le commit est poussé (pas
 | `npm audit --omit=dev` | ✅ 0 vulnérabilité |
 
 Aucune fusion dans `main` n'a été effectuée.
+
+---
+
+# Suivi — FindBarberNearYou (lot 2 : profils BARBER, services, pays, devises, lien public)
+
+État après implémentation du lot 2. Aucun commit / push / PR / fusion réalisé (attente de validation).
+
+## Cadrage retenu (adaptations du plan)
+
+- **`barberId`** = `barber_profiles.id` (identifiant public du profil), jamais `users.id`.
+- **Pays** : `countryCode` ISO 3166-1 alpha-2, validé contre une liste statique documentée (`shared/src/countries.ts`, ~250 entrées, noms français). Aucune dépendance ajoutée.
+- **Devises** : `SUPPORTED_CURRENCIES = ["CHF", "EUR", "USD"]` centralisé dans `shared/src/constants.ts` (énumération Postgres + validation Zod). Une devise par profil, immuable après création (409 `CURRENCY_CHANGE_FORBIDDEN`). USD ajouté dès ce lot.
+- **Lien public** : `/barbers/:id` (page unique), construit côté client depuis `window.location.origin` + `profile.id`. Stable (basé sur l'id). Copie via Clipboard API avec état d'erreur et champ sélectionnable.
+- **Upsert atomique** : `INSERT … ON CONFLICT (user_id) DO UPDATE … SET WHERE currency = excluded.currency`. Conserve `id`/`createdAt`, n'écrase jamais la devise, pas de 500 en création concurrente.
+
+## Fichiers créés
+
+- `shared/src/countries.ts` (liste pays + `isCountryCode`)
+- `shared/src/validation/barber.ts` (schémas profil + service)
+- `shared/src/validation/index.ts`
+- `server/src/modules/barber/service.ts` (profil, services, profil public)
+- `server/src/modules/barber/publicRoutes.ts` (route publique `/api/barbers/:barberId`)
+- `client/src/pages/barber/ProfilePage.tsx`
+- `client/src/pages/barber/ServicesPage.tsx`
+- `client/src/pages/client/BarberProfilePage.tsx` (public)
+- `client/src/lib/formatters.ts` (prix sans flottant + formatage CHF/EUR/USD)
+- `tests/src/barber.integration.test.ts`
+- `tests/src/formatters.test.ts`
+- `server/drizzle/0001_cynical_mother_askani.sql` (+ `server/drizzle/meta/*`)
+
+## Fichiers modifiés
+
+- `shared/src/constants.ts`, `shared/src/types.ts`, `shared/src/schema.ts`, `shared/src/index.ts`, `shared/package.json`
+- `server/src/db/client.ts`, `server/src/modules/barber/routes.ts`, `server/src/app.ts`
+- `client/src/lib/apiClient.ts`, `client/src/pages/barber/DashboardPage.tsx`, `client/src/app/router.tsx`
+- `README.md` (API + fallback SPA), `suiviDeepseek.md`
+
+## Commandes exécutées
+
+```bash
+npm run db:generate   # migration 0001 (2 tables + FK + CHECK + index)
+npm run db:migrate
+npm run typecheck
+npm run lint
+npm test              # 64 tests
+npm run build
+npm audit --omit=dev
+```
+
+## Résultats
+
+| Vérification | Résultat |
+|---|---|
+| db:generate | ✅ `0001_cynical_mother_askani.sql` |
+| db:migrate | ✅ appliquée |
+| typecheck | ✅ shared + server + client |
+| lint | ✅ 0 erreur, 0 warning |
+| tests | ✅ 64/64 (auth 26 + roles 3 + barber 23 + formatters 12) |
+| build | ✅ server `dist/index.js` 37.57 KB + client |
+| audit --omit=dev | ✅ 0 vulnérabilité |
+
+## Points reportés
+
+- PostgreSQL de production non testé de bout en bout (pas de serveur Postgres disponible).
+- Tests navigateur non exécutés (pas de navigateur pilotable dans l'environnement) : copie du lien, navigation privée, actualisation de la page publique à vérifier manuellement.
+- `Intl.NumberFormat("fr-CH", …)` produit le séparateur décimal suisse (point) : affichage « 25.50 CHF ». À ajuster si une locale fr-FR (virgule) est souhaitée.
+- Liste pays statique (~250 entrées) : ajout d'un pays = une ligne dans `shared/src/countries.ts`.
+
+## Git (état final du lot 2)
+
+- Branche : `feature/barber-profiles` (créée depuis `main` à `52dbb4b`).
+- Aucun commit, push, PR ni fusion.
+- `git status --short` : 14 fichiers modifiés (suivis) + 13 fichiers non suivis (nouveaux).
+- `git diff --stat` (suivis) : 14 fichiers, +547 / −23.
+- Aucun `.env`, secret ou ZIP ajouté. `claude/` conservé.

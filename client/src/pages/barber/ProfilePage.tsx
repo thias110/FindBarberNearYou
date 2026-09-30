@@ -1,0 +1,292 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
+import { COUNTRIES, type CountryCode } from "@findbarber/shared/countries";
+import {
+  CURRENCY_LABELS,
+  DEFAULT_CURRENCY,
+  LIMITS,
+  SUPPORTED_CURRENCIES,
+  type Currency,
+} from "@findbarber/shared/constants";
+import { ApiError, barberApi } from "../../lib/apiClient";
+
+const COUNTRIES_SORTED = [...COUNTRIES].sort((a, b) =>
+  a.nameFr.localeCompare(b.nameFr, "fr"),
+);
+
+interface FormState {
+  displayName: string;
+  description: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  countryCode: string;
+  latitude: string;
+  longitude: string;
+  currency: Currency;
+}
+
+const EMPTY_FORM: FormState = {
+  displayName: "",
+  description: "",
+  address: "",
+  city: "",
+  postalCode: "",
+  countryCode: "CH",
+  latitude: "",
+  longitude: "",
+  currency: DEFAULT_CURRENCY,
+};
+
+export function BarberProfilePage() {
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [mode, setMode] = useState<"create" | "edit">("create");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    barberApi
+      .getProfile()
+      .then((res) => {
+        if (cancelled) return;
+        const profile = res.profile;
+        setForm({
+          displayName: profile.displayName,
+          description: profile.description,
+          address: profile.address,
+          city: profile.city,
+          postalCode: profile.postalCode ?? "",
+          countryCode: profile.countryCode,
+          latitude: String(profile.latitude),
+          longitude: String(profile.longitude),
+          currency: profile.currency,
+        });
+        setMode("edit");
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        if (err instanceof ApiError && err.code === "BARBER_PROFILE_NOT_FOUND") {
+          setMode("create");
+        } else {
+          setError(err instanceof Error ? err.message : "Chargement impossible.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function update(field: keyof FormState, value: string) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setSuccess(false);
+
+    const latitude = Number(form.latitude);
+    const longitude = Number(form.longitude);
+
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+      setError("La latitude doit être un nombre entre -90 et 90.");
+      return;
+    }
+    if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+      setError("La longitude doit être un nombre entre -180 et 180.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await barberApi.updateProfile({
+        displayName: form.displayName,
+        description: form.description,
+        address: form.address,
+        city: form.city,
+        postalCode: form.postalCode.trim() ? form.postalCode.trim() : null,
+        countryCode: form.countryCode as CountryCode,
+        latitude,
+        longitude,
+        currency: form.currency,
+      });
+      setMode("edit");
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Enregistrement échoué.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-brand-50 p-8 text-center text-gray-500">
+        Chargement…
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-brand-50 p-4 sm:p-8">
+      <form
+        onSubmit={handleSubmit}
+        className="mx-auto max-w-2xl space-y-6 rounded-2xl bg-white p-6 shadow"
+      >
+        <div>
+          <h1 className="text-2xl font-semibold text-brand-900">
+            {mode === "create" ? "Créer mon profil" : "Modifier mon profil"}
+          </h1>
+          <p className="mt-1 text-sm text-gray-600">
+            <Link to="/pro/dashboard" className="text-brand-700 underline">
+              Retour au tableau de bord
+            </Link>
+          </p>
+        </div>
+
+        {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        {success && (
+          <p className="rounded-lg bg-green-50 p-3 text-sm text-green-700">
+            Profil enregistré.
+          </p>
+        )}
+
+        <label className="block">
+          <span className="text-sm text-gray-700">Nom affiché</span>
+          <input
+            required
+            maxLength={LIMITS.profileDisplayName}
+            value={form.displayName}
+            onChange={(e) => update("displayName", e.target.value)}
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm text-gray-700">Description</span>
+          <textarea
+            required
+            maxLength={LIMITS.profileDescription}
+            rows={4}
+            value={form.description}
+            onChange={(e) => update("description", e.target.value)}
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm text-gray-700">Adresse professionnelle</span>
+          <input
+            required
+            maxLength={LIMITS.profileAddress}
+            value={form.address}
+            onChange={(e) => update("address", e.target.value)}
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+          />
+        </label>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-sm text-gray-700">Ville</span>
+            <input
+              required
+              maxLength={LIMITS.profileCity}
+              value={form.city}
+              onChange={(e) => update("city", e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm text-gray-700">Code postal (facultatif)</span>
+            <input
+              maxLength={LIMITS.profilePostalCode}
+              value={form.postalCode}
+              onChange={(e) => update("postalCode", e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            />
+          </label>
+        </div>
+
+        <label className="block">
+          <span className="text-sm text-gray-700">Pays</span>
+          <select
+            required
+            value={form.countryCode}
+            onChange={(e) => update("countryCode", e.target.value)}
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2"
+          >
+            {COUNTRIES_SORTED.map((country) => (
+              <option key={country.code} value={country.code}>
+                {country.nameFr}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-sm text-gray-700">Latitude</span>
+            <input
+              required
+              inputMode="decimal"
+              value={form.latitude}
+              onChange={(e) => update("latitude", e.target.value)}
+              placeholder="46.2044"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm text-gray-700">Longitude</span>
+            <input
+              required
+              inputMode="decimal"
+              value={form.longitude}
+              onChange={(e) => update("longitude", e.target.value)}
+              placeholder="6.1432"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            />
+          </label>
+        </div>
+
+        <label className="block">
+          <span className="text-sm text-gray-700">Devise</span>
+          <select
+            value={form.currency}
+            disabled={mode === "edit"}
+            onChange={(e) => update("currency", e.target.value)}
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 disabled:bg-gray-100"
+          >
+            {SUPPORTED_CURRENCIES.map((currency) => (
+              <option key={currency} value={currency}>
+                {CURRENCY_LABELS[currency]}
+              </option>
+            ))}
+          </select>
+          {mode === "edit" && (
+            <span className="mt-1 block text-xs text-gray-500">
+              La devise est fixée à la création du profil et ne peut plus être modifiée.
+            </span>
+          )}
+        </label>
+
+        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+          Votre profil et votre adresse professionnelle seront visibles publiquement.
+        </p>
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full rounded-lg bg-brand-700 py-2 text-white disabled:opacity-50"
+        >
+          {saving ? "Enregistrement…" : "Enregistrer"}
+        </button>
+      </form>
+    </div>
+  );
+}

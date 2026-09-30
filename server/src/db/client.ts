@@ -4,10 +4,10 @@ import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
 import type { PgliteDatabase } from "drizzle-orm/pglite";
 import { drizzle as drizzleNodePg } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { users } from "@findbarber/shared/schema";
+import { barberProfiles, barberServices, users } from "@findbarber/shared/schema";
 import { env } from "../config/env.js";
 
-export const schema = { users };
+export const schema = { users, barberProfiles, barberServices };
 
 // The query API is identical for both drivers; we type `db` with the PGlite
 // database type and keep the concrete driver in `driverKind`.

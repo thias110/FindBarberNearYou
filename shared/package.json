@@ -8,7 +8,8 @@
     "./schema": "./src/schema.ts",
     "./types": "./src/types.ts",
     "./constants": "./src/constants.ts",
-    "./validation": "./src/validation/auth.ts"
+    "./countries": "./src/countries.ts",
+    "./validation": "./src/validation/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
