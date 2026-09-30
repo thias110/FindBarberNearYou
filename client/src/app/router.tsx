@@ -4,6 +4,7 @@ import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
 import { ClientHomePage } from "../pages/client/HomePage";
 import { PublicBarberProfilePage } from "../pages/client/BarberProfilePage";
+import { BarbersSearchPage } from "../pages/client/BarbersSearchPage";
 import { BarberDashboardPage } from "../pages/barber/DashboardPage";
 import { BarberProfilePage } from "../pages/barber/ProfilePage";
 import { BarberServicesPage } from "../pages/barber/ServicesPage";
@@ -15,7 +16,8 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Profil public : accessible sans connexion. */}
+      {/* Recherche et profil public : accessibles sans connexion. */}
+      <Route path="/barbers" element={<BarbersSearchPage />} />
       <Route path="/barbers/:barberId" element={<PublicBarberProfilePage />} />
 
       <Route

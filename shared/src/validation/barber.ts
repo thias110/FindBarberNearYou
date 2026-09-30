@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { LIMITS, SUPPORTED_CURRENCIES } from "../constants";
+import {
+  AUDIENCES,
+  LIMITS,
+  SEARCH_LIMITS,
+  SUPPORTED_CURRENCIES,
+  TECHNIQUES,
+} from "../constants";
 import { isCountryCode } from "../countries";
 
 const currencySchema = z.enum(SUPPORTED_CURRENCIES);
@@ -9,6 +15,19 @@ const countryCodeSchema = z
   .trim()
   .toUpperCase()
   .refine(isCountryCode, "Code pays invalide.");
+
+// --- Catalogues de prestations ---
+// Chaque élément est trim + majuscules, puis dédupliqué (Set) et enfin validé
+// contre l'énumération partagée. L'ordre de l'entrée est préservé.
+const audienceListSchema = z
+  .array(z.string().trim().toUpperCase())
+  .transform((values) => Array.from(new Set(values)))
+  .pipe(z.array(z.enum(AUDIENCES)).max(AUDIENCES.length));
+
+const techniqueListSchema = z
+  .array(z.string().trim().toUpperCase())
+  .transform((values) => Array.from(new Set(values)))
+  .pipe(z.array(z.enum(TECHNIQUES)).max(TECHNIQUES.length));
 
 const latitudeSchema = z
   .number()
@@ -83,6 +102,9 @@ export const serviceCreateSchema = z
       .int("Le prix doit être un entier (unités mineures).")
       .min(LIMITS.servicePriceMinorMin, "Le prix ne peut pas être négatif.")
       .max(LIMITS.servicePriceMinorMax, "Le prix est trop élevé."),
+    // À la création, catégories absentes → tableaux vides (compatibilité).
+    audiences: audienceListSchema.optional().default([]),
+    techniques: techniqueListSchema.optional().default([]),
   })
   .strict();
 
@@ -116,6 +138,10 @@ export const serviceUpdateSchema = z
       .min(LIMITS.servicePriceMinorMin, "Le prix ne peut pas être négatif.")
       .max(LIMITS.servicePriceMinorMax, "Le prix est trop élevé.")
       .optional(),
+    // Dans un PATCH : absent → aucune modification ; [] → suppression ;
+    // tableau renseigné → remplacement. Pas de default([]) ici.
+    audiences: audienceListSchema.optional(),
+    techniques: techniqueListSchema.optional(),
     isActive: z.boolean().optional(),
   })
   .strict()
@@ -127,3 +153,51 @@ export const serviceUpdateSchema = z
 export type ProfileInput = z.infer<typeof profileSchema>;
 export type ServiceCreateInput = z.infer<typeof serviceCreateSchema>;
 export type ServiceUpdateInput = z.infer<typeof serviceUpdateSchema>;
+
+// --- Recherche publique ---
+// Chaque paramètre de pagination doit être une chaîne unique AVANT coercition :
+// les tableaux (paramètres répétés), objets et chaînes vides sont rejetés.
+function integerParam(min: number, max: number, defaultValue?: number) {
+  const base = z.number().int().min(min).max(max);
+  const schema = defaultValue === undefined ? base : base.default(defaultValue);
+  return z.preprocess((value) => {
+    if (typeof value !== "string" || value.trim() === "") return value;
+    return Number(value.trim());
+  }, schema);
+}
+
+// Normalise trim + majuscules ; une chaîne vide devient undefined (ignorée).
+// Une valeur non-chaîne (tableau/objet) est conservée pour être rejetée ensuite.
+const normalizeFilter = (value: unknown) =>
+  typeof value === "string" ? value.trim().toUpperCase() || undefined : value;
+
+export const barberSearchQuerySchema = z
+  .object({
+    q: z
+      .string()
+      .trim()
+      .max(LIMITS.profileDisplayName)
+      .optional()
+      .transform((value) => (value ? value : undefined)),
+    city: z
+      .string()
+      .trim()
+      .max(LIMITS.profileCity)
+      .optional()
+      .transform((value) => (value ? value : undefined)),
+    countryCode: z.preprocess(
+      normalizeFilter,
+      z.string().refine(isCountryCode, "Code pays invalide.").optional(),
+    ),
+    audience: z.preprocess(normalizeFilter, z.enum(AUDIENCES).optional()),
+    technique: z.preprocess(normalizeFilter, z.enum(TECHNIQUES).optional()),
+    page: integerParam(
+      SEARCH_LIMITS.pageDefault,
+      SEARCH_LIMITS.pageMax,
+      SEARCH_LIMITS.pageDefault,
+    ),
+    pageSize: integerParam(1, SEARCH_LIMITS.pageSizeMax, SEARCH_LIMITS.pageSizeDefault),
+  })
+  .strict();
+
+export type BarberSearchQuery = z.infer<typeof barberSearchQuerySchema>;

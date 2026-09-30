@@ -7,20 +7,25 @@ import {
   integer,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import {
+  AUDIENCES,
   LIMITS,
   ROLES,
   SUPPORTED_CURRENCIES,
+  TECHNIQUES,
   USER_STATUSES,
 } from "./constants";
 
 export const userRoleEnum = pgEnum("user_role", [...ROLES]);
 export const userStatusEnum = pgEnum("user_status", [...USER_STATUSES]);
 export const currencyEnum = pgEnum("currency", [...SUPPORTED_CURRENCIES]);
+export const audienceEnum = pgEnum("audience", [...AUDIENCES]);
+export const techniqueEnum = pgEnum("technique", [...TECHNIQUES]);
 
 export const users = pgTable(
   "users",
@@ -119,7 +124,37 @@ export const barberServices = pgTable(
   ],
 );
 
+export const barberServiceAudiences = pgTable(
+  "barber_service_audiences",
+  {
+    serviceId: text("service_id")
+      .notNull()
+      .references(() => barberServices.id, { onDelete: "cascade" }),
+    audience: audienceEnum("audience").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.serviceId, table.audience] }),
+    index("barber_service_audiences_audience_idx").on(table.audience),
+  ],
+);
+
+export const barberServiceTechniques = pgTable(
+  "barber_service_techniques",
+  {
+    serviceId: text("service_id")
+      .notNull()
+      .references(() => barberServices.id, { onDelete: "cascade" }),
+    technique: techniqueEnum("technique").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.serviceId, table.technique] }),
+    index("barber_service_techniques_technique_idx").on(table.technique),
+  ],
+);
+
 export type BarberProfile = typeof barberProfiles.$inferSelect;
 export type NewBarberProfile = typeof barberProfiles.$inferInsert;
 export type BarberService = typeof barberServices.$inferSelect;
 export type NewBarberService = typeof barberServices.$inferInsert;
+export type BarberServiceAudience = typeof barberServiceAudiences.$inferSelect;
+export type BarberServiceTechnique = typeof barberServiceTechniques.$inferSelect;

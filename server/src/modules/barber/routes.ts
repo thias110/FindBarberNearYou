@@ -1,5 +1,4 @@
 import { Router } from "express";
-import type { ZodError } from "zod";
 import {
   profileSchema,
   serviceCreateSchema,
@@ -7,7 +6,7 @@ import {
 } from "@findbarber/shared/validation";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
-import { AppError } from "../../lib/errors.js";
+import { validationError } from "../../lib/validation.js";
 import {
   createService,
   getOwnProfile,
@@ -17,13 +16,6 @@ import {
 } from "./service.js";
 
 export const barberRouter = Router();
-
-function validationError(err: ZodError): AppError {
-  const details = err.issues
-    .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
-    .join("; ");
-  return new AppError(400, "VALIDATION_ERROR", details);
-}
 
 barberRouter.get("/profile", requireAuth, requireRole("BARBER"), async (req, res) => {
   const profile = await getOwnProfile(req.user!.id);

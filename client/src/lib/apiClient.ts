@@ -1,4 +1,5 @@
 import type {
+  BarbersSearchResponse,
   OwnBarberProfile,
   OwnBarberService,
   PublicBarberProfileWithServices,
@@ -33,6 +34,7 @@ interface ApiOptions {
   method?: string;
   body?: unknown;
   headers?: Record<string, string>;
+  signal?: AbortSignal;
 }
 
 export async function apiFetch<T>(
@@ -59,6 +61,7 @@ export async function apiFetch<T>(
     headers,
     credentials: "include",
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    signal: options.signal,
   });
 
   if (res.status === 204) {
@@ -143,8 +146,22 @@ export const barberApi: BarberApi = {
     ),
 };
 
+export interface BarbersSearchParams {
+  q?: string;
+  city?: string;
+  countryCode?: string;
+  audience?: string;
+  technique?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface PublicBarbersApi {
   getProfile(barberId: string): Promise<PublicBarberProfileWithServices>;
+  search(
+    params: BarbersSearchParams,
+    signal?: AbortSignal,
+  ): Promise<BarbersSearchResponse>;
 }
 
 export const barbersApi: PublicBarbersApi = {
@@ -152,4 +169,17 @@ export const barbersApi: PublicBarbersApi = {
     apiFetch<PublicBarberProfileWithServices>(
       `/api/barbers/${encodeURIComponent(barberId)}`,
     ),
+  search: (params, signal) => {
+    const sp = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== "") {
+        sp.set(key, String(value));
+      }
+    }
+    const qs = sp.toString();
+    return apiFetch<BarbersSearchResponse>(
+      `/api/barbers${qs ? `?${qs}` : ""}`,
+      { signal },
+    );
+  },
 };

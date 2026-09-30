@@ -238,3 +238,86 @@ npm audit --omit=dev
 - `tests/src/barber.integration.test.ts`, `tests/src/formatters.test.ts`
 - `server/drizzle/0002_stale_natasha_romanoff.sql` + `server/drizzle/meta/0002_snapshot.json` (nouveaux)
 - `server/drizzle/meta/_journal.json` (entrée 0002)
+
+---
+
+# Suivi — lot 3 : recherche et filtres coiffure (non commité)
+
+État : implémenté sur `main`, aucune modification Git (l'utilisateur garde la main).
+Aucun commit, push, branche, PR ni fusion.
+
+## Pass 1 — implémentation (2026-09-30)
+
+### Fichiers créés
+- `server/src/lib/like.ts` (échappement LIKE : `%`, `_`, `\`)
+- `server/src/lib/validation.ts` (`validationError` partagée)
+- `client/src/pages/client/BarbersSearchPage.tsx`
+- `tests/src/search-validation.test.ts`
+- `tests/src/barber-search.integration.test.ts`
+- `tests/src/migration-0003.test.ts`
+- `server/drizzle/0003_equal_ozymandias.sql` + `server/drizzle/meta/0003_snapshot.json` (générés)
+
+### Fichiers modifiés
+- `shared/src/constants.ts` (AUDIENCES/TECHNIQUES + libellés + SEARCH_LIMITS)
+- `shared/src/schema.ts` (enums audience/technique + 2 tables de liaison, PK composites, FK cascade)
+- `shared/src/types.ts` (tags services + types recherche)
+- `shared/src/validation/barber.ts` (tags optionnels create / PATCH sémantique + schéma recherche strict)
+- `server/src/db/client.ts` (enregistrement des 2 tables)
+- `server/src/modules/barber/service.ts` (tags en transaction, searchBarbers, DTO explicites)
+- `server/src/modules/barber/publicRoutes.ts` (`GET /api/barbers`)
+- `server/src/modules/barber/routes.ts` (réutilise `validationError` partagée)
+- `client/src/lib/apiClient.ts` (`search` + `signal` transmis à fetch)
+- `client/src/pages/barber/ServicesPage.tsx` (multi-sélection publics/techniques)
+- `client/src/pages/client/BarberProfilePage.tsx` (affichage tags)
+- `client/src/pages/client/HomePage.tsx` (lien recherche)
+- `client/src/app/router.tsx` (route `/barbers`)
+- `README.md`
+
+### Migration
+`0003_equal_ozymandias.sql` : additive. `CREATE TYPE audience/technique`, 2 tables de liaison
+(PK composites, FK `ON DELETE CASCADE`, index). Aucune retouche de 0000–0002, aucun backfill.
+
+## Pass 2 — vérifications (2026-09-30)
+
+| Commande | Résultat |
+|---|---|
+| `npm run db:generate` | ✅ `0003_equal_ozymandias.sql` |
+| `npm run db:migrate` | ✅ appliquée |
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm test` | ✅ 94/94 (7 fichiers) |
+| `npm run build` | ✅ server `dist/index.js` 47.67 KB + client |
+
+### Incidents / corrections
+- `and(...conditions)` typé `SQL | undefined` → assertion non-null (conditions toujours non vides).
+- `EMPTY_FILTERS` inutilisé (lint) → supprimé.
+- Test migration : extension `.sql` dupliquée → `findMigration` retourne le tag sans extension.
+
+## Pass 3 — tests navigateur (2026-09-30)
+
+Navigateur automatisé : Chrome 154 headless via puppeteer-core (hors dépôt), Vite dev + API
+Express sur base PGlite isolée. **10/10 OK.**
+
+1. Recherche sans filtre (13 résultats, page 1/2)
+2. Filtre `audience=FEMME` (Alpha + Gamma, Beta exclu)
+3. Filtre combiné `FEMME` + `COUPE` (même service → seul Alpha)
+4. Réinitialisation (URL nettoyée)
+5. Pagination (page 2 → Barbier Gamma, tri stable)
+6. Ouverture profil public (nom + service + tags)
+7. Actualisation avec filtres dans l'URL (sélecteur restauré)
+8. Création profil BARBER (UI)
+9. Création service catégorisé (UI, FEMME+HOMME / COUPE+DEGRADE)
+10. Édition : catégories restaurées (cases cochées)
+
+### Incident navigateur
+- Rate limiting dev (20 auth/15 min) tronquait le seed à 10/13 barbiers → serveur de test
+  relancé avec `AUTH_RATE_LIMIT_MAX=1000` (configuration d'environnement, pas du code).
+
+## Limites restantes
+- Rendu visuel/CSS non contrôlé (assertions DOM uniquement).
+- Recherche insensible aux accents et index spécialisés (trigram) : reportés (décision lot 3).
+- PostgreSQL de production non testé de bout en bout (PGlite seul).
+
+## État Git
+- Branche : `main`, HEAD `33b8f44` (inchangé). `git status --short` : uniquement les fichiers
+  listés ci-dessus, aucun commit/merge/push.

@@ -1,7 +1,16 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import type { OwnBarberService } from "@findbarber/shared/types";
-import { LIMITS, type Currency } from "@findbarber/shared/constants";
+import {
+  AUDIENCE_LABELS,
+  AUDIENCES,
+  LIMITS,
+  TECHNIQUE_LABELS,
+  TECHNIQUES,
+  type Audience,
+  type Currency,
+  type Technique,
+} from "@findbarber/shared/constants";
 import { ApiError, barberApi } from "../../lib/apiClient";
 import {
   formatCurrency,
@@ -15,6 +24,8 @@ interface ServiceFormValues {
   description: string | null;
   durationMinutes: number;
   priceMinor: number;
+  audiences: Audience[];
+  techniques: Technique[];
 }
 
 function ServiceForm({
@@ -29,6 +40,8 @@ function ServiceForm({
     description: string;
     durationMinutes: string;
     price: string;
+    audiences: Audience[];
+    techniques: Technique[];
   };
   submitLabel: string;
   submitting: boolean;
@@ -39,7 +52,25 @@ function ServiceForm({
   const [description, setDescription] = useState(initial.description);
   const [durationMinutes, setDurationMinutes] = useState(initial.durationMinutes);
   const [price, setPrice] = useState(initial.price);
+  const [audiences, setAudiences] = useState<Audience[]>(initial.audiences);
+  const [techniques, setTechniques] = useState<Technique[]>(initial.techniques);
   const [localError, setLocalError] = useState<string | null>(null);
+
+  function toggleAudience(code: Audience) {
+    setAudiences((current) =>
+      current.includes(code)
+        ? current.filter((item) => item !== code)
+        : [...current, code],
+    );
+  }
+
+  function toggleTechnique(code: Technique) {
+    setTechniques((current) =>
+      current.includes(code)
+        ? current.filter((item) => item !== code)
+        : [...current, code],
+    );
+  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -74,6 +105,8 @@ function ServiceForm({
       description: description.trim() ? description.trim() : null,
       durationMinutes: duration,
       priceMinor,
+      audiences,
+      techniques,
     });
   }
 
@@ -128,6 +161,36 @@ function ServiceForm({
           />
         </label>
       </div>
+      <fieldset className="space-y-1">
+        <legend className="text-sm text-gray-700">Publics</legend>
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          {AUDIENCES.map((code) => (
+            <label key={code} className="flex items-center gap-1 text-sm">
+              <input
+                type="checkbox"
+                checked={audiences.includes(code)}
+                onChange={() => toggleAudience(code)}
+              />
+              {AUDIENCE_LABELS[code]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset className="space-y-1">
+        <legend className="text-sm text-gray-700">Techniques / prestations</legend>
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          {TECHNIQUES.map((code) => (
+            <label key={code} className="flex items-center gap-1 text-sm">
+              <input
+                type="checkbox"
+                checked={techniques.includes(code)}
+                onChange={() => toggleTechnique(code)}
+              />
+              {TECHNIQUE_LABELS[code]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className="flex gap-2">
         <button
           type="submit"
@@ -277,7 +340,7 @@ export function BarberServicesPage() {
         <section>
           <h2 className="mb-2 font-semibold text-brand-900">Ajouter un service</h2>
           <ServiceForm
-            initial={{ name: "", description: "", durationMinutes: "", price: "" }}
+            initial={{ name: "", description: "", durationMinutes: "", price: "", audiences: [], techniques: [] }}
             submitLabel="Ajouter"
             submitting={submitting}
             onSubmit={(values) => void handleCreate(values)}
@@ -300,6 +363,8 @@ export function BarberServicesPage() {
                     description: service.description ?? "",
                     durationMinutes: String(service.durationMinutes),
                     price: minorToInputValue(service.priceMinor),
+                    audiences: service.audiences,
+                    techniques: service.techniques,
                   }}
                   submitLabel="Enregistrer"
                   submitting={submitting}

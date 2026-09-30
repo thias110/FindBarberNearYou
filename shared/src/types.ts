@@ -1,4 +1,10 @@
-import type { Currency, ROLES, USER_STATUSES } from "./constants";
+import type {
+  Audience,
+  Currency,
+  ROLES,
+  Technique,
+  USER_STATUSES,
+} from "./constants";
 import type { CountryCode } from "./countries";
 
 export type Role = (typeof ROLES)[number];
@@ -41,6 +47,8 @@ export interface PublicBarberService {
   description: string | null;
   durationMinutes: number;
   priceMinor: number;
+  audiences: Audience[];
+  techniques: Technique[];
 }
 
 export interface OwnBarberService extends PublicBarberService {
@@ -52,4 +60,27 @@ export interface OwnBarberService extends PublicBarberService {
 export interface PublicBarberProfileWithServices {
   profile: PublicBarberProfile;
   services: PublicBarberService[];
+}
+
+// --- Recherche publique (lot 3) ---
+// Whitelist stricte : aucun email, hash, userId interne, adresse, coordonnées,
+// devise ni date. Les tags proviennent exclusivement des services actifs.
+export interface PublicBarberSearchItem {
+  id: string;
+  displayName: string;
+  city: string;
+  countryCode: CountryCode;
+  activeServiceCount: number;
+  audiences: Audience[];
+  techniques: Technique[];
+}
+
+export interface BarbersSearchResponse {
+  barbers: PublicBarberSearchItem[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
 }

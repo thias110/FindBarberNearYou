@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import type { PublicBarberProfileWithServices } from "@findbarber/shared/types";
 import { COUNTRY_NAME_BY_CODE } from "@findbarber/shared/countries";
+import { AUDIENCE_LABELS, TECHNIQUE_LABELS } from "@findbarber/shared/constants";
 import { barbersApi } from "../../lib/apiClient";
 import { formatCurrency, formatDuration } from "../../lib/formatters";
 
@@ -93,6 +94,27 @@ export function PublicBarberProfilePage() {
                         <p className="mt-1 text-sm text-gray-600">
                           {service.description}
                         </p>
+                      )}
+                      {(service.audiences.length > 0 ||
+                        service.techniques.length > 0) && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {service.audiences.map((code) => (
+                            <span
+                              key={code}
+                              className="rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-800"
+                            >
+                              {AUDIENCE_LABELS[code]}
+                            </span>
+                          ))}
+                          {service.techniques.map((code) => (
+                            <span
+                              key={code}
+                              className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
+                            >
+                              {TECHNIQUE_LABELS[code]}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </div>
                     <p className="whitespace-nowrap text-right text-sm text-gray-700">

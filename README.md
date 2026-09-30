@@ -116,6 +116,40 @@ npm start           # démarre le serveur compilé
 - `GET  /api/barber/services` — services actifs/inactifs du BARBER connecté
 - `POST /api/barber/services` — création d'un service (BARBER + CSRF)
 - `PATCH /api/barber/services/:serviceId` — modification/désactivation d'un service (BARBER + CSRF)
+- `GET  /api/barbers` — recherche publique (voir ci-dessous)
 - `GET  /api/barbers/:barberId` — profil public + services actifs (public, `barberId` = `barber_profiles.id`)
 
 Erreurs normalisées : `{ "error": { "code": "...", "message": "..." } }`.
+
+### Recherche publique `GET /api/barbers`
+
+Lecture seule, accessible sans connexion. Paramètres (tous facultatifs) :
+
+| Paramètre | Description | Bornes |
+|---|---|---|
+| `q` | recherche partielle insensible à la casse sur le nom affiché | ≤ 120 car. |
+| `city` | recherche partielle insensible à la casse sur la ville | ≤ 100 car. |
+| `countryCode` | code pays ISO 3166-1 alpha-2 | liste `shared/src/countries.ts` |
+| `audience` | un public unique : `FEMME`, `HOMME`, `ENFANT` | sélection unique |
+| `technique` | une prestation unique : `COUPE`, `TAPER`, `DEGRADE`, `LOCKS`, `TRESSES`, `COLORATION`, `BARBE` | sélection unique |
+| `page` | numéro de page | entier ≥ 1, max 10 000 (défaut 1) |
+| `pageSize` | taille de page | entier 1..50 (défaut 12) |
+
+Règles : paramètres inconnus ou répétés rejetés (400 `VALIDATION_ERROR`) ; chaînes vides
+trimmées ignorées (sauf pagination vide, rejetée) ; `%` et `_` traités comme littéraux ;
+filtres combinés en AND ; public et technique doivent correspondre au **même** service actif ;
+seuls les profils ACTIVE + BARBER sont exposés ; tri stable `lower(display_name), id` ;
+réponse paginée (`barbers`, `pagination.{page,pageSize,total,totalPages}`) avec whitelist
+publique (id profil, nom, ville, pays, nb services actifs, tags agrégés).
+
+### Catégories de prestations
+
+- Codes stables (majuscules) et libellés français dans `shared/src/constants.ts`
+  (`AUDIENCES`, `TECHNIQUES`, `AUDIENCE_LABELS`, `TECHNIQUE_LABELS`).
+- Tables de liaison `barber_service_audiences` / `barber_service_techniques` (PK composites,
+  FK `ON DELETE CASCADE`), migration additive `0003_*`.
+- « Mixte » n'est pas un code stocké : il se calcule (FEMME + HOMME présents).
+- À la création, catégories absentes = tableaux vides. En PATCH : absent = inchangé,
+  `[]` = suppression, tableau = remplacement (dans la même transaction que le service).
+- Page publique `/barbers` : filtres + pagination conservés dans l'URL (précédent/suivant
+  cohérents), recherche, réinitialisation, états chargement/erreur+retry/vide.

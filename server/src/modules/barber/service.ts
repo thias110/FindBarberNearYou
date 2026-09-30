@@ -1,27 +1,37 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
   barberProfiles,
+  barberServiceAudiences,
   barberServices,
+  barberServiceTechniques,
   users,
   type BarberProfile,
   type BarberService,
 } from "@findbarber/shared/schema";
 import type { CountryCode } from "@findbarber/shared/countries";
 import type {
+  Audience,
+  Technique,
+} from "@findbarber/shared/constants";
+import type {
+  BarbersSearchResponse,
   OwnBarberProfile,
   OwnBarberService,
   PublicBarberProfile,
   PublicBarberProfileWithServices,
+  PublicBarberSearchItem,
   PublicBarberService,
 } from "@findbarber/shared/types";
 import type {
   ProfileInput,
   ServiceCreateInput,
   ServiceUpdateInput,
+  BarberSearchQuery,
 } from "@findbarber/shared/validation";
 import { AppError } from "../../lib/errors.js";
+import { escapeLikePattern } from "../../lib/like.js";
 
 function toOwnProfile(profile: BarberProfile): OwnBarberProfile {
   return {
@@ -56,27 +66,71 @@ function toPublicProfile(profile: BarberProfile): PublicBarberProfile {
   };
 }
 
-function toOwnService(service: BarberService): OwnBarberService {
+function toOwnService(
+  service: BarberService,
+  audiences: Audience[],
+  techniques: Technique[],
+): OwnBarberService {
   return {
     id: service.id,
     name: service.name,
     description: service.description,
     durationMinutes: service.durationMinutes,
     priceMinor: service.priceMinor,
+    audiences,
+    techniques,
     isActive: service.isActive,
     createdAt: service.createdAt.toISOString(),
     updatedAt: service.updatedAt.toISOString(),
   };
 }
 
-function toPublicService(service: BarberService): PublicBarberService {
+function toPublicService(
+  service: BarberService,
+  audiences: Audience[],
+  techniques: Technique[],
+): PublicBarberService {
   return {
     id: service.id,
     name: service.name,
     description: service.description,
     durationMinutes: service.durationMinutes,
     priceMinor: service.priceMinor,
+    audiences,
+    techniques,
   };
+}
+
+async function loadAudiences(serviceIds: string[]): Promise<Map<string, Audience[]>> {
+  const map = new Map<string, Audience[]>();
+  if (serviceIds.length === 0) return map;
+  const rows = await db
+    .select()
+    .from(barberServiceAudiences)
+    .where(inArray(barberServiceAudiences.serviceId, serviceIds))
+    .orderBy(asc(barberServiceAudiences.audience));
+  for (const row of rows) {
+    const list = map.get(row.serviceId) ?? [];
+    list.push(row.audience);
+    map.set(row.serviceId, list);
+  }
+  return map;
+}
+
+async function loadTechniques(serviceIds: string[]): Promise<Map<string, Technique[]>> {
+  const map = new Map<string, Technique[]>();
+  if (serviceIds.length === 0) return map;
+  const rows = await db
+    .select()
+    .from(barberServiceTechniques)
+    .where(inArray(barberServiceTechniques.serviceId, serviceIds))
+    .orderBy(asc(barberServiceTechniques.technique));
+  for (const row of rows) {
+    const list = map.get(row.serviceId) ?? [];
+    list.push(row.technique);
+    map.set(row.serviceId, list);
+  }
+  return map;
 }
 
 async function getOwnProfileRow(userId: string): Promise<BarberProfile> {
@@ -164,7 +218,18 @@ export async function listOwnServices(
     .from(barberServices)
     .where(eq(barberServices.barberProfileId, profile.id))
     .orderBy(asc(barberServices.createdAt));
-  return services.map(toOwnService);
+  const ids = services.map((service) => service.id);
+  const [audiences, techniques] = await Promise.all([
+    loadAudiences(ids),
+    loadTechniques(ids),
+  ]);
+  return services.map((service) =>
+    toOwnService(
+      service,
+      audiences.get(service.id) ?? [],
+      techniques.get(service.id) ?? [],
+    ),
+  );
 }
 
 export async function createService(
@@ -172,19 +237,36 @@ export async function createService(
   input: ServiceCreateInput,
 ): Promise<OwnBarberService> {
   const profile = await getOwnProfileRow(userId);
-  const [service] = await db
-    .insert(barberServices)
-    .values({
-      id: randomUUID(),
-      barberProfileId: profile.id,
-      name: input.name,
-      description: input.description,
-      durationMinutes: input.durationMinutes,
-      priceMinor: input.priceMinor,
-      isActive: true,
-    })
-    .returning();
-  return toOwnService(service);
+
+  const service = await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(barberServices)
+      .values({
+        id: randomUUID(),
+        barberProfileId: profile.id,
+        name: input.name,
+        description: input.description,
+        durationMinutes: input.durationMinutes,
+        priceMinor: input.priceMinor,
+        isActive: true,
+      })
+      .returning();
+
+    if (input.audiences.length > 0) {
+      await tx
+        .insert(barberServiceAudiences)
+        .values(input.audiences.map((audience) => ({ serviceId: created.id, audience })));
+    }
+    if (input.techniques.length > 0) {
+      await tx
+        .insert(barberServiceTechniques)
+        .values(input.techniques.map((technique) => ({ serviceId: created.id, technique })));
+    }
+
+    return created;
+  });
+
+  return toOwnService(service, input.audiences, input.techniques);
 }
 
 export async function updateService(
@@ -211,23 +293,60 @@ export async function updateService(
   if (input.priceMinor !== undefined) set.priceMinor = input.priceMinor;
   if (input.isActive !== undefined) set.isActive = input.isActive;
 
-  // Filtrage SQL direct sur `serviceId` ET `barberProfileId` : anti-IDOR.
-  const [service] = await db
-    .update(barberServices)
-    .set(set)
-    .where(
-      and(
-        eq(barberServices.id, serviceId),
-        eq(barberServices.barberProfileId, profile.id),
-      ),
-    )
-    .returning();
+  const audiencesProvided = input.audiences;
+  const techniquesProvided = input.techniques;
 
-  if (!service) {
-    throw new AppError(404, "SERVICE_NOT_FOUND", "Service introuvable.");
-  }
+  const service = await db.transaction(async (tx) => {
+    // Filtrage SQL direct sur `serviceId` ET `barberProfileId` : anti-IDOR.
+    const [updated] = await tx
+      .update(barberServices)
+      .set(set)
+      .where(
+        and(
+          eq(barberServices.id, serviceId),
+          eq(barberServices.barberProfileId, profile.id),
+        ),
+      )
+      .returning();
 
-  return toOwnService(service);
+    if (!updated) {
+      throw new AppError(404, "SERVICE_NOT_FOUND", "Service introuvable.");
+    }
+
+    // PATCH : absent → aucun changement ; [] → suppression ; tableau → remplacement.
+    if (audiencesProvided !== undefined) {
+      await tx
+        .delete(barberServiceAudiences)
+        .where(eq(barberServiceAudiences.serviceId, serviceId));
+      if (audiencesProvided.length > 0) {
+        await tx
+          .insert(barberServiceAudiences)
+          .values(audiencesProvided.map((audience) => ({ serviceId, audience })));
+      }
+    }
+    if (techniquesProvided !== undefined) {
+      await tx
+        .delete(barberServiceTechniques)
+        .where(eq(barberServiceTechniques.serviceId, serviceId));
+      if (techniquesProvided.length > 0) {
+        await tx
+          .insert(barberServiceTechniques)
+          .values(techniquesProvided.map((technique) => ({ serviceId, technique })));
+      }
+    }
+
+    return updated;
+  });
+
+  const [audiences, techniques] = await Promise.all([
+    loadAudiences([service.id]),
+    loadTechniques([service.id]),
+  ]);
+  return toOwnService(
+    service,
+    audiences.get(service.id) ?? [],
+    techniques.get(service.id) ?? [],
+  );
 }
 
 export async function getPublicProfile(
@@ -265,8 +384,130 @@ export async function getPublicProfile(
     )
     .orderBy(asc(barberServices.createdAt));
 
+  const ids = services.map((service) => service.id);
+  const [audiences, techniques] = await Promise.all([
+    loadAudiences(ids),
+    loadTechniques(ids),
+  ]);
+
   return {
     profile: toPublicProfile(profile),
-    services: services.map(toPublicService),
+    services: services.map((service) =>
+      toPublicService(
+        service,
+        audiences.get(service.id) ?? [],
+        techniques.get(service.id) ?? [],
+      ),
+    ),
+  };
+}
+
+function buildSearchWhere(input: BarberSearchQuery): SQL {
+  const conditions: SQL[] = [
+    eq(users.status, "ACTIVE"),
+    eq(users.role, "BARBER"),
+  ];
+
+  if (input.q) {
+    conditions.push(
+      sql`${barberProfiles.displayName} ILIKE ${"%" + escapeLikePattern(input.q) + "%"} ESCAPE '\\'`,
+    );
+  }
+  if (input.city) {
+    conditions.push(
+      sql`${barberProfiles.city} ILIKE ${"%" + escapeLikePattern(input.city) + "%"} ESCAPE '\\'`,
+    );
+  }
+  if (input.countryCode) {
+    conditions.push(eq(barberProfiles.countryCode, input.countryCode));
+  }
+
+  // Public et technique doivent correspondre au MÊME service actif (un seul
+  // EXISTS corrélé) pour éviter toute fausse correspondance entre deux services.
+  if (input.audience || input.technique) {
+    conditions.push(sql`EXISTS (
+      SELECT 1 FROM ${barberServices} bs
+      WHERE bs.barber_profile_id = ${barberProfiles.id}
+        AND bs.is_active = true
+        ${
+          input.audience
+            ? sql`AND EXISTS (SELECT 1 FROM ${barberServiceAudiences} bsa WHERE bsa.service_id = bs.id AND bsa.audience = ${input.audience})`
+            : sql``
+        }
+        ${
+          input.technique
+            ? sql`AND EXISTS (SELECT 1 FROM ${barberServiceTechniques} bst WHERE bst.service_id = bs.id AND bst.technique = ${input.technique})`
+            : sql``
+        }
+    )`);
+  }
+
+  // `conditions` est toujours non vide (2 conditions de base) : assertion sûre.
+  return and(...conditions)!;
+}
+
+export async function searchBarbers(
+  input: BarberSearchQuery,
+): Promise<BarbersSearchResponse> {
+  const where = buildSearchWhere(input);
+
+  const [totalRow] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(barberProfiles)
+    .innerJoin(users, eq(barberProfiles.userId, users.id))
+    .where(where);
+  const total = Number(totalRow?.total ?? 0);
+
+  const rows = await db
+    .select({
+      id: barberProfiles.id,
+      displayName: barberProfiles.displayName,
+      city: barberProfiles.city,
+      countryCode: barberProfiles.countryCode,
+      activeServiceCount: sql<number>`(
+        SELECT count(*)::int FROM ${barberServices} bs_count
+        WHERE bs_count.barber_profile_id = ${barberProfiles.id}
+          AND bs_count.is_active = true
+      )`,
+      audiences: sql<string[]>`COALESCE((
+        SELECT array_agg(DISTINCT bsa.audience ORDER BY bsa.audience)::text[]
+        FROM ${barberServiceAudiences} bsa
+        JOIN ${barberServices} bs ON bs.id = bsa.service_id
+        WHERE bs.barber_profile_id = ${barberProfiles.id} AND bs.is_active = true
+      ), ARRAY[]::text[])`,
+      techniques: sql<string[]>`COALESCE((
+        SELECT array_agg(DISTINCT bst.technique ORDER BY bst.technique)::text[]
+        FROM ${barberServiceTechniques} bst
+        JOIN ${barberServices} bs ON bs.id = bst.service_id
+        WHERE bs.barber_profile_id = ${barberProfiles.id} AND bs.is_active = true
+      ), ARRAY[]::text[])`,
+    })
+    .from(barberProfiles)
+    .innerJoin(users, eq(barberProfiles.userId, users.id))
+    .where(where)
+    .orderBy(sql`lower(${barberProfiles.displayName}) asc`, asc(barberProfiles.id))
+    .limit(input.pageSize)
+    .offset((input.page - 1) * input.pageSize);
+
+  const barbers: PublicBarberSearchItem[] = rows.map((row) => ({
+    id: row.id,
+    displayName: row.displayName,
+    city: row.city,
+    countryCode: row.countryCode as CountryCode,
+    activeServiceCount: row.activeServiceCount,
+    audiences: row.audiences as Audience[],
+    techniques: row.techniques as Technique[],
+  }));
+
+  const totalPages = total === 0 ? 0 : Math.ceil(total / input.pageSize);
+
+  return {
+    barbers,
+    pagination: {
+      page: input.page,
+      pageSize: input.pageSize,
+      total,
+      totalPages,
+    },
   };
 }
