@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
 import { createApp } from "../../server/src/app";
 import { db } from "../../server/src/db/client";
@@ -120,7 +121,15 @@ describe("POST /api/auth/login", () => {
     expect(authCookie).toBeDefined();
     expect(authCookie).toContain("HttpOnly");
     expect(authCookie).toContain("SameSite=Lax");
+    expect(authCookie).toContain("Max-Age=604800");
     expect(cookies.some((c) => c.startsWith("csrf_token="))).toBe(true);
+
+    const token = (authCookie as string).slice("auth_token=".length).split(";")[0];
+    const payload = jwt.decode(token) as jwt.JwtPayload | null;
+    expect(payload).not.toBeNull();
+    expect(payload?.exp).toBeTypeOf("number");
+    expect(payload?.iat).toBeTypeOf("number");
+    expect(Math.abs((payload?.exp ?? 0) - (payload?.iat ?? 0) - 604800)).toBeLessThanOrEqual(5);
   });
 
   it("rotates the CSRF token on each login", async () => {
@@ -231,6 +240,10 @@ describe("POST /api/auth/logout", () => {
 
     const res = await agent.post("/api/auth/logout").set("X-CSRF-Token", csrf);
     expect(res.status).toBe(204);
+
+    const setCookies = (res.headers["set-cookie"] ?? []) as string[];
+    expect(setCookies.find((c) => c.startsWith("auth_token=;"))).toBeDefined();
+    expect(setCookies.find((c) => c.startsWith("csrf_token=;"))).toBeDefined();
 
     const me = await agent.get("/api/auth/me");
     expect(me.status).toBe(401);

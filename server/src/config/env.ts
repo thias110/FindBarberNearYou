@@ -28,7 +28,12 @@ const envSchema = z.object({
   DATABASE_URL: z.string().optional(),
   PGLITE_DATA_DIR: z.string().optional(),
   JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters."),
-  JWT_EXPIRES_IN: z.string().min(1).default("7d"),
+  JWT_EXPIRES_IN_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(30 * 24 * 60 * 60)
+    .default(7 * 24 * 60 * 60),
   AUTH_RATE_LIMIT_WINDOW_MS: z.coerce
     .number()
     .int()

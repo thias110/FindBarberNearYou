@@ -4,11 +4,7 @@ import { registerSchema, loginSchema } from "@findbarber/shared/validation";
 import { requireAuth } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
 import { AppError } from "../../lib/errors.js";
-import {
-  AUTH_COOKIE,
-  CSRF_COOKIE,
-  COOKIE_MAX_AGE_MS,
-} from "../../lib/cookies.js";
+import { AUTH_COOKIE, CSRF_COOKIE } from "../../lib/cookies.js";
 import { env } from "../../config/env.js";
 import { registerUser, loginUser } from "./service.js";
 
@@ -25,7 +21,8 @@ function cookieBaseOptions() {
   return {
     sameSite: "lax" as const,
     secure: env.NODE_ENV === "production",
-    maxAge: COOKIE_MAX_AGE_MS,
+    // Durée du cookie, en millisecondes
+    maxAge: env.JWT_EXPIRES_IN_SECONDS * 1000,
     path: "/",
   };
 }

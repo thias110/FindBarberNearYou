@@ -92,7 +92,8 @@ export async function loginUser(input: {
   const token = jwt.sign(
     { sub: user.id, csrf: csrfToken },
     env.JWT_SECRET,
-    { expiresIn: env.JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"] },
+    // Durée du JWT, en secondes
+    { expiresIn: env.JWT_EXPIRES_IN_SECONDS },
   );
 
   return { user: toPublicUser(user), token, csrfToken };

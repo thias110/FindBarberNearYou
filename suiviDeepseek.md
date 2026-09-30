@@ -14,7 +14,7 @@
 
 ### Racine
 - `package.json` (workspaces + scripts), `tsconfig.base.json`, `.gitignore`, `eslint.config.js`, `vitest.config.ts`, `package-lock.json`
-- `.env.example` — modifié (`NEXT_PUBLIC_MAP_API_KEY` → `VITE_MAP_API_KEY`, ajout `NODE_ENV`, `PORT`, `CORS_ORIGIN`, `PGLITE_DATA_DIR`, `DATABASE_URL`, `JWT_EXPIRES_IN`, `AUTH_RATE_LIMIT_*`, `VITE_API_URL`)
+- `.env.example` — modifié (`NEXT_PUBLIC_MAP_API_KEY` → `VITE_MAP_API_KEY`, ajout `NODE_ENV`, `PORT`, `CORS_ORIGIN`, `PGLITE_DATA_DIR`, `DATABASE_URL`, `JWT_EXPIRES_IN_SECONDS`, `AUTH_RATE_LIMIT_*`, `VITE_API_URL`)
 - `.env` — local, ignoré par git (secret aléatoire de dev)
 - `README.md` — modifié
 
@@ -81,7 +81,7 @@ npm ls react-router react-router-dom vite vitest drizzle-kit
 2. **Base prod** : sélection centralisée du pilote (`pglite` dev/test, `postgres` prod) ; dépendance `pg` ajoutée (client node-postgres standard requis par `drizzle-orm/node-postgres`) ; erreur claire si `DATABASE_URL` absent en prod.
 3. **Autorisation** : JWT = `{ sub, csrf }` uniquement ; rôle/statut lus en base à chaque requête ; 401 (token invalide/user absent) / 403 (suspendu / rôle interdit) ; tests de changement rôle+statut à effet immédiat.
 4. **Mots de passe** : min 8 caractères + max 72 octets UTF-8 (via `TextEncoder`), appliqué inscription + `create:admin` ; test Unicode > 72 octets.
-5. **Cookies/CSRF** : HttpOnly/SameSite=Lax/Secure(prod)/Path=//maxAge ; CSRF lisible + rotation à chaque login + comparaison `timingSafeEqual` ; `JWT_SECRET` validé au démarrage (prod : >= 32, non exemple).
+5. **Cookies/CSRF** : HttpOnly/SameSite=Lax/Secure(prod)/Path=//maxAge (dérivée de `JWT_EXPIRES_IN_SECONDS`) ; CSRF lisible + rotation à chaque login + comparaison `timingSafeEqual` ; `JWT_SECRET` validé au démarrage (prod : >= 32, non exemple).
 6. **Rate limit** : `express-rate-limit` sur login/register ; test 429.
 7. **npm** : `react-router-dom` 6 → 7.18.4 (corrige l'avis react-router) ; audit restant = 6 vuln. `moderate` dev-only (vitest, esbuild).
 
