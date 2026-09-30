@@ -138,7 +138,7 @@ Aucune fusion dans `main` n'a été effectuée.
 
 # Suivi — FindBarberNearYou (lot 2 : profils BARBER, services, pays, devises, lien public)
 
-État après implémentation du lot 2. Aucun commit / push / PR / fusion réalisé (attente de validation).
+État après implémentation du lot 2. Commité et poussé sur `feature/barber-profiles` (pas de fusion dans `main`, pas de PR).
 
 ## Cadrage retenu (adaptations du plan)
 
@@ -190,7 +190,7 @@ npm audit --omit=dev
 | db:migrate | ✅ appliquée |
 | typecheck | ✅ shared + server + client |
 | lint | ✅ 0 erreur, 0 warning |
-| tests | ✅ 64/64 (auth 26 + roles 3 + barber 23 + formatters 12) |
+| tests | ✅ 64/64 (auth 23 + roles 3 + barber 23 + formatters 15) |
 | build | ✅ server `dist/index.js` 37.57 KB + client |
 | audit --omit=dev | ✅ 0 vulnérabilité |
 
@@ -204,7 +204,6 @@ npm audit --omit=dev
 ## Git (état final du lot 2)
 
 - Branche : `feature/barber-profiles` (créée depuis `main` à `52dbb4b`).
-- Aucun commit, push, PR ni fusion.
-- `git status --short` : 14 fichiers modifiés (suivis) + 13 fichiers non suivis (nouveaux).
-- `git diff --stat` (suivis) : 14 fichiers, +547 / −23.
-- Aucun `.env`, secret ou ZIP ajouté. `claude/` conservé.
+- Commit : `a775c384e8670a6635c2d6667ba52e9fe04e2ccc` (`feat: add international barber profiles and services`), poussé sur `origin/feature/barber-profiles`.
+- `git status --short` après commit : propre (aucune modification restante).
+- Aucun `.env`, secret, ZIP, dossier de build (`dist/`) ou donnée PGlite (`data/`) ajouté. `claude/` conservé.
