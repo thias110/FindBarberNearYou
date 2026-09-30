@@ -107,6 +107,29 @@ npm run create:admin
 
 Saisie interactive, mot de passe masqué (jamais en clair dans le code, en argument, ni dans `.env.example`). L'inscription publique rejette ADMIN avec 403.
 
-## Archive ZIP
+Terminé. La branche `feature/authent` est à jour et le commit est poussé (pas de merge dans `main`).
 
-`FindBarberNearYou-src.zip` (101 Ko) — code source uniquement, exclut `.env`, `.git`, `node_modules`, `dist`, données PGlite, journaux et secrets.
+## Commit
+- **SHA :** `ed08f26dd7256379256dedc5c14c742fa79bc26a`
+- **Message :** `fix: synchronize JWT and cookie expiration`
+
+## Modifications
+- `.env.example` : `JWT_EXPIRES_IN=7d` → `JWT_EXPIRES_IN_SECONDS=604800` avec commentaire.
+- `.env` local : mis à jour vers `JWT_EXPIRES_IN_SECONDS=604800` (ignoré par git, non commité).
+- `server/src/config/env.ts` : schéma `JWT_EXPIRES_IN_SECONDS` (`z.coerce.number().int().positive().max(30*24*60*60).default(7*24*60*60)`).
+- `server/src/modules/auth/service.ts` : `expiresIn: env.JWT_EXPIRES_IN_SECONDS` (secondes).
+- `server/src/modules/auth/routes.ts` : `maxAge: env.JWT_EXPIRES_IN_SECONDS * 1000` (ms).
+- `server/src/lib/cookies.ts` : suppression de `COOKIE_MAX_AGE_MS`.
+- `suiviDeepseek.md` : références mises à jour.
+- `tests/src/auth.integration.test.ts` : ajout des assertions `Max-Age=604800`, cohérence `exp - iat ≈ 604800` (±5 s), et suppression des cookies `auth_token`/`csrf_token` au logout.
+
+## Vérifications
+| Commande | Résultat |
+|---|---|
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur |
+| `npm test` | ✅ 26/26 (2 fichiers) |
+| `npm run build` | ✅ server (`dist/index.js` 14.10 KB) + client |
+| `npm audit --omit=dev` | ✅ 0 vulnérabilité |
+
+Aucune fusion dans `main` n'a été effectuée.
