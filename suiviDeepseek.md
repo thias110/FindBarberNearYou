@@ -321,3 +321,30 @@ Express sur base PGlite isolée. **10/10 OK.**
 ## État Git
 - Branche : `main`, HEAD `33b8f44` (inchangé). `git status --short` : uniquement les fichiers
   listés ci-dessus, aucun commit/merge/push.
+
+---
+
+## Correctifs ciblés BarbersSearchPage (2026-09-30, non commité)
+
+### Changements
+- `client/src/pages/client/BarbersSearchPage.tsx` :
+  1. Page demandée vide alors que `pagination.total > 0` → message « Cette page ne contient aucun résultat. »
+     + bouton « Revenir à la première page » (`goToPage(1)`, filtres conservés).
+  2. Normalisation `trim + toUpperCase` de `countryCode`, `audience` et `technique` à la lecture
+     de l'URL (`normalizeCode`), pour l'affichage des sélecteurs ET l'appel API.
+
+### Commandes exécutées
+| Commande | Résultat |
+|---|---|
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm test` | ✅ 94/94 |
+| `npm run build` | ✅ server + client |
+| Navigateur ciblé | ✅ 4/4 |
+
+### Vérifications navigateur (4/4)
+1. `?page=999` (données existantes) → message page vide + bouton présents.
+2. Clic « Revenir à la première page » → `url=/barbers` (paramètre `page` retiré).
+3. `?audience=femme&page=999` → bouton conservant le filtre (`url=…?audience=femme`, Alpha+Gamma).
+4. `?audience=femme&technique=coupe&countryCode=ch` → sélecteurs `CH`/`FEMME`/`COUPE`,
+   seul Barbier Alpha retourné.

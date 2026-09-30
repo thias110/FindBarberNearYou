@@ -23,13 +23,19 @@ interface Filters {
   technique: string;
 }
 
+// Les codes (pays, public, technique) sont normalisés trim + majuscules pour que
+// les sélecteurs affichent la valeur réellement appliquée par le serveur.
+function normalizeCode(value: string | null): string {
+  return (value ?? "").trim().toUpperCase();
+}
+
 function filtersFromParams(sp: URLSearchParams): Filters {
   return {
     q: sp.get("q") ?? "",
     city: sp.get("city") ?? "",
-    countryCode: sp.get("countryCode") ?? "",
-    audience: sp.get("audience") ?? "",
-    technique: sp.get("technique") ?? "",
+    countryCode: normalizeCode(sp.get("countryCode")),
+    audience: normalizeCode(sp.get("audience")),
+    technique: normalizeCode(sp.get("technique")),
   };
 }
 
@@ -81,9 +87,9 @@ export function BarbersSearchPage() {
         {
           q: searchParams.get("q") ?? undefined,
           city: searchParams.get("city") ?? undefined,
-          countryCode: searchParams.get("countryCode") ?? undefined,
-          audience: searchParams.get("audience") ?? undefined,
-          technique: searchParams.get("technique") ?? undefined,
+          countryCode: normalizeCode(searchParams.get("countryCode")) || undefined,
+          audience: normalizeCode(searchParams.get("audience")) || undefined,
+          technique: normalizeCode(searchParams.get("technique")) || undefined,
           page,
           pageSize: 12,
         },
@@ -258,9 +264,24 @@ export function BarbersSearchPage() {
             </button>
           </div>
         ) : data && data.barbers.length === 0 ? (
-          <p className="rounded-2xl bg-white p-6 text-center text-gray-600 shadow">
-            Aucun résultat.
-          </p>
+          pagination && pagination.total > 0 ? (
+            <div className="rounded-2xl bg-white p-6 text-center shadow">
+              <p className="text-gray-600">
+                Cette page ne contient aucun résultat.
+              </p>
+              <button
+                type="button"
+                onClick={() => goToPage(1)}
+                className="mt-3 rounded-lg border border-brand-700 px-4 py-2 text-brand-700"
+              >
+                Revenir à la première page
+              </button>
+            </div>
+          ) : (
+            <p className="rounded-2xl bg-white p-6 text-center text-gray-600 shadow">
+              Aucun résultat.
+            </p>
+          )
         ) : (
           <>
             <p className="text-sm text-gray-600">
