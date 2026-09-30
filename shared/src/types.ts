@@ -62,14 +62,18 @@ export interface PublicBarberProfileWithServices {
   services: PublicBarberService[];
 }
 
-// --- Recherche publique (lot 3) ---
-// Whitelist stricte : aucun email, hash, userId interne, adresse, coordonnées,
-// devise ni date. Les tags proviennent exclusivement des services actifs.
+// --- Recherche publique (lot 3, coordonnées lot 4) ---
+// Whitelist stricte : aucun email, hash, userId interne, adresse, devise ni date.
+// Les coordonnées sont volontairement exposées : ce sont celles du commerce, déjà
+// publiques via le profil détaillé (`PublicBarberProfile`). Les tags proviennent
+// exclusivement des services actifs.
 export interface PublicBarberSearchItem {
   id: string;
   displayName: string;
   city: string;
   countryCode: CountryCode;
+  latitude: number;
+  longitude: number;
   activeServiceCount: number;
   audiences: Audience[];
   techniques: Technique[];

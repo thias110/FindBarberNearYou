@@ -138,10 +138,11 @@ describe("GET /api/barbers", () => {
     expect(item).not.toHaveProperty("userId");
     expect(item).not.toHaveProperty("passwordHash");
     expect(item).not.toHaveProperty("address");
-    expect(item).not.toHaveProperty("latitude");
-    expect(item).not.toHaveProperty("longitude");
     expect(item).not.toHaveProperty("currency");
     expect(item).not.toHaveProperty("createdAt");
+    // Coordonnées publiques du commerce (lot 4) : exposées explicitement et exactes.
+    expect(item.latitude).toBe(46.2044);
+    expect(item.longitude).toBe(6.1432);
   });
 
   it("filters by q and city, case-insensitively, trimming spaces", async () => {
@@ -287,6 +288,47 @@ describe("GET /api/barbers", () => {
 
     const byAudience = await request(app).get("/api/barbers").query({ audience: "FEMME" });
     expect(byAudience.body.barbers).toHaveLength(0);
+  });
+
+  it("exposes exact public coordinates with filters and across pages", async () => {
+    await setupBarber("coord-a@example.com", {
+      displayName: "Alpha",
+      city: "Genève",
+      latitude: 46.2044,
+      longitude: 6.1432,
+    });
+    await setupBarber("coord-b@example.com", {
+      displayName: "Beta",
+      city: "Lausanne",
+      latitude: 46.5197,
+      longitude: 6.6323,
+    });
+
+    const all = await request(app).get("/api/barbers");
+    const byName = Object.fromEntries(
+      all.body.barbers.map((b: { displayName: string; latitude: number; longitude: number }) => [
+        b.displayName,
+        { latitude: b.latitude, longitude: b.longitude },
+      ]),
+    );
+    expect(byName.Alpha).toEqual({ latitude: 46.2044, longitude: 6.1432 });
+    expect(byName.Beta).toEqual({ latitude: 46.5197, longitude: 6.6323 });
+
+    // Filtre ville : la coordonnée renvoyée reste celle du profil correspondant.
+    const filtered = await request(app).get("/api/barbers").query({ city: "Lausanne" });
+    expect(filtered.body.barbers).toHaveLength(1);
+    expect(filtered.body.barbers[0].latitude).toBe(46.5197);
+    expect(filtered.body.barbers[0].longitude).toBe(6.6323);
+
+    // Pagination : chaque page porte les coordonnées de ses propres profils.
+    const page1 = await request(app).get("/api/barbers").query({ page: 1, pageSize: 1 });
+    expect(page1.body.barbers[0].displayName).toBe("Alpha");
+    expect(page1.body.barbers[0].latitude).toBe(46.2044);
+    expect(page1.body.pagination).toMatchObject({ page: 1, total: 2, totalPages: 2 });
+
+    const page2 = await request(app).get("/api/barbers").query({ page: 2, pageSize: 1 });
+    expect(page2.body.barbers[0].displayName).toBe("Beta");
+    expect(page2.body.barbers[0].longitude).toBe(6.6323);
   });
 });
 

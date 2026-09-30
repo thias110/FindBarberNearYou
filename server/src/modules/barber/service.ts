@@ -464,6 +464,8 @@ export async function searchBarbers(
       displayName: barberProfiles.displayName,
       city: barberProfiles.city,
       countryCode: barberProfiles.countryCode,
+      latitude: barberProfiles.latitude,
+      longitude: barberProfiles.longitude,
       activeServiceCount: sql<number>`(
         SELECT count(*)::int FROM ${barberServices} bs_count
         WHERE bs_count.barber_profile_id = ${barberProfiles.id}
@@ -494,6 +496,8 @@ export async function searchBarbers(
     displayName: row.displayName,
     city: row.city,
     countryCode: row.countryCode as CountryCode,
+    latitude: row.latitude,
+    longitude: row.longitude,
     activeServiceCount: row.activeServiceCount,
     audiences: row.audiences as Audience[],
     techniques: row.techniques as Technique[],

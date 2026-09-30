@@ -140,7 +140,9 @@ trimmées ignorées (sauf pagination vide, rejetée) ; `%` et `_` traités comme
 filtres combinés en AND ; public et technique doivent correspondre au **même** service actif ;
 seuls les profils ACTIVE + BARBER sont exposés ; tri stable `lower(display_name), id` ;
 réponse paginée (`barbers`, `pagination.{page,pageSize,total,totalPages}`) avec whitelist
-publique (id profil, nom, ville, pays, nb services actifs, tags agrégés).
+publique (id profil, nom, ville, pays, coordonnées `latitude`/`longitude` du commerce,
+nb services actifs, tags agrégés). Les coordonnées exposées sont celles déjà publiques
+sur le profil détaillé.
 
 ### Catégories de prestations
 
@@ -153,3 +155,68 @@ publique (id profil, nom, ville, pays, nb services actifs, tags agrégés).
   `[]` = suppression, tableau = remplacement (dans la même transaction que le service).
 - Page publique `/barbers` : filtres + pagination conservés dans l'URL (précédent/suivant
   cohérents), recherche, réinitialisation, états chargement/erreur+retry/vide.
+
+## Carte (MapLibre GL JS + MapTiler)
+
+La page `/barbers` affiche une carte limitée aux résultats de la page courante (indication
+visible). Desktop : liste + carte côte à côte. Mobile : liste par défaut, bascule
+Liste/Carte. La sélection est bidirectionnelle (clic liste ↔ clic marqueur) et un encart
+React affiche le barbier sélectionné ; « Voir le profil » reste un lien de navigation.
+
+- **Bibliothèque** : `maplibre-gl` (dernier stable), sans Leaflet ni `react-map-gl`.
+  Le wrapper React est maison (`client/src/components/BarbersMap.tsx`), chargé en différé
+  (`React.lazy`) pour ne pas gonfler le bundle initial de la recherche.
+- **Fournisseur de tuiles (développement uniquement)** : MapTiler Free.
+- **Fond vectoriel** : clair et désaturé, famille Dataviz (`dataviz-v4`) par défaut,
+  alternative Basic (`base-v4`). Voir `.env.example` (`VITE_MAP_STYLE_ID`).
+
+### Clé et configuration
+
+La clé est une **clé publique** MapTiler, restreinte par origine HTTP (« Allowed HTTP
+origins »). Elle n'est pas un secret ; aucun service token / token d'administration ne doit
+transiter par le client. À renseigner dans `.env` (ignoré par git), jamais dans la
+conversation ni dans le code.
+
+```bash
+# .env (local, jamais commité)
+VITE_MAP_API_KEY=ta_cle_publique_maptiler
+```
+
+Vite charge le `.env` racine du monorepo via `envDir` (`client/vite.config.ts`). Seules
+les variables préfixées `VITE_` sont exposées au navigateur ; les secrets serveur du
+`.env` racine (`JWT_SECRET`, `DATABASE_URL`…) ne le sont pas.
+
+**Sans clé** : la carte affiche un message « Carte non configurée », la liste reste
+pleinement fonctionnelle, et **aucune requête n'est envoyée au fournisseur** (pas de
+substitution silencieuse par une clé de démonstration ou un autre fournisseur).
+
+### Facturation (requêtes au fournisseur, pas « sessions »)
+
+Avec MapLibre connecté directement à MapTiler, le trafic est comptabilisé **par requête**
+(chargement du style, sprites, glyphes et surtout tuiles), pas automatiquement par session.
+
+- Déplacer ou zoomer la carte **ne déclenche aucun nouvel appel à notre API de recherche**
+  (`GET /api/barbers` n'est appelé qu'au chargement de la page, à la recherche, aux filtres
+  et à la pagination).
+- Déplacer ou zoomer la carte **déclenche en revanche de nouvelles requêtes au fournisseur**
+  pour charger les tuiles manquantes (une tuile = une requête facturée).
+
+Il ne faut donc pas raisonner en « une visite = une session facturée » : le volume dépend
+du nombre de tuiles réellement chargées. Consulter les quotas du plan effectivement utilisé
+(MapTiler Free en développement) sur le compte MapTiler.
+
+### Attribution
+
+L'attribution est ajoutée via `AttributionControl` (MapLibre) :
+« © MapTiler » + « © OpenStreetMap contributors », conforme aux CGU MapTiler (§6). Le
+contrôle est compact (`compact: true`), conforme au plan gratuit.
+
+### Robustesse
+
+- Une erreur de tuile ponctuelle (après chargement du style) est signalée sans casser la
+  carte ; une panne persistante (style jamais chargé) affiche un message + « Réessayer ».
+- Les erreurs asynchrones du moteur (`map.on('error')`) et les exceptions de rendu
+  (`MapErrorBoundary`) sont toutes deux gérées : l'ErrorBoundary React ne suffit pas seul.
+- Redimensionnement (`ResizeObserver`), nettoyage complet (`map.remove()`) et
+  `prefers-reduced-motion` (défilement de liste et animations carte) sont respectés.
+- En échec sur mobile, un bouton « Revenir à la liste » reste immédiatement accessible.

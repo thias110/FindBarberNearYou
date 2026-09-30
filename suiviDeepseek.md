@@ -348,3 +348,282 @@ Express sur base PGlite isolée. **10/10 OK.**
 3. `?audience=femme&page=999` → bouton conservant le filtre (`url=…?audience=femme`, Alpha+Gamma).
 4. `?audience=femme&technique=coupe&countryCode=ch` → sélecteurs `CH`/`FEMME`/`COUPE`,
    seul Barbier Alpha retourné.
+
+---
+
+# Suivi — lot 4 : carte (MapLibre GL JS + MapTiler, non commité)
+
+État : implémenté sur `main`, aucune modification Git (l'utilisateur garde la main).
+Aucun commit, push, branche, PR ni fusion.
+
+## Choix validés appliqués
+
+- **MapLibre GL JS** (`maplibre-gl@6.11.2`, dernier stable vérifié via `npm view`),
+  wrapper React maison (`client/src/components/BarbersMap.tsx`). Ni Leaflet ni
+  `react-map-gl`. Chargement différé via `React.lazy` (chunk `BarbersMap-*.js`
+  ~1 046 Ko minifié, ~285 Ko gzip, sorti du bundle initial).
+- **MapTiler Free** réservé au développement. Aucun abonnement/achat/création de
+  compte effectué.
+- **Fond vectoriel clair/désaturé** : identifiant réel vérifié sur le catalogue
+  MapTiler. `dataviz-v4` (Dataviz) par défaut ; alternative `base-v4` (Basic).
+  **Correction** : `dataviz-v4-light` n'existe pas (ancien défaut erroné).
+- **Carte limitée aux résultats de la page courante**, badge visible
+  « Carte : résultats de cette page ».
+- **Coordonnées exactes** des profils exposées par `GET /api/barbers`
+  (`latitude`/`longitude`), déjà publiques via le profil détaillé.
+- **Mobile** : liste par défaut, bascule Liste/Carte (bouton `lg:hidden`).
+- **Attribution conforme** : `AttributionControl(compact: true)` avec
+  `© MapTiler` + `© OpenStreetMap contributors` (liens), CGU MapTiler §6.
+- **Aucun changement de schéma ni migration** (`shared/src/schema.ts` intact).
+
+## Correction de la documentation de facturation
+
+- MapLibre connecté **directement** à MapTiler : trafic comptabilisé **par
+  requête** (style, sprites, glyphes, tuiles), **pas automatiquement par session**.
+- Déplacement/zoom : **aucun nouvel appel** à notre API de recherche
+  (`GET /api/barbers` n'est appelé qu'au chargement/filtres/pagination), mais
+  **de nouvelles requêtes au fournisseur** pour les tuiles manquantes
+  (une tuile = une requête).
+- **Pas de promesse** « une visite = une session facturée » ; se référer aux
+  quotas du plan réellement utilisé. Documenté dans `README.md`.
+
+## Clé et configuration
+
+- `.env.example` : `VITE_MAP_API_KEY=` vide + instructions de restriction par
+  origine HTTP (« Allowed HTTP origins »). Jamais de clé dans le code.
+- `client/vite.config.ts` : `envDir: '..'` charge le `.env` racine du monorepo.
+  Vérifié avec `loadEnv` : seules les variables `VITE_*` sont exposées à
+  `import.meta.env` (`VITE_API_URL`, `VITE_MAP_API_KEY`) ; `JWT_SECRET` n'est
+  **pas** exposé.
+- **Sans clé** : `getMapSettings()` renvoie `configured: false`, la carte affiche
+  « Carte non configurée », la liste reste fonctionnelle et **aucune requête
+  fournisseur** n'est émise. Aucune substitution silencieuse par une clé de
+  démonstration ou un autre fournisseur.
+- Aucune clé valide disponible : **rendu MapTiler réel non vérifié**, tests
+  réalisés avec un fournisseur simulé (voir ci-dessous).
+
+## Fichiers créés
+
+- `client/src/components/BarbersMap.tsx` (wrapper MapLibre + marqueurs + cadrage)
+- `client/src/components/BarbersMapCard.tsx` (encart React du barber sélectionné)
+- `client/src/components/MapErrorBoundary.tsx` (garde-fou rendu React)
+- `client/src/lib/mapConfig.ts` (clé/style/attribution, aucune requête sans clé)
+- `client/src/lib/media.ts` (`useMediaQuery`, `usePrefersReducedMotion`)
+- `client/src/lib/barberTags.ts` (`audienceChips`, « Mixte » calculé)
+
+## Fichiers modifiés
+
+- `client/package.json` (+ `maplibre-gl@^6.11.2`) et `package-lock.json`
+- `client/src/pages/client/BarbersSearchPage.tsx` (bascule Liste/Carte, sélection
+  bidirectionnelle, retrait de sélection obsolète, liste en alternative textuelle)
+- `client/src/styles/index.css` (marqueurs SVG DOM, état sélectionné, focus,
+  `prefers-reduced-motion`)
+- `client/src/vite-env.d.ts` (+ `VITE_MAP_*`)
+- `shared/src/types.ts` (+ `latitude`/`longitude` sur `PublicBarberSearchItem`)
+- `server/src/modules/barber/service.ts` (expose `latitude`/`longitude` dans le DTO)
+- `tests/src/barber-search.integration.test.ts` (coordonnées exactes, filtres, pages)
+- `.env.example`, `README.md`
+
+## Robustesse implémentée
+
+- Sélection bidirectionnelle liste ↔ marqueur ; encart React ; « Voir le profil »
+  reste un `Link` de navigation.
+- Sélection devenue absente retirée après changement de page/filtres.
+- Pas de recentrage à chaque rendu : cadrage uniquement sur changement réel
+  (`resultsSignature` id:lat:lng).
+- `prefers-reduced-motion` respecté (défilement liste + animations carte).
+- Chargement différé, `map.remove()` au démontage, `ResizeObserver` (mobile).
+- Erreur tuile ponctuelle (après `load`) ≠ panne persistante (style jamais chargé,
+  watchdog 12 s + marge de grâce 4 s). `map.on('error')` géré (l'ErrorBoundary ne
+  suffit pas). Bouton « Revenir à la liste » sur mobile en cas d'échec.
+
+## Vérifications
+
+| Commande | Résultat |
+|---|---|
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm test` | ✅ 95/95 (7 fichiers) |
+| `npm run build` | ✅ server `dist/index.js` 47.80 KB + client (carte lazy) |
+| `npm ls maplibre-gl` | ✅ 6.11.2 (latest) |
+
+### Poids du bundle (gzip niveau 9, mesuré indépendamment)
+
+| Fichier | Minifié | Gzip |
+|---|---|---|
+| `index-*.js` (bundle principal, sans carte) | 467 940 o | **128 805 o** (~125,8 KiB) |
+| `index-*.css` | 17 077 o | 3 938 o |
+| `BarbersMap-*.js` (chunk carte, chargé à la demande) | 1 045 692 o | **282 603 o** (~276,0 KiB) |
+| `BarbersMap-*.css` | 83 132 o | 10 464 o |
+
+- Téléchargement initial en vue Liste mobile : `index.js` + `index.css` ≈ **132,7 Ko gzip**.
+- Surcoût à l'ouverture de la carte : ≈ **293,1 Ko gzip** supplémentaires.
+- Le bundle principal ne contient **aucune** occurrence de « maplibre » (0) ; le chunk
+  carte en contient 286. Le découpage est donc réel, pas seulement déclaré.
+
+## Tests navigateur (fournisseur SIMULÉ, 26/26)
+
+Harness **extérieur à l'arbre de travail du dépôt** (`C:\Users\mathi\temp-lot4`,
+non versionné, n'apparaît pas dans `git status`) : puppeteer-core + Chrome headless,
+style `http://localhost:5050/style.json` simulé, aucune requête MapTiler réelle.
+
+1. Desktop : carte montée + `ready`, 12 résultats, marqueurs = résultats.
+2. Attribution MapTiler + OSM présente ; badge « Carte : résultats de cette page ».
+3. Clic liste → marqueur sélectionné + encart + anneau résultat.
+4. Clic marqueur → résultat mis en évidence (bidirectionnel).
+5. Pagination : page 2 = 2 résultats, aucun marqueur résiduel, sélection retirée.
+6. Filtre ville : liste/carte synchronisées (7/7 Lausanne).
+7. Injection HTML : nom rendu en texte littéral, aucun XSS exécuté.
+8. Clavier : focus marqueur + Entrée sélectionne.
+9. Panne fournisseur persistante (style bloqué) : repli + « Réessayer », liste OK.
+10. Erreur de tuile ponctuelle : badge « Certaines tuiles… », carte non déclarée en panne.
+11. Mobile : liste par défaut (carte non montée), bascule Carte (canvas dimensionné),
+    retour immédiat à la liste.
+12. Aucune erreur JS non gérée (pageerror).
+
+## Passe complémentaire : absence de clé + chargement différé (9/9)
+
+Build normal (sans `VITE_MAP_API_KEY`, sans `VITE_MAP_STYLE_URL`) ; API PGlite
+en mémoire + 14 barbiers seedés ; Chrome headless.
+
+1. Absence de clé → message « Carte non configurée » + instruction `VITE_MAP_API_KEY`.
+2. Recherche fonctionnelle sans clé (12 résultats).
+3. **Zéro requête MapTiler** (aucun style, aucune tuile).
+4. Vue mobile Liste : carte non montée.
+5. Vue mobile Liste : **chunk `BarbersMap-*.js` non chargé** (0 requête).
+6. Recherche/filtre fonctionnels en vue Liste (7 résultats Lausanne).
+7. Ouverture de la carte : chunk chargé **à ce moment** (1 requête) → différé effectif.
+8. Message clair également sur mobile.
+9. Toujours zéro requête MapTiler côté mobile.
+
+## Captures
+
+- Produites : `desktop-selection.png` (1440×900), `mobile-list.png` (390×844),
+  `mobile-map.png` (390×844), `desktop-unconfigured.png` (1440×900),
+  `mobile-unconfigured.png` (390×844) dans `temp-lot4/shots/`.
+- **Non inspectées visuellement** : le modèle courant ne lit pas les images. Seules
+  leurs dimensions/tailles ont été vérifiées (fichiers non vides). Le rendu visuel
+  réel reste à confirmer par l'utilisateur.
+
+## Limites restantes
+
+- Rendu MapTiler réel **non vérifié** (aucune clé fournie) ; seuls des mocks ont été
+  utilisés pour le fournisseur de carte.
+- PostgreSQL de production non testé de bout en bout (PGlite seul).
+- Capture visuelle non inspectée (voir ci-dessus).
+- `temp-lot4/` est un harness **extérieur à l'arbre de travail du dépôt**
+  (`C:\Users\mathi\temp-lot4`, non versionné, absent de `git status`) ; les
+  processus Node qu'il lance doivent être arrêtés manuellement après exécution
+  (nettoyage par port dans `run.sh`/`verify-nokey.sh`, `taskkill` sur `$!` peu
+  fiable sous git-bash/Windows).
+
+---
+
+# Suivi — passe UI ciblée (avant commit, non commité)
+
+Aucun commit/push/branche/fusion. Modifications limitées au formulaire de
+recherche (`BarbersSearchPage.tsx`) et au message « carte non configurée »
+(`BarbersMap.tsx`).
+
+## 1. Filtres compacts sur mobile
+
+- Ligne toujours visible : **Ville** + **Rechercher** + **Filtres**
+  (+ **Réinitialiser**). Objectif : résultats visibles dès le premier écran.
+- Panneau `#advanced-filters` (Nom, Pays, Public, Prestation) **dépliable** sur
+  mobile (`<lg`), **toujours visible** en desktop (`lg`).
+- Accessible : bouton `aria-expanded` + `aria-controls="advanced-filters"` ;
+  replié = `display:none` (champs non focusables) ; Entrée et Espace fonctionnent.
+- **Compteur de filtres supplémentaires actifs** (nom, pays, public, prestation)
+  affiché en pastille sur le bouton ; exposé via `data-active-filters` pour les tests.
+- Valeurs, synchronisation URL et réinitialisation conservées.
+
+## 2. Desktop compact
+
+- Bloc de recherche : `p-4` (au lieu de `p-5`), `space-y-3` (au lieu de `space-y-4`),
+  gaps `gap-2` ; conteneur de page `space-y-4` (au lieu de `space-y-6`).
+- Champs répartis en 2 lignes (ville+actions, puis 4 champs avancés) au lieu de 3.
+- Interface non refaite par ailleurs.
+
+## 3. Carte non configurée (dev vs prod)
+
+- Développement : instructions techniques conservées (« Carte non configurée » +
+  `VITE_MAP_API_KEY`).
+- Production : message neutre uniquement — « La carte est momentanément
+  indisponible. Vous pouvez continuer avec la liste. »
+- Bouton « Revenir à la liste » présent sur mobile dans les deux cas.
+
+### Détail technique — correctif build `NODE_ENV` (à la racine)
+
+**Cause** : `client/vite.config.ts` pointe `envDir` sur le `.env` racine (partagé
+avec le serveur). Vite interprète un `NODE_ENV=development` présent dans ce
+fichier comme une demande explicite de **development build** (code Vite : seule
+la valeur `development` y est supportée ; toute autre valeur est ignorée avec
+ avertissement). Conséquence : `vite build` produisait un bundle React **dev**
+(`jsxDEV`, chemins source) et `import.meta.env.DEV` restait `true`.
+
+**Correctif ciblé** : `NODE_ENV` retiré de `.env.example` **et** du `.env` local.
+- Serveur : retombe sur `development` par défaut (`envSchema.default`), PGlite
+  locale inchangée ; en production, `NODE_ENV=production` est fourni par
+  l'environnement (PostgreSQL + contrôles de secret). Vérifié : le serveur
+  compile démarre bien en `development`.
+- Vite : `vite build` → production, `vite dev` → development (défauts de commande).
+
+**Présentation corrigée** : le détour antérieur par `import.meta.env.MODE` (au
+lieu de `DEV`) a été **annulé**. Il ne corrigeait **pas** le runtime React,
+seulement l'affichage du message. La condition du message est revenue à
+`import.meta.env.DEV`, cohérente avec le runtime React désormais correct.
+
+**Vérifications séparées** :
+- `npm run build` : **aucun `jsxDEV`** → React production ; message neutre
+  présent, branche dev absente du bundle.
+- `npm run dev` (serveur Vite) : instructions techniques présentes.
+- Bundle principal : **129,66 Ko → 73,08 Ko gzip** (passage React dev → prod).
+
+## 4. Vérifications (code final)
+
+| Commande | Résultat |
+|---|---|
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm test` | ✅ 95/95 (7 fichiers) |
+| `npm run build` | ✅ server + client (`index` gzip **73,08 Ko** React prod ; chunk carte gzip 284,57 Ko) |
+
+### Tests navigateur (fournisseur SIMULÉ)
+
+- Suite historique : **26/26** (sélection, pagination, filtres, XSS, clavier,
+  panne persistante vs tuile ponctuelle, mobile).
+- Passe UI ciblée : **16/16** — panneau filtres toujours visible en desktop,
+  champ Nom visible sans clic, bouton Filtres masqué en desktop, restauration URL
+  (nom+pays+public+prestation), réinitialisation, ville+Rechercher+Filtres visibles
+  en mobile, panneau replié par défaut puis ouvert, **Entrée/Espace au clavier**,
+  saisie clavier dans le panneau, compteur `data-active-filters=2` avec badge,
+  sélections restaurées depuis l'URL, bascule Liste/Carte.
+- Absence de clé (build production) : **9/9** — message neutre prod, **0 requête
+  MapTiler**, recherche OK, chunk carte non chargé en vue mobile Liste puis chargé
+  à l'ouverture.
+- Message de développement (`vite dev`) : **3/3** — instructions techniques,
+  0 requête MapTiler, recherche OK.
+
+### Captures (`temp-lot4/shots-final/`, non inspectées visuellement)
+
+`desktop-compact.png`, `desktop-selection.png`, `desktop-url-restore.png`,
+`desktop-unconfigured.png`, `desktop-dev-hints.png` (1440×900) ;
+`mobile-compact.png`, `mobile-list.png`, `mobile-filters-open.png`,
+`mobile-map.png`, `mobile-unconfigured.png` (390×844).
+
+## Distinctions maintenues
+
+- **Fournisseur simulé** : toute la vérification navigateur ci-dessus (style mock
+  `http://localhost:5050/style.json`).
+- **Fournisseur MapTiler réel** : **non testé** (aucune clé fournie). Le rendu
+  réel du fond vectoriel `dataviz-v4` reste à confirmer par l'utilisateur.
+- **Captures** : produites mais **non inspectées visuellement** (le modèle courant
+  ne lit pas les images) ; seules dimensions/tailles vérifiées.
+
+## Limites / points ouverts
+
+- Rendu MapTiler réel non testé (pas de clé) ; `dataviz-v4` vérifié au catalogue.
+- `NODE_ENV=development` ne doit **pas** être remis dans le `.env` partagé : Vite
+  le lit via `envDir` et forcerait un build React dev. Le serveur a `development`
+  par défaut ; en production, définir `NODE_ENV=production` dans l'environnement.
+- `temp-lot4/` reste extérieur à l'arbre de travail du dépôt (non versionné).
