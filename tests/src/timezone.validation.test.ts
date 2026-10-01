@@ -11,6 +11,7 @@ const validProfile = {
   latitude: 46.2,
   longitude: 6.14,
   currency: "CHF",
+  places: ["SALON"],
 };
 
 function parse(body: Record<string, unknown>) {

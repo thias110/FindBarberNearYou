@@ -1194,3 +1194,171 @@ changement de base de données (le type PostgreSQL `date` accepte déjà
 
 Tests navigateur : **non exécutés** (aucun navigateur pilotable). Rendu non
 déclaré validé.
+
+---
+
+# Suivi — lot 8 : lieux de prestation et localisation approximative (issue #19, passe 1)
+
+État : code, tests et documentation écrits sur `main`. Migration `0007` **générée
+mais NON appliquée**. Passe limitée au sous-lot « profils, zones et recherche ».
+Aucune branche, commit, push, PR ni changement d'issue. `npm test` et
+`npm run db:migrate` **volontairement non exécutés** (arrêt avant validation du SQL).
+
+## Décisions appliquées
+
+- Trois modes cumulables **au niveau du profil** : `SALON`, `AT_PROVIDER`,
+  `AT_CLIENT` (constants partagées + libellés). Pas de mode par prestation.
+- Au moins un mode requis à la création et à chaque PUT du profil ; profils
+  historiques laissés sans mode (aucune attribution automatique).
+- Adresse privée obligatoire si `SALON` ou `AT_PROVIDER`, facultative pour
+  `AT_CLIENT` seul (vide → `null`).
+- `travelRadiusKm` entier 1..100, requis si et seulement si `AT_CLIENT` ; `null`
+  sinon (rayon non nul hors `AT_CLIENT` refusé côté serveur).
+- Ville, pays et coordonnées de référence restent requis.
+- Contrat public : `address` retirée des DTO/reponses ; coordonnées publiques
+  **arrondies à deux décimales** via `server/src/lib/location.ts` ; le point privé
+  exact n'est jamais exposé. Stockage jamais réécrit.
+- Filtre `place` ajouté à `GET /api/barbers` ; sans filtre, les profils
+  historiques restent renvoyés ; avec filtre, ceux sans mode correspondant sont
+  exclus.
+- Horaires et indisponibilités inchangés (communs au professionnel).
+
+## Fichiers créés
+
+- `server/src/lib/location.ts` (arrondi public, ne garantit pas l'anonymat)
+- `tests/src/service-places.validation.test.ts`
+- `tests/src/service-places.integration.test.ts`
+- `tests/src/migration-service-places.test.ts`
+- `server/drizzle/0007_fantastic_kid_colt.sql` + `server/drizzle/meta/0007_snapshot.json`
+
+## Fichiers modifiés
+
+- `shared/src/constants.ts` (`SERVICE_PLACES`, `SERVICE_PLACE_LABELS`,
+  `APPROXIMATE_LOCATION_LABEL`, `APPROXIMATE_DISTANCE_LABEL`, bornes du rayon)
+- `shared/src/schema.ts` (enum `service_place`, table `barber_profile_places`,
+  `address` nullable, `travel_radius_km` + CHECK)
+- `shared/src/types.ts` (DTO public sans `address`, `places`, `travelRadiusKm`
+  privé)
+- `shared/src/validation/barber.ts` (`placeListSchema`, `profileSchema`
+  conditionnel, filtre `place`)
+- `server/src/db/client.ts` (table enregistrée)
+- `server/src/modules/barber/service.ts` (`loadPlaces`, mappings, `upsertProfile`
+  transactionnel, recherche, filtre)
+- `client/src/lib/apiClient.ts` (`place` dans `BarbersSearchParams`)
+- `client/src/pages/barber/ProfilePage.tsx` (cases lieux, adresse privée, rayon)
+- `client/src/pages/client/BarberProfilePage.tsx` (badges lieux, plus d'adresse)
+- `client/src/pages/client/BarbersSearchPage.tsx` (filtre lieu, badges, mentions)
+- `client/src/components/BarbersMapCard.tsx` (badges lieux, localisation
+  approximative)
+- Tests existants adaptés (`places` par défaut dans les payloads, coordonnées
+  approximatives attendues, adresse absente du public)
+- `README.md`
+
+## Migration générée (relue, NON appliquée)
+
+`0007_fantastic_kid_colt.sql` : `CREATE TYPE service_place`, `CREATE TABLE
+barber_profile_places` (PK composite, FK CASCADE, index `place`),
+`ALTER TABLE barber_profiles ALTER COLUMN address DROP NOT NULL`,
+`ADD COLUMN travel_radius_km integer`, CHECK `travel_radius_km IS NULL OR BETWEEN
+1 AND 100`. Non destructive, aucun backfill de lieu.
+
+## Commandes réellement exécutées (passe 1)
+
+| Commande | Résultat |
+|---|---|
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run db:generate` | ✅ `0007_fantastic_kid_colt.sql` (relue) |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm run build` | ✅ server `dist/index.js` 70.17 KB ; client `index` gzip 94.33 Ko |
+| `npm test` | ⛔ non exécuté (arrêt avant migration) |
+| `npm run db:migrate` | ⛔ non exécuté (arrêt avant validation du SQL) |
+
+## En attente de validation
+
+1. Validation du SQL `0007_fantastic_kid_colt.sql` puis `npm run db:migrate`.
+2. `npm test` (migrations appliquées en mémoire par les tests).
+3. Rendu navigateur `/pro/profile`, profil public et recherche (filtre lieu)
+   **non vérifié** (aucun navigateur pilotable).
+4. Concurrence réelle PostgreSQL non démontrée (PGlite mono-connexion).
+5. Ce sous-lot ne termine pas #19 : restent le choix du lieu à la réservation,
+   l'adresse client privée et ses autorisations, le refus hors zone côté serveur
+   et la prise en compte des déplacements.
+
+---
+
+# Suivi — lot 8 : passe 2 (application et vérifications) — issue #19
+
+État : SQL `0007_fantastic_kid_colt.sql` validé par l'utilisateur et **appliqué
+sur la base PGlite locale de développement**. Ajustement UI demandé appliqué.
+Aucune branche, commit, push, PR ni changement d'issue.
+
+## Environnement cible confirmé
+
+- `NODE_ENV` non défini (shell et `.env`) → défaut `development` → pilote
+  `pglite`. `DATABASE_URL` présent mais ignoré en dev ; aucune base
+  distante/production.
+- `PGLITE_DATA_DIR=./data/pglite` → `server/data/pglite` (base locale de dev).
+- Aucun processus `node.exe`/`tsx` en cours avant sauvegarde/application.
+- Sauvegarde hors dépôt :
+  `C:/Users/mathi/AppData/Local/Temp/findbarber-pglite-backup-20261001-211229`
+  (1013 fichiers, ~39 Mo), non versionnée.
+
+## Ajustement UI (validé)
+
+- Libellé isolé « Distance approximative » **retiré** de l'interface
+  (`BarbersSearchPage.tsx`) ; « Localisation approximative » conservé.
+- La règle des futures distances (position approximative + libellé
+  `APPROXIMATE_DISTANCE_LABEL`) reste documentée dans `README.md`, pas affichée
+  à vide.
+- Helper `approximateCoordinate` : normalise `-0` en `0` (aucun zéro négatif).
+
+## Commandes et résultats réels
+
+| Commande | Résultat |
+|---|---|
+| `npm run db:migrate` | ✅ appliquée sur PGlite locale de dev |
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm test` | ✅ **231/231** (22 fichiers) |
+| `npm run build` | ✅ server `dist/index.js` 70.21 KB ; client `index` gzip 94.32 Ko |
+
+Tests ciblés #19 en verbose : **27/27** (`location` 5, `service-places.validation`
+12, `service-places.integration` 9, `migration-service-places` 1).
+
+Isolation des tests : `tests/setup.ts` force `NODE_ENV=test` et
+`PGLITE_DATA_DIR=""` → PGlite **en mémoire** ; la base de dev et toute base
+distante ne sont pas touchées.
+
+## Vérifications ciblées couvertes
+
+- Création mobile sans adresse ; `SALON`/`AT_PROVIDER` sans adresse (vide
+  comprise) refusés ; `AT_CLIENT` sans rayon refusé ; rayons 1 et 100 acceptés,
+  0/101/décimaux/chaîne refusés.
+- Retrait d'`AT_CLIENT` avec rayon `null` : ancienne valeur effacée (mise à jour
+  `travel_radius_km` inconditionnelle dans `upsertProfile`).
+- Sans `AT_CLIENT`, rayon non nul refusé ; PUT avec lieux vides/absents refusé.
+- Profils historiques conservés sans attribution automatique (migration) ;
+  recherche sans filtre non régressée ; filtre `place` correct.
+- Adresse absente des réponses publiques ; coordonnées publiques arrondies via
+  le helper ; coordonnées privées et stockées inchangées.
+- Coordonnées négatives et bornes `±90`/`±180` ; un arrondi déjà à deux
+  décimales peut être égal à la valeur exacte (règle testée, pas d'inégalité
+  systématique).
+- Auth/rôle/CSRF/propriété ; non-régression horaires et indisponibilités.
+
+## Migration sur profils préexistants (test)
+
+`tests/src/migration-service-places.test.ts` : applique `0007` sur une base
+peuplée (profil avec adresse + service + horaires + indisponibilité). Résultat :
+profil/service/horaires/indisponibilité conservés, adresse historique intacte,
+`barber_profile_places` vide, `travel_radius_km` NULL, relaxation `address`
+fonctionnelle, CHECK 1..100 appliqué, enum et unicité vérifiés.
+
+## Limites / suite
+
+- Rendu navigateur (`/pro/profile`, profil public, filtre lieu) **non exécuté**
+  (aucun navigateur pilotable).
+- Concurrence PostgreSQL multi-connexions non démontrée (PGlite mono-connexion).
+- Ce sous-lot **ne termine pas #19** : restent le choix du lieu à la réservation,
+  l'adresse client privée et ses autorisations, le refus hors zone côté serveur
+  et la prise en compte des déplacements.

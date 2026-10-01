@@ -33,6 +33,7 @@ function profilePayload(overrides: Record<string, unknown> = {}) {
     latitude: 46.2044,
     longitude: 6.1432,
     currency: "CHF",
+    places: ["SALON"],
     ...overrides,
   };
 }
@@ -638,6 +639,9 @@ describe("public profile", () => {
     expect(res.body.profile).not.toHaveProperty("userId");
     expect(res.body.profile).not.toHaveProperty("passwordHash");
     expect(res.body.profile).not.toHaveProperty("updatedAt");
+    // Lot 8 : l'adresse exacte est retirée du contrat public.
+    expect(res.body.profile).not.toHaveProperty("address");
+    expect(res.body.profile.places).toEqual(["SALON"]);
 
     expect(res.body.services).toHaveLength(1);
     expect(res.body.services[0].name).toBe("Actif");

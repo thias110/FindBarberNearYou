@@ -2,6 +2,7 @@ import type {
   Audience,
   Currency,
   ROLES,
+  ServicePlace,
   Technique,
   USER_STATUSES,
   Weekday,
@@ -22,25 +23,33 @@ export interface PublicUser {
 
 // --- Profils et services barbier ---
 
-// Réponse publique : liste blanche stricte (aucun email, hash, userId interne).
+// Réponse publique : liste blanche stricte (aucun email, hash, userId interne,
+// adresse privée). Depuis le lot 8 (issue #19), l'adresse exacte est retirée du
+// contrat public et les coordonnées sont **approximatives** (arrondies à deux
+// décimales côté serveur) : la localisation publique est distincte de l'adresse
+// exacte de rendez-vous.
 export interface PublicBarberProfile {
   id: string;
   displayName: string;
   description: string;
-  address: string;
   city: string;
   postalCode: string | null;
   countryCode: CountryCode;
   latitude: number;
   longitude: number;
   currency: Currency;
+  places: ServicePlace[];
   createdAt: string;
 }
 
-// Réponse privée (propriétaire) : mêmes champs + updatedAt + fuseau du salon.
+// Réponse privée (propriétaire) : mêmes champs + adresse privée exacte,
+// coordonnées exactes, fuseau et rayon d'intervention. Seul le propriétaire
+// authentifié reçoit cette vue.
 export interface OwnBarberProfile extends PublicBarberProfile {
-  updatedAt: string;
+  address: string | null;
   timezone: string | null;
+  travelRadiusKm: number | null;
+  updatedAt: string;
 }
 
 export interface PublicBarberService {
@@ -79,6 +88,7 @@ export interface PublicBarberSearchItem {
   activeServiceCount: number;
   audiences: Audience[];
   techniques: Technique[];
+  places: ServicePlace[];
 }
 
 export interface BarbersSearchResponse {

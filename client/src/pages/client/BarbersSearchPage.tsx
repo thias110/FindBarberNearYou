@@ -3,8 +3,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import type { BarbersSearchResponse } from "@findbarber/shared/types";
 import { COUNTRIES, COUNTRY_NAME_BY_CODE } from "@findbarber/shared/countries";
 import {
+  APPROXIMATE_LOCATION_LABEL,
   AUDIENCE_LABELS,
   AUDIENCES,
+  SERVICE_PLACE_LABELS,
+  SERVICE_PLACES,
   TECHNIQUE_LABELS,
   TECHNIQUES,
 } from "@findbarber/shared/constants";
@@ -27,6 +30,7 @@ interface Filters {
   countryCode: string;
   audience: string;
   technique: string;
+  place: string;
 }
 
 // Les codes (pays, public, technique) sont normalisés trim + majuscules pour que
@@ -42,6 +46,7 @@ function filtersFromParams(sp: URLSearchParams): Filters {
     countryCode: normalizeCode(sp.get("countryCode")),
     audience: normalizeCode(sp.get("audience")),
     technique: normalizeCode(sp.get("technique")),
+    place: normalizeCode(sp.get("place")),
   };
 }
 
@@ -76,6 +81,7 @@ export function BarbersSearchPage() {
     form.countryCode,
     form.audience,
     form.technique,
+    form.place,
   ].filter((value) => value.trim() !== "").length;
 
   // L'URL est la source de vérité : synchronise le formulaire à chaque
@@ -102,6 +108,7 @@ export function BarbersSearchPage() {
           countryCode: normalizeCode(searchParams.get("countryCode")) || undefined,
           audience: normalizeCode(searchParams.get("audience")) || undefined,
           technique: normalizeCode(searchParams.get("technique")) || undefined,
+          place: normalizeCode(searchParams.get("place")) || undefined,
           page,
           pageSize: 12,
         },
@@ -243,7 +250,7 @@ export function BarbersSearchPage() {
             id="advanced-filters"
             className={[
               isDesktop || filtersOpen ? "grid" : "hidden",
-              "grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4",
+              "grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5",
             ].join(" ")}
           >
             <label className="block min-w-0">
@@ -302,6 +309,23 @@ export function BarbersSearchPage() {
                 {TECHNIQUES.map((code) => (
                   <option key={code} value={code}>
                     {TECHNIQUE_LABELS[code]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block min-w-0">
+              <span className="mb-1 block text-sm text-gray-700">Lieu</span>
+              <select
+                value={form.place}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, place: e.target.value }))
+                }
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2"
+              >
+                <option value="">Tous les lieux</option>
+                {SERVICE_PLACES.map((code) => (
+                  <option key={code} value={code}>
+                    {SERVICE_PLACE_LABELS[code]}
                   </option>
                 ))}
               </select>
@@ -441,6 +465,18 @@ export function BarbersSearchPage() {
                               ))}
                             </div>
                           )}
+                          {barber.places.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {barber.places.map((place) => (
+                                <span
+                                  key={place}
+                                  className="rounded-full bg-white px-2 py-0.5 text-xs text-gray-700 ring-1 ring-gray-300"
+                                >
+                                  {SERVICE_PLACE_LABELS[place]}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           <Link
                             to={`/barbers/${barber.id}`}
                             className="pointer-events-auto mt-3 inline-block rounded-lg border border-brand-700 px-3 py-1.5 text-sm text-brand-700"
@@ -503,7 +539,7 @@ export function BarbersSearchPage() {
                       />
                     )}
                     <p className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-white/90 px-3 py-1 text-xs text-gray-600 shadow-sm">
-                      Carte : résultats de cette page
+                      Carte : résultats de cette page · {APPROXIMATE_LOCATION_LABEL}
                     </p>
                   </div>
                 </div>

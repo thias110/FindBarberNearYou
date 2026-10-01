@@ -3,6 +3,7 @@ import { and, asc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
   barberProfiles,
+  barberProfilePlaces,
   barberServiceAudiences,
   barberServices,
   barberServiceTechniques,
@@ -18,6 +19,7 @@ import type { CountryCode } from "@findbarber/shared/countries";
 import { LIMITS } from "@findbarber/shared/constants";
 import type {
   Audience,
+  ServicePlace,
   Technique,
   Weekday,
 } from "@findbarber/shared/constants";
@@ -42,8 +44,12 @@ import type {
 } from "@findbarber/shared/validation";
 import { AppError, isUniqueViolation } from "../../lib/errors.js";
 import { escapeLikePattern } from "../../lib/like.js";
+import { approximateCoordinates } from "../../lib/location.js";
 
-function toOwnProfile(profile: BarberProfile): OwnBarberProfile {
+function toOwnProfile(
+  profile: BarberProfile,
+  places: ServicePlace[],
+): OwnBarberProfile {
   return {
     id: profile.id,
     displayName: profile.displayName,
@@ -56,23 +62,33 @@ function toOwnProfile(profile: BarberProfile): OwnBarberProfile {
     longitude: profile.longitude,
     currency: profile.currency,
     timezone: profile.timezone,
+    travelRadiusKm: profile.travelRadiusKm,
+    places,
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
   };
 }
 
-function toPublicProfile(profile: BarberProfile): PublicBarberProfile {
+function toPublicProfile(
+  profile: BarberProfile,
+  places: ServicePlace[],
+): PublicBarberProfile {
+  // Coordonnées publiques approximatives : jamais le point privé exact.
+  const { latitude, longitude } = approximateCoordinates(
+    profile.latitude,
+    profile.longitude,
+  );
   return {
     id: profile.id,
     displayName: profile.displayName,
     description: profile.description,
-    address: profile.address,
     city: profile.city,
     postalCode: profile.postalCode,
     countryCode: profile.countryCode as CountryCode,
-    latitude: profile.latitude,
-    longitude: profile.longitude,
+    latitude,
+    longitude,
     currency: profile.currency,
+    places,
     createdAt: profile.createdAt.toISOString(),
   };
 }
@@ -144,6 +160,24 @@ async function loadTechniques(serviceIds: string[]): Promise<Map<string, Techniq
   return map;
 }
 
+async function loadPlaces(
+  profileIds: string[],
+): Promise<Map<string, ServicePlace[]>> {
+  const map = new Map<string, ServicePlace[]>();
+  if (profileIds.length === 0) return map;
+  const rows = await db
+    .select()
+    .from(barberProfilePlaces)
+    .where(inArray(barberProfilePlaces.barberProfileId, profileIds))
+    .orderBy(asc(barberProfilePlaces.place));
+  for (const row of rows) {
+    const list = map.get(row.barberProfileId) ?? [];
+    list.push(row.place);
+    map.set(row.barberProfileId, list);
+  }
+  return map;
+}
+
 async function getOwnProfileRow(userId: string): Promise<BarberProfile> {
   const [profile] = await db
     .select()
@@ -161,7 +195,9 @@ async function getOwnProfileRow(userId: string): Promise<BarberProfile> {
 }
 
 export async function getOwnProfile(userId: string): Promise<OwnBarberProfile> {
-  return toOwnProfile(await getOwnProfileRow(userId));
+  const profile = await getOwnProfileRow(userId);
+  const places = (await loadPlaces([profile.id])).get(profile.id) ?? [];
+  return toOwnProfile(profile, places);
 }
 
 // Upsert atomique fondé sur la contrainte unique `userId`. Deux créations
@@ -175,26 +211,12 @@ export async function upsertProfile(
 ): Promise<OwnBarberProfile> {
   const now = new Date();
 
-  const [profile] = await db
-    .insert(barberProfiles)
-    .values({
-      id: randomUUID(),
-      userId,
-      displayName: input.displayName,
-      description: input.description,
-      address: input.address,
-      city: input.city,
-      postalCode: input.postalCode,
-      countryCode: input.countryCode,
-      latitude: input.latitude,
-      longitude: input.longitude,
-      currency: input.currency,
-      timezone: input.timezone ?? null,
-      updatedAt: now,
-    })
-    .onConflictDoUpdate({
-      target: barberProfiles.userId,
-      set: {
+  return db.transaction(async (tx) => {
+    const [profile] = await tx
+      .insert(barberProfiles)
+      .values({
+        id: randomUUID(),
+        userId,
         displayName: input.displayName,
         description: input.description,
         address: input.address,
@@ -203,28 +225,57 @@ export async function upsertProfile(
         countryCode: input.countryCode,
         latitude: input.latitude,
         longitude: input.longitude,
+        currency: input.currency,
+        timezone: input.timezone ?? null,
+        travelRadiusKm: input.travelRadiusKm,
         updatedAt: now,
-        // `timezone` absent → la valeur existante est conservée (référence à la
-        // ligne cible, valide dans SET d'un ON CONFLICT DO UPDATE). `null`
-        // explicite efface. `currency`, `id` et `createdAt` restent exclus.
-        timezone:
-          input.timezone === undefined
-            ? sql`${barberProfiles.timezone}`
-            : input.timezone,
-      },
-      setWhere: sql`barber_profiles.currency = excluded.currency`,
-    })
-    .returning();
+      })
+      .onConflictDoUpdate({
+        target: barberProfiles.userId,
+        set: {
+          displayName: input.displayName,
+          description: input.description,
+          address: input.address,
+          city: input.city,
+          postalCode: input.postalCode,
+          countryCode: input.countryCode,
+          latitude: input.latitude,
+          longitude: input.longitude,
+          travelRadiusKm: input.travelRadiusKm,
+          updatedAt: now,
+          // `timezone` absent → la valeur existante est conservée (référence à la
+          // ligne cible, valide dans SET d'un ON CONFLICT DO UPDATE). `null`
+          // explicite efface. `currency`, `id` et `createdAt` restent exclus.
+          timezone:
+            input.timezone === undefined
+              ? sql`${barberProfiles.timezone}`
+              : input.timezone,
+        },
+        setWhere: sql`barber_profiles.currency = excluded.currency`,
+      })
+      .returning();
 
-  if (!profile) {
-    throw new AppError(
-      409,
-      "CURRENCY_CHANGE_FORBIDDEN",
-      "La devise d'un profil existant ne peut pas être modifiée.",
+    if (!profile) {
+      throw new AppError(
+        409,
+        "CURRENCY_CHANGE_FORBIDDEN",
+        "La devise d'un profil existant ne peut pas être modifiée.",
+      );
+    }
+
+    // Remplacement complet des lieux, dans la même transaction que le profil.
+    await tx
+      .delete(barberProfilePlaces)
+      .where(eq(barberProfilePlaces.barberProfileId, profile.id));
+    await tx.insert(barberProfilePlaces).values(
+      input.places.map((place) => ({
+        barberProfileId: profile.id,
+        place,
+      })),
     );
-  }
 
-  return toOwnProfile(profile);
+    return toOwnProfile(profile, input.places);
+  });
 }
 
 export async function listOwnServices(
@@ -634,9 +685,10 @@ export async function getPublicProfile(
     loadAudiences(ids),
     loadTechniques(ids),
   ]);
+  const places = (await loadPlaces([barberId])).get(barberId) ?? [];
 
   return {
-    profile: toPublicProfile(profile),
+    profile: toPublicProfile(profile, places),
     services: services.map((service) =>
       toPublicService(
         service,
@@ -665,6 +717,14 @@ function buildSearchWhere(input: BarberSearchQuery): SQL {
   }
   if (input.countryCode) {
     conditions.push(eq(barberProfiles.countryCode, input.countryCode));
+  }
+
+  // Filtre par lieu de prestation : les profils sans lieu déclaré ne
+  // correspondent à aucun filtre (mais restent renvoyés sans filtre).
+  if (input.place) {
+    conditions.push(
+      sql`EXISTS (SELECT 1 FROM ${barberProfilePlaces} bpp WHERE bpp.barber_profile_id = ${barberProfiles.id} AND bpp.place = ${input.place})`,
+    );
   }
 
   // Public et technique doivent correspondre au MÊME service actif (un seul
@@ -728,6 +788,11 @@ export async function searchBarbers(
         JOIN ${barberServices} bs ON bs.id = bst.service_id
         WHERE bs.barber_profile_id = ${barberProfiles.id} AND bs.is_active = true
       ), ARRAY[]::text[])`,
+      places: sql<string[]>`COALESCE((
+        SELECT array_agg(bpp.place ORDER BY bpp.place)::text[]
+        FROM ${barberProfilePlaces} bpp
+        WHERE bpp.barber_profile_id = ${barberProfiles.id}
+      ), ARRAY[]::text[])`,
     })
     .from(barberProfiles)
     .innerJoin(users, eq(barberProfiles.userId, users.id))
@@ -736,17 +801,24 @@ export async function searchBarbers(
     .limit(input.pageSize)
     .offset((input.page - 1) * input.pageSize);
 
-  const barbers: PublicBarberSearchItem[] = rows.map((row) => ({
-    id: row.id,
-    displayName: row.displayName,
-    city: row.city,
-    countryCode: row.countryCode as CountryCode,
-    latitude: row.latitude,
-    longitude: row.longitude,
-    activeServiceCount: row.activeServiceCount,
-    audiences: row.audiences as Audience[],
-    techniques: row.techniques as Technique[],
-  }));
+  const barbers: PublicBarberSearchItem[] = rows.map((row) => {
+    const { latitude, longitude } = approximateCoordinates(
+      row.latitude,
+      row.longitude,
+    );
+    return {
+      id: row.id,
+      displayName: row.displayName,
+      city: row.city,
+      countryCode: row.countryCode as CountryCode,
+      latitude,
+      longitude,
+      activeServiceCount: row.activeServiceCount,
+      audiences: row.audiences as Audience[],
+      techniques: row.techniques as Technique[],
+      places: row.places as ServicePlace[],
+    };
+  });
 
   const totalPages = total === 0 ? 0 : Math.ceil(total / input.pageSize);
 

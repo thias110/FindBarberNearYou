@@ -1,6 +1,10 @@
 import { Link } from "react-router-dom";
 import { COUNTRY_NAME_BY_CODE } from "@findbarber/shared/countries";
-import { TECHNIQUE_LABELS } from "@findbarber/shared/constants";
+import {
+  APPROXIMATE_LOCATION_LABEL,
+  SERVICE_PLACE_LABELS,
+  TECHNIQUE_LABELS,
+} from "@findbarber/shared/constants";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { audienceChips } from "../lib/barberTags";
 
@@ -54,6 +58,19 @@ export function BarbersMapCard({ barber, onClose }: BarbersMapCardProps) {
           ))}
         </div>
       )}
+      {barber.places.length > 0 && (
+        <div className="mt-1 flex flex-wrap gap-1">
+          {barber.places.map((place) => (
+            <span
+              key={place}
+              className="rounded-full bg-white px-2 py-0.5 text-xs text-gray-700 ring-1 ring-gray-300"
+            >
+              {SERVICE_PLACE_LABELS[place]}
+            </span>
+          ))}
+        </div>
+      )}
+      <p className="mt-1 text-xs text-gray-500">{APPROXIMATE_LOCATION_LABEL}</p>
       <Link
         to={`/barbers/${barber.id}`}
         className="mt-3 inline-block rounded-lg bg-brand-700 px-3 py-1.5 text-sm text-white hover:bg-brand-900"

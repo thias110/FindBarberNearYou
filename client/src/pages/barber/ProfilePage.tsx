@@ -5,8 +5,11 @@ import {
   CURRENCY_LABELS,
   DEFAULT_CURRENCY,
   LIMITS,
+  SERVICE_PLACE_LABELS,
+  SERVICE_PLACES,
   SUPPORTED_CURRENCIES,
   type Currency,
+  type ServicePlace,
 } from "@findbarber/shared/constants";
 import {
   hasIanaTimeZoneList,
@@ -51,6 +54,8 @@ interface FormState {
   longitude: string;
   currency: Currency;
   timezone: string;
+  places: ServicePlace[];
+  travelRadiusKm: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -64,6 +69,8 @@ const EMPTY_FORM: FormState = {
   longitude: "",
   currency: DEFAULT_CURRENCY,
   timezone: "",
+  places: [],
+  travelRadiusKm: "",
 };
 
 export function BarberProfilePage() {
@@ -84,7 +91,7 @@ export function BarberProfilePage() {
         setForm({
           displayName: profile.displayName,
           description: profile.description,
-          address: profile.address,
+          address: profile.address ?? "",
           city: profile.city,
           postalCode: profile.postalCode ?? "",
           countryCode: profile.countryCode,
@@ -92,6 +99,11 @@ export function BarberProfilePage() {
           longitude: String(profile.longitude),
           currency: profile.currency,
           timezone: profile.timezone ?? "",
+          places: profile.places,
+          travelRadiusKm:
+            profile.travelRadiusKm === null
+              ? ""
+              : String(profile.travelRadiusKm),
         });
         setMode("edit");
       })
@@ -115,6 +127,15 @@ export function BarberProfilePage() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function togglePlace(place: ServicePlace) {
+    setForm((current) => ({
+      ...current,
+      places: current.places.includes(place)
+        ? current.places.filter((item) => item !== place)
+        : [...current.places, place],
+    }));
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
@@ -123,6 +144,10 @@ export function BarberProfilePage() {
     const latitude = Number(form.latitude);
     const longitude = Number(form.longitude);
 
+    if (form.places.length === 0) {
+      setError("Sélectionnez au moins un lieu de prestation.");
+      return;
+    }
     if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
       setError("La latitude doit être un nombre entre -90 et 90.");
       return;
@@ -132,12 +157,37 @@ export function BarberProfilePage() {
       return;
     }
 
+    const requiresAddress =
+      form.places.includes("SALON") || form.places.includes("AT_PROVIDER");
+    if (requiresAddress && form.address.trim() === "") {
+      setError(
+        "Une adresse est requise pour un lieu en salon ou chez le professionnel.",
+      );
+      return;
+    }
+
+    const isMobile = form.places.includes("AT_CLIENT");
+    const travelRadiusKm =
+      form.travelRadiusKm.trim() === "" ? null : Number(form.travelRadiusKm);
+    if (
+      isMobile &&
+      (travelRadiusKm === null ||
+        !Number.isInteger(travelRadiusKm) ||
+        travelRadiusKm < LIMITS.travelRadiusKmMin ||
+        travelRadiusKm > LIMITS.travelRadiusKmMax)
+    ) {
+      setError(
+        `Un rayon d'intervention entier entre ${LIMITS.travelRadiusKmMin} et ${LIMITS.travelRadiusKmMax} km est requis pour les prestations chez le client.`,
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       await barberApi.updateProfile({
         displayName: form.displayName,
         description: form.description,
-        address: form.address,
+        address: form.address.trim() === "" ? null : form.address.trim(),
         city: form.city,
         postalCode: form.postalCode.trim() ? form.postalCode.trim() : null,
         countryCode: form.countryCode as CountryCode,
@@ -147,6 +197,8 @@ export function BarberProfilePage() {
         // "" = « Non renseigné » : effacement explicite (null). Sinon le
         // fuseau choisi est envoyé tel quel, validé côté serveur.
         timezone: form.timezone.trim() === "" ? null : form.timezone,
+        travelRadiusKm: isMobile ? travelRadiusKm : null,
+        places: form.places,
       });
       setMode("edit");
       setSuccess(true);
@@ -212,16 +264,56 @@ export function BarberProfilePage() {
           />
         </label>
 
+        <fieldset className="space-y-2 rounded-lg border border-gray-200 p-3">
+          <legend className="px-1 text-sm font-medium text-gray-700">
+            Lieux de prestation (au moins un)
+          </legend>
+          {SERVICE_PLACES.map((place) => (
+            <label key={place} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.places.includes(place)}
+                onChange={() => togglePlace(place)}
+              />
+              {SERVICE_PLACE_LABELS[place]}
+            </label>
+          ))}
+          <p className="text-xs text-gray-500">
+            Vos horaires et indisponibilités s'appliquent à tous les lieux.
+          </p>
+        </fieldset>
+
         <label className="block">
-          <span className="text-sm text-gray-700">Adresse professionnelle</span>
+          <span className="text-sm text-gray-700">
+            Adresse privée (facultative)
+          </span>
           <input
-            required
             maxLength={LIMITS.profileAddress}
             value={form.address}
             onChange={(e) => update("address", e.target.value)}
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
           />
+          <span className="mt-1 block text-xs text-gray-500">
+            Requise pour un lieu en salon ou chez le professionnel. Jamais
+            publiée : seul le propriétaire la voit.
+          </span>
         </label>
+
+        {form.places.includes("AT_CLIENT") && (
+          <label className="block">
+            <span className="text-sm text-gray-700">
+              Rayon d'intervention chez le client (km)
+            </span>
+            <input
+              type="number"
+              min={LIMITS.travelRadiusKmMin}
+              max={LIMITS.travelRadiusKmMax}
+              value={form.travelRadiusKm}
+              onChange={(e) => update("travelRadiusKm", e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            />
+          </label>
+        )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
@@ -356,7 +448,9 @@ export function BarberProfilePage() {
         </label>
 
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-          Votre profil et votre adresse professionnelle seront visibles publiquement.
+          Votre nom, description, ville et lieux de prestation sont publics. Les
+          coordonnées affichées publiquement sont approximatives (arrondies) ;
+          votre adresse exacte reste privée.
         </p>
 
         <button
