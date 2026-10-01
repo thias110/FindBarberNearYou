@@ -3,6 +3,7 @@ import {
   AUDIENCES,
   LIMITS,
   SEARCH_LIMITS,
+  SERVICE_PLACES,
   SUPPORTED_CURRENCIES,
   TECHNIQUES,
 } from "../constants";
@@ -30,6 +31,20 @@ const techniqueListSchema = z
   .array(z.string().trim().toUpperCase())
   .transform((values) => Array.from(new Set(values)))
   .pipe(z.array(z.enum(TECHNIQUES)).max(TECHNIQUES.length));
+
+// --- Lieux de prestation (lot 8, issue #19) ---
+// Au moins un mode par profil, valeurs connues uniquement, dédupliquées, ordre
+// d'entrée préservé. Remplacement complet lors d'un PUT (remplace le Set en
+// transaction), comme les catégories de prestation.
+const placeListSchema = z
+  .array(z.string().trim().toUpperCase())
+  .transform((values) => Array.from(new Set(values)))
+  .pipe(
+    z
+      .array(z.enum(SERVICE_PLACES))
+      .min(1, "Sélectionnez au moins un lieu de prestation.")
+      .max(SERVICE_PLACES.length),
+  );
 
 const latitudeSchema = z
   .number()
@@ -96,11 +111,14 @@ export const profileSchema = z
       .trim()
       .min(1, "La description est requise.")
       .max(LIMITS.profileDescription, "La description est trop longue."),
+    // Adresse privée facultative. Vide → null. Requise par la règle
+    // conditionnelle ci-dessous si SALON ou AT_PROVIDER est sélectionné.
     address: z
       .string()
       .trim()
-      .min(1, "L'adresse est requise.")
-      .max(LIMITS.profileAddress, "L'adresse est trop longue."),
+      .max(LIMITS.profileAddress, "L'adresse est trop longue.")
+      .nullish()
+      .transform((value) => (value ? value : null)),
     city: z
       .string()
       .trim()
@@ -117,8 +135,55 @@ export const profileSchema = z
     longitude: longitudeSchema,
     currency: currencySchema,
     timezone: timezoneSchema,
+    // Rayon d'intervention mobile (km) : requis si AT_CLIENT, interdit sinon.
+    // Le client envoie explicitement `null` hors AT_CLIENT ; le serveur rejette
+    // un rayon non nul (superRefine ci-dessous).
+    travelRadiusKm: z
+      .number()
+      .int("Le rayon doit être un entier.")
+      .min(
+        LIMITS.travelRadiusKmMin,
+        `Le rayon doit être supérieur ou égal à ${LIMITS.travelRadiusKmMin} km.`,
+      )
+      .max(
+        LIMITS.travelRadiusKmMax,
+        `Le rayon ne peut pas dépasser ${LIMITS.travelRadiusKmMax} km.`,
+      )
+      .nullish()
+      .transform((value) => (value === undefined || value === null ? null : value)),
+    places: placeListSchema,
   })
-  .strict();
+  .strict()
+  .superRefine((data, ctx) => {
+    const requiresAddress =
+      data.places.includes("SALON") || data.places.includes("AT_PROVIDER");
+    const isMobile = data.places.includes("AT_CLIENT");
+
+    if (requiresAddress && data.address === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Une adresse est requise pour un lieu en salon ou chez le professionnel.",
+        path: ["address"],
+      });
+    }
+    if (isMobile && data.travelRadiusKm === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Un rayon d'intervention est requis pour les prestations chez le client.",
+        path: ["travelRadiusKm"],
+      });
+    }
+    if (!isMobile && data.travelRadiusKm !== null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Le rayon d'intervention n'est autorisé que pour les prestations chez le client.",
+        path: ["travelRadiusKm"],
+      });
+    }
+  });
 
 export const serviceCreateSchema = z
   .object({
@@ -235,6 +300,7 @@ export const barberSearchQuerySchema = z
     ),
     audience: z.preprocess(normalizeFilter, z.enum(AUDIENCES).optional()),
     technique: z.preprocess(normalizeFilter, z.enum(TECHNIQUES).optional()),
+    place: z.preprocess(normalizeFilter, z.enum(SERVICE_PLACES).optional()),
     page: integerParam(
       SEARCH_LIMITS.pageDefault,
       SEARCH_LIMITS.pageMax,

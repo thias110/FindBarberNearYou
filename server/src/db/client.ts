@@ -6,6 +6,7 @@ import { drizzle as drizzleNodePg } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import {
   barberProfiles,
+  barberProfilePlaces,
   barberServiceAudiences,
   barberServices,
   barberServiceTechniques,
@@ -18,6 +19,7 @@ import { env } from "../config/env.js";
 export const schema = {
   users,
   barberProfiles,
+  barberProfilePlaces,
   barberServices,
   barberServiceAudiences,
   barberServiceTechniques,

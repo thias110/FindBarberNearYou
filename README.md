@@ -137,6 +137,7 @@ Lecture seule, accessible sans connexion. Paramètres (tous facultatifs) :
 | `countryCode` | code pays ISO 3166-1 alpha-2 | liste `shared/src/countries.ts` |
 | `audience` | un public unique : `FEMME`, `HOMME`, `ENFANT` | sélection unique |
 | `technique` | une prestation unique : `COUPE`, `TAPER`, `DEGRADE`, `LOCKS`, `TRESSES`, `COLORATION`, `BARBE` | sélection unique |
+| `place` | un lieu de prestation : `SALON`, `AT_PROVIDER`, `AT_CLIENT` | sélection unique |
 | `page` | numéro de page | entier ≥ 1, max 10 000 (défaut 1) |
 | `pageSize` | taille de page | entier 1..50 (défaut 12) |
 
@@ -145,9 +146,10 @@ trimmées ignorées (sauf pagination vide, rejetée) ; `%` et `_` traités comme
 filtres combinés en AND ; public et technique doivent correspondre au **même** service actif ;
 seuls les profils ACTIVE + BARBER sont exposés ; tri stable `lower(display_name), id` ;
 réponse paginée (`barbers`, `pagination.{page,pageSize,total,totalPages}`) avec whitelist
-publique (id profil, nom, ville, pays, coordonnées `latitude`/`longitude` du commerce,
-nb services actifs, tags agrégés). Les coordonnées exposées sont celles déjà publiques
-sur le profil détaillé.
+publique (id profil, nom, ville, pays, lieux `places`, coordonnées `latitude`/`longitude`
+**approximatives**, nb services actifs, tags agrégés). L'adresse exacte n'est jamais
+exposée. Sans filtre `place`, les profils historiques sans lieu restent renvoyés ; avec un
+filtre `place`, seuls ceux ayant ce lieu correspondent.
 
 ### Catégories de prestations
 
@@ -246,6 +248,44 @@ peut exercer chez lui, en salon ou à domicile, ses disponibilités lui appartie
   réécriture.
 - **Pas d'édition** (ni `PATCH`, ni suppression/recréation automatique) et **pas
   d'exposition publique** dans ce lot. Aucun droit ADMIN ajouté.
+
+### Lieux de prestation et localisation approximative (lot 8, issue #19)
+
+Un BARBER est un professionnel, pas nécessairement un salon. Les lieux de prestation sont
+cumulables **au niveau du profil** (pas par prestation dans ce lot). Horaires et
+indisponibilités restent communs au professionnel, tous lieux confondus.
+
+- **Trois modes** : `SALON` (« En salon »), `AT_PROVIDER` (« Chez le professionnel »),
+  `AT_CLIENT` (« Chez le client »). Codes dans `shared/src/constants.ts`
+  (`SERVICE_PLACES`, `SERVICE_PLACE_LABELS`).
+- **Sélection** : `PUT /api/barber/profile` accepte `places` (au moins un mode à la
+  création ou lors d'un PUT ; valeurs connues, dédupliquées, remplacement complet dans la
+  même transaction que le profil). Les **profils historiques** peuvent rester sans lieu
+  jusqu'à leur édition : **aucun mode ne leur est attribué automatiquement**. Sur le profil
+  public, un profil historique affiche « Lieux non renseignés ».
+- **Adresse privée** : `barber_profiles.address` est désormais **nullable** (relaxation
+  `NOT NULL`, migration `0007_*`, valeurs historiques conservées). Adresse requise si
+  `SALON` ou `AT_PROVIDER` est sélectionné, facultative pour `AT_CLIENT` seul (vide →
+  `null`). **Jamais exposée** par le profil public ni la recherche ; seule la réponse
+  privée du propriétaire (`GET /api/barber/profile`) la contient.
+- **Zone mobile** : `travelRadiusKm` entier **1..100**, requis si et seulement si
+  `AT_CLIENT` est sélectionné (`null` sinon ; le serveur rejette un rayon non nul hors
+  `AT_CLIENT`). Pas de ville ni de liste de villes dans ce lot.
+- **Localisation de référence** : `city`, `countryCode`, `latitude`, `longitude` restent
+  requis pour tous (recherche, carte, centre de la zone).
+- **Coordonnées publiques approximatives** : le serveur arrondit à deux décimales via
+  `server/src/lib/location.ts` (`approximateCoordinate`) avant toute réponse publique ;
+  carte et futures distances publiques utilisent cette même position. Les coordonnées
+  stockées ne sont **jamais** arrondies ni réécrites, et le point privé exact n'est jamais
+  exposé (y compris pour un profil `SALON` ou historique). L'interface affiche
+  « Localisation approximative ». Lorsqu'une distance publique sera réellement calculée
+  (aucune dans ce lot), elle devra utiliser la position approximative et être libellée
+  « Distance approximative » (`APPROXIMATE_DISTANCE_LABEL`). **Cet arrondi ne garantit pas
+  l'anonymat.**
+- **Table de liaison** `barber_profile_places` (PK composite `(barber_profile_id, place)`,
+  FK `ON DELETE CASCADE`, index sur `place`) et enum `service_place`.
+- **Hors de ce lot** : choix du lieu à la réservation, adresse client privée et
+  autorisations de lecture, refus hors zone côté serveur, calcul de temps de déplacement.
 
 ## Carte (MapLibre GL JS + MapTiler)
 

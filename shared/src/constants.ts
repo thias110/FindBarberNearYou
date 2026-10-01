@@ -55,6 +55,26 @@ export const TECHNIQUE_LABELS: Record<Technique, string> = {
   BARBE: "Barbe",
 };
 
+// --- Lieux de prestation (lot 8, issue #19) ---
+// Modes cumulables au niveau du profil (pas de mode par prestation dans ce lot).
+// Codes stables en majuscules, libellés français partagés. `SALON` et
+// `AT_PROVIDER` exigent une adresse privée ; `AT_CLIENT` exige un rayon
+// d'intervention. Aucun libellé « domicile » ambigu : on distingue le domicile
+// du professionnel (`AT_PROVIDER`) de celui du client (`AT_CLIENT`).
+export const SERVICE_PLACES = ["SALON", "AT_PROVIDER", "AT_CLIENT"] as const;
+export type ServicePlace = (typeof SERVICE_PLACES)[number];
+
+export const SERVICE_PLACE_LABELS: Record<ServicePlace, string> = {
+  SALON: "En salon",
+  AT_PROVIDER: "Chez le professionnel",
+  AT_CLIENT: "Chez le client",
+};
+
+// Mention obligatoire de l'arrondi des coordonnées publiques. Cet arrondi
+// réduit la précision mais ne garantit pas l'anonymat.
+export const APPROXIMATE_LOCATION_LABEL = "Localisation approximative";
+export const APPROXIMATE_DISTANCE_LABEL = "Distance approximative";
+
 // --- Jours de la semaine (ISO-8601 : 1 = lundi … 7 = dimanche) ---
 // Codes entiers stockés en base, libellés français partagés côté client.
 export const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
@@ -107,4 +127,8 @@ export const LIMITS = {
   timeOffReason: 500,
   timeOffMaxRangeDays: 366,
   timeOffMaxPerBarber: 200,
+  // Lieux de prestation (lot 8, issue #19) : rayon d'intervention mobile en
+  // kilomètres, requis uniquement si `AT_CLIENT` est sélectionné.
+  travelRadiusKmMin: 1,
+  travelRadiusKmMax: 100,
 } as const;

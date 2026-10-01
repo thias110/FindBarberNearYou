@@ -44,6 +44,7 @@ function profilePayload(overrides: Record<string, unknown> = {}) {
     latitude: 46.2044,
     longitude: 6.1432,
     currency: "CHF",
+    places: ["SALON"],
     ...overrides,
   };
 }

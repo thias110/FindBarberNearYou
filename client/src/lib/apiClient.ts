@@ -181,6 +181,7 @@ export interface BarbersSearchParams {
   countryCode?: string;
   audience?: string;
   technique?: string;
+  place?: string;
   page?: number;
   pageSize?: number;
 }

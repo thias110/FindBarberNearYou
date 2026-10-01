@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import type { PublicBarberProfileWithServices } from "@findbarber/shared/types";
 import { COUNTRY_NAME_BY_CODE } from "@findbarber/shared/countries";
-import { AUDIENCE_LABELS, TECHNIQUE_LABELS } from "@findbarber/shared/constants";
+import {
+  APPROXIMATE_LOCATION_LABEL,
+  AUDIENCE_LABELS,
+  SERVICE_PLACE_LABELS,
+  TECHNIQUE_LABELS,
+} from "@findbarber/shared/constants";
 import { barbersApi } from "../../lib/apiClient";
 import { formatCurrency, formatDuration } from "../../lib/formatters";
 
@@ -72,10 +77,27 @@ export function PublicBarberProfilePage() {
             {profile.description}
           </p>
           <p className="mt-4 text-sm text-gray-600">
-            {profile.address}
-            {profile.postalCode ? `, ${profile.postalCode}` : ""}
-            <br />
+            {profile.postalCode ? `${profile.postalCode}, ` : ""}
             {profile.city}, {countryName}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {profile.places.length === 0 ? (
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                Lieux non renseignés
+              </span>
+            ) : (
+              profile.places.map((place) => (
+                <span
+                  key={place}
+                  className="rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-800"
+                >
+                  {SERVICE_PLACE_LABELS[place]}
+                </span>
+              ))
+            )}
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            {APPROXIMATE_LOCATION_LABEL}
           </p>
         </section>
 

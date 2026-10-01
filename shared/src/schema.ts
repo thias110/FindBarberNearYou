@@ -17,6 +17,7 @@ import {
   AUDIENCES,
   LIMITS,
   ROLES,
+  SERVICE_PLACES,
   SUPPORTED_CURRENCIES,
   TECHNIQUES,
   USER_STATUSES,
@@ -27,6 +28,7 @@ export const userStatusEnum = pgEnum("user_status", [...USER_STATUSES]);
 export const currencyEnum = pgEnum("currency", [...SUPPORTED_CURRENCIES]);
 export const audienceEnum = pgEnum("audience", [...AUDIENCES]);
 export const techniqueEnum = pgEnum("technique", [...TECHNIQUES]);
+export const servicePlaceEnum = pgEnum("service_place", [...SERVICE_PLACES]);
 
 export const users = pgTable(
   "users",
@@ -59,13 +61,20 @@ export const barberProfiles = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     displayName: text("display_name").notNull(),
     description: text("description").notNull(),
-    address: text("address").notNull(),
+    // Adresse privée : facultative depuis le lot 8 (issue #19). Un profil
+    // `AT_CLIENT` seul n'a pas besoin d'adresse ; `SALON`/`AT_PROVIDER` en
+    // exigent une (règle applicative). Jamais exposée publiquement. Les valeurs
+    // historiques sont conservées lors de la relaxation du NOT NULL.
+    address: text("address"),
     city: text("city").notNull(),
     postalCode: text("postal_code"),
     countryCode: text("country_code").notNull(),
     latitude: doublePrecision("latitude").notNull(),
     longitude: doublePrecision("longitude").notNull(),
     currency: currencyEnum("currency").notNull().default("CHF"),
+    // Rayon d'intervention mobile (km), requis si et seulement si `AT_CLIENT`
+    // est sélectionné. NULL sinon. Aucune ville/liste de villes dans ce lot.
+    travelRadiusKm: integer("travel_radius_km"),
     // Fuseau IANA du salon (lot 6A). Nullable, sans défaut, jamais backfillé :
     // les profils existants restent NULL (aucun fuseau inventé). La validation
     // applicative refuse offsets, abréviations et Etc/… ; le CHECK ci-dessous
@@ -93,6 +102,12 @@ export const barberProfiles = pgTable(
       sql`${table.timezone} IS NULL OR char_length(${table.timezone}) <= ${sql.raw(
         String(LIMITS.profileTimezone),
       )}`,
+    ),
+    check(
+      "barber_profiles_travel_radius_range",
+      sql`${table.travelRadiusKm} IS NULL OR ${table.travelRadiusKm} BETWEEN ${sql.raw(
+        String(LIMITS.travelRadiusKmMin),
+      )} AND ${sql.raw(String(LIMITS.travelRadiusKmMax))}`,
     ),
   ],
 );
@@ -164,6 +179,24 @@ export const barberServiceTechniques = pgTable(
   ],
 );
 
+// Lieux de prestation du profil (lot 8, issue #19) : ensemble de modes
+// cumulables, remplacé en bloc lors d'un PUT du profil. Table de liaison
+// calquée sur `barber_service_audiences`. Les profils historiques peuvent
+// rester sans ligne (aucun mode inventé).
+export const barberProfilePlaces = pgTable(
+  "barber_profile_places",
+  {
+    barberProfileId: text("barber_profile_id")
+      .notNull()
+      .references(() => barberProfiles.id, { onDelete: "cascade" }),
+    place: servicePlaceEnum("place").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.barberProfileId, table.place] }),
+    index("barber_profile_places_place_idx").on(table.place),
+  ],
+);
+
 // Horaires hebdomadaires : une ligne par plage de travail. Les heures sont des
 // minutes murales locales (0..1440) sans fuseau ; 1440 = 24:00 en fin de plage
 // uniquement. Les chevauchements sont refusés au niveau applicatif ; les
@@ -224,6 +257,8 @@ export type BarberService = typeof barberServices.$inferSelect;
 export type NewBarberService = typeof barberServices.$inferInsert;
 export type BarberServiceAudience = typeof barberServiceAudiences.$inferSelect;
 export type BarberServiceTechnique = typeof barberServiceTechniques.$inferSelect;
+export type BarberProfilePlace = typeof barberProfilePlaces.$inferSelect;
+export type NewBarberProfilePlace = typeof barberProfilePlaces.$inferInsert;
 export type BarberWorkingHours = typeof barberWorkingHours.$inferSelect;
 export type NewBarberWorkingHours = typeof barberWorkingHours.$inferInsert;
 
