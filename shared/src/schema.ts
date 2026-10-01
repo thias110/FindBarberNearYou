@@ -65,6 +65,11 @@ export const barberProfiles = pgTable(
     latitude: doublePrecision("latitude").notNull(),
     longitude: doublePrecision("longitude").notNull(),
     currency: currencyEnum("currency").notNull().default("CHF"),
+    // Fuseau IANA du salon (lot 6A). Nullable, sans défaut, jamais backfillé :
+    // les profils existants restent NULL (aucun fuseau inventé). La validation
+    // applicative refuse offsets, abréviations et Etc/… ; le CHECK ci-dessous
+    // borne la longueur en dernier ressort.
+    timezone: text("timezone"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -81,6 +86,12 @@ export const barberProfiles = pgTable(
     check(
       "barber_profiles_longitude_range",
       sql`${table.longitude} >= -180 AND ${table.longitude} <= 180`,
+    ),
+    check(
+      "barber_profiles_timezone_length",
+      sql`${table.timezone} IS NULL OR char_length(${table.timezone}) <= ${sql.raw(
+        String(LIMITS.profileTimezone),
+      )}`,
     ),
   ],
 );

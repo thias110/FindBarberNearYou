@@ -6,6 +6,7 @@ import { createApp } from "../../server/src/app";
 import { db } from "../../server/src/db/client";
 import { migrateDb } from "../../server/src/db/migrate";
 import { barberProfiles, barberServices, users } from "@findbarber/shared/schema";
+import { classifyIanaTimeZone } from "@findbarber/shared/timezones";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -234,6 +235,99 @@ describe("PUT /api/barber/profile", () => {
 
     const badLng = await createProfile(agent, csrf, { longitude: 181 });
     expect(badLng.status).toBe(400);
+  });
+
+  it("handles the timezone field across create, update and clear", async () => {
+    await registerBarber("tz@example.com");
+    const { agent, csrf } = await login("tz@example.com");
+
+    // Création avec fuseau.
+    const created = await createProfile(agent, csrf, {
+      timezone: "Europe/Zurich",
+    });
+    expect(created.status).toBe(200);
+    expect(created.body.profile.timezone).toBe("Europe/Zurich");
+
+    // GET le renvoie.
+    const read = await agent.get("/api/barber/profile");
+    expect(read.body.profile.timezone).toBe("Europe/Zurich");
+
+    // PUT sans le champ → valeur conservée (aucun effacement).
+    const kept = await createProfile(agent, csrf, { city: "Berne" });
+    expect(kept.status).toBe(200);
+    expect(kept.body.profile.timezone).toBe("Europe/Zurich");
+
+    // Casse corrigée via la liste canonique.
+    const recased = await createProfile(agent, csrf, {
+      timezone: "europe/zurich",
+    });
+    expect(recased.status).toBe(200);
+    expect(recased.body.profile.timezone).toBe("Europe/Zurich");
+
+    // Effacement explicite par null.
+    const cleared = await createProfile(agent, csrf, { timezone: null });
+    expect(cleared.status).toBe(200);
+    expect(cleared.body.profile.timezone).toBeNull();
+    const readCleared = await agent.get("/api/barber/profile");
+    expect(readCleared.body.profile.timezone).toBeNull();
+
+    // Effacement explicite par chaîne vide.
+    await createProfile(agent, csrf, { timezone: "Europe/Zurich" });
+    const clearedEmpty = await createProfile(agent, csrf, { timezone: "" });
+    expect(clearedEmpty.status).toBe(200);
+    expect(clearedEmpty.body.profile.timezone).toBeNull();
+  });
+
+  it("rejects invalid timezone values without touching the profile", async () => {
+    await registerBarber("tz-invalid@example.com");
+    const { agent, csrf } = await login("tz-invalid@example.com");
+    await createProfile(agent, csrf, { timezone: "Europe/Zurich" });
+
+    const invalidValues = [
+      "+01:00",
+      "+23",
+      "-2359",
+      "CET",
+      "Mars/Olympus",
+      "Etc/GMT+1",
+      `Europe/${"x".repeat(58)}`,
+    ];
+    for (const value of invalidValues) {
+      const res = await createProfile(agent, csrf, {
+        timezone: value,
+        displayName: "Nouveau Nom",
+      });
+      expect(res.status, value).toBe(400);
+      expect(res.body.error.code, value).toBe("VALIDATION_ERROR");
+    }
+
+    // Aucune écriture partielle : ni le fuseau ni le reste du payload.
+    const read = await agent.get("/api/barber/profile");
+    expect(read.body.profile.timezone).toBe("Europe/Zurich");
+    expect(read.body.profile.displayName).toBe("Barbier Test");
+  });
+
+  it("accepts UTC and keeps a slash alias recognized by Intl as typed", async () => {
+    await registerBarber("tz-alias@example.com");
+    const { agent, csrf } = await login("tz-alias@example.com");
+
+    const utc = await createProfile(agent, csrf, { timezone: "utc" });
+    expect(utc.status).toBe(200);
+    expect(utc.body.profile.timezone).toBe("UTC");
+
+    // L'acceptation de « US/Eastern » dépend de l'ICU (alias du backward
+    // tzdata, stable en pratique) : l'assertion n'épingle aucune version.
+    // Si l'ICU le reconnaît, la valeur est conservée telle quelle, jamais
+    // remplacée par resolvedOptions().timeZone.
+    const aliasAccepted =
+      classifyIanaTimeZone("US/Eastern").kind === "valid";
+    const alias = await createProfile(agent, csrf, { timezone: "US/Eastern" });
+    if (aliasAccepted) {
+      expect(alias.status).toBe(200);
+      expect(alias.body.profile.timezone).toBe("US/Eastern");
+    } else {
+      expect(alias.status).toBe(400);
+    }
   });
 
   it("rejects unauthorized fields in the profile body", async () => {

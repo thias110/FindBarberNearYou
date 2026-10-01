@@ -7,6 +7,7 @@ import {
   TECHNIQUES,
 } from "../constants";
 import { isCountryCode } from "../countries";
+import { classifyIanaTimeZone } from "../timezones";
 
 const currencySchema = z.enum(SUPPORTED_CURRENCIES);
 
@@ -41,6 +42,47 @@ const longitudeSchema = z
   .min(-180, "La longitude doit être comprise entre -180 et 180.")
   .max(180, "La longitude doit être comprise entre -180 et 180.");
 
+// --- Fuseau horaire du salon (lot 6A) ---
+// Trois états, dans cet ordre : absent = inchangé ; null ou vide après trim =
+// effacement explicite ; valeur non vide = identifiant IANA validé. Une valeur
+// invalide (offset, abréviation, nom inconnu) ou restreinte (Etc/…) fait
+// échouer le parse : elle n'est jamais convertie silencieusement en null.
+export const timezoneSchema = z
+  .union([
+    z
+      .string()
+      .trim()
+      .max(LIMITS.profileTimezone, "Le fuseau horaire est trop long."),
+    z.null(),
+  ])
+  .optional()
+  .superRefine((value, ctx) => {
+    if (value === undefined || value === null) return;
+    const parsed = classifyIanaTimeZone(value);
+    if (parsed.kind === "invalid") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Fuseau horaire invalide : identifiant IANA attendu (ex. Europe/Zurich ou UTC).",
+      });
+    } else if (parsed.kind === "restricted") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Ce fuseau à offset fixe (Etc/…) n'est pas accepté. Choisissez un fuseau géographique, ex. Europe/Zurich.",
+      });
+    }
+  })
+  .transform((value) => {
+    if (value === undefined) return undefined;
+    if (value === null) return null;
+    const parsed = classifyIanaTimeZone(value);
+    if (parsed.kind === "empty") return null;
+    // Invalide/restreint : le parse global échoue déjà, la valeur n'est donc
+    // jamais persistée. Le null renvoyé ici ne satisfait que le typage.
+    return parsed.kind === "valid" ? parsed.value : null;
+  });
+
 export const profileSchema = z
   .object({
     displayName: z
@@ -73,6 +115,7 @@ export const profileSchema = z
     latitude: latitudeSchema,
     longitude: longitudeSchema,
     currency: currencySchema,
+    timezone: timezoneSchema,
   })
   .strict();
 

@@ -37,9 +37,10 @@ export interface PublicBarberProfile {
   createdAt: string;
 }
 
-// Réponse privée (propriétaire) : mêmes champs + updatedAt.
+// Réponse privée (propriétaire) : mêmes champs + updatedAt + fuseau du salon.
 export interface OwnBarberProfile extends PublicBarberProfile {
   updatedAt: string;
+  timezone: string | null;
 }
 
 export interface PublicBarberService {

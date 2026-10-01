@@ -8,11 +8,37 @@ import {
   SUPPORTED_CURRENCIES,
   type Currency,
 } from "@findbarber/shared/constants";
+import {
+  hasIanaTimeZoneList,
+  listIanaTimeZones,
+} from "@findbarber/shared/timezones";
 import { ApiError, barberApi } from "../../lib/apiClient";
 
 const COUNTRIES_SORTED = [...COUNTRIES].sort((a, b) =>
   a.nameFr.localeCompare(b.nameFr, "fr"),
 );
+
+// Fuseaux groupés par région (premier segment de l'identifiant IANA), triés
+// par libellé. "UTC" est proposé à part (exclu de la liste canonique).
+const TIMEZONE_GROUPS = (() => {
+  const groups = new Map<string, string[]>();
+  for (const zone of listIanaTimeZones()) {
+    const slash = zone.indexOf("/");
+    if (zone === "UTC" || slash === -1) continue;
+    const region = zone.slice(0, slash);
+    const items = groups.get(region) ?? [];
+    items.push(zone);
+    groups.set(region, items);
+  }
+  return [...groups.entries()]
+    .map(([label, zones]) => ({
+      label,
+      zones: zones.sort((a, b) => a.localeCompare(b, "fr")),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+})();
+
+const KNOWN_TIMEZONES = new Set(listIanaTimeZones());
 
 interface FormState {
   displayName: string;
@@ -24,6 +50,7 @@ interface FormState {
   latitude: string;
   longitude: string;
   currency: Currency;
+  timezone: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -36,6 +63,7 @@ const EMPTY_FORM: FormState = {
   latitude: "",
   longitude: "",
   currency: DEFAULT_CURRENCY,
+  timezone: "",
 };
 
 export function BarberProfilePage() {
@@ -63,6 +91,7 @@ export function BarberProfilePage() {
           latitude: String(profile.latitude),
           longitude: String(profile.longitude),
           currency: profile.currency,
+          timezone: profile.timezone ?? "",
         });
         setMode("edit");
       })
@@ -115,6 +144,9 @@ export function BarberProfilePage() {
         latitude,
         longitude,
         currency: form.currency,
+        // "" = « Non renseigné » : effacement explicite (null). Sinon le
+        // fuseau choisi est envoyé tel quel, validé côté serveur.
+        timezone: form.timezone.trim() === "" ? null : form.timezone,
       });
       setMode("edit");
       setSuccess(true);
@@ -271,6 +303,54 @@ export function BarberProfilePage() {
           {mode === "edit" && (
             <span className="mt-1 block text-xs text-gray-500">
               La devise est fixée à la création du profil et ne peut plus être modifiée.
+            </span>
+          )}
+        </label>
+
+        <label className="block">
+          <span className="text-sm text-gray-700">Fuseau horaire du salon</span>
+          {hasIanaTimeZoneList() ? (
+            <select
+              value={form.timezone}
+              onChange={(e) => update("timezone", e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2"
+            >
+              <option value="">— Non renseigné —</option>
+              <optgroup label="Temps universel">
+                <option value="UTC">UTC</option>
+              </optgroup>
+              {form.timezone !== "" && !KNOWN_TIMEZONES.has(form.timezone) && (
+                <optgroup label="Valeur enregistrée">
+                  <option value={form.timezone}>{form.timezone}</option>
+                </optgroup>
+              )}
+              {TIMEZONE_GROUPS.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.zones.map((zone) => (
+                    <option key={zone} value={zone}>
+                      {zone}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          ) : (
+            <input
+              maxLength={LIMITS.profileTimezone}
+              value={form.timezone}
+              onChange={(e) => update("timezone", e.target.value)}
+              placeholder="Europe/Zurich"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            />
+          )}
+          <span className="mt-1 block text-xs text-gray-500">
+            Choisi explicitement : jamais déduit du pays ni du navigateur. Il servira
+            à calculer vos créneaux de réservation.
+          </span>
+          {mode === "edit" && form.timezone === "" && (
+            <span className="mt-1 block text-xs text-amber-700">
+              Fuseau non renseigné : la réservation en ligne restera indisponible
+              tant qu'il n'est pas défini.
             </span>
           )}
         </label>
