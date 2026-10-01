@@ -1,18 +1,21 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, sql, type SQL } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
   barberProfiles,
   barberServiceAudiences,
   barberServices,
   barberServiceTechniques,
+  barberTimeOff,
   barberWorkingHours,
   users,
   type BarberProfile,
   type BarberService,
+  type BarberTimeOff,
   type BarberWorkingHours,
 } from "@findbarber/shared/schema";
 import type { CountryCode } from "@findbarber/shared/countries";
+import { LIMITS } from "@findbarber/shared/constants";
 import type {
   Audience,
   Technique,
@@ -26,6 +29,7 @@ import type {
   PublicBarberProfileWithServices,
   PublicBarberSearchItem,
   PublicBarberService,
+  TimeOff,
   WorkingHoursInterval,
 } from "@findbarber/shared/types";
 import type {
@@ -33,9 +37,10 @@ import type {
   ServiceCreateInput,
   ServiceUpdateInput,
   BarberSearchQuery,
+  TimeOffCreateInput,
   WorkingHoursInput,
 } from "@findbarber/shared/validation";
-import { AppError } from "../../lib/errors.js";
+import { AppError, isUniqueViolation } from "../../lib/errors.js";
 import { escapeLikePattern } from "../../lib/like.js";
 
 function toOwnProfile(profile: BarberProfile): OwnBarberProfile {
@@ -441,6 +446,152 @@ export async function replaceWorkingHours(
 
     return rows.map(toWorkingHoursInterval);
   });
+}
+
+// --- Indisponibilités / fermetures exceptionnelles (lot 7, issue #22) ---
+
+function toTimeOff(row: BarberTimeOff): TimeOff {
+  return {
+    id: row.id,
+    startDate: row.startDate,
+    endDate: row.endDate,
+    reason: row.reason,
+  };
+}
+
+export async function listTimeOff(userId: string): Promise<TimeOff[]> {
+  const profile = await getOwnProfileRow(userId);
+
+  const rows = await db
+    .select()
+    .from(barberTimeOff)
+    .where(eq(barberTimeOff.barberProfileId, profile.id))
+    .orderBy(
+      asc(barberTimeOff.startDate),
+      asc(barberTimeOff.endDate),
+      asc(barberTimeOff.id),
+    );
+
+  return rows.map(toTimeOff);
+}
+
+// Création atomique et sérialisée : le profil propriétaire est résolu ET
+// verrouillé (SELECT … FOR UPDATE) dans la transaction AVANT le plafond puis le
+// contrôle de chevauchement, afin que deux créations simultanées du même
+// professionnel ne puissent pas dépasser le plafond ni insérer deux périodes
+// chevauchantes. L'unicité exacte en base reste un filet de sécurité.
+export async function createTimeOff(
+  userId: string,
+  input: TimeOffCreateInput,
+): Promise<TimeOff> {
+  const { startDate, endDate, reason } = input;
+
+  return db.transaction(async (tx) => {
+    const [profile] = await tx
+      .select({ id: barberProfiles.id })
+      .from(barberProfiles)
+      .where(eq(barberProfiles.userId, userId))
+      .limit(1)
+      .for("update");
+
+    if (!profile) {
+      throw new AppError(
+        404,
+        "BARBER_PROFILE_NOT_FOUND",
+        "Aucun profil professionnel. Créez d'abord votre profil.",
+      );
+    }
+
+    const [countRow] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(barberTimeOff)
+      .where(eq(barberTimeOff.barberProfileId, profile.id));
+
+    if (Number(countRow?.count ?? 0) >= LIMITS.timeOffMaxPerBarber) {
+      throw new AppError(
+        409,
+        "TIME_OFF_LIMIT_REACHED",
+        `Vous ne pouvez pas enregistrer plus de ${LIMITS.timeOffMaxPerBarber} indisponibilités.`,
+      );
+    }
+
+    // Chevauchement inclusif : `existing.start <= new.end` ET
+    // `new.start <= existing.end`. Des périodes adjacentes sans jour commun
+    // (par ex. fin le 10, début le 11) ne se chevauchent pas.
+    const [overlap] = await tx
+      .select({ id: barberTimeOff.id })
+      .from(barberTimeOff)
+      .where(
+        and(
+          eq(barberTimeOff.barberProfileId, profile.id),
+          lte(barberTimeOff.startDate, endDate),
+          gte(barberTimeOff.endDate, startDate),
+        ),
+      )
+      .limit(1);
+
+    if (overlap) {
+      throw new AppError(
+        409,
+        "TIME_OFF_OVERLAP",
+        "Cette période chevauche une indisponibilité déjà enregistrée.",
+      );
+    }
+
+    const now = new Date();
+    try {
+      const [created] = await tx
+        .insert(barberTimeOff)
+        .values({
+          id: randomUUID(),
+          barberProfileId: profile.id,
+          startDate,
+          endDate,
+          reason,
+          updatedAt: now,
+        })
+        .returning();
+      return toTimeOff(created);
+    } catch (err) {
+      // Une violation d'unicité ici ne doit jamais devenir EMAIL_TAKEN :
+      // elle traduit le doublon exact d'une période déjà enregistrée.
+      if (isUniqueViolation(err)) {
+        throw new AppError(
+          409,
+          "TIME_OFF_OVERLAP",
+          "Cette période chevauche une indisponibilité déjà enregistrée.",
+        );
+      }
+      throw err;
+    }
+  });
+}
+
+export async function deleteTimeOff(
+  userId: string,
+  timeOffId: string,
+): Promise<void> {
+  const profile = await getOwnProfileRow(userId);
+
+  // Filtrage par id ET profil propriétaire : anti-IDOR. Un identifiant
+  // inexistant ou appartenant à un autre professionnel renvoie 404.
+  const deleted = await db
+    .delete(barberTimeOff)
+    .where(
+      and(
+        eq(barberTimeOff.id, timeOffId),
+        eq(barberTimeOff.barberProfileId, profile.id),
+      ),
+    )
+    .returning({ id: barberTimeOff.id });
+
+  if (deleted.length === 0) {
+    throw new AppError(
+      404,
+      "TIME_OFF_NOT_FOUND",
+      "Indisponibilité introuvable.",
+    );
+  }
 }
 
 export async function getPublicProfile(

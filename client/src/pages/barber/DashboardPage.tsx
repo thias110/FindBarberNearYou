@@ -109,6 +109,17 @@ export function BarberDashboardPage() {
               Jours et plages de travail (heures locales du salon)
             </span>
           </Link>
+          <Link
+            to="/pro/time-off"
+            className="rounded-2xl bg-white p-5 shadow transition hover:shadow-md"
+          >
+            <span className="font-semibold text-brand-900">
+              Mes indisponibilités
+            </span>
+            <span className="mt-1 block text-sm text-gray-600">
+              Congés et fermetures exceptionnelles
+            </span>
+          </Link>
         </nav>
 
         <section className="rounded-2xl bg-white p-6 shadow">

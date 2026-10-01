@@ -105,3 +105,17 @@ export interface WorkingHoursInterval {
 export interface WorkingHoursResponse {
   intervals: WorkingHoursInterval[];
 }
+
+// --- Indisponibilités / fermetures exceptionnelles (lot 7, issue #22) ---
+// Journées entières civiles, bornes incluses, format `AAAA-MM-JJ`, sans fuseau.
+// `reason` est privé (jamais exposé par le profil public ni la recherche).
+export interface TimeOff {
+  id: string;
+  startDate: string;
+  endDate: string;
+  reason: string | null;
+}
+
+export interface TimeOffResponse {
+  timeOff: TimeOff[];
+}

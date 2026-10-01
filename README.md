@@ -118,6 +118,9 @@ npm start           # démarre le serveur compilé
 - `PATCH /api/barber/services/:serviceId` — modification/désactivation d'un service (BARBER + CSRF)
 - `GET  /api/barber/working-hours` — horaires hebdomadaires du BARBER connecté (404 si pas de profil)
 - `PUT  /api/barber/working-hours` — remplacement complet des horaires (BARBER + CSRF)
+- `GET  /api/barber/time-off` — indisponibilités (congés/fermetures) du BARBER connecté (404 si pas de profil)
+- `POST /api/barber/time-off` — création d'une indisponibilité (BARBER + CSRF)
+- `DELETE /api/barber/time-off/:timeOffId` — suppression d'une indisponibilité possédée (BARBER + CSRF, 404 sinon)
 - `GET  /api/barbers` — recherche publique (voir ci-dessous)
 - `GET  /api/barbers/:barberId` — profil public + services actifs (public, `barberId` = `barber_profiles.id`)
 
@@ -208,6 +211,41 @@ même jour sont des pauses implicites.
   (absent du profil public et de la recherche).
 - **Avant de réserver** (lot ultérieur) : un profil sans fuseau verra la réservation
   refusée tant que le fuseau n'est pas renseigné.
+
+### Indisponibilités / fermetures exceptionnelles (barber)
+
+Le professionnel gère ses indisponibilités sur `/pro/time-off`. Les libellés sont neutres
+(« Mes indisponibilités », « Votre fuseau horaire », « Jours indisponibles ») : un BARBER
+peut exercer chez lui, en salon ou à domicile, ses disponibilités lui appartiennent.
+
+- **Journées entières** : une date ou une période. `startDate` / `endDate` sont des dates
+  calendaires réelles au format `AAAA-MM-JJ`, **bornes incluses** ; une journée unique se
+  saisit avec la même date. Une période maximale de **366 jours inclus** est acceptée (367
+  refusés) ; les dates passées sont autorisées dans ce lot.
+- **Stockage sans fuseau** : colonnes PostgreSQL `date` (`start_date`, `end_date`) mappées
+  **explicitement en chaînes** par Drizzle (`date("…", { mode: "string" })`). Aucune
+  conversion depuis le fuseau du navigateur, du serveur ou du DST : `2026-12-24` reste
+  `2026-12-24`. Le fuseau du professionnel n'est appliqué que plus tard, par le futur
+  moteur de créneaux.
+- **Motif facultatif et privé** : trim, vide → `null`, **500 caractères maximum**. Il n'est
+  jamais exposé par le profil public ni la recherche.
+- **Limite** : **200 périodes** enregistrées au maximum par professionnel (historiques
+  comprises), refus au-delà avec `409 TIME_OFF_LIMIT_REACHED`.
+- **Doublons et chevauchements refusés** : chevauchement inclusif (`start ≤ existing.end`
+  et `existing.start ≤ end`) → `409 TIME_OFF_OVERLAP`. Des périodes **adjacentes sans jour
+  commun** (fin le 10, début le 11) sont autorisées. Index unique
+  `(profile, start_date, end_date)` en base comme filet.
+- **Création atomique** : le profil propriétaire est résolu et verrouillé
+  (`SELECT … FOR UPDATE`) **dans** la transaction, avant le contrôle du plafond puis des
+  chevauchements et l'insertion. Le propriétaire est déduit de l'utilisateur authentifié ;
+  la suppression est filtrée par `id` **et** profil (anti-IDOR) et renvoie 404 pour une
+  période inexistante ou appartenant à un autre professionnel.
+- **Sans fuseau** : la création reste autorisée, avec un avertissement dans l'interface
+  (« ils ne seront interprétés qu'une fois votre fuseau défini »). **Changement de
+  fuseau** : les dates civiles stockées restent **inchangées**, sans conversion ni
+  réécriture.
+- **Pas d'édition** (ni `PATCH`, ni suppression/recréation automatique) et **pas
+  d'exposition publique** dans ce lot. Aucun droit ADMIN ajouté.
 
 ## Carte (MapLibre GL JS + MapTiler)
 
