@@ -627,3 +627,176 @@ seulement l'affichage du message. La condition du message est revenue à
   le lit via `envDir` et forcerait un build React dev. Le serveur a `development`
   par défaut ; en production, définir `NODE_ENV=production` dans l'environnement.
 - `temp-lot4/` reste extérieur à l'arbre de travail du dépôt (non versionné).
+
+---
+
+# Suivi — lot 5 : disponibilités hebdomadaires du barbier (non commité)
+
+État : implémenté sur `main`, aucune modification Git (l'utilisateur garde la main).
+Aucun commit, push, branche, PR ni fusion, ni changement d'issue.
+
+## Périmètre validé et appliqué
+
+- Profil propriétaire résolu **et verrouillé** (`SELECT … FOR UPDATE`) **dans** la
+  transaction, avant `DELETE` + `INSERT` : deux PUT simultanés sont sérialisés, y
+  compris sur un planning vide (l'ancre du verrou est la ligne du profil).
+- Plusieurs plages par jour, jours ISO 1–7, pauses implicites entre plages, plages
+  adjacentes autorisées, aucun passage de minuit, remplacement complet par `PUT`,
+  suppression par `{ "intervals": [] }`.
+- `endMinute = 1440` conservé, saisi uniquement via le contrôle explicite
+  « Fin de journée (24:00) » ; jamais `"24:00"` comme valeur d'un `input type="time"`.
+- Heures locales du salon, sans colonne `timezone` : le fuseau IANA du salon sera
+  **obligatoire avant le moteur de réservation**, sans déduction automatique depuis
+  le pays ni le navigateur. Affiché sur `/pro/working-hours` et documenté (README).
+- Aucun développement de réservation ; le moteur de créneaux futur lira cette table.
+
+## Fichiers créés
+
+- `client/src/pages/barber/WorkingHoursPage.tsx`
+- `client/src/lib/time.ts` (parse/format minutes ↔ « HH:MM », split/join fin de journée)
+- `tests/src/time.test.ts`
+- `tests/src/working-hours.validation.test.ts`
+- `tests/src/working-hours.integration.test.ts`
+- `tests/src/migration-working-hours.test.ts` (tag découvert dans `_journal.json`,
+  aucun numéro de migration supposé)
+- `server/drizzle/0004_fuzzy_phantom_reporter.sql` + `server/drizzle/meta/0004_snapshot.json`
+
+## Fichiers modifiés
+
+- `shared/src/constants.ts` (`WEEKDAYS`, `WEEKDAY_LABELS`, limites horaires dans `LIMITS`)
+- `shared/src/types.ts` (`WorkingHoursInterval`, `WorkingHoursResponse`)
+- `shared/src/schema.ts` (table `barber_working_hours`)
+- `shared/src/validation/barber.ts` (`workingHoursIntervalSchema`, `workingHoursSchema`,
+  `WorkingHoursInput` : bornes, `.strict()`, `start < end`, doublons/chevauchements,
+  plafonds 6/jour et 42 au total)
+- `server/src/db/client.ts` (table enregistrée dans `schema`)
+- `server/src/modules/barber/service.ts` (`getWorkingHours`, `replaceWorkingHours`
+  avec verrou `FOR UPDATE` in-transaction)
+- `server/src/modules/barber/routes.ts` (`GET`/`PUT /api/barber/working-hours`)
+- `client/src/lib/apiClient.ts` (`getWorkingHours`, `replaceWorkingHours`)
+- `client/src/app/router.tsx` (route `/pro/working-hours`)
+- `client/src/pages/barber/DashboardPage.tsx` (carte « Mes horaires »)
+- `README.md`, `suiviDeepseek.md`
+- `server/drizzle/meta/_journal.json` (entrée 0004, générée)
+
+## Migration
+
+`0004_fuzzy_phantom_reporter.sql` : purement additive. `CREATE TABLE
+barber_working_hours` (id text PK, FK `barber_profile_id` → `barber_profiles` ON
+DELETE CASCADE, weekday int, start_minute/end_minute int, timestamps), 4 CHECK
+(weekday 1..7, start 0..1439, end 1..1440, start < end), index
+`(barber_profile_id, weekday)`, index unique `(barber_profile_id, weekday,
+start_minute)`. **Relue avant application.** Aucune retouche de 0000–0003, aucun
+backfill. Appliquée sur la base locale de développement (PGlite
+`server/data/pglite`), jamais sur une base de production.
+
+## Commandes exécutées et résultats
+
+| Commande | Résultat |
+|---|---|
+| `npm run db:generate` | ✅ `0004_fuzzy_phantom_reporter.sql` (relue) |
+| `npm run db:migrate` | ✅ appliquée (base locale) |
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning (1 erreur corrigée : variable inutilisée) |
+| `npm test` | ✅ **137/137** (11 fichiers ; +42 nouveaux : time 13, validation 13, intégration 15, migration 1) |
+| `npm run build` | ✅ server `dist/index.js` 53.97 KB + client |
+
+### Poids du bundle client
+
+Le bundle principal passe de **73,08 Ko → 89,35 Ko gzip** : la page des horaires
+importe `workingHoursSchema` (zod) pour la pré-validation locale, conformément au
+plan validé. Le serveur reste l'autorité. Si ce surcoût (~16 Ko gzip) est jugé
+excessif, une validation manuelle côté client (comme `ServicesPage`) retirerait
+zod du bundle — à arbitrer.
+
+## Tests de concurrence et limite PGlite
+
+Deux PUT simultanés testés (planning vide puis déjà rempli) : chaque réponse 200
+égale à son propre payload, l'état final correspond **exactement** à l'un des deux
+payloads (jamais un mélange), aucune erreur 500.
+
+**Limite documentée** : PGlite exécute les transactions via un mutex interne
+(`_runExclusiveTransaction`, une seule connexion). Ces tests prouvent l'absence
+de mélange et de 500, mais **ne prouvent pas** le comportement `FOR UPDATE` sous
+deux connexions PostgreSQL réelles (pas de serveur Postgres dans l'environnement,
+et `server/src/db/client.ts` expose un singleton `db` non injectable). Le
+comportement multi-connexions reste à valider sur une vraie base Postgres (CI/recette).
+
+## Point de revue séparé — `updateService` (à vérifier, NON conclu)
+
+`updateService` effectue un remplacement DELETE + INSERT des audiences/techniques
+dans une transaction, sans verrouillage explicite du profil. **Hypothèse à
+vérifier avant toute conclusion** : vérifier l'ordre exact des opérations dans
+`updateService` et les verrous déjà acquis (par les DELETE/INSERT de lignes
+existantes) pour déterminer si deux PATCH simultanés sur le même service peuvent
+produire une union des catégories. Aucun changement n'a été apporté à
+`updateService` dans ce lot, et cette hypothèse n'est **pas présentée comme
+confirmée**.
+
+## Limites et tests manuels restants
+
+- Rendu visuel de `/pro/working-hours` non vérifié en navigateur (pas de navigateur
+  pilotable) : coche « Fin de journée (24:00) », désactivation du champ Fin,
+  ajout/suppression de plages, boutons Enregistrer/Tout effacer — à vérifier
+  manuellement.
+- Concurrence PostgreSQL multi-connexions non testée (voir ci-dessus).
+- PostgreSQL de production non testé de bout en bout (PGlite seul).
+- Surcharge zod dans le bundle client (~16 Ko gzip) : arbitrage en attente.
+
+---
+
+## Passe revue — corrections ciblées validées (non commité)
+
+État : corrections appliquées après revue des extraits, uniquement sur les points
+autorisés. Aucun autre changement, aucun nettoyage CRLF, aucun commit/push/branche.
+
+### 1. Tout effacer — confirmation
+
+- Panneau de confirmation « Effacer tous vos horaires enregistrés ? » avec
+  « Annuler » / « Confirmer » (aucun `window.confirm`).
+- « Annuler » ferme le panneau : ni requête, ni modification du brouillon.
+- « Confirmer » exécute le PUT `{ intervals: [] }` inchangé, puis synchronise le
+  formulaire depuis la réponse (liste vide), sans GET supplémentaire.
+
+### 2. Erreurs de validation rattachées aux plages
+
+- `workingHoursSchema.superRefine` conserve désormais **les indices d'origine du
+  payload** dans le `path` de chaque issue (`["intervals", index]`) : chevauchements
+  (intervalle en conflit) et plafond par jour (chaque plage excédentaire). Le
+  `refine` début/fin expose déjà `["intervals", index, "endMinute"]`. Aucune
+  validation serveur supprimée.
+- Côté page : `buildPayload` construit une correspondance payload→ligne
+  (`meta` : clé de ligne, jour, numéro de plage dans l'ordre d'affichage) ;
+  les erreurs de saisie locale et les issues Zod (via `extractIntervalIndex` +
+  `formatIntervalError` dans `client/src/lib/time.ts`) sont affichées **sous la
+  ligne concernée** sous la forme « Mardi, plage 2 : … ». Les issues sans index
+  restent dans le bandeau global.
+- Tests ajoutés : chemins des issues (chevauchement → index d'origine, début≥fin →
+  index + `endMinute`, plafond → indices excédentaires uniquement) et helpers
+  `extractIntervalIndex` / `formatIntervalError`.
+
+### 3. Sauvegarde
+
+- La réponse du PUT est réutilisée pour synchroniser le formulaire
+  (`applyIntervals(res.intervals)`), plus de `GET /working-hours` systématique
+  après sauvegarde ni après effacement. Le GET ne sert qu'au chargement initial.
+- Tous les contrôles du formulaire sont désactivés pendant `saving` (cases jours,
+  heures, coche 24:00, suppression, ajout, boutons).
+- En cas d'échec (réseau/API), le brouillon reste intact (aucun `setDays` dans les
+  chemins d'erreur).
+- Correction lint : `applyIntervals`/`loadData` stabilisés via `useCallback`
+  (dépendance d'effet manquante signalée, résolue).
+
+### Résultats réellement obtenus
+
+| Commande | Résultat |
+|---|---|
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning (après correction `useCallback`) |
+| `npm test` | ✅ **143/143** (11 fichiers ; +6 : time 16, validation 16) |
+| `npm run build` | ✅ server `dist/index.js` 54.24 KB + client (`index` gzip 89.91 Ko) |
+
+- Aucune migration nouvelle : `0004_fuzzy_phantom_reporter.sql` inchangée.
+- Rendu navigateur des nouveaux comportements (confirmation d'effacement, erreurs
+  sous les lignes, désactivation pendant `saving`) : à vérifier manuellement, pas
+  de navigateur pilotable.

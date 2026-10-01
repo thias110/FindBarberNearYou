@@ -3,6 +3,7 @@ import {
   profileSchema,
   serviceCreateSchema,
   serviceUpdateSchema,
+  workingHoursSchema,
 } from "@findbarber/shared/validation";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
@@ -10,7 +11,9 @@ import { validationError } from "../../lib/validation.js";
 import {
   createService,
   getOwnProfile,
+  getWorkingHours,
   listOwnServices,
+  replaceWorkingHours,
   updateService,
   upsertProfile,
 } from "./service.js";
@@ -73,5 +76,32 @@ barberRouter.patch(
       parsed.data,
     );
     res.json({ service });
+  },
+);
+
+barberRouter.get(
+  "/working-hours",
+  requireAuth,
+  requireRole("BARBER"),
+  async (req, res) => {
+    const intervals = await getWorkingHours(req.user!.id);
+    res.json({ intervals });
+  },
+);
+
+// Remplacement complet du planning (suppression = `{ "intervals": [] }`).
+// Requiert un profil existant (404 sinon).
+barberRouter.put(
+  "/working-hours",
+  requireAuth,
+  requireRole("BARBER"),
+  csrfProtection,
+  async (req, res) => {
+    const parsed = workingHoursSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw validationError(parsed.error);
+    }
+    const intervals = await replaceWorkingHours(req.user!.id, parsed.data);
+    res.json({ intervals });
   },
 );

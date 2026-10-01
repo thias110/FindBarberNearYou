@@ -152,9 +152,65 @@ export const barberServiceTechniques = pgTable(
   ],
 );
 
+// Horaires hebdomadaires : une ligne par plage de travail. Les heures sont des
+// minutes murales locales (0..1440) sans fuseau ; 1440 = 24:00 en fin de plage
+// uniquement. Les chevauchements sont refusés au niveau applicatif ; les
+// bornes et l'ordre début < fin sont garantis par CHECK en dernier ressort.
+export const barberWorkingHours = pgTable(
+  "barber_working_hours",
+  {
+    id: text("id").primaryKey(),
+    barberProfileId: text("barber_profile_id")
+      .notNull()
+      .references(() => barberProfiles.id, { onDelete: "cascade" }),
+    weekday: integer("weekday").notNull(),
+    startMinute: integer("start_minute").notNull(),
+    endMinute: integer("end_minute").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("barber_working_hours_profile_weekday_idx").on(
+      table.barberProfileId,
+      table.weekday,
+    ),
+    uniqueIndex("barber_working_hours_profile_weekday_start_unique").on(
+      table.barberProfileId,
+      table.weekday,
+      table.startMinute,
+    ),
+    check(
+      "barber_working_hours_weekday_range",
+      sql`${table.weekday} BETWEEN 1 AND 7`,
+    ),
+    check(
+      "barber_working_hours_start_range",
+      sql`${table.startMinute} BETWEEN ${sql.raw(
+        String(LIMITS.workingHoursStartMin),
+      )} AND ${sql.raw(String(LIMITS.workingHoursStartMax))}`,
+    ),
+    check(
+      "barber_working_hours_end_range",
+      sql`${table.endMinute} BETWEEN ${sql.raw(
+        String(LIMITS.workingHoursEndMin),
+      )} AND ${sql.raw(String(LIMITS.workingHoursEndMax))}`,
+    ),
+    check(
+      "barber_working_hours_order",
+      sql`${table.startMinute} < ${table.endMinute}`,
+    ),
+  ],
+);
+
 export type BarberProfile = typeof barberProfiles.$inferSelect;
 export type NewBarberProfile = typeof barberProfiles.$inferInsert;
 export type BarberService = typeof barberServices.$inferSelect;
 export type NewBarberService = typeof barberServices.$inferInsert;
 export type BarberServiceAudience = typeof barberServiceAudiences.$inferSelect;
 export type BarberServiceTechnique = typeof barberServiceTechniques.$inferSelect;
+export type BarberWorkingHours = typeof barberWorkingHours.$inferSelect;
+export type NewBarberWorkingHours = typeof barberWorkingHours.$inferInsert;

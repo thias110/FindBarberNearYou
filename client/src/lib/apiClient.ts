@@ -4,11 +4,13 @@ import type {
   OwnBarberService,
   PublicBarberProfileWithServices,
   PublicUser,
+  WorkingHoursResponse,
 } from "@findbarber/shared/types";
 import type {
   ProfileInput,
   ServiceCreateInput,
   ServiceUpdateInput,
+  WorkingHoursInput,
 } from "@findbarber/shared/validation";
 
 const API_URL =
@@ -122,6 +124,8 @@ export interface BarberApi {
     serviceId: string,
     input: ServiceUpdateInput,
   ): Promise<{ service: OwnBarberService }>;
+  getWorkingHours(): Promise<WorkingHoursResponse>;
+  replaceWorkingHours(input: WorkingHoursInput): Promise<WorkingHoursResponse>;
 }
 
 export const barberApi: BarberApi = {
@@ -144,6 +148,13 @@ export const barberApi: BarberApi = {
       `/api/barber/services/${encodeURIComponent(serviceId)}`,
       { method: "PATCH", body: input },
     ),
+  getWorkingHours: () =>
+    apiFetch<WorkingHoursResponse>("/api/barber/working-hours"),
+  replaceWorkingHours: (input) =>
+    apiFetch<WorkingHoursResponse>("/api/barber/working-hours", {
+      method: "PUT",
+      body: input,
+    }),
 };
 
 export interface BarbersSearchParams {

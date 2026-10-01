@@ -6,14 +6,17 @@ import {
   barberServiceAudiences,
   barberServices,
   barberServiceTechniques,
+  barberWorkingHours,
   users,
   type BarberProfile,
   type BarberService,
+  type BarberWorkingHours,
 } from "@findbarber/shared/schema";
 import type { CountryCode } from "@findbarber/shared/countries";
 import type {
   Audience,
   Technique,
+  Weekday,
 } from "@findbarber/shared/constants";
 import type {
   BarbersSearchResponse,
@@ -23,12 +26,14 @@ import type {
   PublicBarberProfileWithServices,
   PublicBarberSearchItem,
   PublicBarberService,
+  WorkingHoursInterval,
 } from "@findbarber/shared/types";
 import type {
   ProfileInput,
   ServiceCreateInput,
   ServiceUpdateInput,
   BarberSearchQuery,
+  WorkingHoursInput,
 } from "@findbarber/shared/validation";
 import { AppError } from "../../lib/errors.js";
 import { escapeLikePattern } from "../../lib/like.js";
@@ -347,6 +352,87 @@ export async function updateService(
     audiences.get(service.id) ?? [],
     techniques.get(service.id) ?? [],
   );
+}
+
+// --- Horaires hebdomadaires ---
+
+function toWorkingHoursInterval(row: BarberWorkingHours): WorkingHoursInterval {
+  return {
+    id: row.id,
+    weekday: row.weekday as Weekday,
+    startMinute: row.startMinute,
+    endMinute: row.endMinute,
+  };
+}
+
+export async function getWorkingHours(
+  userId: string,
+): Promise<WorkingHoursInterval[]> {
+  const profile = await getOwnProfileRow(userId);
+
+  const rows = await db
+    .select()
+    .from(barberWorkingHours)
+    .where(eq(barberWorkingHours.barberProfileId, profile.id))
+    .orderBy(asc(barberWorkingHours.weekday), asc(barberWorkingHours.startMinute));
+
+  return rows.map(toWorkingHoursInterval);
+}
+
+// Remplacement complet du planning, atomique et sérialisé :
+// le profil propriétaire est résolu ET verrouillé (SELECT … FOR UPDATE) dans
+// la transaction avant le DELETE + INSERT. Deux PUT simultanés du même
+// barbier s'exécutent l'un après l'autre, même lorsque le planning est vide
+// (aucune ligne d'horaires à verrouiller : l'ancre est la ligne du profil).
+export async function replaceWorkingHours(
+  userId: string,
+  input: WorkingHoursInput,
+): Promise<WorkingHoursInterval[]> {
+  return db.transaction(async (tx) => {
+    const [profile] = await tx
+      .select({ id: barberProfiles.id })
+      .from(barberProfiles)
+      .where(eq(barberProfiles.userId, userId))
+      .limit(1)
+      .for("update");
+
+    if (!profile) {
+      throw new AppError(
+        404,
+        "BARBER_PROFILE_NOT_FOUND",
+        "Aucun profil professionnel. Créez d'abord votre profil.",
+      );
+    }
+
+    await tx
+      .delete(barberWorkingHours)
+      .where(eq(barberWorkingHours.barberProfileId, profile.id));
+
+    if (input.intervals.length > 0) {
+      const now = new Date();
+      await tx.insert(barberWorkingHours).values(
+        input.intervals.map((interval) => ({
+          id: randomUUID(),
+          barberProfileId: profile.id,
+          weekday: interval.weekday,
+          startMinute: interval.startMinute,
+          endMinute: interval.endMinute,
+          updatedAt: now,
+        })),
+      );
+    }
+
+    const rows = await tx
+      .select()
+      .from(barberWorkingHours)
+      .where(eq(barberWorkingHours.barberProfileId, profile.id))
+      .orderBy(
+        asc(barberWorkingHours.weekday),
+        asc(barberWorkingHours.startMinute),
+      );
+
+    return rows.map(toWorkingHoursInterval);
+  });
 }
 
 export async function getPublicProfile(

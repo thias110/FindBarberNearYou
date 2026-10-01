@@ -55,6 +55,21 @@ export const TECHNIQUE_LABELS: Record<Technique, string> = {
   BARBE: "Barbe",
 };
 
+// --- Jours de la semaine (ISO-8601 : 1 = lundi … 7 = dimanche) ---
+// Codes entiers stockés en base, libellés français partagés côté client.
+export const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
+export type Weekday = (typeof WEEKDAYS)[number];
+
+export const WEEKDAY_LABELS: Record<Weekday, string> = {
+  1: "Lundi",
+  2: "Mardi",
+  3: "Mercredi",
+  4: "Jeudi",
+  5: "Vendredi",
+  6: "Samedi",
+  7: "Dimanche",
+};
+
 // Limites de pagination de la recherche publique.
 export const SEARCH_LIMITS = {
   pageDefault: 1,
@@ -78,4 +93,12 @@ export const LIMITS = {
   serviceDurationMax: 480,
   servicePriceMinorMin: 0,
   servicePriceMinorMax: 1_000_000,
+  // Horaires hebdomadaires : minutes depuis minuit local (heures murales du
+  // salon, sans fuseau). 1440 = 24:00 (fin de journée, jamais un départ).
+  workingHoursStartMin: 0,
+  workingHoursStartMax: 1439,
+  workingHoursEndMin: 1,
+  workingHoursEndMax: 1440,
+  workingHoursMaxIntervalsPerDay: 6,
+  workingHoursMaxIntervals: 42, // 7 jours × 6 plages
 } as const;
