@@ -160,4 +160,7 @@ export const LIMITS = {
   bookingLeadTimeMinutes: 30,
   bookingHorizonDays: 60,
   bookingClientCancelMinMinutes: 120,
+  // Adresse client privée (lot 9 passe A, issue #19) : chaîne libre géocodée
+  // côté serveur pour `AT_CLIENT`, jamais exposée publiquement.
+  clientAddress: 200,
 } as const;

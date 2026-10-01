@@ -351,7 +351,10 @@ export const bookings = pgTable(
     durationMinutes: integer("duration_minutes").notNull(),
     priceMinor: integer("price_minor").notNull(),
     currency: currencyEnum("currency").notNull(),
-    // Adresse client : nullables, inutilisées dans ce lot (reste de #19).
+    // Adresse privée du client (lot 9 passe A, issue #19) : renseignées
+    // uniquement pour `AT_CLIENT`, nullables partout ailleurs (compatibilité
+    // historique). Jamais exposées publiquement. Les coordonnées sont celles du
+    // géocodeur serveur, jamais celles envoyées par le navigateur.
     clientAddress: text("client_address"),
     clientCity: text("client_city"),
     clientPostalCode: text("client_postal_code"),
@@ -394,6 +397,11 @@ export const bookings = pgTable(
     check(
       "bookings_client_longitude_range",
       sql`${table.clientLongitude} IS NULL OR ${table.clientLongitude} BETWEEN -180 AND 180`,
+    ),
+    // Les deux coordonnées sont nulles ensemble ou non nulles ensemble.
+    check(
+      "bookings_client_coordinates_together",
+      sql`(${table.clientLatitude} IS NULL) = (${table.clientLongitude} IS NULL)`,
     ),
   ],
 );

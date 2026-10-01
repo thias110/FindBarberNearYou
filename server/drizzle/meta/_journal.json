@@ -64,6 +64,13 @@
       "when": 1790882860495,
       "tag": "0008_panoramic_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790885882512,
+      "tag": "0009_daily_magik",
+      "breakpoints": true
     }
   ]
 }

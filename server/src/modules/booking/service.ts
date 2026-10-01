@@ -9,6 +9,7 @@ import {
   barberWorkingHours,
   bookings,
   users,
+  type BarberProfile,
   type BookingRow,
 } from "@findbarber/shared/schema";
 import {
@@ -21,6 +22,7 @@ import type {
 } from "@findbarber/shared/constants";
 import type {
   Booking,
+  BookingDetails,
   BookingSlotDto,
   Role,
 } from "@findbarber/shared/types";
@@ -33,6 +35,12 @@ import {
   calendarDateToUtcMillis,
   weekdayFromCalendarDate,
 } from "@findbarber/shared/dates";
+import { geocodeAddress } from "../../lib/geocoding.js";
+import {
+  haversineDistanceKm,
+  isValidLatitude,
+  isValidLongitude,
+} from "../../lib/location.js";
 import { AppError } from "../../lib/errors.js";
 
 const MS_PER_HOUR = 3_600_000;
@@ -57,6 +65,60 @@ function toBooking(row: BookingRow, clientName: string | null): Booking {
     cancelledAt: row.cancelledAt ? row.cancelledAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+function toBookingDetails(
+  row: BookingRow,
+  clientName: string | null,
+): BookingDetails {
+  return {
+    ...toBooking(row, clientName),
+    clientAddress: row.clientAddress,
+    clientLatitude: row.clientLatitude,
+    clientLongitude: row.clientLongitude,
+  };
+}
+
+// Résout l'adresse client pour `AT_CLIENT` : vérifie la configuration de zone,
+// géocode côté serveur, calcule la distance Haversine et refuse hors zone.
+// Aucune coordonnée acceptée du navigateur : seules celles du géocodeur font foi.
+async function resolveClientLocation(
+  profile: BarberProfile,
+  address: string,
+): Promise<{ latitude: number; longitude: number }> {
+  if (profile.travelRadiusKm === null) {
+    throw new AppError(
+      409,
+      "BARBER_SERVICE_AREA_MISSING",
+      "Ce professionnel ne définit pas de zone d'intervention.",
+    );
+  }
+  if (
+    !isValidLatitude(profile.latitude) ||
+    !isValidLongitude(profile.longitude)
+  ) {
+    throw new AppError(
+      409,
+      "BARBER_COORDINATES_MISSING",
+      "Coordonnées du professionnel indisponibles.",
+    );
+  }
+
+  const geocoded = await geocodeAddress(address);
+  const distanceKm = haversineDistanceKm(
+    profile.latitude,
+    profile.longitude,
+    geocoded.latitude,
+    geocoded.longitude,
+  );
+  if (distanceKm > profile.travelRadiusKm) {
+    throw new AppError(
+      409,
+      "OUT_OF_SERVICE_AREA",
+      "Cette adresse est hors de la zone d'intervention du professionnel.",
+    );
+  }
+  return geocoded;
 }
 
 // Fenêtre UTC large (offset -14h..+14h + journée) couvrant toute réservation
@@ -299,6 +361,14 @@ export async function createBooking(
       );
     }
 
+    // 3b. Adresse client privée : requise et géocodée seulement pour AT_CLIENT ;
+    // nulle (non stockée) pour SALON / AT_PROVIDER. Le géocodage et le contrôle
+    // de zone sont faits ici, sous le verrou du profil.
+    const clientLocation =
+      input.place === "AT_CLIENT"
+        ? await resolveClientLocation(profile, input.clientAddress as string)
+        : null;
+
     // 4. Contexte de disponibilité, relu SOUS verrou.
     const [hours, timeOff, busy] = await Promise.all([
       loadWorkingHours(runner, profile.id, input.date),
@@ -344,6 +414,10 @@ export async function createBooking(
         durationMinutes: service.durationMinutes,
         priceMinor: service.priceMinor,
         currency: profile.currency,
+        clientAddress:
+          input.place === "AT_CLIENT" ? (input.clientAddress ?? null) : null,
+        clientLatitude: clientLocation?.latitude ?? null,
+        clientLongitude: clientLocation?.longitude ?? null,
         updatedAt: now,
       })
       .returning();
@@ -390,6 +464,46 @@ export async function listBookings(user: {
     .where(eq(bookings.clientUserId, user.id))
     .orderBy(asc(bookings.startAt));
   return rows.map((row) => toBooking(row.booking, row.clientName));
+}
+
+// Détail privé d'une réservation : adresse et coordonnées exactes du client,
+// réservées au CLIENT propriétaire, au BARBER concerné et à ADMIN. Tout autre
+// appel reçoit 404 (aucune fuite d'existence ni d'adresse).
+export async function getBookingDetails(
+  user: { id: string; role: Role },
+  bookingId: string,
+): Promise<BookingDetails> {
+  const [row] = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.id, bookingId))
+    .limit(1);
+  if (!row) {
+    throw new AppError(404, "BOOKING_NOT_FOUND", "Réservation introuvable.");
+  }
+
+  if (user.role === "CLIENT") {
+    if (row.clientUserId !== user.id) {
+      throw new AppError(404, "BOOKING_NOT_FOUND", "Réservation introuvable.");
+    }
+  } else if (user.role === "BARBER") {
+    const [profile] = await db
+      .select({ id: barberProfiles.id })
+      .from(barberProfiles)
+      .where(eq(barberProfiles.userId, user.id))
+      .limit(1);
+    if (!profile || profile.id !== row.barberProfileId) {
+      throw new AppError(404, "BOOKING_NOT_FOUND", "Réservation introuvable.");
+    }
+  }
+  // ADMIN : autorisé sans contrôle de propriété.
+
+  const [client] = await db
+    .select({ name: users.name })
+    .from(users)
+    .where(eq(users.id, row.clientUserId))
+    .limit(1);
+  return toBookingDetails(row, client?.name ?? null);
 }
 
 export async function confirmBooking(

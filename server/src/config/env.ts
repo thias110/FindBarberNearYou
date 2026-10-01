@@ -40,6 +40,10 @@ const envSchema = z.object({
     .positive()
     .default(15 * 60 * 1000),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+  // Clé API MapTiler côté SERVEUR pour géocoder l'adresse client (AT_CLIENT).
+  // Secret serveur : jamais exposé au navigateur. Absente → géocodage
+  // indisponible et réservations AT_CLIENT refusées.
+  MAPTILER_GEOCODING_API_KEY: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

@@ -126,6 +126,7 @@ npm start           # démarre le serveur compilé
 - `GET  /api/barbers/:barberId/slots` — créneaux disponibles (public, `barberId` = `barber_profiles.id`)
 - `POST /api/bookings` — création d'une réservation (CLIENT + CSRF)
 - `GET  /api/bookings` — réservations du CLIENT connecté ou du profil du BARBER connecté
+- `GET  /api/bookings/:bookingId` — détail privé (adresse client) du CLIENT propriétaire, du BARBER concerné ou d'ADMIN
 - `POST /api/bookings/:bookingId/confirm` — confirmation `PENDING` → `CONFIRMED` (BARBER propriétaire + CSRF)
 - `POST /api/bookings/:bookingId/cancel` — annulation (CLIENT dans le délai de 2 h, ou BARBER sans délai + CSRF)
 
@@ -308,7 +309,7 @@ ce lot.
   `service_description` (nullable), `duration_minutes`, `price_minor`, `currency`. Ces
   valeurs ne suivent pas les éventuelles modifications ultérieures du profil ou du
   service. Les colonnes `client_*` (adresse privée du client) sont nullables et
-  **inutilisées** dans ce lot (reste de #19).
+  **renseignées uniquement pour `AT_CLIENT`** (voir ci-dessous).
 - **Statuts** : enum `booking_status` complet dès maintenant — `PENDING`, `CONFIRMED`,
   `CANCELLED`, `COMPLETED`, `NO_SHOW`. Transitions câblées dans ce lot : création →
   `PENDING` ; confirmation barbier `PENDING` → `CONFIRMED` (pas d'auto-confirmation) ;
@@ -326,20 +327,35 @@ ce lot.
   BARBER), `409 BARBER_TIMEZONE_MISSING` (fuseau non renseigné), `404 SERVICE_NOT_FOUND`
   (service inactif ou étranger), `409 PLACE_NOT_OFFERED`.
 - **Création** : `POST /api/bookings` (CLIENT + CSRF) avec `barberId`, `serviceId`, `date`,
-  `startMinute` (0..1439) et `place`. Le serveur revalide le créneau **sous verrou du
-  profil** (`SELECT … FOR UPDATE`) : un créneau déjà pris, hors grille, hors délai/horizon,
-  couvert par une indisponibilité ou hors plage ouverte est refusé `409 SLOT_UNAVAILABLE`.
-  L'anti-double-réservation est applicatif (verrou transactionnel) car `btree_gist` n'est
-  pas disponible sous PGlite ; aucune contrainte d'exclusion PostgreSQL dans ce lot.
+  `startMinute` (0..1439), `place` et, **uniquement pour `AT_CLIENT`**, `clientAddress`.
+  Le serveur revalide le créneau **sous verrou du profil** (`SELECT … FOR UPDATE`) : un
+  créneau déjà pris, hors grille, hors délai/horizon, couvert par une indisponibilité ou
+  hors plage ouverte est refusé `409 SLOT_UNAVAILABLE`. L'anti-double-réservation est
+  applicatif (verrou transactionnel) car `btree_gist` n'est pas disponible sous PGlite ;
+  aucune contrainte d'exclusion PostgreSQL dans ce lot.
+- **Prestation chez le client (`AT_CLIENT`)** : `clientAddress` obligatoire (sinon
+  `400 VALIDATION_ERROR`) ; pour `SALON`/`AT_PROVIDER`, toute `clientAddress` est refusée
+  et rien n'est stocké. Le serveur géocode l'adresse (MapTiler, clé serveur
+  `MAPTILER_GEOCODING_API_KEY`) puis refuse `409 OUT_OF_SERVICE_AREA` si la distance
+  Haversine dépasse `travel_radius_km`. Zone non configurée →
+  `409 BARBER_SERVICE_AREA_MISSING` ; géocodeur absent/en panne → `503
+  GEOCODING_UNAVAILABLE` ; adresse introuvable → `404 ADDRESS_NOT_FOUND`. Les coordonnées
+  ne sont **jamais** acceptées depuis le navigateur : seules celles du géocodeur serveur
+  font foi.
 - **Confirmation / annulation** : propriété vérifiée (anti-IDOR, 404 sinon). Confirmation
   refusée si le statut n'est pas `PENDING` (`409 INVALID_STATUS_TRANSITION`). Annulation
   client trop tardive → `409 CANCELLATION_TOO_LATE`. `cancelled_by` (`CLIENT`/`BARBER`) et
   `cancelled_at` sont enregistrés.
 - **Lecture** : `GET /api/bookings` renvoie les réservations du CLIENT connecté, ou celles
   du profil du BARBER connecté (tri par `start_at`). `clientName` est exposé au BARBER via
-  une jointure sur `users.name` (nullable).
-- **Hors de ce lot** : interface client de réservation, `COMPLETED`/`NO_SHOW`, adresse
-  client privée et ses autorisations, refus hors zone et temps de déplacement.
+  une jointure sur `users.name` (nullable). **Aucune adresse dans les listes.**
+- **Détail privé** : `GET /api/bookings/:bookingId` renvoie `clientAddress`,
+  `clientLatitude` et `clientLongitude` uniquement au CLIENT propriétaire, au BARBER
+  concerné et à ADMIN ; tout autre rôle ou propriétaire reçoit `404` (aucune fuite
+  d'existence ni d'adresse). L'adresse n'apparaît jamais dans `GET /api/barbers`,
+  `GET /api/barbers/:barberId`, la recherche, la carte ni les DTO publics.
+- **Hors de ce lot** : interface client de réservation, `COMPLETED`/`NO_SHOW`, et temps de
+  déplacement.
 
 ## Carte (MapLibre GL JS + MapTiler)
 

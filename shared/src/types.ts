@@ -160,6 +160,16 @@ export interface BookingsResponse {
   bookings: Booking[];
 }
 
+// Détails privés d'une réservation (lot 9 passe A, issue #19). L'adresse et les
+// coordonnées exactes du client ne sont exposées qu'au CLIENT propriétaire, au
+// BARBER concerné et à ADMIN, via l'endpoint de détail uniquement. Jamais dans
+// les listes ni dans les réponses publiques.
+export interface BookingDetails extends Booking {
+  clientAddress: string | null;
+  clientLatitude: number | null;
+  clientLongitude: number | null;
+}
+
 export interface BookingSlotDto {
   startAt: string;
   endAt: string;

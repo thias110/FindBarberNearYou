@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SERVICE_PLACES } from "../constants";
+import { LIMITS, SERVICE_PLACES } from "../constants";
 import { isValidCalendarDate } from "../dates";
 
 const objectIdSchema = z
@@ -18,6 +18,15 @@ const calendarDateSchema = z
 
 const servicePlaceSchema = z.enum(SERVICE_PLACES);
 
+// Adresse client privée, géocodée côté serveur. Requise uniquement pour
+// `AT_CLIENT` ; interdite pour les autres lieux. Les coordonnées ne sont JAMAIS
+// acceptées du navigateur : seules celles du géocodeur serveur font foi.
+const clientAddressSchema = z
+  .string()
+  .trim()
+  .min(1, "L'adresse est requise.")
+  .max(LIMITS.clientAddress, "L'adresse est trop longue.");
+
 // --- Réservation (création) ---
 // Le client ne choisit QUE la date et la minute murale locale : le serveur
 // recalcule les créneaux et fait autorité. Aucun instant UTC ni prix/durée
@@ -33,8 +42,27 @@ export const bookingCreateSchema = z
       .min(0, "La minute de début ne peut pas être négative.")
       .max(1439, "La minute de début ne peut pas dépasser 23:59."),
     place: servicePlaceSchema,
+    clientAddress: clientAddressSchema.optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.place === "AT_CLIENT") {
+      if (!data.clientAddress) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Une adresse est requise pour une prestation chez le client.",
+          path: ["clientAddress"],
+        });
+      }
+    } else if (data.clientAddress) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "L'adresse client n'est autorisée que pour une prestation chez le client (AT_CLIENT).",
+        path: ["clientAddress"],
+      });
+    }
+  });
 
 export type BookingCreateInput = z.infer<typeof bookingCreateSchema>;
 

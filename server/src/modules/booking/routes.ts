@@ -7,6 +7,7 @@ import {
   cancelBooking,
   confirmBooking,
   createBooking,
+  getBookingDetails,
   listBookings,
 } from "./service.js";
 
@@ -39,6 +40,21 @@ bookingRouter.get(
       role: req.user!.role,
     });
     res.json({ bookings });
+  },
+);
+
+// Détail privé : adresse et coordonnées exactes du client, réservées au CLIENT
+// propriétaire, au BARBER concerné et à ADMIN (404 sinon).
+bookingRouter.get(
+  "/:bookingId",
+  requireAuth,
+  requireRole("CLIENT", "BARBER", "ADMIN"),
+  async (req, res) => {
+    const booking = await getBookingDetails(
+      { id: req.user!.id, role: req.user!.role },
+      req.params.bookingId as string,
+    );
+    res.json({ booking });
   },
 );
 

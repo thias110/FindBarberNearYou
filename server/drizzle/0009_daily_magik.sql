@@ -1,0 +1,1 @@
+ALTER TABLE "bookings" ADD CONSTRAINT "bookings_client_coordinates_together" CHECK (("bookings"."client_latitude" IS NULL) = ("bookings"."client_longitude" IS NULL));

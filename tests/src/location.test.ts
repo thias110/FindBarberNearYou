@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   approximateCoordinate,
   approximateCoordinates,
+  haversineDistanceKm,
+  isValidLatitude,
+  isValidLongitude,
 } from "../../server/src/lib/location";
 
 describe("approximateCoordinate", () => {
@@ -44,5 +47,44 @@ describe("approximateCoordinate", () => {
       latitude: -33.87,
       longitude: 151.21,
     });
+  });
+});
+
+describe("haversineDistanceKm", () => {
+  it("returns 0 for identical points", () => {
+    expect(haversineDistanceKm(46.2044, 6.1432, 46.2044, 6.1432)).toBe(0);
+  });
+
+  it("computes the approximate distance between two cities", () => {
+    // Genève → Zurich ≈ 224 km.
+    const distance = haversineDistanceKm(46.2044, 6.1432, 47.3769, 8.5417);
+    expect(distance).toBeGreaterThan(200);
+    expect(distance).toBeLessThan(250);
+  });
+
+  it("is symmetric", () => {
+    const ab = haversineDistanceKm(46.2, 6.14, 47.37, 8.54);
+    const ba = haversineDistanceKm(47.37, 8.54, 46.2, 6.14);
+    expect(ab).toBeCloseTo(ba, 10);
+  });
+
+  it("throws a generic error for invalid coordinates (no private leak)", () => {
+    expect(() => haversineDistanceKm(91, 0, 0, 0)).toThrow("Coordonnées invalides.");
+    expect(() => haversineDistanceKm(0, 181, 0, 0)).toThrow("Coordonnées invalides.");
+    expect(() => haversineDistanceKm(0, 0, -91, 0)).toThrow("Coordonnées invalides.");
+  });
+});
+
+describe("coordinate validation", () => {
+  it("validates latitudes and longitudes", () => {
+    expect(isValidLatitude(0)).toBe(true);
+    expect(isValidLatitude(90)).toBe(true);
+    expect(isValidLatitude(-90)).toBe(true);
+    expect(isValidLatitude(90.1)).toBe(false);
+    expect(isValidLatitude(Number.NaN)).toBe(false);
+    expect(isValidLongitude(0)).toBe(true);
+    expect(isValidLongitude(180)).toBe(true);
+    expect(isValidLongitude(-180)).toBe(true);
+    expect(isValidLongitude(180.1)).toBe(false);
   });
 });

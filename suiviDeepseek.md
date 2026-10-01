@@ -1504,3 +1504,96 @@ d'issue.
 - Rendu navigateur non exécuté ; aucune UI de réservation dans ce lot.
 - Restent hors lot : interface client, `COMPLETED`/`NO_SHOW`, adresse client privée et
   autorisations, refus hors zone et temps de déplacement (#19).
+
+---
+
+# Suivi — lot 9 passe A : flux privé « prestation chez le client » (issue #19)
+
+État : code, tests et documentation écrits sur `main`. Migration **NON générée ni
+appliquée** (instruction : présenter le SQL avant `db:generate`/`db:migrate`). Aucune
+branche, commit, push, PR ni issue. `npm test`, `npm run build`, `npm run lint`,
+`db:generate` et `db:migrate` volontairement NON lancés. `npm run typecheck` exécuté ✅.
+
+## Décisions appliquées
+
+- `AT_CLIENT` : `clientAddress` obligatoire (Zod), géocodée côté serveur, refus hors
+  rayon via `travel_radius_km` (`409 OUT_OF_SERVICE_AREA`).
+- `SALON` / `AT_PROVIDER` : `clientAddress` refusée (400) et rien n'est stocké.
+- Adresse et coordonnées exactes client privées : exposées uniquement au CLIENT
+  propriétaire, au BARBER concerné et à ADMIN, via `GET /api/bookings/:bookingId`.
+  Jamais dans les listes ni les routes publiques.
+- Coordonnées client jamais acceptées du navigateur : seules celles du géocodeur
+  serveur font foi.
+- Abstraction de géocodage injectable (`server/src/lib/geocoding.ts`), fournisseur
+  MapTiler uniquement si `MAPTILER_GEOCODING_API_KEY` présente ; timeout 5 s ;
+  erreurs `ADDRESS_NOT_FOUND` (404) et `GEOCODING_UNAVAILABLE` (503) ; aucune fuite
+  de l'adresse dans les messages.
+- Distance Haversine pure + validation de coordonnées dans `server/src/lib/location.ts`
+  (message d'erreur générique, aucune coordonnée privée).
+
+## Fichiers créés
+
+- `server/src/lib/geocoding.ts`
+- `tests/src/geocoding.test.ts`
+- `tests/src/booking-at-client.test.ts`
+
+## Fichiers modifiés
+
+- `shared/src/schema.ts` (CHECK `bookings_client_coordinates_together`)
+- `shared/src/constants.ts` (`LIMITS.clientAddress = 200`)
+- `shared/src/validation/booking.ts` (`clientAddress` conditionnel AT_CLIENT)
+- `shared/src/types.ts` (`BookingDetails`)
+- `server/src/lib/location.ts` (Haversine + validation coordonnées)
+- `server/src/config/env.ts` (`MAPTILER_GEOCODING_API_KEY` optionnelle)
+- `server/src/modules/booking/service.ts` (géocodage/zone + `getBookingDetails`)
+- `server/src/modules/booking/routes.ts` (`GET /api/bookings/:bookingId`)
+- `.env.example` (variable serveur MapTiler documentée, sans clé)
+- `README.md` (routes + section AT_CLIENT/privée)
+- `tests/src/location.test.ts` (Haversine + validation)
+
+## Migration attendue (NON générée — SQL prévisionnel)
+
+```sql
+ALTER TABLE "bookings" ADD CONSTRAINT "bookings_client_coordinates_together" CHECK (("bookings"."client_latitude" IS NULL) = ("bookings"."client_longitude" IS NULL));
+```
+
+Additive uniquement, aucune colonne ajoutée (les colonnes `client_*` existent déjà
+depuis le lot 9), pas de trigger, pas de renommage.
+
+## Variables d'environnement
+
+- `MAPTILER_GEOCODING_API_KEY` (serveur, secrète, optionnelle). Absente → géocodage
+  indisponible, réservations AT_CLIENT refusées (`503 GEOCODING_UNAVAILABLE`).
+
+## Routes / DTO
+
+- Nouvelle route : `GET /api/bookings/:bookingId` (auth + CLIENT/BARBER/ADMIN), renvoie
+  `BookingDetails` (adresse + coordonnées) au seul propriétaire autorisé, 404 sinon.
+- `POST /api/bookings` accepte `clientAddress` uniquement pour `AT_CLIENT`.
+- `Booking` (public) inchangé ; `BookingDetails extends Booking` privé.
+
+## Stratégie de tests
+
+- `tests/src/geocoding.test.ts` : MapTilerGeocoder avec `fetch` mocké (succès, vide →
+  ADDRESS_NOT_FOUND, HTTP 500/réseau → GEOCODING_UNAVAILABLE, coordonnées invalides) +
+  injection `setGeocoder`.
+- `tests/src/booking-at-client.test.ts` : intégration supertest avec géocodeur injecté —
+  adresse manquante (400), dans le rayon (201 + persistance + détail propriétaire),
+  hors rayon (409 OUT_OF_SERVICE_AREA), géocodeur indisponible (503) / introuvable
+  (404), SALON/AT_PROVIDER sans adresse + refus, détail CLIENT/BARBER/ADMIN autorisés,
+  autre client/barber 404, aucune fuite dans les routes publiques.
+- `tests/src/location.test.ts` : Haversine (0, Genève→Zurich ≈ 224 km, symétrie) et
+  validation de coordonnées.
+
+## Commandes NON lancées (attente validation)
+
+`npm run lint`, `npm test`, `npm run build`, `npm run db:generate`, `npm run db:migrate`.
+
+## Risques / décisions restantes
+
+- Le géocodage réel MapTiler n'est pas testé de bout en bout (aucun appel HTTP en test).
+- `clientCity`/`clientPostalCode`/`clientCountryCode` restent non renseignés (seule
+  l'adresse libre + les coordonnées sont stockées) : à décider si le géocodeur doit
+  renvoyer aussi les composants structurés.
+- La limite de longueur d'adresse est appliquée côté Zod (`LIMITS.clientAddress = 200`),
+  pas en CHECK SQL (convention existante : `profileAddress` également sans CHECK).
