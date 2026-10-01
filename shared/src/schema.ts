@@ -15,6 +15,7 @@ import {
 } from "drizzle-orm/pg-core";
 import {
   AUDIENCES,
+  BOOKING_STATUSES,
   LIMITS,
   ROLES,
   SERVICE_PLACES,
@@ -29,6 +30,9 @@ export const currencyEnum = pgEnum("currency", [...SUPPORTED_CURRENCIES]);
 export const audienceEnum = pgEnum("audience", [...AUDIENCES]);
 export const techniqueEnum = pgEnum("technique", [...TECHNIQUES]);
 export const servicePlaceEnum = pgEnum("service_place", [...SERVICE_PLACES]);
+export const bookingStatusEnum = pgEnum("booking_status", [
+  ...BOOKING_STATUSES,
+]);
 
 export const users = pgTable(
   "users",
@@ -314,3 +318,85 @@ export const barberTimeOff = pgTable(
 
 export type BarberTimeOff = typeof barberTimeOff.$inferSelect;
 export type NewBarberTimeOff = typeof barberTimeOff.$inferInsert;
+
+// Réservations (lot 9). `start_at`/`end_at` sont des instants **UTC**
+// (`timestamptz`), calculés depuis les minutes murales locales du barber et son
+// fuseau IANA. Prix/durée/currency et snapshots texte sont figés à la création.
+// Les colonnes `client_*` (adresse) sont nullables et **inutilisées** dans ce
+// lot : elles préparent le reste de #19. Le lieu réutilise l'enum existant
+// `service_place`. Aucune contrainte d'exclusion : `btree_gist` n'est pas
+// disponible sous PGlite (dev/tests) ; l'anti-double-réservation est assuré par
+// verrou transactionnel applicatif.
+export const bookings = pgTable(
+  "bookings",
+  {
+    id: text("id").primaryKey(),
+    clientUserId: text("client_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    barberProfileId: text("barber_profile_id")
+      .notNull()
+      .references(() => barberProfiles.id, { onDelete: "cascade" }),
+    serviceId: text("service_id")
+      .notNull()
+      .references(() => barberServices.id, { onDelete: "restrict" }),
+    startAt: timestamp("start_at", { withTimezone: true }).notNull(),
+    endAt: timestamp("end_at", { withTimezone: true }).notNull(),
+    servicePlace: servicePlaceEnum("service_place").notNull(),
+    status: bookingStatusEnum("status").notNull().default("PENDING"),
+    // Snapshots figés à la création.
+    barberDisplayName: text("barber_display_name").notNull(),
+    serviceName: text("service_name").notNull(),
+    serviceDescription: text("service_description"),
+    durationMinutes: integer("duration_minutes").notNull(),
+    priceMinor: integer("price_minor").notNull(),
+    currency: currencyEnum("currency").notNull(),
+    // Adresse client : nullables, inutilisées dans ce lot (reste de #19).
+    clientAddress: text("client_address"),
+    clientCity: text("client_city"),
+    clientPostalCode: text("client_postal_code"),
+    clientCountryCode: text("client_country_code"),
+    clientLatitude: doublePrecision("client_latitude"),
+    clientLongitude: doublePrecision("client_longitude"),
+    cancelledBy: text("cancelled_by"),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("bookings_barber_start_idx").on(
+      table.barberProfileId,
+      table.startAt,
+    ),
+    index("bookings_client_start_idx").on(table.clientUserId, table.startAt),
+    index("bookings_status_idx").on(table.status),
+    check("bookings_period_order", sql`${table.startAt} < ${table.endAt}`),
+    check(
+      "bookings_duration_range",
+      sql`${table.durationMinutes} BETWEEN ${sql.raw(
+        String(LIMITS.serviceDurationMin),
+      )} AND ${sql.raw(String(LIMITS.serviceDurationMax))}`,
+    ),
+    check(
+      "bookings_price_range",
+      sql`${table.priceMinor} BETWEEN ${sql.raw(
+        String(LIMITS.servicePriceMinorMin),
+      )} AND ${sql.raw(String(LIMITS.servicePriceMinorMax))}`,
+    ),
+    check(
+      "bookings_client_latitude_range",
+      sql`${table.clientLatitude} IS NULL OR ${table.clientLatitude} BETWEEN -90 AND 90`,
+    ),
+    check(
+      "bookings_client_longitude_range",
+      sql`${table.clientLongitude} IS NULL OR ${table.clientLongitude} BETWEEN -180 AND 180`,
+    ),
+  ],
+);
+
+export type BookingRow = typeof bookings.$inferSelect;
+export type NewBookingRow = typeof bookings.$inferInsert;

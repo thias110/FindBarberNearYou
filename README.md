@@ -123,6 +123,11 @@ npm start           # démarre le serveur compilé
 - `DELETE /api/barber/time-off/:timeOffId` — suppression d'une indisponibilité possédée (BARBER + CSRF, 404 sinon)
 - `GET  /api/barbers` — recherche publique (voir ci-dessous)
 - `GET  /api/barbers/:barberId` — profil public + services actifs (public, `barberId` = `barber_profiles.id`)
+- `GET  /api/barbers/:barberId/slots` — créneaux disponibles (public, `barberId` = `barber_profiles.id`)
+- `POST /api/bookings` — création d'une réservation (CLIENT + CSRF)
+- `GET  /api/bookings` — réservations du CLIENT connecté ou du profil du BARBER connecté
+- `POST /api/bookings/:bookingId/confirm` — confirmation `PENDING` → `CONFIRMED` (BARBER propriétaire + CSRF)
+- `POST /api/bookings/:bookingId/cancel` — annulation (CLIENT dans le délai de 2 h, ou BARBER sans délai + CSRF)
 
 Erreurs normalisées : `{ "error": { "code": "...", "message": "..." } }`.
 
@@ -286,6 +291,55 @@ indisponibilités restent communs au professionnel, tous lieux confondus.
   FK `ON DELETE CASCADE`, index sur `place`) et enum `service_place`.
 - **Hors de ce lot** : choix du lieu à la réservation, adresse client privée et
   autorisations de lecture, refus hors zone côté serveur, calcul de temps de déplacement.
+
+### Réservations de base (lot 9)
+
+Le client choisit une prestation, une date et une heure ; le serveur recalcule et fait
+autorité (jamais de confiance au frontend). Seul le statut `PENDING` est posé à la
+création ; la confirmation est manuelle par le barbier (`CONFIRMED`), l'annulation est
+`CANCELLED`. `COMPLETED` et `NO_SHOW` existent dans l'enum mais sans logique métier dans
+ce lot.
+
+- **Modèle** : table `bookings` (migration additive `0008_*`). `start_at`/`end_at` sont
+  des instants **UTC** (`timestamptz`), calculés depuis les minutes murales locales du
+  barbier et son fuseau IANA. Le lieu réutilise l'enum existant `service_place`
+  (`SALON`, `AT_PROVIDER`, `AT_CLIENT`) : aucun enum `booking_place` n'est créé.
+- **Snapshots figés à la création** : `barber_display_name`, `service_name`,
+  `service_description` (nullable), `duration_minutes`, `price_minor`, `currency`. Ces
+  valeurs ne suivent pas les éventuelles modifications ultérieures du profil ou du
+  service. Les colonnes `client_*` (adresse privée du client) sont nullables et
+  **inutilisées** dans ce lot (reste de #19).
+- **Statuts** : enum `booking_status` complet dès maintenant — `PENDING`, `CONFIRMED`,
+  `CANCELLED`, `COMPLETED`, `NO_SHOW`. Transitions câblées dans ce lot : création →
+  `PENDING` ; confirmation barbier `PENDING` → `CONFIRMED` (pas d'auto-confirmation) ;
+  annulation (`PENDING`/`CONFIRMED`) → `CANCELLED`. `COMPLETED`/`NO_SHOW` restent sans
+  transition.
+- **Délais** : réservation possible au plus tôt **30 minutes** avant le début, au plus
+  tard **60 jours** à l'avance. Annulation client autorisée jusqu'à **2 heures** avant le
+  début ; le barbier peut annuler sans cette limite.
+- **Grille de créneaux non fixe** : pas de pas de 15 minutes. La grille suit la durée de
+  la prestation (un créneau commence au début d'une plage ouverte puis toutes les
+  `durationMinutes`) ; deux créneaux d'une même prestation ne se chevauchent donc jamais.
+- **Créneaux publics** : `GET /api/barbers/:barberId/slots?serviceId&date&place` renvoie
+  des créneaux UTC (`startAt`, `endAt`, `startMinute`). La `date` est une date civile
+  dans le fuseau du professionnel. Refus `404 BARBER_NOT_FOUND` (profil inactif ou non
+  BARBER), `409 BARBER_TIMEZONE_MISSING` (fuseau non renseigné), `404 SERVICE_NOT_FOUND`
+  (service inactif ou étranger), `409 PLACE_NOT_OFFERED`.
+- **Création** : `POST /api/bookings` (CLIENT + CSRF) avec `barberId`, `serviceId`, `date`,
+  `startMinute` (0..1439) et `place`. Le serveur revalide le créneau **sous verrou du
+  profil** (`SELECT … FOR UPDATE`) : un créneau déjà pris, hors grille, hors délai/horizon,
+  couvert par une indisponibilité ou hors plage ouverte est refusé `409 SLOT_UNAVAILABLE`.
+  L'anti-double-réservation est applicatif (verrou transactionnel) car `btree_gist` n'est
+  pas disponible sous PGlite ; aucune contrainte d'exclusion PostgreSQL dans ce lot.
+- **Confirmation / annulation** : propriété vérifiée (anti-IDOR, 404 sinon). Confirmation
+  refusée si le statut n'est pas `PENDING` (`409 INVALID_STATUS_TRANSITION`). Annulation
+  client trop tardive → `409 CANCELLATION_TOO_LATE`. `cancelled_by` (`CLIENT`/`BARBER`) et
+  `cancelled_at` sont enregistrés.
+- **Lecture** : `GET /api/bookings` renvoie les réservations du CLIENT connecté, ou celles
+  du profil du BARBER connecté (tri par `start_at`). `clientName` est exposé au BARBER via
+  une jointure sur `users.name` (nullable).
+- **Hors de ce lot** : interface client de réservation, `COMPLETED`/`NO_SHOW`, adresse
+  client privée et ses autorisations, refus hors zone et temps de déplacement.
 
 ## Carte (MapLibre GL JS + MapTiler)
 

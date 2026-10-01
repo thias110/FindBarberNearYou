@@ -4,6 +4,8 @@
 // serveur, aucun recours à `Date` local, donc aucun effet du DST. Le fuseau du
 // professionnel n'est appliqué que plus tard, par le futur moteur de créneaux.
 
+import type { Weekday } from "./constants";
+
 const CALENDAR_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
@@ -61,7 +63,8 @@ export function compareCalendarDates(a: string, b: string): number {
 
 // Millisecondes UTC depuis l'epoch, sans passer par un fuseau : `setUTCFullYear`
 // gère aussi les années 0000-0099 que `Date.UTC` interpréterait comme 19xx.
-function toUtcMillis(value: string): number {
+// Lève pour une date civile invalide.
+export function calendarDateToUtcMillis(value: string): number {
   const parts = splitCalendarDate(value);
   if (!parts) throw new Error(`Date calendaire invalide : ${value}`);
   const date = new Date(0);
@@ -71,11 +74,26 @@ function toUtcMillis(value: string): number {
 }
 
 /**
+ * Jour ISO-8601 (1 = lundi … 7 = dimanche) d'une date civile `AAAA-MM-JJ`.
+ * Calcul en UTC : indépendant du fuseau local. Lève si la date est invalide.
+ */
+export function weekdayFromCalendarDate(value: string): Weekday {
+  const parts = splitCalendarDate(value);
+  if (!parts) throw new Error(`Date calendaire invalide : ${value}`);
+  const date = new Date(0);
+  date.setUTCFullYear(parts.year, parts.month - 1, parts.day);
+  date.setUTCHours(0, 0, 0, 0);
+  // getUTCDay : 0 = dimanche … 6 = samedi → 1 = lundi … 7 = dimanche.
+  return (((date.getUTCDay() + 6) % 7) + 1) as Weekday;
+}
+
+/**
  * Nombre de jours inclus dans `[startDate, endDate]` (bornes comprises).
  * Calcul en UTC : insensible au fuseau local et aux changements d'heure.
  * Suppose des dates civiles valides et `startDate <= endDate`.
  */
 export function inclusiveDayCount(startDate: string, endDate: string): number {
-  const diff = toUtcMillis(endDate) - toUtcMillis(startDate);
+  const diff =
+    calendarDateToUtcMillis(endDate) - calendarDateToUtcMillis(startDate);
   return Math.round(diff / 86_400_000) + 1;
 }

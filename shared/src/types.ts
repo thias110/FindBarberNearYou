@@ -1,5 +1,6 @@
 import type {
   Audience,
+  BookingStatus,
   Currency,
   ROLES,
   ServicePlace,
@@ -128,4 +129,43 @@ export interface TimeOff {
 
 export interface TimeOffResponse {
   timeOff: TimeOff[];
+}
+
+// --- Réservations (lot 9) ---
+// `startAt`/`endAt` sont des instants UTC (ISO 8601). Les snapshots figent le
+// nom du professionnel, le nom/la description du service, la durée, le prix et
+// la devise au moment de la réservation. L'adresse client n'est pas exposée
+// dans ce lot.
+export interface Booking {
+  id: string;
+  barberId: string;
+  serviceId: string;
+  barberDisplayName: string;
+  serviceName: string;
+  serviceDescription: string | null;
+  durationMinutes: number;
+  priceMinor: number;
+  currency: Currency;
+  servicePlace: ServicePlace;
+  status: BookingStatus;
+  startAt: string;
+  endAt: string;
+  clientName: string | null;
+  cancelledBy: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+}
+
+export interface BookingsResponse {
+  bookings: Booking[];
+}
+
+export interface BookingSlotDto {
+  startAt: string;
+  endAt: string;
+  startMinute: number;
+}
+
+export interface BookingSlotsResponse {
+  slots: BookingSlotDto[];
 }

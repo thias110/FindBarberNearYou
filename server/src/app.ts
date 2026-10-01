@@ -7,6 +7,7 @@ import { authRouter } from "./modules/auth/routes.js";
 import { adminRouter } from "./modules/admin/routes.js";
 import { barberRouter } from "./modules/barber/routes.js";
 import { barbersRouter } from "./modules/barber/publicRoutes.js";
+import { bookingRouter } from "./modules/booking/routes.js";
 import { errorHandler } from "./middleware/error.js";
 
 export interface AppOptions {
@@ -48,6 +49,7 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api/admin", adminRouter);
   app.use("/api/barber", barberRouter);
   app.use("/api/barbers", barbersRouter);
+  app.use("/api/bookings", bookingRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Route not found." } });

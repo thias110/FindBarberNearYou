@@ -70,6 +70,29 @@ export const SERVICE_PLACE_LABELS: Record<ServicePlace, string> = {
   AT_CLIENT: "Chez le client",
 };
 
+// --- Réservations (lot 9) ---
+// Enum complet des statuts dès maintenant ; seules les transitions
+// PENDING→CONFIRMED (barber) et →CANCELLED sont câblées dans ce lot.
+// `ACTIVE_BOOKING_STATUSES` = statuts qui bloquent un créneau.
+export const BOOKING_STATUSES = [
+  "PENDING",
+  "CONFIRMED",
+  "CANCELLED",
+  "COMPLETED",
+  "NO_SHOW",
+] as const;
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+
+export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
+  PENDING: "En attente de confirmation",
+  CONFIRMED: "Confirmée",
+  CANCELLED: "Annulée",
+  COMPLETED: "Terminée",
+  NO_SHOW: "Absence",
+};
+
+export const ACTIVE_BOOKING_STATUSES = ["PENDING", "CONFIRMED"] as const;
+
 // Mention obligatoire de l'arrondi des coordonnées publiques. Cet arrondi
 // réduit la précision mais ne garantit pas l'anonymat.
 export const APPROXIMATE_LOCATION_LABEL = "Localisation approximative";
@@ -131,4 +154,10 @@ export const LIMITS = {
   // kilomètres, requis uniquement si `AT_CLIENT` est sélectionné.
   travelRadiusKmMin: 1,
   travelRadiusKmMax: 100,
+  // Réservations (lot 9) : délai minimal avant le début, horizon de réservation
+  // et délai limite d'annulation côté client. La grille de créneaux n'est PAS
+  // fixe (pas de pas de 15 minutes) : elle suit la durée de la prestation.
+  bookingLeadTimeMinutes: 30,
+  bookingHorizonDays: 60,
+  bookingClientCancelMinMinutes: 120,
 } as const;

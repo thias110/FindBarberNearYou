@@ -1362,3 +1362,145 @@ fonctionnelle, CHECK 1..100 appliqué, enum et unicité vérifiés.
 - Ce sous-lot **ne termine pas #19** : restent le choix du lieu à la réservation,
   l'adresse client privée et ses autorisations, le refus hors zone côté serveur
   et la prise en compte des déplacements.
+
+---
+
+# Suivi — lot 9 : réservation de base (issue #19, suite)
+
+État : code, tests, README et migration écrits sur `main`. Migration `0008` **générée
+mais NON appliquée** à la base PGlite de dev (vérifié : `bookings`/`booking_status`
+absents). Aucune branche, commit, push, PR ni changement d'issue. Aucune interface
+client de réservation dans ce lot.
+
+## Décisions appliquées (validation utilisateur)
+
+- **Pas de nouvel enum `booking_place`** : réutilisation de l'enum existant
+  `service_place` (`SALON`, `AT_PROVIDER`, `AT_CLIENT`) pour `bookings.service_place`.
+- **Enum complet des statuts** `booking_status` : `PENDING`, `CONFIRMED`, `CANCELLED`,
+  `COMPLETED`, `NO_SHOW`. Seules les transitions sont câblées : création client →
+  `PENDING` ; confirmation barber `PENDING` → `CONFIRMED` (pas d'auto-confirmation) ;
+  annulation (`PENDING`/`CONFIRMED`) → `CANCELLED`. `COMPLETED`/`NO_SHOW` sans logique
+  métier.
+- **Snapshot barber minimal** figé à la création : `barber_display_name` (NOT NULL),
+  `service_name` (NOT NULL), `service_description` (nullable), `duration_minutes`,
+  `price_minor`, `currency`. Les colonnes `client_*` (adresse) sont nullables et
+  inutilisées dans ce lot.
+- **Délais figés** : délai minimal 30 min (`bookingLeadTimeMinutes`), horizon maximal
+  60 jours (`bookingHorizonDays`), annulation client jusqu'à 2 h avant
+  (`bookingClientCancelMinMinutes`) ; le barber annule sans limite.
+- **Grille non fixe (pas de pas de 15 minutes)** : la grille suit la durée de la
+  prestation. `computeBookingSlots` n'a plus de paramètre `stepMinutes` ; le pas est
+  `durationMinutes`. Deux créneaux d'une même prestation ne se chevauchent donc jamais.
+
+## Contrôle serveur strict
+
+- Le client ne fournit que `barberId`, `serviceId`, `date`, `startMinute`, `place`
+  (Zod `.strict()` : tout champ inconnu est rejeté). Aucun instant UTC, prix ni durée
+  acceptés depuis le frontend.
+- Le créneau est **recalculé** côté serveur et doit correspondre exactement à
+  `startMinute` (hors grille → `409 SLOT_UNAVAILABLE`).
+- Création dans une transaction avec verrou `SELECT … FOR UPDATE` sur le profil : les
+  créations simultanées du même barber sont sérialisées ; l'anti-double-réservation est
+  applicatif (pas de contrainte d'exclusion : `btree_gist` indisponible sous PGlite).
+- Propriété vérifiée sur confirm/cancel/list (anti-IDOR, 404 sinon) ; rôles et CSRF
+  contrôlés par les middlewares existants.
+
+## Fichiers créés
+
+- `server/src/modules/booking/routes.ts` + `service.ts`
+- `shared/src/booking.ts` (moteur de créneaux pur)
+- `shared/src/validation/booking.ts`
+- `server/drizzle/0008_panoramic_inertia.sql` + `server/drizzle/meta/0008_snapshot.json`
+- `tests/src/slots.test.ts`
+- `tests/src/booking.validation.test.ts`
+- `tests/src/booking.integration.test.ts`
+- `tests/src/migration-bookings.test.ts`
+
+## Fichiers modifiés
+
+- `shared/src/constants.ts` (`BOOKING_STATUSES`, `ACTIVE_BOOKING_STATUSES`, bornes
+  réservation ; suppression de `bookingSlotStepMinutes`)
+- `shared/src/schema.ts` (enum `booking_status`, table `bookings`)
+- `shared/src/types.ts` (`Booking`, `BookingSlotDto`, réponses)
+- `shared/src/dates.ts` (`calendarDateToUtcMillis`, `weekdayFromCalendarDate`)
+- `shared/src/timezones.ts` (`zonedTimeToUtc`, `utcToZonedParts`)
+- `shared/src/index.ts`, `shared/src/validation/index.ts`, `shared/package.json`
+  (exports `./booking`, validation booking)
+- `server/src/app.ts` (`/api/bookings`)
+- `server/src/db/client.ts` (table `bookings` enregistrée)
+- `server/src/modules/barber/publicRoutes.ts` (`GET /api/barbers/:barberId/slots`)
+- `server/drizzle/meta/_journal.json` (entrée 0008)
+- `README.md` (routes + section « Réservations de base (lot 9) »)
+
+## Migration générée (relue, NON appliquée)
+
+`0008_panoramic_inertia.sql` : `CREATE TYPE booking_status` (5 valeurs), `CREATE TABLE
+bookings` (24 colonnes, `service_place` réutilise l'enum `service_place`, snapshots,
+CHECK période/prix/durée/lat/lon, FK CLIENT cascade / profil cascade / service restrict),
+3 index (`(barber_profile_id, start_at)`, `(client_user_id, start_at)`, `status`).
+`npm run db:generate` confirme « No schema changes » après coup. Non destructive,
+additive uniquement, aucun backfill.
+
+## Commandes réellement exécutées
+
+| Commande | Résultat |
+|---|---|
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm test` | ✅ **276/276** (26 fichiers) — +32 vs lot 8 |
+| `npm run build` | ✅ server `dist/index.js` 91.28 KB ; client `index` gzip 94.47 Ko |
+| `npm run db:generate` | ✅ « No schema changes, nothing to migrate » |
+| `npm run db:migrate` | ⛔ non exécuté (SQL non validé, voir ci-dessous) |
+
+## Points de vigilance / suite
+
+- SQL `0008` **non appliqué** : en attente de validation utilisateur avant
+  `npm run db:migrate` (même processus que les lots précédents).
+- Sémantique « grille non fixe » interprétée comme **pas = durée de la prestation** ;
+  à confirmer si un pas configurable par professionnel est attendu plus tard.
+- Concurrence PostgreSQL multi-connexions non démontrée (PGlite mono-connexion) ; le
+  verrou applicatif est le seul filet en production (pas de contrainte d'exclusion).
+- Rendu navigateur non exécuté (aucun navigateur pilotable) ; aucune UI de réservation
+  dans ce lot.
+- Restent hors lot : interface client, `COMPLETED`/`NO_SHOW`, adresse client privée et
+  autorisations, refus hors zone et temps de déplacement (#19).
+
+---
+
+# Suivi — lot 9 : passe 2 (application et vérifications) — issue #19
+
+État : SQL `0008_panoramic_inertia.sql` validé par l'utilisateur et **appliqué sur la
+base PGlite locale de développement**. Aucune branche, commit, push, PR ni changement
+d'issue.
+
+## Environnement
+
+- Aucun processus serveur/dev en cours : les deux `node.exe` présents sont l'agent
+  d'exécution lui-même, pas un serveur tenant la base ouverte.
+- `NODE_ENV` non défini → défaut `development` → pilote `pglite` ; `PGLITE_DATA_DIR`
+  `./data/pglite` → `server/data/pglite` (base locale de dev).
+
+## Commandes et résultats réels
+
+| Commande | Résultat |
+|---|---|
+| `npm run db:migrate` | ✅ `[migrate] Migrations applied.` |
+| `npm test` | ✅ **276/276** (26 fichiers) |
+| `npm run build` | ✅ server `dist/index.js` 91.28 KB ; client `index` gzip 94.47 Ko |
+| `npm run db:generate` | ✅ « No schema changes, nothing to migrate » (aucune migration 0009 générée) |
+
+## Vérifications post-migration
+
+- Table `bookings` présente dans la base de dev : 24 colonnes dont `service_place` de
+  type `service_place` (enum réutilisé) et `status` de type `booking_status`.
+- Aucune dérive de schéma : `npm run db:generate` ne produit aucun nouveau fichier et
+  le journal reste sur l'entrée `0008`.
+- Aucune migration supplémentaire dans `server/drizzle/` ni dans `git status`.
+
+## Limites / suite (inchangées)
+
+- Concurrence PostgreSQL multi-connexions non démontrée (PGlite mono-connexion) ; le
+  verrou applicatif est le seul filet en production.
+- Rendu navigateur non exécuté ; aucune UI de réservation dans ce lot.
+- Restent hors lot : interface client, `COMPLETED`/`NO_SHOW`, adresse client privée et
+  autorisations, refus hors zone et temps de déplacement (#19).
