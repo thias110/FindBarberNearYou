@@ -43,6 +43,13 @@
       "when": 1790861262381,
       "tag": "0005_cold_switch",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790880301584,
+      "tag": "0006_glorious_pretty_boy",
+      "breakpoints": true
     }
   ]
 }

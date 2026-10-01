@@ -4,12 +4,15 @@ import type {
   OwnBarberService,
   PublicBarberProfileWithServices,
   PublicUser,
+  TimeOff,
+  TimeOffResponse,
   WorkingHoursResponse,
 } from "@findbarber/shared/types";
 import type {
   ProfileInput,
   ServiceCreateInput,
   ServiceUpdateInput,
+  TimeOffCreateInput,
   WorkingHoursInput,
 } from "@findbarber/shared/validation";
 
@@ -126,6 +129,9 @@ export interface BarberApi {
   ): Promise<{ service: OwnBarberService }>;
   getWorkingHours(): Promise<WorkingHoursResponse>;
   replaceWorkingHours(input: WorkingHoursInput): Promise<WorkingHoursResponse>;
+  getTimeOff(): Promise<TimeOffResponse>;
+  createTimeOff(input: TimeOffCreateInput): Promise<{ timeOff: TimeOff }>;
+  deleteTimeOff(timeOffId: string): Promise<void>;
 }
 
 export const barberApi: BarberApi = {
@@ -154,6 +160,18 @@ export const barberApi: BarberApi = {
     apiFetch<WorkingHoursResponse>("/api/barber/working-hours", {
       method: "PUT",
       body: input,
+    }),
+  getTimeOff: () =>
+    apiFetch<TimeOffResponse>("/api/barber/time-off"),
+  createTimeOff: (input) =>
+    apiFetch<{ timeOff: TimeOff }>("/api/barber/time-off", {
+      method: "POST",
+      body: input,
+    }),
+  // `apiFetch` court-circuite le parsing JSON sur 204 et renvoie `undefined`.
+  deleteTimeOff: (timeOffId) =>
+    apiFetch<void>(`/api/barber/time-off/${encodeURIComponent(timeOffId)}`, {
+      method: "DELETE",
     }),
 };
 

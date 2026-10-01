@@ -102,4 +102,9 @@ export const LIMITS = {
   workingHoursEndMax: 1440,
   workingHoursMaxIntervalsPerDay: 6,
   workingHoursMaxIntervals: 42, // 7 jours × 6 plages
+  // Indisponibilités en journées entières (lot 7, issue #22) : motif privé
+  // facultatif, période inclusive bornée et plafond total par professionnel.
+  timeOffReason: 500,
+  timeOffMaxRangeDays: 366,
+  timeOffMaxPerBarber: 200,
 } as const;

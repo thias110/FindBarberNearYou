@@ -7,6 +7,7 @@ import {
   TECHNIQUES,
 } from "../constants";
 import { isCountryCode } from "../countries";
+import { compareCalendarDates, inclusiveDayCount, isValidCalendarDate } from "../dates";
 import { classifyIanaTimeZone } from "../timezones";
 
 const currencySchema = z.enum(SUPPORTED_CURRENCIES);
@@ -343,3 +344,61 @@ export const workingHoursSchema = z
   });
 
 export type WorkingHoursInput = z.infer<typeof workingHoursSchema>;
+
+// --- Indisponibilités / fermetures exceptionnelles (lot 7, issue #22) ---
+// Fermetures en journées entières : `startDate` et `endDate` sont des dates
+// civiles réelles `AAAA-MM-JJ`, bornes incluses. Le motif est facultatif,
+// trimé, vide → null, privé. La période est bornée à `timeOffMaxRangeDays`
+// jours inclus ; le plafond total est vérifié côté service. Les dates passées
+// sont autorisées. Aucune conversion de fuseau, aucune dépendance au DST.
+const calendarDateSchema = z
+  .string()
+  .trim()
+  .refine(
+    isValidCalendarDate,
+    "Date invalide : format AAAA-MM-JJ et date calendaire réelle attendus.",
+  );
+
+export const timeOffCreateSchema = z
+  .object({
+    startDate: calendarDateSchema,
+    endDate: calendarDateSchema,
+    reason: z
+      .string()
+      .trim()
+      .max(
+        LIMITS.timeOffReason,
+        `Le motif ne peut pas dépasser ${LIMITS.timeOffReason} caractères.`,
+      )
+      .nullish()
+      .transform((value) => {
+        if (value === undefined || value === null) return null;
+        return value.length > 0 ? value : null;
+      }),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    // Les deux dates ont déjà été validées par `calendarDateSchema` : si l'une
+    // est invalide, l'issue de champ suffit, on n'ajoute pas d'issue de plage.
+    if (!isValidCalendarDate(data.startDate) || !isValidCalendarDate(data.endDate)) {
+      return;
+    }
+    if (compareCalendarDates(data.startDate, data.endDate) > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "La date de fin doit être identique ou postérieure à la date de début.",
+        path: ["endDate"],
+      });
+      return;
+    }
+    if (inclusiveDayCount(data.startDate, data.endDate) > LIMITS.timeOffMaxRangeDays) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `La période ne peut pas dépasser ${LIMITS.timeOffMaxRangeDays} jours inclus.`,
+        path: ["endDate"],
+      });
+    }
+  });
+
+export type TimeOffCreateInput = z.infer<typeof timeOffCreateSchema>;

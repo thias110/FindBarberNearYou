@@ -3,6 +3,7 @@ import {
   profileSchema,
   serviceCreateSchema,
   serviceUpdateSchema,
+  timeOffCreateSchema,
   workingHoursSchema,
 } from "@findbarber/shared/validation";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
@@ -10,9 +11,12 @@ import { csrfProtection } from "../../middleware/csrf.js";
 import { validationError } from "../../lib/validation.js";
 import {
   createService,
+  createTimeOff,
+  deleteTimeOff,
   getOwnProfile,
   getWorkingHours,
   listOwnServices,
+  listTimeOff,
   replaceWorkingHours,
   updateService,
   upsertProfile,
@@ -103,5 +107,45 @@ barberRouter.put(
     }
     const intervals = await replaceWorkingHours(req.user!.id, parsed.data);
     res.json({ intervals });
+  },
+);
+
+// --- Indisponibilités / fermetures exceptionnelles (lot 7, issue #22) ---
+// Gestion par élément : liste, création, suppression. Pas d'édition (PATCH)
+// ni de remplacement global. Le propriétaire est déduit de l'utilisateur
+// authentifié ; aucun identifiant de profil n'est accepté dans le payload.
+barberRouter.get(
+  "/time-off",
+  requireAuth,
+  requireRole("BARBER"),
+  async (req, res) => {
+    const timeOff = await listTimeOff(req.user!.id);
+    res.json({ timeOff });
+  },
+);
+
+barberRouter.post(
+  "/time-off",
+  requireAuth,
+  requireRole("BARBER"),
+  csrfProtection,
+  async (req, res) => {
+    const parsed = timeOffCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw validationError(parsed.error);
+    }
+    const timeOff = await createTimeOff(req.user!.id, parsed.data);
+    res.status(201).json({ timeOff });
+  },
+);
+
+barberRouter.delete(
+  "/time-off/:timeOffId",
+  requireAuth,
+  requireRole("BARBER"),
+  csrfProtection,
+  async (req, res) => {
+    await deleteTimeOff(req.user!.id, req.params.timeOffId as string);
+    res.status(204).end();
   },
 );

@@ -937,3 +937,260 @@ locale — vider un champ seul n'affiche pas forcément d'erreur de ligne ; cliq
 « Réessayer » et vérifier que brouillon, erreur de ligne et messages du planning
 restent strictement identiques, qu'une seule requête `GET /profile` parte, et
 que le bandeau passe à « Heures locales du salon (…) » après déblocage.
+
+---
+
+# Suivi — lot 7 : indisponibilités / fermetures exceptionnelles (issue #22, passe 1)
+
+État : code et tests écrits sur `main`, migration **générée mais NON appliquée**.
+Aucune branche, aucun commit, push, PR ni changement d'issue. `npm test` et
+`npm run db:migrate` **volontairement non exécutés** (arrêt obligatoire avant
+application/validation du SQL). Aucune base distante touchée.
+
+## Périmètre validé et appliqué
+
+- Fermetures en journées entières, `startDate` / `endDate` incluses, format
+  `AAAA-MM-JJ`. Journée unique = même date.
+- Stockage PostgreSQL `date`, mapping Drizzle explicite en chaînes
+  (`date("...", { mode: "string" })`). Aucune conversion de fuseau à
+  l'écriture/lecture, aucun recours à `Date` local, donc aucun effet du DST.
+- Temps du professionnel (pas forcément un salon), libellés neutres :
+  « Mes indisponibilités », « Votre fuseau horaire », « Jours indisponibles ».
+- Motif facultatif et privé : trim, vide → `null`, maximum 500 caractères.
+- Période maximale 366 jours inclus ; maximum 200 périodes par professionnel.
+- Dates passées autorisées ; création autorisée sans fuseau (avertissement UI).
+- Doublons et chevauchements inclusifs refusés → 409 `TIME_OFF_OVERLAP` ;
+  périodes adjacentes sans jour commun autorisées.
+- Changement de fuseau : dates civiles inchangées, aucune réécriture.
+- Pas de PATCH ni d'édition automatique ; aucun droit ADMIN ; aucune exposition
+  publique du motif. Hors périmètre : modes de prestation #19, pauses
+  récurrentes, réservations, notifications.
+
+## Routes
+
+- `GET /api/barber/time-off` → `{ timeOff: TimeOff[] }`, tri stable
+  `start_date`, puis `end_date`, puis `id`.
+- `POST /api/barber/time-off` → 201 `{ timeOff }` (CSRF).
+- `DELETE /api/barber/time-off/:timeOffId` → 204 (CSRF), 404 si inexistant ou
+  appartenant à un autre professionnel.
+
+## Fichiers créés
+
+- `shared/src/dates.ts` (helpers calendaires purs : validité, comparaison,
+  nombre de jours inclus en UTC)
+- `client/src/lib/date.ts` (affichage `AAAA-MM-JJ` → `JJ.MM.AAAA` sans décalage)
+- `client/src/pages/barber/TimeOffPage.tsx`
+- `tests/src/dates.test.ts`, `tests/src/time-off.validation.test.ts`,
+  `tests/src/time-off.integration.test.ts`, `tests/src/migration-time-off.test.ts`
+- `server/drizzle/0006_glorious_pretty_boy.sql` +
+  `server/drizzle/meta/0006_snapshot.json` (générés par drizzle-kit)
+
+## Fichiers modifiés
+
+- `shared/src/constants.ts` (`LIMITS.timeOffReason=500`,
+  `timeOffMaxRangeDays=366`, `timeOffMaxPerBarber=200`)
+- `shared/src/schema.ts` (table `barber_time_off`, types)
+- `shared/src/types.ts` (`TimeOff`, `TimeOffResponse`)
+- `shared/src/validation/barber.ts` (`timeOffCreateSchema`, `.strict()`, dates
+  réelles, `start <= end`, plage max, motif)
+- `shared/src/index.ts`, `shared/package.json` (export `./dates`)
+- `server/src/db/client.ts` (table enregistrée dans `schema`)
+- `server/src/modules/barber/service.ts` (`listTimeOff`, `createTimeOff` avec
+  verrou `FOR UPDATE` du profil avant plafond puis chevauchement, `deleteTimeOff`
+  scoped id + profil ; traduction d'une violation d'unicité en
+  `TIME_OFF_OVERLAP`, jamais `EMAIL_TAKEN`)
+- `server/src/modules/barber/routes.ts` (3 routes, auth + rôle + CSRF)
+- `client/src/lib/apiClient.ts` (méthodes `getTimeOff`/`createTimeOff`/
+  `deleteTimeOff` ; 204 déjà géré en tête de `apiFetch`)
+- `client/src/app/router.tsx` (route `/pro/time-off`)
+- `client/src/pages/barber/DashboardPage.tsx` (carte « Mes indisponibilités »)
+
+## Migration générée (relue, NON appliquée)
+
+`server/drizzle/0006_glorious_pretty_boy.sql` : `CREATE TABLE
+"barber_time_off"` (id text PK, FK `barber_profile_id` → `barber_profiles` ON
+DELETE CASCADE, `start_date`/`end_date date NOT NULL`, `reason text`,
+timestamps), 3 CHECK (`start_date <= end_date`, `end_date - start_date <= 365`,
+`reason` NULL ou `char_length <= 500`), index
+`(barber_profile_id, start_date)`, index unique
+`(barber_profile_id, start_date, end_date)`. Purement additive : aucune
+retouche de `0000`–`0005`, aucun backfill. Le CHECK de durée utilise une valeur
+littérale (`sql.raw`) et non un paramètre (interdit dans un CHECK).
+
+## Commandes réellement exécutées et résultats
+
+| Commande | Résultat |
+|---|---|
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run db:generate` | ✅ `0006_glorious_pretty_boy.sql` générée (relue) |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm run build` | ✅ server `dist/index.js` 64.69 KB ; client `index` gzip 93.14 Ko (+~2 Ko) |
+| `npm test` | ⛔ **non exécuté** (arrêt avant migration) |
+| `npm run db:migrate` | ⛔ **non exécuté** (arrêt avant validation du SQL) |
+
+## En attente de validation
+
+1. Relecture/validation du SQL `0006_glorious_pretty_boy.sql` par l'utilisateur.
+2. Après validation seulement : `npm run db:migrate`, puis `npm test`
+   (les tests d'intégration et de migration appliquent les migrations sur
+   PGlite en mémoire), puis smoke test local éventuel.
+3. Rendu navigateur de `/pro/time-off` non vérifié (pas de navigateur
+   pilotable) : formulaire, confirmation de suppression, bandeau fuseau 3 états,
+   conservation du formulaire en cas d'échec — à vérifier manuellement.
+4. Concurrence réelle PostgreSQL non prouvée : PGlite exécute les transactions
+   via un mutex mono-connexion ; le verrou `FOR UPDATE` du profil reste à
+   valider sur une vraie base Postgres (comme aux lots 5 et 6A).
+5. Formulaire non persisté au rechargement ; pas de limite UI au-delà du
+   `maxLength` du motif et du message « 366 jours ».
+
+---
+
+# Suivi — lot 7 : passe 2 (application et vérifications) — issue #22
+
+État : SQL `0006_glorious_pretty_boy.sql` validé par l'utilisateur et **appliqué
+sur la base PGlite locale de développement**. Vérifications complètes exécutées.
+Aucune branche, commit, push, PR ni changement d'issue ; #22 et #2 restent
+ouvertes.
+
+## Environnement cible confirmé
+
+- `NODE_ENV` non défini dans le shell ni dans `.env` → valeur par défaut
+  `development` → `driverKind = "pglite"`. `DATABASE_URL` présent dans `.env`
+  mais **ignoré en développement** ; aucune base distante/production utilisée.
+- `PGLITE_DATA_DIR=./data/pglite`, résolu (cwd = `server/`) en
+  `server/data/pglite`. Cible = base PGlite locale de développement.
+- Aucun processus `node.exe`/`tsx` en cours avant la sauvegarde et l'application
+  → aucun écrivain concurrent dans PGlite.
+
+## Sauvegarde préalable
+
+- Copie récursive de `server/data/pglite` (1008 fichiers, ~39 Mo) vers
+  `C:/Users/mathi/AppData/Local/Temp/findbarber-pglite-backup-20261001-204702`,
+  **hors dépôt et non versionnée**. Après application : 1013 fichiers dans la
+  base de dev (migration), tests isolés en mémoire.
+
+## Commande d'application
+
+- `npm run db:migrate` → `[migrate] Migrations applied.`
+
+## Résultats réels des commandes
+
+| Commande | Résultat |
+|---|---|
+| `npm run db:migrate` | ✅ appliquée sur PGlite locale de dev |
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm test` | ✅ **199/199** (18 fichiers) — +37 : dates 8, validation 11, intégration 17, migration 1 |
+| `npm run build` | ✅ server `dist/index.js` 64.69 KB ; client `index` gzip 93.14 Ko |
+
+Isolation des tests : `tests/setup.ts` force `NODE_ENV=test` et
+`PGLITE_DATA_DIR=""` avant l'import de `server/src/config/env.ts` → PGlite en
+mémoire par fichier. Les tests n'ont pas touché `server/data/pglite` (1013
+fichiers après migration, inchangé par les tests) ni aucune base distante.
+
+## Tests confirmés
+
+- Journée unique, période, dates bissextiles (validation + intégration +
+  helpers de dates).
+- 366 jours inclus acceptés, 367 refusés (validation, API, contrainte DB).
+- Doublons/chevauchements refusés (409 `TIME_OFF_OVERLAP`), périodes adjacentes
+  acceptées.
+- Plafond de 200 périodes (201e refusée, 409 `TIME_OFF_LIMIT_REACHED`).
+- Auth (401), rôle (403 CLIENT), CSRF (403 `CSRF_INVALID`), propriété et
+  isolation entre professionnels (404 sur l'id d'autrui).
+- Suppression et réponse 204.
+- Dates civiles inchangées après ajout/changement de fuseau.
+- Motif absent des réponses publiques.
+- Migration additive découverte par contenu, données préexistantes conservées,
+  table `barber_time_off` vide avant insertion.
+
+**Limite** : les tests de concurrence PGlite (mutex mono-connexion) ne
+prouvent **pas** le comportement multi-connexions PostgreSQL ; le verrou
+`FOR UPDATE` reste à valider sur une vraie base Postgres.
+
+## Interface `/pro/time-off`
+
+**Non exécutés** : aucun navigateur pilotable (ni Playwright, ni Puppeteer, ni
+Cypress installés). Le rendu n'est **pas** déclaré validé. Procédure manuelle :
+
+1. Se connecter en BARBER (`/pro`), créer un profil si besoin.
+2. Aller sur `/pro/time-off` (ou carte « Mes indisponibilités » du dashboard).
+3. Créer une journée unique (même date début/fin) → succès et apparition triée.
+4. Créer une période puis tenter une période chevauchante → message d'erreur,
+   formulaire conservé, liste intacte.
+5. Cliquer « Supprimer » → confirmation ; « Annuler » ne supprime rien ;
+   « Confirmer » supprime (204) et retire la ligne.
+6. Couper le réseau (onglet Network → offline) puis « Ajouter » → message
+   d'erreur, brouillon et données conservés.
+7. Bandeau « Votre fuseau horaire » : renseigné / non renseigné / indisponible
+   (bloquer `*/api/barber/profile` + « Réessayer » sans perdre le formulaire).
+
+## Documentation README.md
+
+Ajouts : 3 routes `time-off` dans la section API ; nouvelle section
+« Indisponibilités / fermetures exceptionnelles (barber) » (dates inclusives,
+366 jours, 200 périodes, motif privé 500 car., chevauchements, fuseau et
+changement de fuseau sans réécriture, pas d'exposition publique).
+
+## Échecs / points ouverts
+
+- Aucun échec de test ou de build.
+- Interface navigateur non testée (voir ci-dessus).
+- Concurrence PostgreSQL multi-connexions non prouvée.
+- PostgreSQL de production non testé de bout en bout (PGlite seul).
+
+---
+
+# Suivi — lot 7 : revue finale ciblée — issue #22
+
+État : corrections limitées au helper de dates et à ses tests ; migration `0006`
+**non régénérée ni modifiée**. Aucune branche, commit, push, PR ni changement
+d'issue.
+
+## Correction appliquée
+
+`shared/src/dates.ts` → `splitCalendarDate` refuse désormais l'année `0000`
+(`if (year < 1) return null;`) tout en conservant la gestion littérale des
+années `0001..0099` (via `setUTCFullYear`, jamais `Date.UTC`). Le format à
+quatre chiffres borne déjà l'année haute à `9999`. Cette règle s'applique donc
+aussi à `isValidCalendarDate`, `toUtcMillis` et `inclusiveDayCount`. Aucun
+changement de base de données (le type PostgreSQL `date` accepte déjà
+0001..9999) ; migration inchangée.
+
+## Tests ajoutés
+
+- Helper : `0000-01-01` et `0000-02-29` refusés ; `0001`, `0099` acceptés ;
+  `0099-02-29` refusé (99 non bissextile) ; `0400-02-29` accepté,
+  `1900-02-29` refusé, `2000-02-29` accepté ; `9999-12-31` accepté.
+- Helper : `inclusiveDayCount` sur années précoces (`0001`, `0099`,
+  `0099-01-01`→`0100-01-01` = 366).
+- Zod : année `0000` refusée ; années `0001` et `0099` acceptées.
+- API : POST année `0000` → `400 VALIDATION_ERROR`, aucune insertion, aucune
+  500 ; POST année `0099` → 201 avec dates exactes.
+- Cas `0000` ajouté à la liste des payloads invalides (aucun résidu en base).
+
+## Code relu (point 3)
+
+- Signatures explicites : `createTimeOff(userId: string, input: TimeOffCreateInput): Promise<TimeOff>`,
+  `deleteTimeOff(userId: string, timeOffId: string): Promise<void>`.
+- Motif absent des DTO publics : `PublicBarberProfile`, `PublicBarberService`,
+  `PublicBarberSearchItem`, `PublicBarberProfileWithServices` ne contiennent ni
+  `reason` ni `timeOff` ; `reason` n'existe que dans `TimeOff` (privé).
+- DELETE 204 : `apiFetch` court-circuite avant toute lecture JSON
+  (`if (res.status === 204) return undefined as T;`).
+- Suppression annulée sans requête : bouton « Annuler » → `setConfirmingId(null)`
+  uniquement.
+- Relance du fuseau sans effacement du brouillon : `retryTimezone` n'appelle que
+  `GET /profile` et ne touche ni au formulaire, ni à la liste, ni aux messages.
+
+## Résultats réels (revue finale)
+
+| Commande | Résultat |
+|---|---|
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm test` | ✅ **204/204** (18 fichiers) — +5 (dates +2, validation +1, intégration +2) |
+| `npm run build` | ✅ server `dist/index.js` 64.73 KB ; client `index` gzip 93.14 Ko |
+
+Tests navigateur : **non exécutés** (aucun navigateur pilotable). Rendu non
+déclaré validé.

@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   doublePrecision,
   index,
   integer,
@@ -225,3 +226,56 @@ export type BarberServiceAudience = typeof barberServiceAudiences.$inferSelect;
 export type BarberServiceTechnique = typeof barberServiceTechniques.$inferSelect;
 export type BarberWorkingHours = typeof barberWorkingHours.$inferSelect;
 export type NewBarberWorkingHours = typeof barberWorkingHours.$inferInsert;
+
+// Indisponibilités / fermetures exceptionnelles : journées entières civiles
+// (`start_date`..`end_date` incluses), sans fuseau ni conversion. L'unicité
+// exacte est un filet de sécurité ; les chevauchements sont refusés côté
+// applicatif. Le motif est privé (jamais exposé publiquement).
+export const barberTimeOff = pgTable(
+  "barber_time_off",
+  {
+    id: text("id").primaryKey(),
+    barberProfileId: text("barber_profile_id")
+      .notNull()
+      .references(() => barberProfiles.id, { onDelete: "cascade" }),
+    startDate: date("start_date", { mode: "string" }).notNull(),
+    endDate: date("end_date", { mode: "string" }).notNull(),
+    reason: text("reason"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("barber_time_off_profile_start_idx").on(
+      table.barberProfileId,
+      table.startDate,
+    ),
+    uniqueIndex("barber_time_off_profile_dates_unique").on(
+      table.barberProfileId,
+      table.startDate,
+      table.endDate,
+    ),
+    check(
+      "barber_time_off_order",
+      sql`${table.startDate} <= ${table.endDate}`,
+    ),
+    check(
+      "barber_time_off_range",
+      sql`${table.endDate} - ${table.startDate} <= ${sql.raw(
+        String(LIMITS.timeOffMaxRangeDays - 1),
+      )}`,
+    ),
+    check(
+      "barber_time_off_reason_length",
+      sql`${table.reason} IS NULL OR char_length(${table.reason}) <= ${sql.raw(
+        String(LIMITS.timeOffReason),
+      )}`,
+    ),
+  ],
+);
+
+export type BarberTimeOff = typeof barberTimeOff.$inferSelect;
+export type NewBarberTimeOff = typeof barberTimeOff.$inferInsert;
