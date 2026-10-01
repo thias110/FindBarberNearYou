@@ -800,3 +800,140 @@ autorisés. Aucun autre changement, aucun nettoyage CRLF, aucun commit/push/bran
 - Rendu navigateur des nouveaux comportements (confirmation d'effacement, erreurs
   sous les lignes, désactivation pendant `saving`) : à vérifier manuellement, pas
   de navigateur pilotable.
+
+---
+
+# Suivi — lot 6A : fuseau horaire du salon (non commité)
+
+État : implémenté sur `main` après validation explicite du SQL de migration par
+l'utilisateur. Aucune modification Git (l'utilisateur garde la main) : aucun
+commit, push, branche, PR.
+
+## Décisions appliquées (option A + précisions validées)
+
+- `barber_profiles.timezone` nullable, sans valeur par défaut, sans backfill :
+  les profils existants restent `NULL`. Aucun fuseau inventé.
+- Choix explicite uniquement, jamais déduit du pays ni du navigateur ; un fuseau
+  devra être renseigné avant de pouvoir réserver (lot ultérieur).
+- API : `absent` = valeur conservée (création → NULL) ; `null` ou chaîne vide
+  après trim = effacement explicite ; valeur non vide invalide = 400
+  `VALIDATION_ERROR` sans écriture partielle.
+- Validation : `UTC` accepté explicitement ; sinon identifiant nommé contenant
+  `/` validé par `Intl.DateTimeFormat` ; offsets (`+01:00`) et abréviations
+  seules (`CET`) refusés ; `Etc/…` refusé sans distinction de casse
+  (restriction produit volontaire — état `restricted` dédié, jamais présenté
+  comme « invalide ») ; casse corrigée via la liste canonique
+  (`Intl.supportedValuesOf`) ; alias avec `/` reconnu par Intl conservé tel
+  quel, jamais `resolvedOptions().timeZone`.
+- Pas d'exposition publique (profil public et recherche inchangés).
+  `DashboardPage` hors périmètre. `WorkingHoursResponse` inchangé : le bandeau
+  horaires charge le profil par un GET séparé (état d'erreur distinct de
+  « fuseau absent »).
+
+## Fichiers créés
+
+- `shared/src/timezones.ts` (liste canonique + `classifyIanaTimeZone`)
+- `tests/src/migration-helpers.ts` (découverte d'une migration PAR CONTENU)
+- `tests/src/timezone.test.ts`
+- `tests/src/timezone.validation.test.ts`
+- `tests/src/migration-timezone.test.ts`
+- `server/drizzle/0005_cold_switch.sql` + `server/drizzle/meta/0005_snapshot.json`
+  (générés par drizzle-kit, SQL relu et validé avant application)
+
+## Fichiers modifiés
+
+- `shared/src/constants.ts` (`LIMITS.profileTimezone = 64`)
+- `shared/src/schema.ts` (colonne `timezone` + CHECK longueur)
+- `shared/src/validation/barber.ts` (`timezoneSchema` 3 états)
+- `shared/src/types.ts` (`OwnBarberProfile.timezone`)
+- `shared/src/index.ts`, `shared/package.json` (export `./timezones`)
+- `server/src/modules/barber/service.ts` (mapping + upsert absent/inchangé)
+- `client/src/pages/barber/ProfilePage.tsx` (sélecteur groupé, UTC, option
+  « valeur enregistrée », repli champ texte, avertissement)
+- `client/src/pages/barber/WorkingHoursPage.tsx` (bandeau 3 états :
+  fuseau renseigné / non renseigné / indisponible)
+- `tests/src/barber.integration.test.ts` (+3 tests fuseau)
+- `tests/src/migration-working-hours.test.ts` (cible trouvée par contenu, plus
+  par la dernière entrée du journal)
+- `README.md`, `suiviDeepseek.md`
+- `server/drizzle/meta/_journal.json` (entrée 0005, générée)
+
+## Migration
+
+`0005_cold_switch.sql` : `ALTER TABLE "barber_profiles" ADD COLUMN "timezone"
+text;` + `ADD CONSTRAINT "barber_profiles_timezone_length" CHECK ("timezone" IS
+NULL OR char_length("timezone") <= 64)`. Purement additive, relue avant
+application. Appliquée sur la base locale de développement PGlite
+(`server/data/pglite`) uniquement : `NODE_ENV` absent du `.env` (défaut
+`development`) → pilote pglite ; `DATABASE_URL` du `.env` ignoré en dev. Aucune
+base distante, aucun reset, aucune suppression de données.
+
+## Commandes exécutées et résultats réels
+
+| Commande | Résultat |
+|---|---|
+| `npm run db:generate` | ✅ `0005_cold_switch.sql` (affichée et validée avant application) |
+| `npm run db:migrate` | ✅ appliquée sur la base PGlite locale de dev |
+| `npm run typecheck` | ✅ shared + server + client |
+| `npm run lint` | ✅ 0 erreur, 0 warning |
+| `npm test` | ✅ **162/162** (14 fichiers) — +19 : timezone 7, timezone.validation 8, migration-timezone 1, barber.integration +3 |
+| `npm run build` | ✅ server `dist/index.js` 57.09 KB + client (index gzip 91.19 Ko, +~1,3 Ko) |
+
+## Tests ajoutés / adaptés
+
+- Helper (7) : liste + UTC (absent de `supportedValuesOf`), vide ≠ invalide,
+  casse canonique, alias conservé sans épingler une version d'ICU (`US/Eastern`
+  vérifié conditionnellement), `Etc/…` → `restricted`, rejets `+01:00`, `+23`,
+  `-2359`, `CET`, `GMT`, `Mars/Olympus`, `Europe/Zurich/Extra`.
+- Zod (8) : absent → `undefined` ; `null`/vide → `null` ; normalisation ;
+  rejets sans conversion silencieuse ; `Etc/…` ; longueur > 64 ; `.strict()`.
+- Intégration (3 nouveaux) : cycle create/update/keep/clear ; PUT invalide
+  (7 valeurs dont > 64) → 400 sans écriture partielle ; `utc` → `UTC` et alias
+  reconnu conservé tel quel.
+- Migrations : `migration-working-hours.test.ts` et `migration-timezone.test.ts`
+  identifient leur cible PAR CONTENU du SQL (`CREATE TABLE
+  "barber_working_hours"` / `ADD COLUMN "timezone"`), sans dépendre de la
+  dernière entrée du journal.
+- Isolation des tests : `NODE_ENV=test` + `PGLITE_DATA_DIR=""` → PGlite en
+  mémoire par fichier ; la base de développement n'est jamais touchée.
+
+## Limites non testées / points ouverts
+
+- Rendu navigateur non vérifié (pas de navigateur pilotable dans
+  l'environnement) : sélecteur groupé, repli champ texte sans
+  `Intl.supportedValuesOf`, injection « valeur enregistrée », bandeau horaires
+  (3 états) et avertissement du profil — à vérifier manuellement.
+- Concurrence `ON CONFLICT DO UPDATE` (branche absent/inchangé) non démontrable
+  sous PGlite (mono-connexion) : à valider sur PostgreSQL réel, comme au lot 5.
+- PostgreSQL de production non testé de bout en bout (PGlite seul).
+- Drift ICU : une valeur stockée absente de la liste locale est conservée par
+  injection d'option côté client ; le moteur de créneaux futur devra traiter
+  une valeur devenue inconnue d'ICU comme un état d'erreur explicite.
+- `package-lock.json` et les fins de ligne CRLF préexistants volontairement non
+  touchés (aucune normalisation, aucune réinstallation).
+
+## Correctif ciblé — bouton « Réessayer » du bandeau fuseau (non commité)
+
+Défaut : le bouton « Réessayer » du bandeau fuseau appelait `loadData` (chargeur
+de la page) → `applyIntervals` + `setRowErrors({})` + `setError(null)` +
+`setLoading(true)` : un brouillon d'horaires non enregistré et les erreurs de
+ligne étaient écrasés, et le message du planning effacé.
+
+Correctif (`client/src/pages/barber/WorkingHoursPage.tsx` uniquement) :
+`retryTimezone` dédié (GET `/profile` seulement), garde synchrone `useRef`
+libérée dans `finally`, `timezoneStatus="loading"` pendant la relance, bouton
+rebranché. La relance ne touche ni `days`, ni `rowErrors`, ni `error`/`success`,
+ni le loading global. Chargement initial (`loadData`, `Promise.allSettled`)
+inchangé ; contrats API inchangés.
+
+Vérifications réellement exécutées : `npm run typecheck`, `npm run lint`,
+`npm test` (162/162), `npm run build` — voir résultats du rapport de lot 6A.
+
+Scénario navigateur : **à vérifier manuellement** (pas de navigateur pilotable).
+Procédure : bloquer `*/api/barber/profile` puis recharger `/pro/working-hours`
+(horaires OK, bandeau « indisponible » + Réessayer) ; modifier une plage ;
+**vider un champ puis cliquer « Enregistrer »** pour déclencher la validation
+locale — vider un champ seul n'affiche pas forcément d'erreur de ligne ; cliquer
+« Réessayer » et vérifier que brouillon, erreur de ligne et messages du planning
+restent strictement identiques, qu'une seule requête `GET /profile` parte, et
+que le bandeau passe à « Heures locales du salon (…) » après déblocage.

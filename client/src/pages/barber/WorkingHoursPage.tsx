@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   LIMITS,
@@ -60,6 +60,13 @@ export function BarberWorkingHoursPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  // Fuseau du salon, chargé via GET /profile séparément (contrat de
+  // /working-hours inchangé). "error" ≠ "absent" : en cas d'échec de la
+  // requête, on n'affiche jamais « fuseau non renseigné ».
+  const [timezone, setTimezone] = useState<string | null>(null);
+  const [timezoneStatus, setTimezoneStatus] = useState<
+    "loading" | "loaded" | "error"
+  >("loading");
 
   // Synchronise le formulaire depuis la liste d'intervalles (chargement
   // initial, réponse d'un PUT réussi ou d'un effacement) — sans GET
@@ -84,16 +91,32 @@ export function BarberWorkingHoursPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setTimezoneStatus("loading");
     try {
-      const res = await barberApi.getWorkingHours();
-      applyIntervals(res.intervals);
+      // Horaires (autorité de la page) et profil (bandeau fuseau) en parallèle,
+      // avec des états d'erreur distincts.
+      const [hoursRes, profileRes] = await Promise.allSettled([
+        barberApi.getWorkingHours(),
+        barberApi.getProfile(),
+      ]);
+      if (hoursRes.status === "rejected") {
+        const err = hoursRes.reason;
+        if (err instanceof ApiError && err.code === "BARBER_PROFILE_NOT_FOUND") {
+          setProfileMissing(true);
+        } else {
+          setError(err instanceof Error ? err.message : "Chargement impossible.");
+        }
+        return;
+      }
+      applyIntervals(hoursRes.value.intervals);
       setRowErrors({});
       setProfileMissing(false);
-    } catch (err) {
-      if (err instanceof ApiError && err.code === "BARBER_PROFILE_NOT_FOUND") {
-        setProfileMissing(true);
+      if (profileRes.status === "fulfilled") {
+        setTimezone(profileRes.value.profile.timezone);
+        setTimezoneStatus("loaded");
       } else {
-        setError(err instanceof Error ? err.message : "Chargement impossible.");
+        setTimezone(null);
+        setTimezoneStatus("error");
       }
     } finally {
       setLoading(false);
@@ -103,6 +126,29 @@ export function BarberWorkingHoursPage() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  // Relance du seul bandeau fuseau : GET /profile uniquement. Ne touche ni au
+  // brouillon (days), ni aux erreurs de ligne (rowErrors), ni aux messages du
+  // planning (error/success), ni au loading global de la page. La garde
+  // synchrone (ref) couvre le double-clic dans le même tick ; le passage à
+  // timezoneStatus="loading" masque le bouton dès le rendu suivant.
+  const retryTimezoneRef = useRef(false);
+
+  const retryTimezone = useCallback(async () => {
+    if (retryTimezoneRef.current) return;
+    retryTimezoneRef.current = true;
+    setTimezoneStatus("loading");
+    try {
+      const res = await barberApi.getProfile();
+      setTimezone(res.profile.timezone);
+      setTimezoneStatus("loaded");
+    } catch {
+      setTimezone(null);
+      setTimezoneStatus("error");
+    } finally {
+      retryTimezoneRef.current = false;
+    }
+  }, []);
 
   function clearRowError(key: string) {
     setRowErrors((current) => {
@@ -330,10 +376,32 @@ export function BarberWorkingHoursPage() {
           </p>
         </div>
 
-        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-          Heures locales du salon. Le fuseau horaire du salon sera renseigné avant
-          l'ouverture des réservations ; il n'est pas déduit du pays ni du navigateur.
-        </p>
+        {timezoneStatus === "loaded" && timezone ? (
+          <p className="rounded-lg bg-brand-50 p-3 text-sm text-brand-800">
+            Heures locales du salon ({timezone}). Ce fuseau est choisi sur votre
+            profil et servira à calculer vos créneaux de réservation.
+          </p>
+        ) : timezoneStatus === "loaded" ? (
+          <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+            Fuseau non renseigné : la réservation en ligne restera indisponible
+            tant que vous n'aurez pas choisi votre fuseau.{" "}
+            <Link to="/pro/profile" className="text-brand-700 underline">
+              Définir mon fuseau
+            </Link>
+          </p>
+        ) : timezoneStatus === "error" ? (
+          <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
+            Fuseau horaire indisponible pour le moment. Votre planning reste
+            enregistré en heures murales.{" "}
+            <button
+              type="button"
+              onClick={() => void retryTimezone()}
+              className="text-brand-700 underline"
+            >
+              Réessayer
+            </button>
+          </p>
+        ) : null}
 
         {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
         {success && (

@@ -169,9 +169,9 @@ même jour sont des pauses implicites.
   local (0…1440). `1440` (= 24:00) n'est autorisé qu'en fin de plage, via le contrôle
   explicite « Fin de journée (24:00) » — jamais comme valeur d'un `input type="time"`.
   Aucune plage ne traverse minuit (`start < end`).
-- **Heures locales au salon, sans fuseau** : les heures sont des heures murales du salon.
-  Le fuseau IANA du salon sera obligatoire avant le moteur de réservation ; il ne sera
-  déduit ni du pays ni du navigateur. Aucune colonne `timezone` dans ce lot.
+- **Heures locales au salon** : les heures restent des minutes murales, sans calcul de
+  fuseau dans ce lot. Le fuseau IANA du salon est stocké sur le profil (section
+  ci-dessous) et deviendra obligatoire avant le moteur de réservation.
 - **Validation** : rejets stricts (400 `VALIDATION_ERROR`) — jour hors 1..7, minutes hors
   bornes, début ≥ fin, doublons, chevauchements (plages adjacentes autorisées), plus de
   `6` plages par jour ou `42` au total, champs inconnus interdits. Contraintes `CHECK` +
@@ -182,7 +182,32 @@ même jour sont des pauses implicites.
   compris sur un planning vide (l'ancre du verrou est la ligne du profil).
   Suppression = `PUT { "intervals": [] }`.
 - Réservations : non implémentées dans ce lot. Le moteur de créneaux futur lira cette
-  table (après ajout du fuseau IANA du salon).
+  table et le fuseau IANA du salon (déjà stocké sur le profil).
+
+### Fuseau horaire du salon (barber)
+
+- **Stockage** : `barber_profiles.timezone` (`text`), nullable, sans valeur par défaut ni
+  backfill ; `CHECK (timezone IS NULL OR char_length(timezone) <= 64)`. Les profils
+  existants restent `NULL` : aucun fuseau inventé. Migration additive `0005_*`.
+- **Choix explicite** : sélecteur groupé par région sur `/pro/profile` (identifiants IANA
+  canoniques + `UTC`), jamais déduit du pays ni du navigateur. Sans
+  `Intl.supportedValuesOf`, repli sur un champ texte avec validation serveur. Une valeur
+  stockée absente de la liste locale (drift d'ICU) est conservée comme option
+  « valeur enregistrée ».
+- **API** : `GET`/`PUT /api/barber/profile` exposent `timezone: string | null`.
+  `PUT` : champ absent = valeur existante conservée (aucun effacement accidentel) ;
+  `null` ou chaîne vide (après trim) = effacement explicite ; valeur non vide invalide =
+  `400 VALIDATION_ERROR` sans écriture partielle.
+- **Validation** : `UTC` accepté (casse insensible) ; sinon identifiant nommé contenant
+  `/`, validé par `Intl.DateTimeFormat` ; offsets (`+01:00`) et abréviations seules
+  (`CET`) refusés ; `Etc/…` refusé sans distinction de casse (restriction produit : zones
+  à offset fixe, jamais présentées comme des identifiants invalides) ; la casse est
+  corrigée si la valeur correspond à la liste canonique, un alias reconnu est conservé tel
+  quel (jamais de conversion via `resolvedOptions().timeZone`).
+- **Pas d'exposition publique** dans ce lot : le fuseau est un champ privé du barbier
+  (absent du profil public et de la recherche).
+- **Avant de réserver** (lot ultérieur) : un profil sans fuseau verra la réservation
+  refusée tant que le fuseau n'est pas renseigné.
 
 ## Carte (MapLibre GL JS + MapTiler)
 

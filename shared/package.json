@@ -9,6 +9,7 @@
     "./types": "./src/types.ts",
     "./constants": "./src/constants.ts",
     "./countries": "./src/countries.ts",
+    "./timezones": "./src/timezones.ts",
     "./validation": "./src/validation/index.ts"
   },
   "scripts": {

@@ -87,6 +87,7 @@ export const LIMITS = {
   profileAddress: 200,
   profileCity: 100,
   profilePostalCode: 20,
+  profileTimezone: 64,
   serviceName: 120,
   serviceDescription: 1000,
   serviceDurationMin: 1,

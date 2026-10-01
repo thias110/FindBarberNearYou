@@ -1,0 +1,2 @@
+ALTER TABLE "barber_profiles" ADD COLUMN "timezone" text;--> statement-breakpoint
+ALTER TABLE "barber_profiles" ADD CONSTRAINT "barber_profiles_timezone_length" CHECK ("barber_profiles"."timezone" IS NULL OR char_length("barber_profiles"."timezone") <= 64);

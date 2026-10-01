@@ -1,35 +1,27 @@
+// Migration des horaires (lot 5) sur une base peuplée. La migration cible est
+// découverte PAR CONTENU (`CREATE TABLE "barber_working_hours"`), sans
+// dépendre de la dernière entrée du journal : ce test reste valide après les
+// migrations suivantes (fuseau, congés, réservations…).
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { describe, expect, it } from "vitest";
+import {
+  findTagBySqlContent,
+  readMigration,
+  tagsBefore,
+} from "./migration-helpers";
 
-const DRIZZLE_DIR = fileURLToPath(
-  new URL("../../server/drizzle", import.meta.url),
+const WORKING_HOURS_TAG = findTagBySqlContent((sql) =>
+  sql.includes('CREATE TABLE "barber_working_hours"'),
 );
 
-function readMigration(tag: string): string {
-  return readFileSync(`${DRIZZLE_DIR}/${tag}.sql`, "utf8");
-}
-
-// Découvre les tags dynamiquement depuis le journal drizzle : aucun numéro de
-// migration n'est supposé. La dernière entrée est celle qui ajoute
-// `barber_working_hours`.
-function migrationTags(): string[] {
-  const journal = JSON.parse(
-    readFileSync(`${DRIZZLE_DIR}/meta/_journal.json`, "utf8"),
-  ) as { entries: { tag: string }[] };
-  return journal.entries.map((entry) => entry.tag);
-}
-
-describe("dernière migration sur une base peuplée", () => {
+describe("migration barber_working_hours sur une base peuplée", () => {
   it("conserve les données existantes et crée barber_working_hours vide", async () => {
-    const tags = migrationTags();
-    expect(tags.length).toBeGreaterThan(1);
-    const last = tags[tags.length - 1];
+    const before = tagsBefore(WORKING_HOURS_TAG);
+    expect(before.length).toBeGreaterThan(1);
 
     const client = new PGlite();
-    for (const tag of tags.slice(0, -1)) {
+    for (const tag of before) {
       await client.exec(readMigration(tag));
     }
 
@@ -48,7 +40,7 @@ describe("dernière migration sur une base peuplée", () => {
         VALUES ('${serviceId}', '${profileId}', 'Ancien service', NULL, 30, 2500, true);
     `);
 
-    await client.exec(readMigration(last));
+    await client.exec(readMigration(WORKING_HOURS_TAG));
 
     const profiles = await client.query(
       "SELECT count(*)::int AS n FROM barber_profiles",

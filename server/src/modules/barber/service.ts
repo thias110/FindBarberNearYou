@@ -50,6 +50,7 @@ function toOwnProfile(profile: BarberProfile): OwnBarberProfile {
     latitude: profile.latitude,
     longitude: profile.longitude,
     currency: profile.currency,
+    timezone: profile.timezone,
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
   };
@@ -183,6 +184,7 @@ export async function upsertProfile(
       latitude: input.latitude,
       longitude: input.longitude,
       currency: input.currency,
+      timezone: input.timezone ?? null,
       updatedAt: now,
     })
     .onConflictDoUpdate({
@@ -197,7 +199,13 @@ export async function upsertProfile(
         latitude: input.latitude,
         longitude: input.longitude,
         updatedAt: now,
-        // `currency`, `id` et `createdAt` sont volontairement exclus.
+        // `timezone` absent → la valeur existante est conservée (référence à la
+        // ligne cible, valide dans SET d'un ON CONFLICT DO UPDATE). `null`
+        // explicite efface. `currency`, `id` et `createdAt` restent exclus.
+        timezone:
+          input.timezone === undefined
+            ? sql`${barberProfiles.timezone}`
+            : input.timezone,
       },
       setWhere: sql`barber_profiles.currency = excluded.currency`,
     })
