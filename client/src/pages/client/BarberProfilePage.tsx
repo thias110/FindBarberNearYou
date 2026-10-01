@@ -10,6 +10,7 @@ import {
 } from "@findbarber/shared/constants";
 import { barbersApi } from "../../lib/apiClient";
 import { formatCurrency, formatDuration } from "../../lib/formatters";
+import { BookingForm } from "../../components/BookingForm";
 
 export function PublicBarberProfilePage() {
   const { barberId } = useParams();
@@ -100,6 +101,23 @@ export function PublicBarberProfilePage() {
             {APPROXIMATE_LOCATION_LABEL}
           </p>
         </section>
+
+        {services.length > 0 && profile.places.length > 0 ? (
+          <BookingForm
+            barberId={profile.id}
+            profile={profile}
+            services={services}
+          />
+        ) : (
+          <section className="rounded-2xl bg-white p-6 shadow">
+            <h2 className="font-semibold text-brand-900">Réservation</h2>
+            <p className="mt-2 text-gray-600">
+              {services.length === 0
+                ? "Ce professionnel ne propose pas encore de service à réserver."
+                : "Ce professionnel n'a pas encore renseigné ses lieux de prestation."}
+            </p>
+          </section>
+        )}
 
         <section className="rounded-2xl bg-white p-6 shadow">
           <h2 className="font-semibold text-brand-900">Services</h2>

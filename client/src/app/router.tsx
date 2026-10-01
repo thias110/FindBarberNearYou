@@ -5,11 +5,13 @@ import { RegisterPage } from "../pages/auth/RegisterPage";
 import { ClientHomePage } from "../pages/client/HomePage";
 import { PublicBarberProfilePage } from "../pages/client/BarberProfilePage";
 import { BarbersSearchPage } from "../pages/client/BarbersSearchPage";
+import { ClientBookingsPage } from "../pages/client/BookingsPage";
 import { BarberDashboardPage } from "../pages/barber/DashboardPage";
 import { BarberProfilePage } from "../pages/barber/ProfilePage";
 import { BarberServicesPage } from "../pages/barber/ServicesPage";
 import { BarberWorkingHoursPage } from "../pages/barber/WorkingHoursPage";
 import { BarberTimeOffPage } from "../pages/barber/TimeOffPage";
+import { BarberBookingsPage } from "../pages/barber/BookingsPage";
 import { AdminDashboardPage } from "../pages/admin/DashboardPage";
 
 export function AppRoutes() {
@@ -27,6 +29,14 @@ export function AppRoutes() {
         element={
           <RequireRole roles={["CLIENT"]}>
             <ClientHomePage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/appointments"
+        element={
+          <RequireRole roles={["CLIENT"]}>
+            <ClientBookingsPage />
           </RequireRole>
         }
       />
@@ -67,6 +77,14 @@ export function AppRoutes() {
         element={
           <RequireRole roles={["BARBER"]}>
             <BarberTimeOffPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/pro/bookings"
+        element={
+          <RequireRole roles={["BARBER"]}>
+            <BarberBookingsPage />
           </RequireRole>
         }
       />

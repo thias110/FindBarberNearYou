@@ -1,5 +1,9 @@
 import type {
   BarbersSearchResponse,
+  Booking,
+  BookingDetails,
+  BookingsResponse,
+  BookingSlotsResponse,
   OwnBarberProfile,
   OwnBarberService,
   PublicBarberProfileWithServices,
@@ -8,7 +12,9 @@ import type {
   TimeOffResponse,
   WorkingHoursResponse,
 } from "@findbarber/shared/types";
+import type { ServicePlace } from "@findbarber/shared/constants";
 import type {
+  BookingCreateInput,
   ProfileInput,
   ServiceCreateInput,
   ServiceUpdateInput,
@@ -188,6 +194,11 @@ export interface BarbersSearchParams {
 
 export interface PublicBarbersApi {
   getProfile(barberId: string): Promise<PublicBarberProfileWithServices>;
+  getSlots(
+    barberId: string,
+    params: { serviceId: string; date: string; place: ServicePlace },
+    signal?: AbortSignal,
+  ): Promise<BookingSlotsResponse>;
   search(
     params: BarbersSearchParams,
     signal?: AbortSignal,
@@ -199,6 +210,17 @@ export const barbersApi: PublicBarbersApi = {
     apiFetch<PublicBarberProfileWithServices>(
       `/api/barbers/${encodeURIComponent(barberId)}`,
     ),
+  getSlots: (barberId, params, signal) => {
+    const sp = new URLSearchParams({
+      serviceId: params.serviceId,
+      date: params.date,
+      place: params.place,
+    });
+    return apiFetch<BookingSlotsResponse>(
+      `/api/barbers/${encodeURIComponent(barberId)}/slots?${sp.toString()}`,
+      { signal },
+    );
+  },
   search: (params, signal) => {
     const sp = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
@@ -212,4 +234,35 @@ export const barbersApi: PublicBarbersApi = {
       { signal },
     );
   },
+};
+
+export interface BookingApi {
+  create(input: BookingCreateInput): Promise<{ booking: Booking }>;
+  list(): Promise<BookingsResponse>;
+  getDetails(bookingId: string): Promise<{ booking: BookingDetails }>;
+  confirm(bookingId: string): Promise<{ booking: Booking }>;
+  cancel(bookingId: string): Promise<{ booking: Booking }>;
+}
+
+export const bookingApi: BookingApi = {
+  create: (input) =>
+    apiFetch<{ booking: Booking }>("/api/bookings", {
+      method: "POST",
+      body: input,
+    }),
+  list: () => apiFetch<BookingsResponse>("/api/bookings"),
+  getDetails: (bookingId) =>
+    apiFetch<{ booking: BookingDetails }>(
+      `/api/bookings/${encodeURIComponent(bookingId)}`,
+    ),
+  confirm: (bookingId) =>
+    apiFetch<{ booking: Booking }>(
+      `/api/bookings/${encodeURIComponent(bookingId)}/confirm`,
+      { method: "POST" },
+    ),
+  cancel: (bookingId) =>
+    apiFetch<{ booking: Booking }>(
+      `/api/bookings/${encodeURIComponent(bookingId)}/cancel`,
+      { method: "POST" },
+    ),
 };

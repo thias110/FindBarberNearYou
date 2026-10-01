@@ -44,6 +44,16 @@ export function formatCurrency(priceMinor: number, currency: Currency): string {
   }).format(priceMinor / 100);
 }
 
+/** Affiche un instant ISO 8601 dans le fuseau local du visiteur. */
+export function formatDateTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat("fr-CH", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+}
+
 export function formatDuration(minutes: number): string {
   if (minutes < 60) {
     return `${minutes} min`;

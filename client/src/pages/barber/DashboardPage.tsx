@@ -120,6 +120,17 @@ export function BarberDashboardPage() {
               Congés et fermetures exceptionnelles
             </span>
           </Link>
+          <Link
+            to="/pro/bookings"
+            className="rounded-2xl bg-white p-5 shadow transition hover:shadow-md"
+          >
+            <span className="font-semibold text-brand-900">
+              Mes réservations
+            </span>
+            <span className="mt-1 block text-sm text-gray-600">
+              Demandes en attente, confirmations et annulations
+            </span>
+          </Link>
         </nav>
 
         <section className="rounded-2xl bg-white p-6 shadow">

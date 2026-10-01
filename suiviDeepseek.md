@@ -1597,3 +1597,62 @@ depuis le lot 9), pas de trigger, pas de renommage.
   renvoyer aussi les composants structurés.
 - La limite de longueur d'adresse est appliquée côté Zod (`LIMITS.clientAddress = 200`),
   pas en CHECK SQL (convention existante : `profileAddress` également sans CHECK).
+
+---
+
+# Suivi — lot 10 : UI de réservation complète (client + barber)
+
+État : interface client construite sur le backend de réservation existant. Aucun
+commit / branche / push / PR / issue. Aucune modification du backend métier. Tests,
+lint, build, typecheck et migrations volontairement NON lancés (attente validation).
+
+## Décisions appliquées
+
+- Aucun endpoint inventé : seuls les endpoints réels sont consommés
+  (`GET /api/barbers/:barberId/slots`, `POST /api/bookings`, `GET /api/bookings`,
+  `GET /api/bookings/:bookingId`, `POST /api/bookings/:bookingId/confirm`,
+  `POST /api/bookings/:bookingId/cancel`).
+- Adresse privée : jamais affichée dans les listes ; uniquement sur le détail
+  (`GET /api/bookings/:bookingId`) pour une réservation `AT_CLIENT`, à la demande.
+- Validation serveur = source de vérité ; validation frontend limitée au blocage
+  des soumissions incomplètes (service, lieu, date, créneau, adresse si AT_CLIENT).
+- Erreurs serveur affichées telles quelles (message déjà en français).
+
+## Fichiers créés
+
+- `client/src/lib/booking.ts` (validation du formulaire + helpers de dates locales)
+- `client/src/components/BookingForm.tsx`
+- `client/src/components/BookingStatusBadge.tsx`
+- `client/src/pages/client/BookingsPage.tsx` (Mes rendez-vous)
+- `client/src/pages/barber/BookingsPage.tsx` (gestion des réservations barber)
+- `tests/src/booking-form.test.ts`
+
+## Fichiers modifiés
+
+- `client/src/lib/apiClient.ts` (bookingApi + getSlots)
+- `client/src/lib/formatters.ts` (formatDateTime)
+- `client/src/pages/client/BarberProfilePage.tsx` (intégration BookingForm)
+- `client/src/pages/client/HomePage.tsx` (lien Mes rendez-vous)
+- `client/src/pages/barber/DashboardPage.tsx` (carte Mes réservations)
+- `client/src/app/router.tsx` (routes /appointments et /pro/bookings)
+- `README.md`, `suiviDeepseek.md`
+
+## Routes UI ajoutées
+
+- `/appointments` — CLIENT : liste de ses réservations, annulation, adresse privée
+  AT_CLIENT sur le détail uniquement.
+- `/pro/bookings` — BARBER : demandes PENDING/CONFIRMED/CANCELLED, confirmation,
+  annulation, adresse privée AT_CLIENT sur le détail uniquement.
+- `/barbers/:barberId` — ajout du formulaire de réservation public.
+
+## Commandes NON lancées (attente validation)
+
+`npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
+
+## Risques / points d'attention
+
+- La date affichée d'un rendez-vous est formatée dans le fuseau local du visiteur
+  (le fuseau du barber n'est pas exposé publiquement) ; la sélection de créneau, elle,
+  affiche bien la minute murale (`startMinute`) choisie.
+- Le login ne conserve pas la page de retour : un visiteur non connecté est invité à
+  se connecter puis revient manuellement sur le profil pour réserver.

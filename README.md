@@ -354,8 +354,25 @@ ce lot.
   concerné et à ADMIN ; tout autre rôle ou propriétaire reçoit `404` (aucune fuite
   d'existence ni d'adresse). L'adresse n'apparaît jamais dans `GET /api/barbers`,
   `GET /api/barbers/:barberId`, la recherche, la carte ni les DTO publics.
-- **Hors de ce lot** : interface client de réservation, `COMPLETED`/`NO_SHOW`, et temps de
-  déplacement.
+- **Hors de ce lot** : `COMPLETED`/`NO_SHOW` et temps de déplacement.
+
+### Interface de réservation (client et barber)
+
+- **Profil public** `/barbers/:barberId` : formulaire « Réserver » — service actif,
+  lieu parmi `places`, date, créneaux chargés via `GET /api/barbers/:barberId/slots`,
+  choix d'un créneau, adresse demandée **uniquement** pour `AT_CLIENT`. L'envoi exige
+  un compte CLIENT (lien vers la connexion sinon). Les erreurs serveur
+  (`SLOT_UNAVAILABLE`, `PLACE_NOT_OFFERED`, `OUT_OF_SERVICE_AREA`,
+  `ADDRESS_NOT_FOUND`, `GEOCODING_UNAVAILABLE`, `BARBER_TIMEZONE_MISSING`,
+  `VALIDATION_ERROR`) sont affichées telles quelles.
+- **Client** `/appointments` (« Mes rendez-vous ») : liste des réservations (service,
+  professionnel, date, lieu, statut), annulation avec confirmation, et adresse privée
+  visible uniquement sur le détail d'une réservation `AT_CLIENT` via
+  `GET /api/bookings/:bookingId`.
+- **Barber** `/pro/bookings` (« Mes réservations ») : demandes `PENDING`, confirmation
+  `PENDING` → `CONFIRMED`, annulation, nom du client, et adresse privée uniquement sur
+  le détail d'une réservation `AT_CLIENT`.
+- Les listes n'exposent jamais d'adresse ; seul le détail autorisé la renvoie.
 
 ## Carte (MapLibre GL JS + MapTiler)
 
