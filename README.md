@@ -116,6 +116,8 @@ npm start           # démarre le serveur compilé
 - `GET  /api/barber/services` — services actifs/inactifs du BARBER connecté
 - `POST /api/barber/services` — création d'un service (BARBER + CSRF)
 - `PATCH /api/barber/services/:serviceId` — modification/désactivation d'un service (BARBER + CSRF)
+- `GET  /api/barber/working-hours` — horaires hebdomadaires du BARBER connecté (404 si pas de profil)
+- `PUT  /api/barber/working-hours` — remplacement complet des horaires (BARBER + CSRF)
 - `GET  /api/barbers` — recherche publique (voir ci-dessous)
 - `GET  /api/barbers/:barberId` — profil public + services actifs (public, `barberId` = `barber_profiles.id`)
 
@@ -155,6 +157,32 @@ sur le profil détaillé.
   `[]` = suppression, tableau = remplacement (dans la même transaction que le service).
 - Page publique `/barbers` : filtres + pagination conservés dans l'URL (précédent/suivant
   cohérents), recherche, réinitialisation, états chargement/erreur+retry/vide.
+
+### Horaires hebdomadaires (barber)
+
+Le barbier configure ses jours de travail sur `/pro/working-hours`. Plusieurs plages par
+jour sont possibles (`lundi 09:00–12:00` et `14:00–18:00`) : les trous entre plages d'un
+même jour sont des pauses implicites.
+
+- **Représentation** : une ligne `barber_working_hours` par plage. `weekday` entier
+  ISO-8601 (1 = lundi … 7 = dimanche) ; `startMinute`/`endMinute` en minutes depuis minuit
+  local (0…1440). `1440` (= 24:00) n'est autorisé qu'en fin de plage, via le contrôle
+  explicite « Fin de journée (24:00) » — jamais comme valeur d'un `input type="time"`.
+  Aucune plage ne traverse minuit (`start < end`).
+- **Heures locales au salon, sans fuseau** : les heures sont des heures murales du salon.
+  Le fuseau IANA du salon sera obligatoire avant le moteur de réservation ; il ne sera
+  déduit ni du pays ni du navigateur. Aucune colonne `timezone` dans ce lot.
+- **Validation** : rejets stricts (400 `VALIDATION_ERROR`) — jour hors 1..7, minutes hors
+  bornes, début ≥ fin, doublons, chevauchements (plages adjacentes autorisées), plus de
+  `6` plages par jour ou `42` au total, champs inconnus interdits. Contraintes `CHECK` +
+  index unique `(profile, weekday, start)` en base comme filet.
+- **Enregistrement atomique** : `PUT` = remplacement complet de la semaine. Le profil
+  propriétaire est résolu et verrouillé (`SELECT … FOR UPDATE`) **dans** la transaction,
+  avant `DELETE` + `INSERT` : deux PUT simultanés du même barbier sont sérialisés, y
+  compris sur un planning vide (l'ancre du verrou est la ligne du profil).
+  Suppression = `PUT { "intervals": [] }`.
+- Réservations : non implémentées dans ce lot. Le moteur de créneaux futur lira cette
+  table (après ajout du fuseau IANA du salon).
 
 ## Carte (MapLibre GL JS + MapTiler)
 

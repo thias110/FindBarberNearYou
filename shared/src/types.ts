@@ -4,6 +4,7 @@ import type {
   ROLES,
   Technique,
   USER_STATUSES,
+  Weekday,
 } from "./constants";
 import type { CountryCode } from "./countries";
 
@@ -87,4 +88,19 @@ export interface BarbersSearchResponse {
     total: number;
     totalPages: number;
   };
+}
+
+// --- Horaires hebdomadaires (lot 5) ---
+// Une entrée = une plage de travail. Les trous entre plages d'un même jour
+// sont des pauses implicites. Minutes depuis minuit local du salon.
+// `endMinute` vaut au plus 1440 (24:00, fin de journée) ; aucun passage minuit.
+export interface WorkingHoursInterval {
+  id: string;
+  weekday: Weekday;
+  startMinute: number;
+  endMinute: number;
+}
+
+export interface WorkingHoursResponse {
+  intervals: WorkingHoursInterval[];
 }

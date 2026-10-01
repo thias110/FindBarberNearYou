@@ -100,6 +100,15 @@ export function BarberDashboardPage() {
               Prestations, durées et tarifs
             </span>
           </Link>
+          <Link
+            to="/pro/working-hours"
+            className="rounded-2xl bg-white p-5 shadow transition hover:shadow-md"
+          >
+            <span className="font-semibold text-brand-900">Mes horaires</span>
+            <span className="mt-1 block text-sm text-gray-600">
+              Jours et plages de travail (heures locales du salon)
+            </span>
+          </Link>
         </nav>
 
         <section className="rounded-2xl bg-white p-6 shadow">

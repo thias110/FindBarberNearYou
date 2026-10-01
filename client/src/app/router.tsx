@@ -8,6 +8,7 @@ import { BarbersSearchPage } from "../pages/client/BarbersSearchPage";
 import { BarberDashboardPage } from "../pages/barber/DashboardPage";
 import { BarberProfilePage } from "../pages/barber/ProfilePage";
 import { BarberServicesPage } from "../pages/barber/ServicesPage";
+import { BarberWorkingHoursPage } from "../pages/barber/WorkingHoursPage";
 import { AdminDashboardPage } from "../pages/admin/DashboardPage";
 
 export function AppRoutes() {
@@ -49,6 +50,14 @@ export function AppRoutes() {
         element={
           <RequireRole roles={["BARBER"]}>
             <BarberServicesPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/pro/working-hours"
+        element={
+          <RequireRole roles={["BARBER"]}>
+            <BarberWorkingHoursPage />
           </RequireRole>
         }
       />

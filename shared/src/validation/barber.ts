@@ -201,3 +201,102 @@ export const barberSearchQuerySchema = z
   .strict();
 
 export type BarberSearchQuery = z.infer<typeof barberSearchQuerySchema>;
+
+// --- Horaires hebdomadaires (remplacement complet par PUT) ---
+// Les heures sont des minutes murales locales (0..1439 pour un départ,
+// 1..1440 pour une fin ; 1440 = 24:00). Refuse les doublons, les
+// chevauchements stricts (les plages adjacentes sont autorisées) et les
+// dépassements du nombre maximal de plages (par jour et au total).
+export const workingHoursIntervalSchema = z
+  .object({
+    weekday: z
+      .number()
+      .int("Le jour doit être un entier.")
+      .min(1, "Le jour doit être compris entre 1 (lundi) et 7 (dimanche).")
+      .max(7, "Le jour doit être compris entre 1 (lundi) et 7 (dimanche)."),
+    startMinute: z
+      .number()
+      .int("L'heure de début doit être un entier.")
+      .min(
+        LIMITS.workingHoursStartMin,
+        "L'heure de début ne peut pas être avant 00:00.",
+      )
+      .max(
+        LIMITS.workingHoursStartMax,
+        "L'heure de début ne peut pas être après 23:59.",
+      ),
+    endMinute: z
+      .number()
+      .int("L'heure de fin doit être un entier.")
+      .min(
+        LIMITS.workingHoursEndMin,
+        "L'heure de fin ne peut pas être avant 00:01.",
+      )
+      .max(
+        LIMITS.workingHoursEndMax,
+        "L'heure de fin ne peut pas dépasser 24:00.",
+      ),
+  })
+  .strict()
+  .refine((interval) => interval.startMinute < interval.endMinute, {
+    message: "La fin doit être après le début (aucune plage ne traverse minuit).",
+    path: ["endMinute"],
+  });
+
+export const workingHoursSchema = z
+  .object({
+    intervals: z
+      .array(workingHoursIntervalSchema)
+      .max(
+        LIMITS.workingHoursMaxIntervals,
+        `Le planning ne peut pas dépasser ${LIMITS.workingHoursMaxIntervals} plages.`,
+      ),
+  })
+  .strict()
+  .superRefine((payload, ctx) => {
+    // Les indices d'origine dans le payload sont conservés dans `path` de
+    // chaque issue (["intervals", index]) pour que le client rattache
+    // l'erreur à la ligne concernée, même après tri par début.
+    const byDay = new Map<
+      number,
+      { index: number; startMinute: number; endMinute: number }[]
+    >();
+    payload.intervals.forEach((interval, index) => {
+      const list = byDay.get(interval.weekday) ?? [];
+      list.push({
+        index,
+        startMinute: interval.startMinute,
+        endMinute: interval.endMinute,
+      });
+      byDay.set(interval.weekday, list);
+    });
+    for (const [weekday, items] of byDay) {
+      if (items.length > LIMITS.workingHoursMaxIntervalsPerDay) {
+        for (const item of items.slice(LIMITS.workingHoursMaxIntervalsPerDay)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Jour ${weekday} : plus de ${LIMITS.workingHoursMaxIntervalsPerDay} plages.`,
+            path: ["intervals", item.index],
+          });
+        }
+        continue;
+      }
+      // Tri par début : un doublon exact ou un chevauchement strict se lit
+      // par `début suivant < fin précédente`. L'issue est rattachée à
+      // l'intervalle concerné par son index d'origine.
+      const sorted = [...items].sort((a, b) => a.startMinute - b.startMinute);
+      for (let position = 1; position < sorted.length; position++) {
+        const current = sorted[position];
+        const previous = sorted[position - 1];
+        if (current.startMinute < previous.endMinute) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Jour ${weekday} : plages qui se chevauchent.`,
+            path: ["intervals", current.index],
+          });
+        }
+      }
+    }
+  });
+
+export type WorkingHoursInput = z.infer<typeof workingHoursSchema>;
