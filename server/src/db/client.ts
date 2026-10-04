@@ -13,6 +13,7 @@ import {
   barberTimeOff,
   barberWorkingHours,
   bookings,
+  reviews,
   users,
 } from "@findbarber/shared/schema";
 import { env } from "../config/env.js";
@@ -27,6 +28,7 @@ export const schema = {
   barberTimeOff,
   barberWorkingHours,
   bookings,
+  reviews,
 };
 
 // The query API is identical for both drivers; we type `db` with the PGlite

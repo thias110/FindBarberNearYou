@@ -123,6 +123,16 @@ export const SEARCH_LIMITS = {
   pageSizeMax: 50,
 } as const;
 
+// Pagination des avis publics d'un professionnel (lot 11). Liste courte par
+// défaut : le profil public reste léger ; la pagination complète est disponible
+// via `page`/`pageSize`.
+export const REVIEW_LIMITS = {
+  pageDefault: 1,
+  pageMax: 10_000,
+  pageSizeDefault: 5,
+  pageSizeMax: 20,
+} as const;
+
 // Limites partagées (utilisées par Zod côté serveur et par les formulaires côté client).
 export const LIMITS = {
   profileDisplayName: 120,
@@ -163,4 +173,10 @@ export const LIMITS = {
   // Adresse client privée (lot 9 passe A, issue #19) : chaîne libre géocodée
   // côté serveur pour `AT_CLIENT`, jamais exposée publiquement.
   clientAddress: 200,
+  // Avis post-rendez-vous (lot 11) : note entière 1..5 obligatoire et
+  // commentaire public facultatif, trimé et borné. La note est aussi garantie
+  // par un CHECK SQL en dernier ressort.
+  reviewRatingMin: 1,
+  reviewRatingMax: 5,
+  reviewComment: 1000,
 } as const;

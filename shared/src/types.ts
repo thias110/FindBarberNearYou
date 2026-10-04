@@ -151,6 +151,9 @@ export interface Booking {
   startAt: string;
   endAt: string;
   clientName: string | null;
+  // Indicateur léger uniquement (lot 11) : le commentaire et les détails d'un
+  // éventuel avis ne sont JAMAIS embarqués dans les listes de réservations.
+  hasReview: boolean;
   cancelledBy: string | null;
   cancelledAt: string | null;
   createdAt: string;
@@ -178,4 +181,33 @@ export interface BookingSlotDto {
 
 export interface BookingSlotsResponse {
   slots: BookingSlotDto[];
+}
+
+// --- Avis post-rendez-vous (lot 11) ---
+// Whitelist publique stricte : note, commentaire, date et nom public du client
+// (users.name, nullable). Aucun email, hash, userId interne, adresse, identifiant
+// de réservation ni coordonnées. `clientName` est le nom affiché de l'auteur,
+// conformément à la convention déjà utilisée par `Booking.clientName`.
+export interface PublicReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  clientName: string | null;
+}
+
+export interface BarberReviewsSummary {
+  averageRating: number | null;
+  totalReviews: number;
+}
+
+export interface BarberReviewsResponse {
+  summary: BarberReviewsSummary;
+  reviews: PublicReview[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
 }

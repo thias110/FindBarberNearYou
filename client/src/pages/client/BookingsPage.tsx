@@ -5,9 +5,10 @@ import {
   type BookingStatus,
 } from "@findbarber/shared/constants";
 import type { Booking, BookingDetails } from "@findbarber/shared/types";
-import { bookingApi } from "../../lib/apiClient";
+import { ApiError, bookingApi } from "../../lib/apiClient";
 import { formatDateTime } from "../../lib/formatters";
 import { BookingStatusBadge } from "../../components/BookingStatusBadge";
+import { ReviewForm } from "../../components/ReviewForm";
 
 export function ClientBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -20,6 +21,13 @@ export function ClientBookingsPage() {
   const [details, setDetails] = useState<Record<string, BookingDetails>>({});
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
+
+  const [reviewFormId, setReviewFormId] = useState<string | null>(null);
+  const [reviewSubmittingId, setReviewSubmittingId] = useState<string | null>(
+    null,
+  );
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewThanksId, setReviewThanksId] = useState<string | null>(null);
 
   const loadBookings = useCallback(async () => {
     setLoading(true);
@@ -53,6 +61,33 @@ export function ClientBookingsPage() {
     } finally {
       setActionId(null);
       setConfirmingId(null);
+    }
+  }
+
+  async function handleSubmitReview(
+    bookingId: string,
+    input: { rating: number; comment: string },
+  ) {
+    setReviewError(null);
+    setReviewSubmittingId(bookingId);
+    try {
+      await bookingApi.createReview(bookingId, {
+        rating: input.rating,
+        comment: input.comment,
+      });
+      setBookings((current) =>
+        current.map((booking) =>
+          booking.id === bookingId ? { ...booking, hasReview: true } : booking,
+        ),
+      );
+      setReviewFormId(null);
+      setReviewThanksId(bookingId);
+    } catch (err) {
+      setReviewError(
+        err instanceof ApiError ? err.message : "Envoi de l'avis échoué.",
+      );
+    } finally {
+      setReviewSubmittingId(null);
     }
   }
 
@@ -181,6 +216,46 @@ export function ClientBookingsPage() {
                           {detailLoadingId === booking.id
                             ? "Chargement…"
                             : "Voir l'adresse"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {booking.status === "COMPLETED" && (
+                    <div className="mt-3 border-t border-gray-100 pt-3">
+                      {booking.hasReview ? (
+                        reviewThanksId === booking.id ? (
+                          <p className="text-sm text-gray-600">
+                            Merci, votre avis a été enregistré.
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-600">
+                            Vous avez déjà laissé un avis.
+                          </p>
+                        )
+                      ) : reviewFormId === booking.id ? (
+                        <ReviewForm
+                          onSubmit={(input) =>
+                            handleSubmitReview(booking.id, input)
+                          }
+                          submitting={reviewSubmittingId === booking.id}
+                          onCancel={() => {
+                            setReviewFormId(null);
+                            setReviewError(null);
+                          }}
+                          serverError={reviewError}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={reviewSubmittingId === booking.id}
+                          onClick={() => {
+                            setReviewError(null);
+                            setReviewFormId(booking.id);
+                          }}
+                          className="rounded-lg border border-brand-700 px-3 py-1.5 text-sm text-brand-700 disabled:opacity-50"
+                        >
+                          Laisser un avis
                         </button>
                       )}
                     </div>

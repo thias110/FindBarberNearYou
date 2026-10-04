@@ -8,6 +8,7 @@ import {
   barberTimeOff,
   barberWorkingHours,
   bookings,
+  reviews,
   users,
   type BarberProfile,
   type BookingRow,
@@ -45,7 +46,11 @@ import { AppError } from "../../lib/errors.js";
 
 const MS_PER_HOUR = 3_600_000;
 
-function toBooking(row: BookingRow, clientName: string | null): Booking {
+function toBooking(
+  row: BookingRow,
+  clientName: string | null,
+  hasReview = false,
+): Booking {
   return {
     id: row.id,
     barberId: row.barberProfileId,
@@ -61,6 +66,7 @@ function toBooking(row: BookingRow, clientName: string | null): Booking {
     startAt: row.startAt.toISOString(),
     endAt: row.endAt.toISOString(),
     clientName,
+    hasReview,
     cancelledBy: row.cancelledBy,
     cancelledAt: row.cancelledAt ? row.cancelledAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
@@ -70,9 +76,10 @@ function toBooking(row: BookingRow, clientName: string | null): Booking {
 function toBookingDetails(
   row: BookingRow,
   clientName: string | null,
+  hasReview = false,
 ): BookingDetails {
   return {
-    ...toBooking(row, clientName),
+    ...toBooking(row, clientName, hasReview),
     clientAddress: row.clientAddress,
     clientLatitude: row.clientLatitude,
     clientLongitude: row.clientLongitude,
@@ -449,21 +456,27 @@ export async function listBookings(user: {
       );
     }
     const rows = await db
-      .select({ booking: bookings, clientName: users.name })
+      .select({ booking: bookings, clientName: users.name, reviewId: reviews.id })
       .from(bookings)
       .leftJoin(users, eq(users.id, bookings.clientUserId))
+      .leftJoin(reviews, eq(reviews.bookingId, bookings.id))
       .where(eq(bookings.barberProfileId, profile.id))
       .orderBy(asc(bookings.startAt));
-    return rows.map((row) => toBooking(row.booking, row.clientName));
+    return rows.map((row) =>
+      toBooking(row.booking, row.clientName, row.reviewId !== null),
+    );
   }
 
   const rows = await db
-    .select({ booking: bookings, clientName: users.name })
+    .select({ booking: bookings, clientName: users.name, reviewId: reviews.id })
     .from(bookings)
     .leftJoin(users, eq(users.id, bookings.clientUserId))
+    .leftJoin(reviews, eq(reviews.bookingId, bookings.id))
     .where(eq(bookings.clientUserId, user.id))
     .orderBy(asc(bookings.startAt));
-  return rows.map((row) => toBooking(row.booking, row.clientName));
+  return rows.map((row) =>
+    toBooking(row.booking, row.clientName, row.reviewId !== null),
+  );
 }
 
 // Détail privé d'une réservation : adresse et coordonnées exactes du client,
@@ -503,7 +516,12 @@ export async function getBookingDetails(
     .from(users)
     .where(eq(users.id, row.clientUserId))
     .limit(1);
-  return toBookingDetails(row, client?.name ?? null);
+  const [review] = await db
+    .select({ id: reviews.id })
+    .from(reviews)
+    .where(eq(reviews.bookingId, bookingId))
+    .limit(1);
+  return toBookingDetails(row, client?.name ?? null, review !== undefined);
 }
 
 export async function confirmBooking(
@@ -547,6 +565,65 @@ export async function confirmBooking(
   const [updated] = await db
     .update(bookings)
     .set({ status: "CONFIRMED", updatedAt: new Date() })
+    .where(
+      and(
+        eq(bookings.id, bookingId),
+        eq(bookings.barberProfileId, profile.id),
+      ),
+    )
+    .returning();
+  const [client] = await db
+    .select({ name: users.name })
+    .from(users)
+    .where(eq(users.id, updated.clientUserId))
+    .limit(1);
+  return toBooking(updated, client?.name ?? null);
+}
+
+// Marquage terminé (lot 11) : seul le BARBER propriétaire peut passer
+// CONFIRMED → COMPLETED. Aucun autre statut ne peut devenir COMPLETED ;
+// CLIENT et ADMIN sont bloqués en amont par `requireRole("BARBER")`.
+export async function completeBooking(
+  barberUserId: string,
+  bookingId: string,
+): Promise<Booking> {
+  const [profile] = await db
+    .select({ id: barberProfiles.id })
+    .from(barberProfiles)
+    .where(eq(barberProfiles.userId, barberUserId))
+    .limit(1);
+  if (!profile) {
+    throw new AppError(
+      404,
+      "BARBER_PROFILE_NOT_FOUND",
+      "Aucun profil professionnel.",
+    );
+  }
+
+  const [existing] = await db
+    .select()
+    .from(bookings)
+    .where(
+      and(
+        eq(bookings.id, bookingId),
+        eq(bookings.barberProfileId, profile.id),
+      ),
+    )
+    .limit(1);
+  if (!existing) {
+    throw new AppError(404, "BOOKING_NOT_FOUND", "Réservation introuvable.");
+  }
+  if (existing.status !== "CONFIRMED") {
+    throw new AppError(
+      409,
+      "INVALID_STATUS_TRANSITION",
+      "Seule une réservation confirmée peut être marquée comme terminée.",
+    );
+  }
+
+  const [updated] = await db
+    .update(bookings)
+    .set({ status: "COMPLETED", updatedAt: new Date() })
     .where(
       and(
         eq(bookings.id, bookingId),

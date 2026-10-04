@@ -17,6 +17,7 @@ export function BarberBookingsPage() {
 
   const [actionId, setActionId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [completingId, setCompletingId] = useState<string | null>(null);
 
   const [details, setDetails] = useState<Record<string, BookingDetails>>({});
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
@@ -58,6 +59,25 @@ export function BarberBookingsPage() {
       setError(err instanceof Error ? err.message : "Confirmation échouée.");
     } finally {
       setActionId(null);
+    }
+  }
+
+  async function handleComplete(bookingId: string) {
+    setError(null);
+    setActionId(bookingId);
+    setCompletingId(bookingId);
+    try {
+      const res = await bookingApi.complete(bookingId);
+      setBookings((current) =>
+        current.map((booking) =>
+          booking.id === bookingId ? res.booking : booking,
+        ),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Terminaison échouée.");
+    } finally {
+      setActionId(null);
+      setCompletingId(null);
     }
   }
 
@@ -237,6 +257,18 @@ export function BarberBookingsPage() {
                           className="rounded-lg bg-brand-700 px-3 py-1.5 text-sm text-white disabled:opacity-50"
                         >
                           {busy ? "Confirmation…" : "Confirmer"}
+                        </button>
+                      )}
+                      {booking.status === "CONFIRMED" && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void handleComplete(booking.id)}
+                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+                        >
+                          {completingId === booking.id
+                            ? "Terminaison…"
+                            : "Marquer comme terminé"}
                         </button>
                       )}
                       {cancellable(booking.status) &&

@@ -1656,3 +1656,70 @@ lint, build, typecheck et migrations volontairement NON lancés (attente validat
   affiche bien la minute murale (`startMinute`) choisie.
 - Le login ne conserve pas la page de retour : un visiteur non connecté est invité à
   se connecter puis revient manuellement sur le profil pour réserver.
+
+---
+
+# Suivi — lot 11 : avis post-rendez-vous et statut COMPLETED
+
+État : backend + interface réalisés sur la base de réservation existante. Aucun
+commit / branche / push / PR / issue. Typecheck, tests, lint et build volontairement
+NON lancés (attente validation). Migration Drizzle `0010_*` générée (non appliquée).
+
+## Décisions appliquées
+
+- `POST /api/bookings/:bookingId/complete` : BARBER propriétaire uniquement,
+  `CONFIRMED → COMPLETED` ; tout autre statut → 409 `INVALID_STATUS_TRANSITION` ;
+  CLIENT/ADMIN → 403 (aucune convention ADMIN existante sur les réservations).
+- `POST /api/bookings/:bookingId/review` : CLIENT propriétaire d'un booking `COMPLETED`
+  uniquement. `barberId`/`clientId` jamais acceptés du body (Zod `.strict()`) : le
+  barber noté est déduit du booking, l'auteur de la session.
+- Avis unique par booking : index unique `reviews_booking_id` en base (protection
+  finale contre la concurrence) + catch `isUniqueViolation` → 409 `REVIEW_ALREADY_EXISTS`.
+- `Booking` n'embarque PAS l'avis complet : uniquement `hasReview: boolean` (décision
+  passe B). Le commentaire/détail d'avis reste réservé à la lecture publique.
+- `GET /api/barbers/:barberId/reviews` : public, paginé (page défaut 1, pageSize défaut
+  5 max 20), whitelist `{ id, rating, comment, createdAt, clientName }`, moyenne
+  arrondie à 2 décimales, `null` si aucun avis. Jamais d'email/adresse/bookingId/userId.
+- Validation : `rating` entier 1..5 ; `comment` facultatif trimé ≤ 1000 (CHECK SQL en
+  dernier ressort).
+
+## Fichiers créés
+
+- `shared/src/validation/review.ts`
+- `server/src/modules/review/service.ts`
+- `server/drizzle/0010_eminent_kat_farrell.sql` (+ snapshot + journal)
+- `client/src/lib/review.ts`
+- `client/src/components/ReviewForm.tsx`
+- `tests/src/review.integration.test.ts`
+- `tests/src/migration-reviews.test.ts`
+- `tests/src/review-form.test.ts`
+
+## Fichiers modifiés
+
+- `shared/src/constants.ts` (`REVIEW_LIMITS`, `LIMITS.reviewRatingMin/Max`, `LIMITS.reviewComment`)
+- `shared/src/schema.ts` (table `reviews`)
+- `shared/src/types.ts` (`PublicReview`, `BarberReviewsSummary`, `BarberReviewsResponse`, `Booking.hasReview`)
+- `shared/src/validation/barber.ts` (`integerParam` exporté)
+- `shared/src/validation/index.ts` (export review)
+- `server/src/db/client.ts` (`reviews` au schéma)
+- `server/src/modules/booking/routes.ts` (`complete`, `review`)
+- `server/src/modules/booking/service.ts` (`completeBooking`, `hasReview` dans listes/détail)
+- `server/src/modules/barber/publicRoutes.ts` (`GET /:barberId/reviews`)
+- `client/src/lib/apiClient.ts` (`complete`, `createReview`, `getReviews`)
+- `client/src/pages/client/BookingsPage.tsx` (avis)
+- `client/src/pages/barber/BookingsPage.tsx` (terminer)
+- `client/src/pages/client/BarberProfilePage.tsx` (bloc avis)
+- `README.md`, `suiviDeepseek.md`
+
+## Commandes NON lancées (attente validation)
+
+`npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
+`npm run db:generate` a été lancé (génération de la migration `0010_*`) ;
+`npm run db:migrate` n'a PAS été lancé.
+
+## Risques / points d'attention
+
+- Le détail `GET /api/bookings/:bookingId` renvoie `hasReview` (cohérent avec `Booking`),
+  mais pas le contenu de l'avis.
+- Le profil public charge les avis via un second appel (`getReviews`) pour rester paginable.
+- La note moyenne est calculée en SQL (`avg(rating)::float8`) et arrondie en JS à 2 décimales.

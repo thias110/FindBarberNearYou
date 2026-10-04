@@ -1,10 +1,15 @@
 import { Router } from "express";
-import { bookingCreateSchema } from "@findbarber/shared/validation";
+import {
+  bookingCreateSchema,
+  reviewCreateSchema,
+} from "@findbarber/shared/validation";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
 import { validationError } from "../../lib/validation.js";
+import { createReview } from "../review/service.js";
 import {
   cancelBooking,
+  completeBooking,
   confirmBooking,
   createBooking,
   getBookingDetails,
@@ -70,6 +75,42 @@ bookingRouter.post(
       req.params.bookingId as string,
     );
     res.json({ booking });
+  },
+);
+
+// Marquage terminé (lot 11) : BARBER propriétaire, CONFIRMED → COMPLETED.
+bookingRouter.post(
+  "/:bookingId/complete",
+  requireAuth,
+  requireRole("BARBER"),
+  csrfProtection,
+  async (req, res) => {
+    const booking = await completeBooking(
+      req.user!.id,
+      req.params.bookingId as string,
+    );
+    res.json({ booking });
+  },
+);
+
+// Avis post-rendez-vous (lot 11) : CLIENT propriétaire d'une réservation
+// COMPLETED. `barberId`/`clientId` sont déduits du booking et de la session.
+bookingRouter.post(
+  "/:bookingId/review",
+  requireAuth,
+  requireRole("CLIENT"),
+  csrfProtection,
+  async (req, res) => {
+    const parsed = reviewCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw validationError(parsed.error);
+    }
+    const review = await createReview(
+      req.user!.id,
+      req.params.bookingId as string,
+      parsed.data,
+    );
+    res.status(201).json({ review });
   },
 );
 

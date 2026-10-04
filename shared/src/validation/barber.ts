@@ -266,7 +266,7 @@ export type ServiceUpdateInput = z.infer<typeof serviceUpdateSchema>;
 // --- Recherche publique ---
 // Chaque paramètre de pagination doit être une chaîne unique AVANT coercition :
 // les tableaux (paramètres répétés), objets et chaînes vides sont rejetés.
-function integerParam(min: number, max: number, defaultValue?: number) {
+export function integerParam(min: number, max: number, defaultValue?: number) {
   const base = z.number().int().min(min).max(max);
   const schema = defaultValue === undefined ? base : base.default(defaultValue);
   return z.preprocess((value) => {

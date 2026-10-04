@@ -2,10 +2,12 @@ import { Router } from "express";
 import {
   barberSearchQuerySchema,
   bookingSlotsQuerySchema,
+  reviewListQuerySchema,
 } from "@findbarber/shared/validation";
 import { validationError } from "../../lib/validation.js";
 import { getPublicProfile, searchBarbers } from "./service.js";
 import { getBookingSlots } from "../booking/service.js";
+import { listBarberReviews } from "../review/service.js";
 
 export const barbersRouter = Router();
 
@@ -30,6 +32,20 @@ barbersRouter.get("/:barberId/slots", async (req, res) => {
     parsed.data,
   );
   res.json({ slots });
+});
+
+// Avis publics d'un professionnel (lot 11) : lecture seule, sans auth,
+// paginée. Whitelist stricte (aucune donnée privée ni détail de réservation).
+barbersRouter.get("/:barberId/reviews", async (req, res) => {
+  const parsed = reviewListQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    throw validationError(parsed.error);
+  }
+  const result = await listBarberReviews(
+    req.params.barberId as string,
+    parsed.data,
+  );
+  res.json(result);
 });
 
 // Route publique de détail. `barberId` = barber_profiles.id.

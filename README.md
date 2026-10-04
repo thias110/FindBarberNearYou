@@ -124,10 +124,13 @@ npm start           # démarre le serveur compilé
 - `GET  /api/barbers` — recherche publique (voir ci-dessous)
 - `GET  /api/barbers/:barberId` — profil public + services actifs (public, `barberId` = `barber_profiles.id`)
 - `GET  /api/barbers/:barberId/slots` — créneaux disponibles (public, `barberId` = `barber_profiles.id`)
+- `GET  /api/barbers/:barberId/reviews` — avis publics paginés d'un professionnel (public)
 - `POST /api/bookings` — création d'une réservation (CLIENT + CSRF)
 - `GET  /api/bookings` — réservations du CLIENT connecté ou du profil du BARBER connecté
 - `GET  /api/bookings/:bookingId` — détail privé (adresse client) du CLIENT propriétaire, du BARBER concerné ou d'ADMIN
 - `POST /api/bookings/:bookingId/confirm` — confirmation `PENDING` → `CONFIRMED` (BARBER propriétaire + CSRF)
+- `POST /api/bookings/:bookingId/complete` — clôture `CONFIRMED` → `COMPLETED` (BARBER propriétaire + CSRF)
+- `POST /api/bookings/:bookingId/review` — dépôt d'un avis (CLIENT propriétaire d'une réservation `COMPLETED` + CSRF)
 - `POST /api/bookings/:bookingId/cancel` — annulation (CLIENT dans le délai de 2 h, ou BARBER sans délai + CSRF)
 
 Erreurs normalisées : `{ "error": { "code": "...", "message": "..." } }`.
@@ -373,6 +376,39 @@ ce lot.
   `PENDING` → `CONFIRMED`, annulation, nom du client, et adresse privée uniquement sur
   le détail d'une réservation `AT_CLIENT`.
 - Les listes n'exposent jamais d'adresse ; seul le détail autorisé la renvoie.
+
+### Avis post-rendez-vous (lot 11)
+
+Après une prestation, le barbier clôture la réservation puis le client propriétaire
+peut déposer **un unique avis** public sur le professionnel.
+
+- **Clôture** : `POST /api/bookings/:bookingId/complete` (BARBER + CSRF), uniquement
+  `CONFIRMED` → `COMPLETED`. Seul le BARBER propriétaire du booking est autorisé ;
+  tout autre statut est refusé (`409 INVALID_STATUS_TRANSITION`), tout autre rôle ou
+  propriétaire reçoit 403/404. ADMIN n'a aucun droit sur cette action (aucune
+  convention ADMIN existante sur les réservations).
+- **Création d'avis** : `POST /api/bookings/:bookingId/review` (CLIENT + CSRF). Le
+  booking doit appartenir au client authentifié (sinon 404 `BOOKING_NOT_FOUND`), être
+  `COMPLETED` (sinon 409 `BOOKING_NOT_COMPLETED`), et le barber noté est **déduit du
+  booking** : `barberId`/`clientId` ne sont jamais acceptés depuis le body (Zod
+  `.strict()`). Body : `rating` entier obligatoire 1..5, `comment` facultatif, trimé,
+  1000 caractères max. Un seul avis par booking : index unique `reviews_booking_id`
+  (protection finale contre le doublon en concurrence) ; doublon →
+  `409 REVIEW_ALREADY_EXISTS`.
+- **Lecture publique** : `GET /api/barbers/:barberId/reviews?page&pageSize` (public,
+  sans auth). Réponse paginée (`page` défaut 1 max 10 000, `pageSize` défaut 5 max
+  20) : `summary` (`averageRating` arrondie à 2 décimales, `null` si aucun avis ;
+  `totalReviews`) et `reviews` en whitelist stricte `{ id, rating, comment, createdAt,
+  clientName }`. Aucun email, hash, userId interne, adresse, identifiant de réservation
+  ni détail de réservation n'est exposé. `clientName` est `users.name` (nullable),
+  conformément aux conventions existantes. Profils inconnus/inactifs/non BARBER → 404.
+- **Listes de réservations** : `Booking` expose uniquement `hasReview: boolean` (aucun
+  commentaire ni détail d'avis embarqué). Le CLIENT voit « Laisser un avis » seulement
+  si `status === COMPLETED && !hasReview` ; le BARBER voit « Marquer comme terminé »
+  seulement si `status === CONFIRMED`.
+- **Modèle** : table `reviews` (migration additive `0010_*`), FK `booking_id` →
+  `bookings` `ON DELETE CASCADE`, CHECK `rating BETWEEN 1 AND 5` et
+  `char_length(comment) <= 1000`, index sur `created_at`.
 
 ## Carte (MapLibre GL JS + MapTiler)
 

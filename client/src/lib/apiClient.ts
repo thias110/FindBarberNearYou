@@ -1,4 +1,5 @@
 import type {
+  BarberReviewsResponse,
   BarbersSearchResponse,
   Booking,
   BookingDetails,
@@ -7,6 +8,7 @@ import type {
   OwnBarberProfile,
   OwnBarberService,
   PublicBarberProfileWithServices,
+  PublicReview,
   PublicUser,
   TimeOff,
   TimeOffResponse,
@@ -16,6 +18,7 @@ import type { ServicePlace } from "@findbarber/shared/constants";
 import type {
   BookingCreateInput,
   ProfileInput,
+  ReviewCreateInput,
   ServiceCreateInput,
   ServiceUpdateInput,
   TimeOffCreateInput,
@@ -199,6 +202,10 @@ export interface PublicBarbersApi {
     params: { serviceId: string; date: string; place: ServicePlace },
     signal?: AbortSignal,
   ): Promise<BookingSlotsResponse>;
+  getReviews(
+    barberId: string,
+    params?: { page?: number; pageSize?: number },
+  ): Promise<BarberReviewsResponse>;
   search(
     params: BarbersSearchParams,
     signal?: AbortSignal,
@@ -221,6 +228,17 @@ export const barbersApi: PublicBarbersApi = {
       { signal },
     );
   },
+  getReviews: (barberId, params) => {
+    const sp = new URLSearchParams();
+    if (params?.page !== undefined) sp.set("page", String(params.page));
+    if (params?.pageSize !== undefined) {
+      sp.set("pageSize", String(params.pageSize));
+    }
+    const qs = sp.toString();
+    return apiFetch<BarberReviewsResponse>(
+      `/api/barbers/${encodeURIComponent(barberId)}/reviews${qs ? `?${qs}` : ""}`,
+    );
+  },
   search: (params, signal) => {
     const sp = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
@@ -241,7 +259,12 @@ export interface BookingApi {
   list(): Promise<BookingsResponse>;
   getDetails(bookingId: string): Promise<{ booking: BookingDetails }>;
   confirm(bookingId: string): Promise<{ booking: Booking }>;
+  complete(bookingId: string): Promise<{ booking: Booking }>;
   cancel(bookingId: string): Promise<{ booking: Booking }>;
+  createReview(
+    bookingId: string,
+    input: ReviewCreateInput,
+  ): Promise<{ review: PublicReview }>;
 }
 
 export const bookingApi: BookingApi = {
@@ -260,9 +283,19 @@ export const bookingApi: BookingApi = {
       `/api/bookings/${encodeURIComponent(bookingId)}/confirm`,
       { method: "POST" },
     ),
+  complete: (bookingId) =>
+    apiFetch<{ booking: Booking }>(
+      `/api/bookings/${encodeURIComponent(bookingId)}/complete`,
+      { method: "POST" },
+    ),
   cancel: (bookingId) =>
     apiFetch<{ booking: Booking }>(
       `/api/bookings/${encodeURIComponent(bookingId)}/cancel`,
       { method: "POST" },
+    ),
+  createReview: (bookingId, input) =>
+    apiFetch<{ review: PublicReview }>(
+      `/api/bookings/${encodeURIComponent(bookingId)}/review`,
+      { method: "POST", body: input },
     ),
 };

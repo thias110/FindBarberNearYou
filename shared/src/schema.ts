@@ -408,3 +408,46 @@ export const bookings = pgTable(
 
 export type BookingRow = typeof bookings.$inferSelect;
 export type NewBookingRow = typeof bookings.$inferInsert;
+
+// Avis post-rendez-vous (lot 11). Un seul avis par réservation, garanti par
+// l'index unique sur `booking_id` (protection finale contre le doublon en cas
+// de création concurrente). Le professionnel noté est déduit du booking à la
+// création : aucun `barber_profile_id`/`client_user_id` redondant n'est stocké
+// ici (le booking reste la seule source de vérité, via sa FK). La note est un
+// entier 1..5 (CHECK), le commentaire est public, facultatif et borné (CHECK).
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: text("id").primaryKey(),
+    bookingId: text("booking_id")
+      .notNull()
+      .references(() => bookings.id, { onDelete: "cascade" }),
+    rating: integer("rating").notNull(),
+    comment: text("comment"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("reviews_booking_id_unique").on(table.bookingId),
+    index("reviews_created_at_idx").on(table.createdAt),
+    check(
+      "reviews_rating_range",
+      sql`${table.rating} BETWEEN ${sql.raw(
+        String(LIMITS.reviewRatingMin),
+      )} AND ${sql.raw(String(LIMITS.reviewRatingMax))}`,
+    ),
+    check(
+      "reviews_comment_length",
+      sql`${table.comment} IS NULL OR char_length(${table.comment}) <= ${sql.raw(
+        String(LIMITS.reviewComment),
+      )}`,
+    ),
+  ],
+);
+
+export type ReviewRow = typeof reviews.$inferSelect;
+export type NewReviewRow = typeof reviews.$inferInsert;
