@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  SERVICE_PLACE_LABELS,
-  type BookingStatus,
-} from "@findbarber/shared/constants";
+import type { BookingStatus } from "@findbarber/shared/constants";
 import type { Booking, BookingDetails } from "@findbarber/shared/types";
 import { ApiError, bookingApi } from "../../lib/apiClient";
-import { formatDateTime } from "../../lib/formatters";
-import { BookingStatusBadge } from "../../components/BookingStatusBadge";
-import { ReviewForm } from "../../components/ReviewForm";
+import { BookingCard } from "../../components/client/BookingCard";
+import { Alert } from "../../components/ui/Alert";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Skeleton } from "../../components/ui/Skeleton";
 
 export function ClientBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -17,6 +16,10 @@ export function ClientBookingsPage() {
 
   const [actionId, setActionId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<{
+    bookingId: string;
+    message: string;
+  } | null>(null);
 
   const [details, setDetails] = useState<Record<string, BookingDetails>>({});
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
@@ -47,7 +50,7 @@ export function ClientBookingsPage() {
   }, [loadBookings]);
 
   async function handleCancel(bookingId: string) {
-    setError(null);
+    setCancelError(null);
     setActionId(bookingId);
     try {
       const res = await bookingApi.cancel(bookingId);
@@ -57,7 +60,12 @@ export function ClientBookingsPage() {
         ),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Annulation échouée.");
+      // Erreur contextuelle : on ne recharge pas la liste, le rendez-vous
+      // reste visible et l'utilisateur peut réessayer si possible.
+      setCancelError({
+        bookingId,
+        message: err instanceof Error ? err.message : "Annulation échouée.",
+      });
     } finally {
       setActionId(null);
       setConfirmingId(null);
@@ -108,200 +116,127 @@ export function ClientBookingsPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-brand-50 p-8 text-center text-gray-500">
-        Chargement…
-      </div>
-    );
-  }
-
   const cancellable = (status: BookingStatus) =>
     status === "PENDING" || status === "CONFIRMED";
 
+  // Regroupement purement visuel, côté frontend, sans helper partagé.
+  const now = Date.now();
+  const isUpcoming = (booking: Booking) =>
+    (booking.status === "PENDING" || booking.status === "CONFIRMED") &&
+    new Date(booking.startAt).getTime() >= now;
+  const upcoming = bookings.filter(isUpcoming);
+  const past = bookings.filter((booking) => !isUpcoming(booking));
+
+  function renderCard(booking: Booking) {
+    return (
+      <li key={booking.id}>
+        <BookingCard
+          booking={booking}
+          detail={details[booking.id]}
+          cancellable={cancellable(booking.status)}
+          busy={actionId === booking.id}
+          confirming={confirmingId === booking.id}
+          cancelError={
+            cancelError?.bookingId === booking.id ? cancelError.message : null
+          }
+          detailLoading={detailLoadingId === booking.id}
+          reviewFormOpen={reviewFormId === booking.id}
+          reviewSubmitting={reviewSubmittingId === booking.id}
+          reviewThanks={reviewThanksId === booking.id}
+          reviewError={reviewError}
+          onRequestCancel={() => setConfirmingId(booking.id)}
+          onConfirmCancel={() => void handleCancel(booking.id)}
+          onAbortCancel={() => setConfirmingId(null)}
+          onShowAddress={() => void handleShowAddress(booking)}
+          onOpenReview={() => {
+            setReviewError(null);
+            setReviewFormId(booking.id);
+          }}
+          onCloseReview={() => {
+            setReviewFormId(null);
+            setReviewError(null);
+          }}
+          onSubmitReview={(input) => handleSubmitReview(booking.id, input)}
+        />
+      </li>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-brand-50 p-4 sm:p-8">
+    <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-brand-900">
+          <h1 className="text-2xl font-semibold text-foreground">
             Mes rendez-vous
           </h1>
-          <p className="mt-1 text-sm text-gray-600">
-            <Link to="/barbers" className="text-brand-700 underline">
+          <p className="mt-1 text-sm text-foreground-muted">
+            <Link to="/barbers" className="text-accent underline">
               Rechercher un barbier
             </Link>
           </p>
         </div>
 
-        {error && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+        {loading ? (
+          <div aria-busy="true" className="space-y-3">
+            <span className="sr-only" role="status">
+              Chargement des rendez-vous…
+            </span>
+            {[0, 1, 2].map((index) => (
+              <Skeleton key={index} className="h-44 w-full rounded-2xl" />
+            ))}
+          </div>
+        ) : error ? (
+          <Alert variant="danger">
             <p>{error}</p>
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              className="mt-2 min-h-[44px]"
               onClick={() => void loadBookings()}
-              className="mt-2 rounded-lg border border-brand-700 px-3 py-1 text-brand-700"
             >
               Réessayer
-            </button>
-          </div>
-        )}
-        {detailError && (
-          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-            {detailError}
-          </p>
-        )}
-
-        {bookings.length === 0 && !error ? (
-          <div className="rounded-2xl bg-white p-6 text-center shadow">
-            <p className="text-gray-600">Aucun rendez-vous pour le moment.</p>
+            </Button>
+          </Alert>
+        ) : bookings.length === 0 ? (
+          <Card className="p-6 text-center">
+            <p className="text-foreground-muted">
+              Aucun rendez-vous pour le moment.
+            </p>
             <Link
               to="/barbers"
-              className="mt-3 inline-block rounded-lg bg-brand-700 px-4 py-2 text-white"
+              className="mt-3 inline-flex min-h-[44px] items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Trouver un barbier
+              Rechercher un barber
             </Link>
-          </div>
+          </Card>
         ) : (
-          <ul className="space-y-3">
-            {bookings.map((booking) => {
-              const detail = details[booking.id];
-              const busy = actionId === booking.id;
-              return (
-                <li key={booking.id} className="rounded-xl bg-white p-4 shadow">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-brand-900">
-                        {booking.serviceName}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        avec {booking.barberDisplayName}
-                      </p>
-                      <p className="mt-1 text-sm text-gray-700">
-                        {formatDateTime(booking.startAt)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {SERVICE_PLACE_LABELS[booking.servicePlace]}
-                      </p>
-                      {booking.status === "CANCELLED" && booking.cancelledBy && (
-                        <p className="mt-1 text-xs text-gray-500">
-                          Annulée par{" "}
-                          {booking.cancelledBy === "CLIENT"
-                            ? "vous"
-                            : booking.cancelledBy === "ADMIN"
-                              ? "l'administration"
-                              : "le professionnel"}
-                          .
-                        </p>
-                      )}
-                    </div>
-                    <BookingStatusBadge status={booking.status} />
-                  </div>
+          <div className="space-y-8">
+            {detailError && <Alert variant="danger">{detailError}</Alert>}
 
-                  {booking.servicePlace === "AT_CLIENT" && (
-                    <div className="mt-3 border-t border-gray-100 pt-3">
-                      {detail ? (
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                            Adresse de la prestation
-                          </p>
-                          <p className="mt-1 text-sm text-gray-800">
-                            {detail.clientAddress ?? "Adresse non renseignée."}
-                          </p>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={detailLoadingId === booking.id}
-                          onClick={() => void handleShowAddress(booking)}
-                          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50"
-                        >
-                          {detailLoadingId === booking.id
-                            ? "Chargement…"
-                            : "Voir l'adresse"}
-                        </button>
-                      )}
-                    </div>
-                  )}
+            {upcoming.length > 0 && (
+              <section aria-labelledby="bookings-upcoming-title">
+                <h2
+                  id="bookings-upcoming-title"
+                  className="text-lg font-semibold text-foreground"
+                >
+                  À venir ({upcoming.length})
+                </h2>
+                <ul className="mt-3 space-y-3">{upcoming.map(renderCard)}</ul>
+              </section>
+            )}
 
-                  {booking.status === "COMPLETED" && (
-                    <div className="mt-3 border-t border-gray-100 pt-3">
-                      {booking.hasReview ? (
-                        reviewThanksId === booking.id ? (
-                          <p className="text-sm text-gray-600">
-                            Merci, votre avis a été enregistré.
-                          </p>
-                        ) : (
-                          <p className="text-sm text-gray-600">
-                            Vous avez déjà laissé un avis.
-                          </p>
-                        )
-                      ) : reviewFormId === booking.id ? (
-                        <ReviewForm
-                          onSubmit={(input) =>
-                            handleSubmitReview(booking.id, input)
-                          }
-                          submitting={reviewSubmittingId === booking.id}
-                          onCancel={() => {
-                            setReviewFormId(null);
-                            setReviewError(null);
-                          }}
-                          serverError={reviewError}
-                        />
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={reviewSubmittingId === booking.id}
-                          onClick={() => {
-                            setReviewError(null);
-                            setReviewFormId(booking.id);
-                          }}
-                          className="rounded-lg border border-brand-700 px-3 py-1.5 text-sm text-brand-700 disabled:opacity-50"
-                        >
-                          Laisser un avis
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {cancellable(booking.status) &&
-                    (confirmingId === booking.id ? (
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span className="text-xs text-red-700">
-                          Annuler ce rendez-vous ?
-                        </span>
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => setConfirmingId(null)}
-                          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50"
-                        >
-                          Non
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void handleCancel(booking.id)}
-                          className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
-                        >
-                          {busy ? "Annulation…" : "Confirmer l'annulation"}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="mt-3">
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => setConfirmingId(booking.id)}
-                          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50"
-                        >
-                          Annuler
-                        </button>
-                      </div>
-                    ))}
-                </li>
-              );
-            })}
-          </ul>
+            {past.length > 0 && (
+              <section aria-labelledby="bookings-past-title">
+                <h2
+                  id="bookings-past-title"
+                  className="text-lg font-semibold text-foreground"
+                >
+                  Passés ({past.length})
+                </h2>
+                <ul className="mt-3 space-y-3">{past.map(renderCard)}</ul>
+              </section>
+            )}
+          </div>
         )}
       </div>
     </div>

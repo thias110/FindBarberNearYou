@@ -99,7 +99,7 @@ export function BarberGalleryPage() {
   const maxMegabytes = Math.round(LIMITS.uploadMaxBytes / 1_048_576);
 
   return (
-    <div className="min-h-screen bg-brand-50 p-4 sm:p-8">
+    <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-4xl space-y-6">
         <div>
           <h1 className="text-2xl font-semibold text-brand-900">Ma galerie</h1>

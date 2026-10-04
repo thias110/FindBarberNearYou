@@ -21,12 +21,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-brand-50 p-4 sm:p-8">
+    <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-brand-900">Espace admin</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Espace admin</h1>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm text-gray-600">{user?.email}</span>
+            <span className="text-sm text-foreground-muted">{user?.email}</span>
             <button
               type="button"
               onClick={handleLogout}
@@ -50,7 +50,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 `rounded-lg px-3 py-1.5 text-sm ${
                   isActive
                     ? "bg-brand-700 text-white"
-                    : "border border-gray-300 text-gray-700"
+                    : "border border-border text-foreground"
                 }`
               }
             >

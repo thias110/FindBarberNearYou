@@ -3,7 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FindBarberNearYou</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>FindBarber</title>
+    <!-- Anti-flash : applique le thème avant le chargement de React pour éviter
+         tout clignotement clair/sombre. Clé localStorage : fb-theme. -->
+    <script>
+      (function () {
+        try {
+          var stored = window.localStorage.getItem("fb-theme");
+          var preference =
+            stored === "light" || stored === "dark" || stored === "system"
+              ? stored
+              : "system";
+          var prefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          var isDark = preference === "dark" || (preference === "system" && prefersDark);
+          var root = document.documentElement;
+          root.classList.toggle("dark", isDark);
+          root.style.colorScheme = isDark ? "dark" : "light";
+        } catch (error) {
+          /* localStorage indisponible : on garde le thème par défaut. */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

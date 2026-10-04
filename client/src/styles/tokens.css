@@ -1,0 +1,71 @@
+/* --- Tokens de design FindBarber (issue #16) ---
+   Source unique des couleurs, ombres et typographie. Les couleurs sont stockées
+   en canaux RGB séparés par des espaces afin d'être compatibles avec le motif
+   Tailwind `rgb(var(--fb-...) / <alpha-value>)` (modificateurs d'opacité
+   inclus). Le thème est appliqué par la classe `dark` sur <html>
+   (darkMode: "class"). */
+
+:root {
+  color-scheme: light;
+
+  /* Police : Inter en premier choix LOCAL (aucun téléchargement), puis stack
+     système. */
+  --fb-font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji";
+
+  /* Thème clair (défaut) — cuivre / ambre chaud. */
+  --fb-background: 247 246 242;
+  --fb-surface: 255 255 255;
+  --fb-surface-muted: 239 237 231;
+  --fb-foreground: 28 27 26;
+  --fb-foreground-muted: 111 106 99;
+  --fb-border: 222 218 210;
+  --fb-accent: 184 107 43;
+  --fb-accent-hover: 149 84 33;
+  --fb-accent-soft: 245 228 212;
+  --fb-accent-foreground: 18 18 18;
+  /* Or réservé aux badges, icônes et petites touches premium (jamais du texte
+     courant). */
+  --fb-gold: 185 146 59;
+  --fb-gold-soft: 246 237 216;
+
+  /* Statuts : le vert est réservé au succès (ex. réservation confirmée). */
+  --fb-success: 46 125 91;
+  --fb-warning: 183 121 31;
+  --fb-danger: 184 59 59;
+  --fb-info: 62 110 168;
+
+  --fb-shadow-sm: 0 1px 2px rgba(17, 19, 21, 0.06);
+  --fb-shadow-md:
+    0 1px 2px rgba(17, 19, 21, 0.06), 0 10px 30px rgba(17, 19, 21, 0.08);
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* Thème sombre — cuivre / ambre chaud. */
+  --fb-background: 18 18 18;
+  --fb-surface: 27 27 27;
+  --fb-surface-muted: 38 38 38;
+  --fb-foreground: 245 243 238;
+  --fb-foreground-muted: 170 164 156;
+  --fb-border: 53 53 53;
+  --fb-accent: 216 135 69;
+  --fb-accent-hover: 231 154 88;
+  --fb-accent-soft: 60 42 29;
+  --fb-accent-foreground: 18 18 18;
+  --fb-gold: 211 178 96;
+  --fb-gold-soft: 46 39 22;
+
+  /* Statuts (versions dark). */
+  --fb-success: 76 175 122;
+  --fb-warning: 214 163 58;
+  --fb-danger: 224 106 106;
+  --fb-info: 110 158 214;
+
+  --fb-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --fb-shadow-md:
+    0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
+}

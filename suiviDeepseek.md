@@ -2146,3 +2146,229 @@ lancées (attente validation).
   se resynchronise au prochain `GET /api/auth/me`.
 - `publicRoutes.ts`, `barber/routes.ts` et la recherche publique ne sont pas
   modifiés par ce lot.
+
+---
+
+# Suivi — issue #8 : LOT 1 (backend avatars + galerie)
+
+État : implémenté et commité (`90ace42 feat: add avatar upload and barber gallery`).
+Rappel des décisions et fichiers pour mémoire.
+
+## Décisions
+
+- Avatar générique `users.avatar_path` (nullable) ; galerie table `barber_photos`
+  (FK cascade, index profil/date, CHECK légende, aucune colonne `position`).
+- Stockage local sous `env.UPLOAD_DIR` (défaut `./data/uploads`), servi sous
+  `/uploads` (nosniff + cache immutable) ; noms UUID générés serveur.
+- `multer` mémoire + `sharp` : WebP, avatar 512x512 cover, galerie 1600px max,
+  5 Mo, JPEG/PNG/WebP uniquement.
+- 15 photos max (`LIMITS.galleryMaxPhotos`), légende ≤ 300.
+- API : `PUT/DELETE /api/users/me/avatar` ; `GET/POST/DELETE /api/barber/photos` ;
+  `GET /api/barbers/:id/photos` (avant `/:barberId`).
+
+## Fichiers
+
+- Créés : `server/src/lib/storage.ts`, `server/src/lib/images.ts`,
+  `server/src/middleware/upload.ts`, `server/src/modules/user/{routes,service}.ts`,
+  `shared/src/validation/gallery.ts`, `tests/src/avatar.integration.test.ts`,
+  `tests/src/gallery.integration.test.ts`, migration `0011_bright_quiet_harbor`.
+- Modifiés : `shared/src/schema.ts`, `shared/src/types.ts`,
+  `shared/src/constants.ts`, `shared/src/validation/index.ts`,
+  `server/src/config/env.ts`, `server/src/app.ts`,
+  `server/src/modules/auth/service.ts`, `server/src/modules/barber/routes.ts`,
+  `server/src/modules/barber/publicRoutes.ts`.
+
+## Points d'attention
+
+- Aucune migration écrite à la main : générée via `npm run db:generate`.
+- Les couleurs des marqueurs MapLibre ont été alignées plus tard sur le cuivre
+  (#16/#17.3).
+
+---
+
+# Suivi — issue #16 : design system et identité visuelle
+
+État : implémenté (non commité au moment de la rédaction). Nom visible
+**FindBarber**, nom technique du dépôt conservé `FindBarberNearYou`.
+
+## Décisions
+
+- Thème par défaut `system`, options `system|light|dark` persistées dans
+  `localStorage` clé `fb-theme` ; `darkMode: "class"` ; classe `dark` sur
+  `document.documentElement` ; script anti-flash dans `client/index.html`.
+- Tokens CSS centralisés (`client/src/styles/tokens.css`) en canaux RGB séparés
+  par des espaces, consommés via `rgb(var(--fb-*) / <alpha-value>)` ; police
+  Inter en premier choix local puis stack système ; `prefers-reduced-motion`
+  respecté et étendu.
+- Palette cuivre/ambre validée : light `#B86B2B` / `#955421`, dark `#D88745` /
+  `#E79A58` ; `brand-*` conservé en palette de compatibilité cuivrée ; or
+  réservé aux badges/icônes/touches premium ; vert réservé au succès.
+- Composants UI : `Button`, `Input`, `Field`, `Card`, `Badge`, `Skeleton`,
+  `Alert` (ajouté en #17.4) ; `Logo`, `ThemeToggle`, `favicon.svg` ;
+  `client/src/lib/cn.ts`.
+- Header global (Logo + ThemeToggle) masqué sur `/login` et `/register`
+  (`AuthLayout` porte alors Logo + ThemeToggle, sans doublon).
+
+## Corrections successives
+
+- Conversion des tokens en canaux RGB et body en CSS natif : suppression du
+  blocage `@apply bg-background` sur `index.css`.
+- Correctif dark mode : remplacement des fonds fixes des conteneurs racines
+  (`bg-brand-50` → `bg-background`, fonds/panneaux → `bg-surface`, etc.).
+- Application de la palette cuivre : `tokens.css`, `tailwind.config.js`
+  (`brand-*` cuivrés, statuts `success/warning/danger/info`), `favicon.svg`,
+  `Button` (danger token), `Badge` (variantes de statut), marqueurs MapLibre et
+  contrôles MapLibre tokenisés (`index.css`).
+
+## Fichiers
+
+- Créés : `client/src/styles/tokens.css`, `client/src/app/theme-context.ts`,
+  `client/src/app/ThemeProvider.tsx`, `client/src/lib/cn.ts`,
+  `client/src/components/ui/{Button,Input,Field,Card,Badge,Skeleton,Alert}.tsx`,
+  `client/src/components/Logo.tsx`, `client/src/components/ThemeToggle.tsx`,
+  `client/public/favicon.svg`, `client/src/components/ui/README.md`.
+- Modifiés : `client/index.html`, `client/tailwind.config.js`,
+  `client/src/styles/index.css`, `client/src/main.tsx`, `client/src/App.tsx`.
+
+## Points d'attention
+
+- La migration visuelle des pages a été faite par lots (#17.1 → #17.5).
+- Le style de carte sombre est optionnel via `VITE_MAP_STYLE_DARK_URL` (#17.3).
+
+---
+
+# Suivi — issue #17.1 : refonte Login / Register
+
+État : implémenté.
+
+- Coque partagée `AuthLayout` (desktop 2 colonnes : panneau de marque cuivre +
+  formulaire dans une `Card` centrée ; mobile : en-tête compact Logo +
+  ThemeToggle) et `AuthBrandPanel` (titre « Le bon barber, au bon moment. »,
+  description, 3 bénéfices).
+- `client/src/lib/authMessages.ts` : traduction française des codes d'erreur
+  connus, fallback obligatoire sur `err.message`.
+- Login : « Content de vous revoir. », CTA « Se connecter », lien vers Register,
+  mot de passe affichable/masquable (`aria-label` dynamique), titres navigateur
+  « Connexion — FindBarber » / « Inscription — FindBarber ».
+- Register : « Créez votre compte. », CTA « Créer mon compte », segmented control
+  accessible « Je cherche un barber » / « Je suis barber » (jamais ADMIN),
+  message de succès après redirection vers `/login` (`state.registered`).
+- Logique conservée : `useAuth().login`, `ROLE_HOME`, `authApi.register`,
+  payload, redirection `/login`, pas d'auto-login, garde anti-double-soumission.
+- `App.tsx` masque le header global uniquement sur `/login` et `/register`.
+- Fichiers : `client/src/components/auth/{AuthLayout,AuthBrandPanel}.tsx`,
+  `client/src/lib/authMessages.ts`, `client/src/pages/auth/{LoginPage,RegisterPage}.tsx`,
+  `client/src/App.tsx`.
+
+---
+
+# Suivi — issue #17.2 : navigation globale et accueil client
+
+État : implémenté.
+
+- `HomePage` transformée en accueil connecté : hero de bienvenue (salutation
+  « Bonjour, {prénom}. » ou « Bienvenue sur FindBarber. », avatar/initiale),
+  recherche par ville → `/barbers?city=<encodée>` (ou `/barbers` si vide),
+  chips de prestations (`technique=COUPE|DEGRADE|BARBE|TRESSES|COLORATION`),
+  section « Barbers à découvrir » via `barbersApi.search` (AbortController,
+  skeletons, erreur `role="alert"` + Réessayer, vide + CTA), raccourci
+  « Vos rendez-vous » → `/appointments`, étapes « 1. Cherchez / 2. Comparez /
+  3. Réservez », déconnexion discrète.
+- Contrat d'URL de la recherche préservé (`q, city, countryCode, audience,
+  technique, place, page`).
+- Fichiers : `client/src/components/home/{HomeHero,CategoryChips,BarberPreviewCard}.tsx`,
+  `client/src/pages/client/HomePage.tsx`. `App.tsx` non modifié (header global
+  inchangé).
+
+---
+
+# Suivi — issue #17.3 : recherche de barbers, résultats, filtres et carte
+
+État : implémenté.
+
+- `SearchFilters` : formulaire refactorisé avec `Field`/`Input`/`Button`/`Card`,
+  selects HTML natifs tokenisés, filtres mobiles repliables
+  (`aria-expanded`/`aria-controls`, compteur), cibles ≥ 44 px.
+- `BarberResultCard` : whitelist `PublicBarberSearchItem` uniquement (nom, ville
+  + pays, services actifs, audiences accent doux, techniques/lieux `Badge`
+  neutral, CTA « Voir le profil »), carte sélectionnée `ring-accent`.
+- États liste : skeletons, erreur `role="alert"` + Réessayer, vide + reset,
+  page vide + retour page 1 ; carte : overlays tokenisés (`bg-surface`,
+  `text-foreground(-muted)`, CTA accent) et pastille tuiles.
+- MapLibre : conservation intégrale des marqueurs/événements/ResizeObserver/
+  watchdog/fitBounds/easeTo/reducedMotion ; style sombre **optionnel** via
+  `VITE_MAP_STYLE_DARK_URL` (`getMapSettings(theme)`, `map.setStyle(url,
+  { diff: false })` dans un `try/catch`, sans remount ni perte de caméra/
+  marqueurs ; fallback style clair si absente). Contrôles MapLibre tokenisés en
+  dark (`.dark .maplibregl-ctrl*`).
+- Fichiers : `client/src/components/search/{SearchFilters,BarberResultCard}.tsx`,
+  `client/src/pages/client/BarbersSearchPage.tsx`, `client/src/components/BarbersMap.tsx`,
+  `client/src/components/BarbersMapCard.tsx`, `client/src/lib/mapConfig.ts`,
+  `client/src/vite-env.d.ts`, `client/src/styles/index.css`, `.env.example`.
+
+---
+
+# Suivi — issue #17.4 : fiche barber publique et réservation
+
+État : implémenté.
+
+- `BarberProfilePage` : grille desktop `1fr + 22rem` (colonne principale
+  profil/services/galerie/avis, `BookingForm` sticky à droite) ; mobile
+  une colonne, réservation juste après l'en-tête.
+- Composants : `BarberProfileHeader` (avatar/initiale, nom, description, ville +
+  pays, lieu(x), localisation approximative, note + total uniquement si avis,
+  étoile gold discrète), `BarberServices` (lecture seule, audiences accent doux,
+  techniques `Badge` neutral, prix/durée), `BarberGallery` (skeletons, erreur +
+  retry, vide, grille responsive, pas de carrousel/lightbox), `BarberReviews`
+  (lecture seule, loading/erreur/vide/succès).
+- `BookingForm` : logique intégralement conservée (props, `barbersApi.getSlots`
+  + AbortController, `validateBookingForm`, payload `BookingCreateInput`,
+  garde CLIENT, `bookingApi.create`, adresse `AT_CLIENT`) ; UI tokenisée
+  (`Card`, champs `bg-surface-muted`, créneaux ≥ 44 px `bg-accent` si
+  sélectionnés, `Alert` pour erreurs/succès, champs désactivés pendant l'envoi).
+- `BookingStatusBadge` : variantes de statut `warning`, `success`, `neutral`,
+  `info`, `danger` : statuts, libellés et props inchangés.
+- Ajout `client/src/components/ui/Alert.tsx` (info/success/warning/danger,
+  `role="alert"` pour danger, `status` sinon).
+- Fichiers : `client/src/pages/client/BarberProfilePage.tsx`,
+  `client/src/components/BookingForm.tsx`, `client/src/components/BookingStatusBadge.tsx`,
+  `client/src/components/barber/{BarberProfileHeader,BarberServices,BarberGallery,BarberReviews}.tsx`,
+  `client/src/components/ui/Alert.tsx`.
+
+---
+
+# Suivi — issue #17.5 : espace client, rendez-vous, annulation et avis
+
+État : implémenté.
+
+- `BookingsPage` : sections « À venir » (PENDING/CONFIRMED futurs) et
+  « Passés » (COMPLETED/CANCELLED/NO_SHOW ou `startAt` passé), regroupement
+  purement frontend, ordre serveur conservé ; skeletons au chargement ; erreur
+  liste `Alert danger` + Réessayer ; vide avec CTA « Rechercher un barber ».
+- `BookingCard` (présentational, aucun appel API) : données existantes,
+  `BookingStatusBadge`, annulation inline en deux étapes (uniquement
+  PENDING/CONFIRMED, `Button` danger `isLoading`, erreur contextuelle
+  `Alert danger`, mention « L'annulation est soumise aux conditions
+  applicables. »), adresse client chargée à la demande (`bg-surface-muted`),
+  bloc avis (merci / déjà laissé / `ReviewForm` / bouton).
+- `ReviewForm` : props, `validateReviewDraft`, handlers et payload inchangés ;
+  textarea natif et boutons de note tokenisés, `aria-pressed`, erreurs
+  `role="alert"`, envoi `Button` `isLoading`, annuler `Button secondary`.
+- Logique conservée : `bookingApi.{list,cancel,getDetails,createReview}`,
+  payloads, confirmation en deux étapes, `hasReview` mis à jour localement,
+  `reviewThanksId`, chargement d'adresse à la demande, aucune règle frontend de
+  délai d'annulation (serveur source de vérité).
+- Fichiers : `client/src/components/client/BookingCard.tsx`,
+  `client/src/pages/client/BookingsPage.tsx`, `client/src/components/ReviewForm.tsx`.
+
+---
+
+# État de publication
+
+- Lots #7, #8 et #12–#20 déjà commités/poussés sur `main` lors des sessions
+  précédentes ; le travail #16 et #17.1 → #17.5 est regroupé dans un commit
+  dédié et poussé sur `origin/main` (voir message de commit).
+- Fichiers explicitement hors périmètre, non suivis et non commités :
+  `server/src/scripts/seed-demo.ts`, `genreVisuelSite/*.png`.
+- Aucune nouvelle dépendance, aucun secret ajouté ; `VITE_MAP_STYLE_DARK_URL`
+  reste optionnelle et vide par défaut.

@@ -2,6 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* CSS natif : plus de dépendance à `@apply` pour le fond/texte du body.
+     Une erreur de résolution Tailwind ne peut donc plus bloquer le build. */
+  body {
+    background-color: rgb(var(--fb-background));
+    color: rgb(var(--fb-foreground));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Transition douce lors du changement de thème, uniquement si l'utilisateur
+   n'a pas demandé de réduire les animations. */
+@media (prefers-reduced-motion: no-preference) {
+  body {
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
+  }
+}
+
+/* Respect global de `prefers-reduced-motion` : neutralise animations et
+   transitions (dont celles du thème). Les animations MapLibre sont en canvas
+   (JS) et ne sont pas affectées. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* --- Marqueurs de la carte (lot 4) --- */
 .fb-map-marker {
   width: 30px;
@@ -11,7 +46,7 @@
   background: transparent;
   cursor: pointer;
   transform-origin: 50% 100%;
-  filter: drop-shadow(0 2px 3px rgba(18, 43, 28, 0.35));
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
   transition: transform 150ms ease;
 }
 
@@ -22,7 +57,7 @@
 }
 
 .fb-map-marker__pin {
-  fill: #1f4a30; /* brand-700 */
+  fill: rgb(var(--fb-accent));
 }
 
 .fb-map-marker__ring {
@@ -32,7 +67,7 @@
 }
 
 .fb-map-marker__dot {
-  fill: #ffffff;
+  fill: rgb(var(--fb-accent-foreground));
 }
 
 .fb-map-marker:hover {
@@ -43,23 +78,23 @@
 .fb-map-marker--selected {
   transform: scale(1.3);
   z-index: 2;
-  filter: drop-shadow(0 3px 6px rgba(18, 43, 28, 0.5));
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
 }
 
 .fb-map-marker--selected .fb-map-marker__pin {
-  fill: #2f6b46; /* brand-500 */
+  fill: rgb(var(--fb-accent-hover));
 }
 
 .fb-map-marker--selected .fb-map-marker__ring {
-  stroke: #ffd166;
+  stroke: rgb(var(--fb-gold));
 }
 
 .fb-map-marker--selected .fb-map-marker__dot {
-  fill: #122b1c; /* brand-900 */
+  fill: rgb(var(--fb-accent-foreground));
 }
 
 .fb-map-marker:focus-visible {
-  outline: 2px solid #2f6b46;
+  outline: 2px solid rgb(var(--fb-accent));
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -73,4 +108,47 @@
   .fb-map-marker:hover {
     transform: none;
   }
+}
+
+/* --- Contrôles MapLibre en thème sombre (issue #17.3) ---
+   Les boutons et l'attribution MapLibre sont blancs par défaut. On les aligne
+   sur les tokens. Les marqueurs `.fb-map-marker*` ne sont pas touchés.
+   La spécificité compense l'ordre de chargement (CSS MapLibre chargé avec le
+   chunk lazy `BarbersMap`). */
+.dark .maplibregl-ctrl-group {
+  background-color: rgb(var(--fb-surface));
+  border: 1px solid rgb(var(--fb-border));
+  box-shadow: var(--fb-shadow-md);
+}
+
+.dark .maplibregl-ctrl-group button + button {
+  border-top: 1px solid rgb(var(--fb-border));
+}
+
+.dark .maplibregl-ctrl button {
+  background-color: transparent;
+  color: rgb(var(--fb-foreground));
+}
+
+.dark .maplibregl-ctrl-group button:hover {
+  background-color: rgb(var(--fb-surface-muted));
+}
+
+.dark .maplibregl-ctrl button .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
+
+.dark .maplibregl-ctrl-attrib,
+.dark .maplibregl-ctrl-attrib.maplibregl-compact,
+.dark .maplibregl-ctrl-attrib.maplibregl-compact-show {
+  background-color: rgb(var(--fb-surface) / 0.85);
+  color: rgb(var(--fb-foreground-muted));
+}
+
+.dark .maplibregl-ctrl-attrib a {
+  color: rgb(var(--fb-foreground));
+}
+
+.dark .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
 }

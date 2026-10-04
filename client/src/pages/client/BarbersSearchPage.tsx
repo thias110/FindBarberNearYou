@@ -1,37 +1,33 @@
-import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import type { BarbersSearchResponse } from "@findbarber/shared/types";
-import { COUNTRIES, COUNTRY_NAME_BY_CODE } from "@findbarber/shared/countries";
 import {
-  APPROXIMATE_LOCATION_LABEL,
-  AUDIENCE_LABELS,
-  AUDIENCES,
-  SERVICE_PLACE_LABELS,
-  SERVICE_PLACES,
-  TECHNIQUE_LABELS,
-  TECHNIQUES,
-} from "@findbarber/shared/constants";
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
+import { useSearchParams } from "react-router-dom";
+import type { BarbersSearchResponse } from "@findbarber/shared/types";
+import { APPROXIMATE_LOCATION_LABEL } from "@findbarber/shared/constants";
 import { barbersApi } from "../../lib/apiClient";
-import { audienceChips } from "../../lib/barberTags";
+import { cn } from "../../lib/cn";
 import { useMediaQuery, usePrefersReducedMotion } from "../../lib/media";
+import { useTheme } from "../../app/theme-context";
 import { MapErrorBoundary } from "../../components/MapErrorBoundary";
 import { BarbersMapCard } from "../../components/BarbersMapCard";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Skeleton } from "../../components/ui/Skeleton";
+import {
+  SearchFilters,
+  type SearchFiltersValues,
+} from "../../components/search/SearchFilters";
+import { BarberResultCard } from "../../components/search/BarberResultCard";
 
 // Chargement différé : MapLibre (volumineux) sort du bundle initial de la recherche.
 const BarbersMap = lazy(() => import("../../components/BarbersMap"));
 
-const COUNTRIES_SORTED = [...COUNTRIES].sort((a, b) =>
-  a.nameFr.localeCompare(b.nameFr, "fr"),
-);
-
-interface Filters {
-  q: string;
-  city: string;
-  countryCode: string;
-  audience: string;
-  technique: string;
-  place: string;
-}
+type Filters = SearchFiltersValues;
 
 // Les codes (pays, public, technique) sont normalisés trim + majuscules pour que
 // les sélecteurs affichent la valeur réellement appliquée par le serveur.
@@ -74,6 +70,7 @@ export function BarbersSearchPage() {
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const reducedMotion = usePrefersReducedMotion();
+  const { resolvedTheme } = useTheme();
 
   // Nombre de filtres supplémentaires actifs (hors ville, toujours visible).
   const extraFilterCount = [
@@ -187,205 +184,94 @@ export function BarbersSearchPage() {
   const showList = isDesktop || view === "list";
 
   return (
-    <div className="min-h-screen bg-brand-50 p-4 sm:p-8">
+    <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-7xl space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold text-brand-900">
+          <h1 className="text-2xl font-semibold text-foreground">
             Rechercher un barbier
           </h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-foreground-muted">
             Par nom, ville, pays, public ou prestation.
           </p>
         </div>
 
-        <form
+        <SearchFilters
+          form={form}
+          onChange={setForm}
           onSubmit={handleSubmit}
-          className="space-y-3 rounded-2xl bg-white p-4 shadow sm:p-5"
-        >
-          {/* Ligne toujours visible : ville + recherche + accès aux filtres. */}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <label className="block min-w-0 flex-1">
-              <span className="mb-1 block text-sm text-gray-700">Ville</span>
-              <input
-                value={form.city}
-                onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                placeholder="Ville"
-              />
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="submit"
-                className="rounded-lg bg-brand-700 px-4 py-2 text-white"
-              >
-                Rechercher
-              </button>
-              <button
-                type="button"
-                onClick={() => setFiltersOpen((open) => !open)}
-                aria-expanded={filtersOpen}
-                aria-controls="advanced-filters"
-                data-active-filters={extraFilterCount}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 lg:hidden"
-              >
-                Filtres
-                {extraFilterCount > 0 && (
-                  <span className="ml-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-brand-700 px-1.5 text-xs font-medium text-white">
-                    {extraFilterCount}
-                  </span>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={handleReset}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700"
-              >
-                Réinitialiser
-              </button>
-            </div>
-          </div>
-
-          {/* Panneau avancé : dépliable sur mobile, toujours visible en desktop. */}
-          <div
-            id="advanced-filters"
-            className={[
-              isDesktop || filtersOpen ? "grid" : "hidden",
-              "grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5",
-            ].join(" ")}
-          >
-            <label className="block min-w-0">
-              <span className="mb-1 block text-sm text-gray-700">Nom</span>
-              <input
-                value={form.q}
-                onChange={(e) => setForm((f) => ({ ...f, q: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2"
-                placeholder="Nom du barbier"
-              />
-            </label>
-            <label className="block min-w-0">
-              <span className="mb-1 block text-sm text-gray-700">Pays</span>
-              <select
-                value={form.countryCode}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, countryCode: e.target.value }))
-                }
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2"
-              >
-                <option value="">Tous les pays</option>
-                {COUNTRIES_SORTED.map((country) => (
-                  <option key={country.code} value={country.code}>
-                    {country.nameFr}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block min-w-0">
-              <span className="mb-1 block text-sm text-gray-700">Public</span>
-              <select
-                value={form.audience}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, audience: e.target.value }))
-                }
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2"
-              >
-                <option value="">Tous les publics</option>
-                {AUDIENCES.map((code) => (
-                  <option key={code} value={code}>
-                    {AUDIENCE_LABELS[code]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block min-w-0">
-              <span className="mb-1 block text-sm text-gray-700">Prestation</span>
-              <select
-                value={form.technique}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, technique: e.target.value }))
-                }
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2"
-              >
-                <option value="">Toutes les prestations</option>
-                {TECHNIQUES.map((code) => (
-                  <option key={code} value={code}>
-                    {TECHNIQUE_LABELS[code]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block min-w-0">
-              <span className="mb-1 block text-sm text-gray-700">Lieu</span>
-              <select
-                value={form.place}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, place: e.target.value }))
-                }
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2"
-              >
-                <option value="">Tous les lieux</option>
-                {SERVICE_PLACES.map((code) => (
-                  <option key={code} value={code}>
-                    {SERVICE_PLACE_LABELS[code]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </form>
+          onReset={handleReset}
+          filtersOpen={filtersOpen}
+          onToggleFilters={() => setFiltersOpen((open) => !open)}
+          extraFilterCount={extraFilterCount}
+          advancedVisible={isDesktop}
+        />
 
         {loading ? (
-          <p className="rounded-2xl bg-white p-6 text-center text-gray-500 shadow">
-            Chargement…
-          </p>
+          <div
+            aria-busy="true"
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1"
+          >
+            <span className="sr-only" role="status">
+              Chargement des résultats…
+            </span>
+            {[0, 1, 2].map((index) => (
+              <Skeleton key={index} className="h-40 w-full rounded-2xl" />
+            ))}
+          </div>
         ) : error ? (
-          <div className="rounded-2xl bg-white p-6 text-center shadow">
-            <p className="text-sm text-red-700">{error}</p>
-            <button
-              onClick={() => setReloadToken((t) => t + 1)}
-              className="mt-3 rounded-lg border border-brand-700 px-4 py-2 text-brand-700"
+          <Card role="alert" className="p-6 text-center">
+            <p className="text-sm text-danger">{error}</p>
+            <Button
+              variant="secondary"
+              className="mt-3 min-h-[44px]"
+              onClick={() => setReloadToken((token) => token + 1)}
             >
               Réessayer
-            </button>
-          </div>
+            </Button>
+          </Card>
         ) : data && data.barbers.length === 0 ? (
           pagination && pagination.total > 0 ? (
-            <div className="rounded-2xl bg-white p-6 text-center shadow">
-              <p className="text-gray-600">
+            <Card className="p-6 text-center">
+              <p className="text-foreground-muted">
                 Cette page ne contient aucun résultat.
               </p>
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                className="mt-3 min-h-[44px]"
                 onClick={() => goToPage(1)}
-                className="mt-3 rounded-lg border border-brand-700 px-4 py-2 text-brand-700"
               >
                 Revenir à la première page
-              </button>
-            </div>
+              </Button>
+            </Card>
           ) : (
-            <p className="rounded-2xl bg-white p-6 text-center text-gray-600 shadow">
-              Aucun résultat.
-            </p>
+            <Card className="p-6 text-center">
+              <p className="text-foreground-muted">Aucun résultat.</p>
+              <Button className="mt-3 min-h-[44px]" onClick={handleReset}>
+                Réinitialiser les filtres
+              </Button>
+            </Card>
           )
         ) : (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-foreground-muted">
                 {pagination ? `${pagination.total} résultat(s)` : ""}
               </p>
               <div
                 role="group"
                 aria-label="Mode d'affichage des résultats"
-                className="inline-flex rounded-lg border border-gray-300 bg-white p-0.5 lg:hidden"
+                className="inline-flex rounded-lg border border-border bg-surface p-0.5 lg:hidden"
               >
                 <button
                   type="button"
                   aria-pressed={view === "list"}
                   onClick={() => setView("list")}
-                  className={`rounded-md px-3 py-1.5 text-sm ${
+                  className={cn(
+                    "inline-flex min-h-[44px] items-center rounded-md px-3 text-sm",
                     view === "list"
-                      ? "bg-brand-700 text-white"
-                      : "text-gray-700"
-                  }`}
+                      ? "bg-accent text-accent-foreground"
+                      : "text-foreground-muted",
+                  )}
                 >
                   Liste
                 </button>
@@ -393,9 +279,12 @@ export function BarbersSearchPage() {
                   type="button"
                   aria-pressed={view === "map"}
                   onClick={() => setView("map")}
-                  className={`rounded-md px-3 py-1.5 text-sm ${
-                    view === "map" ? "bg-brand-700 text-white" : "text-gray-700"
-                  }`}
+                  className={cn(
+                    "inline-flex min-h-[44px] items-center rounded-md px-3 text-sm",
+                    view === "map"
+                      ? "bg-accent text-accent-foreground"
+                      : "text-foreground-muted",
+                  )}
                 >
                   Carte
                 </button>
@@ -403,90 +292,17 @@ export function BarbersSearchPage() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
-              <div
-                ref={listRef}
-                className={showList ? "space-y-4" : "hidden"}
-              >
+              <div ref={listRef} className={showList ? "space-y-4" : "hidden"}>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                  {barbers.map((barber) => {
-                    const selected = barber.id === selectedId;
-                    return (
-                      <article
-                        key={barber.id}
-                        data-barber-id={barber.id}
-                        className={`relative rounded-2xl bg-white p-5 shadow transition ${
-                          selected
-                            ? "ring-2 ring-brand-500"
-                            : "hover:shadow-md"
-                        }`}
-                      >
-                        {/* Zone d'action pleine carte : sélectionne le marqueur. */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedId(barber.id)}
-                          aria-label={`Afficher ${barber.displayName} sur la carte`}
-                          aria-pressed={selected}
-                          className="absolute inset-0 z-0 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500"
-                        />
-                        <div className="pointer-events-none relative z-10">
-                          <h2 className="text-lg font-semibold text-brand-900">
-                            {barber.displayName}
-                          </h2>
-                          <p className="mt-1 text-sm text-gray-600">
-                            {barber.city}
-                            {barber.countryCode
-                              ? `, ${
-                                  COUNTRY_NAME_BY_CODE[barber.countryCode] ??
-                                  barber.countryCode
-                                }`
-                              : ""}
-                          </p>
-                          <p className="mt-1 text-sm text-gray-600">
-                            {barber.activeServiceCount} service(s) actif(s)
-                          </p>
-                          {(barber.audiences.length > 0 ||
-                            barber.techniques.length > 0) && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {audienceChips(barber.audiences).map((label) => (
-                                <span
-                                  key={label}
-                                  className="rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-800"
-                                >
-                                  {label}
-                                </span>
-                              ))}
-                              {barber.techniques.map((code) => (
-                                <span
-                                  key={code}
-                                  className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700"
-                                >
-                                  {TECHNIQUE_LABELS[code]}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          {barber.places.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {barber.places.map((place) => (
-                                <span
-                                  key={place}
-                                  className="rounded-full bg-white px-2 py-0.5 text-xs text-gray-700 ring-1 ring-gray-300"
-                                >
-                                  {SERVICE_PLACE_LABELS[place]}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          <Link
-                            to={`/barbers/${barber.id}`}
-                            className="pointer-events-auto mt-3 inline-block rounded-lg border border-brand-700 px-3 py-1.5 text-sm text-brand-700"
-                          >
-                            Voir le profil
-                          </Link>
-                        </div>
-                      </article>
-                    );
-                  })}
+                  {barbers.map((barber) => (
+                    <div key={barber.id} data-barber-id={barber.id}>
+                      <BarberResultCard
+                        barber={barber}
+                        selected={barber.id === selectedId}
+                        onSelect={setSelectedId}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -495,7 +311,7 @@ export function BarbersSearchPage() {
                   <div
                     role="region"
                     aria-label="Carte des barbiers (résultats de cette page)"
-                    className="relative h-72 overflow-hidden rounded-2xl bg-white shadow lg:h-[34rem]"
+                    className="relative h-72 overflow-hidden rounded-2xl border border-border bg-surface shadow lg:h-[34rem]"
                   >
                     <p className="sr-only">
                       La liste des résultats est l'alternative textuelle de
@@ -506,7 +322,7 @@ export function BarbersSearchPage() {
                         fallback={
                           <div
                             role="alert"
-                            className="flex h-full items-center justify-center p-6 text-center text-sm text-gray-600"
+                            className="flex h-full items-center justify-center p-6 text-center text-sm text-foreground-muted"
                           >
                             La carte n'a pas pu être affichée. La liste des
                             résultats reste utilisable.
@@ -515,7 +331,7 @@ export function BarbersSearchPage() {
                       >
                         <Suspense
                           fallback={
-                            <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                            <div className="flex h-full items-center justify-center text-sm text-foreground-muted">
                               Chargement de la carte…
                             </div>
                           }
@@ -528,6 +344,7 @@ export function BarbersSearchPage() {
                             reducedMotion={reducedMotion}
                             onRetry={() => setMapRetryToken((t) => t + 1)}
                             onShowList={() => setView("list")}
+                            theme={resolvedTheme}
                           />
                         </Suspense>
                       </MapErrorBoundary>
@@ -538,8 +355,9 @@ export function BarbersSearchPage() {
                         onClose={() => setSelectedId(null)}
                       />
                     )}
-                    <p className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-white/90 px-3 py-1 text-xs text-gray-600 shadow-sm">
-                      Carte : résultats de cette page · {APPROXIMATE_LOCATION_LABEL}
+                    <p className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-surface/90 px-3 py-1 text-xs text-foreground-muted shadow-sm">
+                      Carte : résultats de cette page ·{" "}
+                      {APPROXIMATE_LOCATION_LABEL}
                     </p>
                   </div>
                 </div>
@@ -548,25 +366,25 @@ export function BarbersSearchPage() {
 
             {pagination && pagination.totalPages > 0 && (
               <div className="flex items-center justify-between">
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  className="min-h-[44px]"
                   disabled={!canPrev}
                   onClick={() => goToPage(page - 1)}
-                  className="rounded-lg border border-brand-700 px-4 py-2 text-brand-700 disabled:opacity-40"
                 >
                   Précédent
-                </button>
-                <span className="text-sm text-gray-600">
+                </Button>
+                <span className="text-sm text-foreground-muted">
                   Page {pagination.page} / {pagination.totalPages}
                 </span>
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  className="min-h-[44px]"
                   disabled={!canNext}
                   onClick={() => goToPage(page + 1)}
-                  className="rounded-lg border border-brand-700 px-4 py-2 text-brand-700 disabled:opacity-40"
                 >
                   Suivant
-                </button>
+                </Button>
               </div>
             )}
           </>

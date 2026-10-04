@@ -8,6 +8,11 @@
 const rawKey = (import.meta.env.VITE_MAP_API_KEY ?? "").trim();
 const rawStyleId = (import.meta.env.VITE_MAP_STYLE_ID ?? "").trim();
 const rawStyleUrl = (import.meta.env.VITE_MAP_STYLE_URL ?? "").trim();
+// Style sombre OPTIONNEL : URL MapLibre complète fournie par l'opérateur.
+// Vide → la carte conserve le style clair en thème sombre (aucune erreur).
+const rawDarkStyleUrl = (
+  import.meta.env.VITE_MAP_STYLE_DARK_URL ?? ""
+).trim();
 
 // Style clair et désaturé, vérifié dans le catalogue MapTiler (famille Dataviz).
 // Identifiant réel du style actuel : `dataviz-v4` (alternative Basic : `base-v4`).
@@ -27,7 +32,12 @@ export interface MapSettings {
   configured: boolean;
 }
 
-export function getMapSettings(): MapSettings {
+export function getMapSettings(theme: "light" | "dark" = "light"): MapSettings {
+  // Thème sombre : uniquement si une URL dédiée est fournie. Sinon, on retombe
+  // sur la configuration claire existante (jamais de style inventé).
+  if (theme === "dark" && rawDarkStyleUrl) {
+    return { styleUrl: rawDarkStyleUrl, configured: true };
+  }
   if (rawStyleUrl) {
     return { styleUrl: rawStyleUrl, configured: true };
   }

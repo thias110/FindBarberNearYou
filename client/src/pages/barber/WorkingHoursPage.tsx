@@ -337,7 +337,7 @@ export function BarberWorkingHoursPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-brand-50 p-8 text-center text-gray-500">
+      <div className="min-h-screen bg-background p-8 text-center text-foreground-muted">
         Chargement…
       </div>
     );
@@ -345,7 +345,7 @@ export function BarberWorkingHoursPage() {
 
   if (profileMissing) {
     return (
-      <div className="min-h-screen bg-brand-50 p-4 sm:p-8">
+      <div className="min-h-screen bg-background p-4 sm:p-8">
         <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 text-center shadow">
           <h1 className="text-xl font-semibold text-brand-900">Mes horaires</h1>
           <p className="mt-2 text-gray-700">
@@ -365,7 +365,7 @@ export function BarberWorkingHoursPage() {
   const hasContent = days.some((day) => day.intervals.length > 0);
 
   return (
-    <div className="min-h-screen bg-brand-50 p-4 sm:p-8">
+    <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
           <h1 className="text-2xl font-semibold text-brand-900">Mes horaires</h1>

@@ -11,6 +11,10 @@ interface ImportMetaEnv {
   readonly VITE_MAP_STYLE_ID?: string;
   // URL de style MapLibre complète (prioritaire si renseignée) pour un style personnalisé.
   readonly VITE_MAP_STYLE_URL?: string;
+  // URL de style MapLibre COMPLÈTE pour le thème sombre (optionnelle).
+  // Vide → la carte garde le style clair en dark mode. Aucune clé/URL réelle
+  // ne doit être committée.
+  readonly VITE_MAP_STYLE_DARK_URL?: string;
 }
 
 interface ImportMeta {
