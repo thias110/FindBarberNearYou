@@ -1,6 +1,11 @@
-import { and, eq, gte, lt, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { barberProfiles, bookings, reviews } from "@findbarber/shared/schema";
+import {
+  barberProfiles,
+  bookings,
+  reviews,
+  type BarberProfile,
+} from "@findbarber/shared/schema";
 import { calendarDateToUtcMillis } from "@findbarber/shared/dates";
 import { utcToZonedParts } from "@findbarber/shared/timezones";
 import { computeBarberStats } from "@findbarber/shared/stats";
@@ -35,26 +40,13 @@ function resolvePeriod(
   }
 }
 
-// Orchestration uniquement : profil, fuseau, période, deux requêtes minimales
-// (réservations + premières réservations par client) et note moyenne globale.
-// Tout le bucketing est délégué à `computeBarberStats` (pur).
-export async function getBarberStats(
-  userId: string,
+// Calcul partagé entre l'espace barber (résolution par userId) et l'admin
+// (résolution par barberProfileId). Tout le bucketing est délégué à
+// `computeBarberStats` (pur) ; ce service orchestre uniquement.
+async function computeStatsForProfile(
+  profile: BarberProfile,
   query: BarberStatsQuery,
 ): Promise<BarberStatsResponse> {
-  const [profile] = await db
-    .select()
-    .from(barberProfiles)
-    .where(eq(barberProfiles.userId, userId))
-    .limit(1);
-
-  if (!profile) {
-    throw new AppError(
-      404,
-      "BARBER_PROFILE_NOT_FOUND",
-      "Aucun profil professionnel. Créez d'abord votre profil.",
-    );
-  }
   if (!profile.timezone) {
     throw new AppError(
       409,
@@ -111,6 +103,7 @@ export async function getBarberStats(
     );
   }
 
+  // Note moyenne globale, avis masqués exclus (issue #7).
   const [rating] = await db
     .select({
       average: sql<number | null>`avg(${reviews.rating})::float8`,
@@ -118,7 +111,12 @@ export async function getBarberStats(
     })
     .from(reviews)
     .innerJoin(bookings, eq(reviews.bookingId, bookings.id))
-    .where(eq(bookings.barberProfileId, profile.id));
+    .where(
+      and(
+        eq(bookings.barberProfileId, profile.id),
+        isNull(reviews.hiddenAt),
+      ),
+    );
 
   const totalReviews = Number(rating?.total ?? 0);
   const averageRating =
@@ -141,4 +139,41 @@ export async function getBarberStats(
     firstBookingByClient,
     rating: { averageRating, totalReviews },
   });
+}
+
+export async function getBarberStats(
+  userId: string,
+  query: BarberStatsQuery,
+): Promise<BarberStatsResponse> {
+  const [profile] = await db
+    .select()
+    .from(barberProfiles)
+    .where(eq(barberProfiles.userId, userId))
+    .limit(1);
+
+  if (!profile) {
+    throw new AppError(
+      404,
+      "BARBER_PROFILE_NOT_FOUND",
+      "Aucun profil professionnel. Créez d'abord votre profil.",
+    );
+  }
+  return computeStatsForProfile(profile, query);
+}
+
+// Statistiques d'un barber ciblé, résolues par `barber_profiles.id` (issue #7).
+export async function getBarberStatsForAdmin(
+  barberProfileId: string,
+  query: BarberStatsQuery,
+): Promise<BarberStatsResponse> {
+  const [profile] = await db
+    .select()
+    .from(barberProfiles)
+    .where(eq(barberProfiles.id, barberProfileId))
+    .limit(1);
+
+  if (!profile) {
+    throw new AppError(404, "BARBER_PROFILE_NOT_FOUND", "Profil introuvable.");
+  }
+  return computeStatsForProfile(profile, query);
 }

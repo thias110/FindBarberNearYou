@@ -442,6 +442,35 @@ Tableau de bord réservé au **BARBER** (aucun accès ADMIN), accessible sur la 
   `409 BARBER_TIMEZONE_MISSING` sans fuseau, `400 VALIDATION_ERROR` période
   invalide.
 
+### Administration & modération (issue #7, LOT 1)
+
+API réservée aux **ADMIN**, préfixée `/api/admin`. Toute mutation admin est
+protégée par `requireAuth` + `requireRole("ADMIN")` + `csrfProtection`, et le
+bucket de rate limiting « mutations » s'applique sur `/api/admin`.
+
+- `GET /api/admin/metrics` — compteurs globaux (utilisateurs, réservations, avis).
+- `GET /api/admin/users?role=&page=&pageSize=` — liste paginée et filtrable.
+- `POST /api/admin/users/:id/suspend` — suspension (interdit sur soi-même et sur
+  le dernier ADMIN actif). La suspension d'un BARBER annule transactionnellement
+  ses réservations futures `PENDING`/`CONFIRMED` avec `cancelled_by = ADMIN`.
+- `POST /api/admin/users/:id/reactivate` — réactivation.
+- `GET /api/admin/bookings?status=&page=&pageSize=` — réservations globales.
+- `GET /api/admin/reviews?page=&pageSize=` — avis (masqués inclus).
+- `POST /api/admin/reviews/:id/hide` — masquage réversible (`hidden_at`, jamais
+  de suppression). Les avis masqués sont exclus des lectures publiques et des
+  agrégats de note.
+- `GET /api/admin/barbers/:id/stats?range=...` — statistiques d'un barber ciblé,
+  réutilisant `computeBarberStats` (aucune donnée personnelle de client).
+
+**Interface `/admin`** (lot 3, sans dépendance) : coque `AdminLayout` avec
+navigation responsive et logout ; tableau de bord (`metrics`, dont les barbiers
+actifs) ; listes paginées utilisateurs (filtre rôle, suspension/réactivation
+avec confirmation, lien vers les stats du profil), réservations (filtre statut,
+responsable d'annulation, aucune adresse privée) et avis (masquage réversible) ;
+page de statistiques d'un professionnel réutilisant le rendu partagé
+`BarberStatsContent`. Le frontend ne duplique aucune autorisation :
+`RequireRole` masque l'accès, le serveur reste la source de vérité.
+
 ### Autorisation et anti-IDOR
 
 Toutes les décisions d'accès sont prises **côté serveur** ; les gardes frontend

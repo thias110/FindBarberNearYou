@@ -187,7 +187,9 @@ export function ClientBookingsPage() {
                           Annulée par{" "}
                           {booking.cancelledBy === "CLIENT"
                             ? "vous"
-                            : "le professionnel"}
+                            : booking.cancelledBy === "ADMIN"
+                              ? "l'administration"
+                              : "le professionnel"}
                           .
                         </p>
                       )}

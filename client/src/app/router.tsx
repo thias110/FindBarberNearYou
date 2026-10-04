@@ -14,6 +14,10 @@ import { BarberTimeOffPage } from "../pages/barber/TimeOffPage";
 import { BarberBookingsPage } from "../pages/barber/BookingsPage";
 import { BarberStatsPage } from "../pages/barber/StatsPage";
 import { AdminDashboardPage } from "../pages/admin/DashboardPage";
+import { AdminUsersPage } from "../pages/admin/UsersPage";
+import { AdminBookingsPage } from "../pages/admin/BookingsPage";
+import { AdminReviewsPage } from "../pages/admin/ReviewsPage";
+import { AdminBarberStatsPage } from "../pages/admin/BarberStatsPage";
 
 export function AppRoutes() {
   return (
@@ -102,6 +106,38 @@ export function AppRoutes() {
         element={
           <RequireRole roles={["ADMIN"]}>
             <AdminDashboardPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <RequireRole roles={["ADMIN"]}>
+            <AdminUsersPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/bookings"
+        element={
+          <RequireRole roles={["ADMIN"]}>
+            <AdminBookingsPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/reviews"
+        element={
+          <RequireRole roles={["ADMIN"]}>
+            <AdminReviewsPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/barbers/:barberId/stats"
+        element={
+          <RequireRole roles={["ADMIN"]}>
+            <AdminBarberStatsPage />
           </RequireRole>
         }
       />

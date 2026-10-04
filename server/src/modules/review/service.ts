@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
   barberProfiles,
@@ -135,7 +135,12 @@ export async function listBarberReviews(
     })
     .from(reviews)
     .innerJoin(bookings, eq(reviews.bookingId, bookings.id))
-    .where(eq(bookings.barberProfileId, barberId));
+    .where(
+      and(
+        eq(bookings.barberProfileId, barberId),
+        isNull(reviews.hiddenAt),
+      ),
+    );
 
   const total = Number(summary?.total ?? 0);
   const averageRating =
@@ -146,7 +151,12 @@ export async function listBarberReviews(
     .from(reviews)
     .innerJoin(bookings, eq(reviews.bookingId, bookings.id))
     .innerJoin(users, eq(bookings.clientUserId, users.id))
-    .where(eq(bookings.barberProfileId, barberId))
+    .where(
+      and(
+        eq(bookings.barberProfileId, barberId),
+        isNull(reviews.hiddenAt),
+      ),
+    )
     .orderBy(desc(reviews.createdAt), desc(reviews.id))
     .limit(query.pageSize)
     .offset((query.page - 1) * query.pageSize);

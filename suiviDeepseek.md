@@ -1908,3 +1908,192 @@ volontairement NON lancées (attente validation).
 - `appointmentsByWeek`/`appointmentsByMonth` comptent toutes les réservations
   (annulées incluses), comme le total de la période ; seuls les jours/heures
   « chargés » excluent les annulées.
+
+---
+
+# Suivi — issue #7 : administration & modération (LOT 1, API admin)
+
+État : LOT 1 implémenté (migration, DTO/validation partagés, routes/service
+admin, client apiAdmin, tests). Aucun commit / push / PR / fermeture d'issue.
+Commandes de vérification volontairement NON lancées (attente validation).
+
+## Décisions appliquées
+
+- Suspension via `users.status` existant (pas de `suspended_at`/`suspended_reason`).
+- Auto-suspension interdite ; dernier ADMIN actif protégé.
+- Suspension d'un BARBER → annulation transactionnelle des réservations futures
+  PENDING/CONFIRMED avec `cancelled_by = "ADMIN"` (`CANCELLED_BY_ADMIN`).
+- Avis : masquage réversible via `reviews.hidden_at` (jamais de DELETE) ; lectures
+  publiques et agrégats excluent les avis masqués.
+- `GET /api/admin/barbers/:id/stats` réutilise `computeBarberStats` via un
+  refactor minimal de `statsService` (`getBarberStatsForAdmin`).
+- Mutations admin protégées par `requireAuth` + `requireRole("ADMIN")` +
+  `csrfProtection` ; bucket mutations ajouté sur `/api/admin`.
+
+## Migration ajoutée
+
+- `0011_bright_quiet_harbor.sql` : `ALTER TABLE reviews ADD COLUMN hidden_at timestamptz`.
+- Snapshot `0011_snapshot.json` + entrée `_journal.json` (idx 11).
+
+## Fichiers créés
+
+- `server/src/modules/admin/service.ts`
+- `shared/src/validation/admin.ts`
+- `tests/src/admin.integration.test.ts`
+- `server/drizzle/0011_bright_quiet_harbor.sql`
+- `server/drizzle/meta/0011_snapshot.json`
+
+## Fichiers modifiés
+
+- `server/src/modules/admin/routes.ts` (routes admin complètes)
+- `server/src/app.ts` (rate limiting `/api/admin`)
+- `server/src/modules/barber/statsService.ts` (refactor + filtre avis masqués)
+- `server/src/modules/review/service.ts` (lectures publiques excluent masqués)
+- `shared/src/schema.ts` (reviews.hiddenAt)
+- `shared/src/constants.ts` (CANCELLED_BY_ADMIN, ADMIN_LIMITS)
+- `shared/src/types.ts` (DTO admin)
+- `shared/src/validation/index.ts` (export admin)
+- `client/src/lib/apiClient.ts` (adminApi)
+- `server/drizzle/meta/_journal.json`
+- `README.md`, `suiviDeepseek.md`
+
+## Commandes NON lancées (attente validation)
+
+`npm install`, `npm run typecheck`, `npm test`, `npm run lint`, `npm run build`,
+`npm run db:generate`, `npm run db:migrate`.
+
+## Points d'attention
+
+- La route `GET /api/admin/status` est conservée pour ne pas casser les tests
+  d'authentification existants.
+- La règle « dernier ADMIN actif » est une défense en profondeur testée au niveau
+  service (au niveau HTTP, l'acteur est lui-même ADMIN actif).
+- L'action de démasquage d'un avis (unhide) n'est pas dans ce LOT 1 (seule la
+  pose de `hidden_at` est câblée) ; la réversibilité est portée par le modèle.
+
+---
+
+# Suivi — issue #7 : LOT 2 (sécurité du compte suspendu)
+
+État : audit terminé, aucun trou de sécurité serveur constaté. Aucun commit /
+push / PR / fermeture d'issue. Commandes de vérification volontairement NON
+lancées (attente validation).
+
+## Audit (confirmé, déjà en place)
+
+- `loginUser` refuse SUSPENDED (`403 ACCOUNT_SUSPENDED`), après vérification du
+  mot de passe.
+- `requireAuth` relit l'utilisateur en base à chaque requête et refuse SUSPENDED
+  (`403 ACCOUNT_SUSPENDED`) : aucune session émise avant la suspension ne reste
+  valide. Le JWT ne porte ni rôle ni statut (seulement `sub` + `csrf`) : aucun
+  rôle/statut figé en cookie.
+- `requireRole` s'appuie sur `req.user` fraîchement relu.
+- Suspendu = bloqué sur toutes les routes authentifiées (barber, client, admin).
+- Côté public : recherche (`users.status = ACTIVE`), profil public (404 si non
+  ACTIVE/BARBER), créneaux (`assertActiveBarber` → 404), avis (propriétaire
+  actif requis → 404) et nouvelles réservations (`assertActiveBarber` → 404).
+- Garde-fous LOT 1 confirmés : auto-suspension interdite, dernier ADMIN actif
+  protégé, annulation des seules futures PENDING/CONFIRMED,
+  `cancelled_by = ADMIN` distinct de BARBER/CLIENT, réactivation sans
+  restauration des réservations annulées (aucun chemin PENDING/CONFIRMED depuis
+  CANCELLED : confirm/complete → 409 INVALID_STATUS_TRANSITION).
+
+## Correction minimale (cas métier oublié)
+
+- Affichage du responsable d'annulation : `cancelled_by = "ADMIN"` affiche
+  désormais « l'administration » côté barber ET côté client (avant : « vous » /
+  « le professionnel », trompeur pour les annulations de suspension).
+
+## Tests ajoutés
+
+- `tests/src/account-suspension.integration.test.ts` : login refusé si SUSPENDED ;
+  session émise puis refusée après suspension (relecture DB) ; auto-suspension
+  interdite ; dernier ADMIN actif protégé ; endpoints admin refusés à
+  CLIENT/BARBER (lecture + mutation) ; suspension barber → annulation des seules
+  futures PENDING/CONFIRMED ; `cancelled_by` ADMIN distinct de BARBER ;
+  réactivation sans restauration (booking toujours CANCELLED, re-confirmation
+  impossible).
+
+## Fichiers modifiés / créés
+
+- `tests/src/account-suspension.integration.test.ts` (créé)
+- `client/src/pages/barber/BookingsPage.tsx` (affichage « l'administration »)
+- `client/src/pages/client/BookingsPage.tsx` (idem)
+- `suiviDeepseek.md`
+
+## Commandes NON lancées (attente validation)
+
+`npm install`, `npm run typecheck`, `npm test`, `npm run lint`, `npm run build`,
+`npm run db:generate`, `npm run db:migrate`.
+
+## Points d'attention
+
+- Aucune migration : le LOT 2 ne touche pas au schéma.
+- Les réservations futures d'un CLIENT suspendu ne sont PAS annulées (décision
+  LOT 1 limitée aux barbers) : à confirmer si un lot ultérieur doit l'étendre.
+
+---
+
+# Suivi — issue #7 : LOT 3 (interface /admin)
+
+État : interface d'administration implémentée (sans dépendance). Aucun commit /
+push / PR / fermeture d'issue. Commandes de vérification volontairement NON
+lancées (attente validation).
+
+## Décisions appliquées
+
+- `AdminLayout` : coque légère (en-tête, navigation responsive, logout) ;
+  aucune redéfinition d'autorisation (`RequireRole` + serveur restent la source
+  de vérité).
+- Dashboard : cartes (utilisateurs, barbiers actifs, réservations, suspendus,
+  en attente, avis masqués) + liens vers users/bookings/reviews.
+- Listes paginées avec filtres rôle/statut, états chargement/erreur/vide,
+  actions avec confirmation (`window.confirm`), rechargement + message
+  contextualisé après mutation.
+- Users : bouton « Suspendre » désactivé sur soi-même (contrôle serveur
+  conservé) ; lien « Voir les statistiques » si `barberProfileId` présent.
+- Bookings : vue globale, aucune adresse privée (absente du DTO admin).
+- Reviews : « Masquer » uniquement si l'avis est visible ; statut masqué/visible.
+- Stats barber admin : rendu partagé `BarberStatsContent` + `StatsRangeSelector`
+  (7 j / 30 j / mois / personnalisé), valeurs textuelles toujours présentes.
+
+## Ajouts additifs côté DTO admin (lecture seule, aucune règle métier)
+
+- `AdminUser.barberProfileId` (lien stats) ;
+- `AdminMetrics.barbers.active` (carte « Barbiers actifs ») ;
+- `AdminBooking.clientName` / `clientEmail` (colonne client) ;
+- libellés partagés `ROLE_LABELS` / `USER_STATUS_LABELS`.
+
+## Fichiers créés
+
+- `client/src/components/AdminLayout.tsx`
+- `client/src/components/AdminPagination.tsx`
+- `client/src/components/BarberStatsContent.tsx`
+- `client/src/lib/admin.ts`
+- `client/src/pages/admin/UsersPage.tsx`
+- `client/src/pages/admin/BookingsPage.tsx`
+- `client/src/pages/admin/ReviewsPage.tsx`
+- `client/src/pages/admin/BarberStatsPage.tsx`
+- `tests/src/admin-ui.test.ts`
+
+## Fichiers modifiés
+
+- `client/src/pages/admin/DashboardPage.tsx` (dashboard complet)
+- `client/src/pages/barber/StatsPage.tsx` (réutilise les composants partagés)
+- `client/src/app/router.tsx` (routes admin protégées)
+- `shared/src/types.ts` (champs DTO admin additifs)
+- `shared/src/constants.ts` (ROLE_LABELS, USER_STATUS_LABELS)
+- `server/src/modules/admin/service.ts` (jointures/listes pour les champs additifs)
+- `README.md`, `suiviDeepseek.md`
+
+## Commandes NON lancées (attente validation)
+
+`npm install`, `npm run typecheck`, `npm test`, `npm run lint`, `npm run build`,
+`npm run db:generate`, `npm run db:migrate`.
+
+## Points d'attention
+
+- Les 3 champs DTO additifs sont en lecture seule et n'altèrent aucune règle
+  métier (autorisations, suspension, annulation inchangées).
+- Pas de tests DOM (infrastructure non configurée) : seuls les helpers purs
+  (`client/src/lib/admin.ts`) sont testés unitairement.

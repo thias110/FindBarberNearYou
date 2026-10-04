@@ -278,3 +278,85 @@ export interface BarberStatsResponse {
   rating: BarberStatsRating;
   clients: BarberStatsClients;
 }
+
+// --- Administration & modération (issue #7, LOT 1) ---
+// DTO réservés à l'API admin : ils peuvent exposer des identifiants internes
+// (userId, profileId, bookingId) nécessaires à la modération, contrairement aux
+// DTO publics. Aucun DTO public existant n'est modifié.
+
+export interface AdminMetrics {
+  users: { total: number; active: number; suspended: number };
+  barbers: { active: number };
+  bookings: {
+    total: number;
+    pending: number;
+    confirmed: number;
+    completed: number;
+    cancelled: number;
+  };
+  reviews: { total: number; hidden: number };
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  role: Role;
+  status: UserStatus;
+  name: string | null;
+  createdAt: string;
+  // Identifiant du profil professionnel s'il existe (lien stats admin).
+  barberProfileId: string | null;
+}
+
+export interface AdminUsersResponse {
+  users: AdminUser[];
+  pagination: AdminPagination;
+}
+
+export interface AdminBooking {
+  id: string;
+  clientUserId: string;
+  clientName: string | null;
+  clientEmail: string | null;
+  barberProfileId: string;
+  serviceId: string;
+  barberDisplayName: string;
+  serviceName: string;
+  servicePlace: ServicePlace;
+  status: BookingStatus;
+  startAt: string;
+  endAt: string;
+  priceMinor: number;
+  currency: Currency;
+  cancelledBy: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+}
+
+export interface AdminBookingsResponse {
+  bookings: AdminBooking[];
+  pagination: AdminPagination;
+}
+
+export interface AdminReview {
+  id: string;
+  bookingId: string;
+  rating: number;
+  comment: string | null;
+  hiddenAt: string | null;
+  createdAt: string;
+  clientName: string | null;
+  barberDisplayName: string | null;
+}
+
+export interface AdminReviewsResponse {
+  reviews: AdminReview[];
+  pagination: AdminPagination;
+}
+
+export interface AdminPagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}

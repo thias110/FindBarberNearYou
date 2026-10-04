@@ -68,6 +68,9 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api/auth/register", registerLimiter);
   app.use("/api/bookings", mutationLimiter);
   app.use("/api/barber", mutationLimiter);
+  // Modérations admin (suspend/reactivate/hide) : même bucket mutations que
+  // les autres écritures sensibles ; les GET admin ne sont pas comptés.
+  app.use("/api/admin", mutationLimiter);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true });

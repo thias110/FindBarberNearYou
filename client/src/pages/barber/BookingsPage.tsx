@@ -213,7 +213,9 @@ export function BarberBookingsPage() {
                           Annulée par{" "}
                           {booking.cancelledBy === "CLIENT"
                             ? "le client"
-                            : "vous"}
+                            : booking.cancelledBy === "ADMIN"
+                              ? "l'administration"
+                              : "vous"}
                           .
                         </p>
                       )}

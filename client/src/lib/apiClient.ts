@@ -1,4 +1,10 @@
 import type {
+  AdminBookingsResponse,
+  AdminMetrics,
+  AdminReview,
+  AdminReviewsResponse,
+  AdminUser,
+  AdminUsersResponse,
   BarberReviewsResponse,
   BarbersSearchResponse,
   BarberStatsResponse,
@@ -15,7 +21,7 @@ import type {
   TimeOffResponse,
   WorkingHoursResponse,
 } from "@findbarber/shared/types";
-import type { ServicePlace } from "@findbarber/shared/constants";
+import type { BookingStatus, ServicePlace } from "@findbarber/shared/constants";
 import type {
   BookingCreateInput,
   ProfileInput,
@@ -200,6 +206,79 @@ export const barberApi: BarberApi = {
     apiFetch<void>(`/api/barber/time-off/${encodeURIComponent(timeOffId)}`, {
       method: "DELETE",
     }),
+};
+
+function toQueryString(params: object = {}): string {
+  const sp = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== "") sp.set(key, String(value));
+  }
+  const qs = sp.toString();
+  return qs ? `?${qs}` : "";
+}
+
+export interface AdminUsersParams {
+  role?: "CLIENT" | "BARBER" | "ADMIN";
+  page?: number;
+  pageSize?: number;
+}
+
+export interface AdminBookingsParams {
+  status?: BookingStatus;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface AdminReviewsParams {
+  page?: number;
+  pageSize?: number;
+}
+
+export interface AdminApi {
+  getMetrics(): Promise<AdminMetrics>;
+  listUsers(params?: AdminUsersParams): Promise<AdminUsersResponse>;
+  suspendUser(userId: string): Promise<{ user: AdminUser }>;
+  reactivateUser(userId: string): Promise<{ user: AdminUser }>;
+  listBookings(params?: AdminBookingsParams): Promise<AdminBookingsResponse>;
+  listReviews(params?: AdminReviewsParams): Promise<AdminReviewsResponse>;
+  hideReview(reviewId: string): Promise<{ review: AdminReview }>;
+  getBarberStats(
+    barberId: string,
+    params?: BarberStatsParams,
+  ): Promise<BarberStatsResponse>;
+}
+
+export const adminApi: AdminApi = {
+  getMetrics: () => apiFetch<AdminMetrics>("/api/admin/metrics"),
+  listUsers: (params) =>
+    apiFetch<AdminUsersResponse>(`/api/admin/users${toQueryString(params)}`),
+  suspendUser: (userId) =>
+    apiFetch<{ user: AdminUser }>(
+      `/api/admin/users/${encodeURIComponent(userId)}/suspend`,
+      { method: "POST" },
+    ),
+  reactivateUser: (userId) =>
+    apiFetch<{ user: AdminUser }>(
+      `/api/admin/users/${encodeURIComponent(userId)}/reactivate`,
+      { method: "POST" },
+    ),
+  listBookings: (params) =>
+    apiFetch<AdminBookingsResponse>(
+      `/api/admin/bookings${toQueryString(params)}`,
+    ),
+  listReviews: (params) =>
+    apiFetch<AdminReviewsResponse>(
+      `/api/admin/reviews${toQueryString(params)}`,
+    ),
+  hideReview: (reviewId) =>
+    apiFetch<{ review: AdminReview }>(
+      `/api/admin/reviews/${encodeURIComponent(reviewId)}/hide`,
+      { method: "POST" },
+    ),
+  getBarberStats: (barberId, params) =>
+    apiFetch<BarberStatsResponse>(
+      `/api/admin/barbers/${encodeURIComponent(barberId)}/stats${toQueryString(params)}`,
+    ),
 };
 
 export interface BarbersSearchParams {

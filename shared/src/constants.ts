@@ -8,6 +8,21 @@ export const ROLE_HOME = {
   ADMIN: "/admin",
 } as const;
 
+// Libellés français partagés (interface d'administration, lot 3).
+export const ROLE_LABELS: Record<(typeof ROLES)[number], string> = {
+  CLIENT: "Client",
+  BARBER: "Barbier",
+  ADMIN: "Administrateur",
+};
+
+export const USER_STATUS_LABELS: Record<
+  (typeof USER_STATUSES)[number],
+  string
+> = {
+  ACTIVE: "Actif",
+  SUSPENDED: "Suspendu",
+};
+
 // Devises prises en charge dans ce lot. Une seule devise par profil, immuable
 // après création. Les montants sont stockés en unités mineures entières.
 export const SUPPORTED_CURRENCIES = ["CHF", "EUR", "USD"] as const;
@@ -190,4 +205,18 @@ export const STATS_DEFAULT_RANGE: StatsRange = "30d";
 export const STATS_LIMITS = {
   maxRangeDays: 366,
   topServicesLimit: 5,
+} as const;
+
+// --- Administration & modération (issue #7, LOT 1) ---
+// `cancelled_by` utilisé lorsqu'une suspension administrateur annule les
+// réservations futures d'un barber. Le champ reste un `text` (pas d'enum) dans
+// le schéma : on partage la constante pour éviter les divergences.
+export const CANCELLED_BY_ADMIN = "ADMIN" as const;
+
+// Pagination des listes d'administration (users, bookings, reviews).
+export const ADMIN_LIMITS = {
+  pageDefault: 1,
+  pageMax: 10_000,
+  pageSizeDefault: 20,
+  pageSizeMax: 100,
 } as const;
