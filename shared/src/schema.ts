@@ -43,6 +43,10 @@ export const users = pgTable(
     role: userRoleEnum("role").notNull().default("CLIENT"),
     status: userStatusEnum("status").notNull().default("ACTIVE"),
     name: text("name"),
+    // Avatar générique (issue #8) : chemin relatif sous UPLOAD_DIR
+    // (`avatars/<uuid>.webp`), jamais exposé tel quel (URL publique
+    // `/uploads/<path>`). Nullable : aucun avatar par défaut en base.
+    avatarPath: text("avatar_path"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -455,3 +459,40 @@ export const reviews = pgTable(
 
 export type ReviewRow = typeof reviews.$inferSelect;
 export type NewReviewRow = typeof reviews.$inferInsert;
+
+// Galerie photos du professionnel (issue #8, lot 1). Aucune colonne `position`
+// dans ce lot : l'ordre d'affichage est chronologique. Le fichier est stocké
+// hors base (`image_path` = chemin relatif sous UPLOAD_DIR) ; l'URL publique est
+// `/uploads/<image_path>`. Suppression en cascade avec le profil.
+export const barberPhotos = pgTable(
+  "barber_photos",
+  {
+    id: text("id").primaryKey(),
+    barberProfileId: text("barber_profile_id")
+      .notNull()
+      .references(() => barberProfiles.id, { onDelete: "cascade" }),
+    imagePath: text("image_path").notNull(),
+    caption: text("caption"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("barber_photos_profile_created_idx").on(
+      table.barberProfileId,
+      table.createdAt,
+    ),
+    check(
+      "barber_photos_caption_length",
+      sql`${table.caption} IS NULL OR char_length(${table.caption}) <= ${sql.raw(
+        String(LIMITS.galleryCaption),
+      )}`,
+    ),
+  ],
+);
+
+export type BarberPhotoRow = typeof barberPhotos.$inferSelect;
+export type NewBarberPhotoRow = typeof barberPhotos.$inferInsert;

@@ -19,6 +19,8 @@ export interface PublicUser {
   role: Role;
   status: UserStatus;
   name: string | null;
+  // URL publique relative de l'avatar (`/uploads/avatars/<uuid>.webp`) ou null.
+  avatarPath: string | null;
   createdAt: string;
 }
 
@@ -359,4 +361,28 @@ export interface AdminPagination {
   pageSize: number;
   total: number;
   totalPages: number;
+}
+
+// --- Galerie photos du professionnel (issue #8) ---
+// `imagePath` est une URL publique relative servie sous `/uploads`. Aucune
+// donnée privée : ni chemin disque absolu, ni identifiant de réservation.
+export interface PublicBarberPhoto {
+  id: string;
+  imagePath: string;
+  caption: string | null;
+  createdAt: string;
+}
+
+// Vue propriétaire : mêmes champs + rattachement au profil et date de mise à jour.
+export interface OwnBarberPhoto extends PublicBarberPhoto {
+  barberProfileId: string;
+  updatedAt: string;
+}
+
+export interface PublicBarberPhotosResponse {
+  photos: PublicBarberPhoto[];
+}
+
+export interface OwnBarberPhotosResponse {
+  photos: OwnBarberPhoto[];
 }

@@ -7,6 +7,7 @@ import { users, type User } from "@findbarber/shared/schema";
 import type { PublicUser, Role } from "@findbarber/shared/types";
 import { env } from "../../config/env.js";
 import { AppError, isUniqueViolation } from "../../lib/errors.js";
+import { publicUploadPath } from "../../lib/storage.js";
 
 const BCRYPT_COST = 12;
 
@@ -14,13 +15,16 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-function toPublicUser(user: User): PublicUser {
+// Mapper public partagé (auth + module user). L'avatar est exposé sous forme
+// d'URL publique relative (`/uploads/...`), jamais comme chemin disque.
+export function toPublicUser(user: User): PublicUser {
   return {
     id: user.id,
     email: user.email,
     role: user.role,
     status: user.status,
     name: user.name,
+    avatarPath: user.avatarPath ? publicUploadPath(user.avatarPath) : null,
     createdAt: user.createdAt.toISOString(),
   };
 }

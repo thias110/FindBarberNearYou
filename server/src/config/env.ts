@@ -27,6 +27,9 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().min(1).default("http://localhost:5173"),
   DATABASE_URL: z.string().optional(),
   PGLITE_DATA_DIR: z.string().optional(),
+  // Répertoire racine des fichiers uploadés (avatars, galerie), servi sous
+  // `/uploads`. Relatif à la racine d'exécution par défaut.
+  UPLOAD_DIR: z.string().min(1).default("./data/uploads"),
   JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters."),
   JWT_EXPIRES_IN_SECONDS: z.coerce
     .number()

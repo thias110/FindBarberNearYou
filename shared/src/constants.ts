@@ -194,7 +194,22 @@ export const LIMITS = {
   reviewRatingMin: 1,
   reviewRatingMax: 5,
   reviewComment: 1000,
+  // Uploads d'images (issue #8). Taille maximale du fichier source, dimensions
+  // de réencodage WebP (avatar 512x512 crop cover, galerie 1600px max de large)
+  // et limites de la galerie (nombre de photos, longueur de la légende).
+  uploadMaxBytes: 5_242_880,
+  avatarSizePx: 512,
+  galleryMaxWidthPx: 1600,
+  galleryMaxPhotos: 15,
+  galleryCaption: 300,
 } as const;
+
+// Types MIME acceptés pour les uploads d'images (issue #8).
+export const UPLOAD_IMAGE_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
 
 // --- Statistiques d'activité du barber (issue #20) ---
 // Plages prédéfinies du tableau de bord et bornes de la plage personnalisée.

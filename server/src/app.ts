@@ -7,7 +7,9 @@ import { adminRouter } from "./modules/admin/routes.js";
 import { barberRouter } from "./modules/barber/routes.js";
 import { barbersRouter } from "./modules/barber/publicRoutes.js";
 import { bookingRouter } from "./modules/booking/routes.js";
+import { userRouter } from "./modules/user/routes.js";
 import { errorHandler } from "./middleware/error.js";
+import { resolveUploadDir } from "./lib/storage.js";
 import { configureTrustProxy, securityHeaders } from "./middleware/security.js";
 import { createRateLimiter, MUTATING_METHODS } from "./middleware/rateLimit.js";
 
@@ -34,6 +36,23 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
   app.use(express.json());
   app.use(cookieParser());
+
+  // Fichiers uploadés (avatars, galerie) servis publiquement sous `/uploads`.
+  // Les noms sont générés côté serveur (UUID) ; aucun listing n'est exposé.
+  // En-têtes explicites : nosniff + cache immuable (le nom change à chaque
+  // upload, donc l'immutabilité est sûre).
+  app.use(
+    "/uploads",
+    express.static(resolveUploadDir(), {
+      setHeaders: (res) => {
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        res.setHeader(
+          "Cache-Control",
+          "public, max-age=31536000, immutable",
+        );
+      },
+    }),
+  );
 
   // En-têtes de sécurité uniquement sur l'API JSON (le SPA est servi à part).
   app.use("/api", securityHeaders(env.NODE_ENV === "production"));
@@ -71,6 +90,8 @@ export function createApp(options: AppOptions = {}): express.Express {
   // Modérations admin (suspend/reactivate/hide) : même bucket mutations que
   // les autres écritures sensibles ; les GET admin ne sont pas comptés.
   app.use("/api/admin", mutationLimiter);
+  // Avatar (PUT/DELETE /api/users/me/avatar) : même bucket mutations.
+  app.use("/api/users", mutationLimiter);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true });
@@ -78,6 +99,7 @@ export function createApp(options: AppOptions = {}): express.Express {
 
   app.use("/api/auth", authRouter);
   app.use("/api/admin", adminRouter);
+  app.use("/api/users", userRouter);
   app.use("/api/barber", barberRouter);
   app.use("/api/barbers", barbersRouter);
   app.use("/api/bookings", bookingRouter);
