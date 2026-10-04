@@ -1,6 +1,7 @@
 import type {
   BarberReviewsResponse,
   BarbersSearchResponse,
+  BarberStatsResponse,
   Booking,
   BookingDetails,
   BookingsResponse,
@@ -127,8 +128,15 @@ export const authApi: AuthApi = {
   logout: () => apiFetch<void>("/api/auth/logout", { method: "POST" }),
 };
 
+export interface BarberStatsParams {
+  range?: "7d" | "30d" | "month" | "custom";
+  from?: string;
+  to?: string;
+}
+
 export interface BarberApi {
   getProfile(): Promise<{ profile: OwnBarberProfile }>;
+  getStats(params?: BarberStatsParams): Promise<BarberStatsResponse>;
   updateProfile(input: ProfileInput): Promise<{ profile: OwnBarberProfile }>;
   getServices(): Promise<{ services: OwnBarberService[] }>;
   createService(input: ServiceCreateInput): Promise<{ service: OwnBarberService }>;
@@ -146,6 +154,16 @@ export interface BarberApi {
 export const barberApi: BarberApi = {
   getProfile: () =>
     apiFetch<{ profile: OwnBarberProfile }>("/api/barber/profile"),
+  getStats: (params) => {
+    const sp = new URLSearchParams();
+    if (params?.range !== undefined) sp.set("range", params.range);
+    if (params?.from !== undefined) sp.set("from", params.from);
+    if (params?.to !== undefined) sp.set("to", params.to);
+    const qs = sp.toString();
+    return apiFetch<BarberStatsResponse>(
+      `/api/barber/stats${qs ? `?${qs}` : ""}`,
+    );
+  },
   updateProfile: (input) =>
     apiFetch<{ profile: OwnBarberProfile }>("/api/barber/profile", {
       method: "PUT",

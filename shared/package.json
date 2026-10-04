@@ -12,6 +12,7 @@
     "./countries": "./src/countries.ts",
     "./dates": "./src/dates.ts",
     "./timezones": "./src/timezones.ts",
+    "./stats": "./src/stats.ts",
     "./validation": "./src/validation/index.ts"
   },
   "scripts": {

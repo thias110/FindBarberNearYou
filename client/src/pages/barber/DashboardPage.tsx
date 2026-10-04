@@ -131,6 +131,17 @@ export function BarberDashboardPage() {
               Demandes en attente, confirmations et annulations
             </span>
           </Link>
+          <Link
+            to="/pro/stats"
+            className="rounded-2xl bg-white p-5 shadow transition hover:shadow-md"
+          >
+            <span className="font-semibold text-brand-900">
+              Mes statistiques
+            </span>
+            <span className="mt-1 block text-sm text-gray-600">
+              Revenus, rendez-vous, services et avis
+            </span>
+          </Link>
         </nav>
 
         <section className="rounded-2xl bg-white p-6 shadow">

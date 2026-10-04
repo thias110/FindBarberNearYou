@@ -411,6 +411,37 @@ peut déposer **un unique avis** public sur le professionnel.
   `bookings` `ON DELETE CASCADE`, CHECK `rating BETWEEN 1 AND 5` et
   `char_length(comment) <= 1000`, index sur `created_at`.
 
+### Statistiques d'activité du barber (issue #20)
+
+Tableau de bord réservé au **BARBER** (aucun accès ADMIN), accessible sur la page
+`/pro/stats` (client) et l'endpoint `GET /api/barber/stats` (serveur).
+
+- **Période** (query `.strict()`) : `range=7d|30d|month|custom` (défaut `30d`).
+  `7d`/`30d` = glissants ; `month` = du 1er du mois local au jour local courant ;
+  `custom` exige `from` et `to` (`AAAA-MM-JJ`, bornes incluses, **max 366 jours**).
+  Le fuseau n'est jamais fourni par le client : il est lu sur le profil.
+- **Réponse** (agrégats uniquement) :
+  - totaux : rendez-vous, terminés, annulés, refusés (`CANCELLED` +
+    `cancelled_by = BARBER`), revenus (**COMPLETED uniquement**, `priceMinor` figé) ;
+  - taux d'annulation et de refus en fractions 0..1 (sur le total de la période) ;
+  - `appointmentsByWeek` / `appointmentsByMonth` / `revenueByMonth` (buckets
+    complets et ordonnés) ;
+  - `topServices` (toutes réservations, annulées incluses), `busiestWeekdays` /
+    `busiestHours` (toutes réservations sauf annulées) ;
+  - `rating` **global permanent** (non filtré par la période) et `clients`
+    (nouveaux / réguliers, compteurs seuls).
+- **Confidentialité** : aucune donnée personnelle de client (pas d'id, email,
+  nom, adresse ni coordonnées) ; uniquement des compteurs, sommes, taux et
+  libellés temporels / noms de services du barber.
+- **Calcul** : `computeBarberStats` (`shared/src/stats.ts`) est une fonction
+  **pure** qui buckète dans le fuseau du professionnel via `utcToZonedParts`
+  (jours/semaines/mois/heures locaux, DST inclus). Le service (`statsService.ts`)
+  ne fait qu'orchestrer : profil, fuseau (409 si absent), période, requêtes SQL
+  minimales, puis appel de la fonction pure.
+- **Erreurs** : `401` non authentifié, `403` CLIENT/ADMIN, `404` sans profil,
+  `409 BARBER_TIMEZONE_MISSING` sans fuseau, `400 VALIDATION_ERROR` période
+  invalide.
+
 ### Autorisation et anti-IDOR
 
 Toutes les décisions d'accès sont prises **côté serveur** ; les gardes frontend

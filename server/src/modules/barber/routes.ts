@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  barberStatsQuerySchema,
   profileSchema,
   serviceCreateSchema,
   serviceUpdateSchema,
@@ -21,8 +22,24 @@ import {
   updateService,
   upsertProfile,
 } from "./service.js";
+import { getBarberStats } from "./statsService.js";
 
 export const barberRouter = Router();
+
+// Statistiques d'activité du barber (issue #20) : lecture seule, réservée au
+// BARBER propriétaire. La période est validée ici, le calcul délégué au service.
+barberRouter.get(
+  "/stats",
+  requireAuth,
+  requireRole("BARBER"),
+  async (req, res) => {
+    const parsed = barberStatsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      throw validationError(parsed.error);
+    }
+    res.json(await getBarberStats(req.user!.id, parsed.data));
+  },
+);
 
 barberRouter.get("/profile", requireAuth, requireRole("BARBER"), async (req, res) => {
   const profile = await getOwnProfile(req.user!.id);

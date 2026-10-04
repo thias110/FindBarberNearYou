@@ -180,3 +180,14 @@ export const LIMITS = {
   reviewRatingMax: 5,
   reviewComment: 1000,
 } as const;
+
+// --- Statistiques d'activité du barber (issue #20) ---
+// Plages prédéfinies du tableau de bord et bornes de la plage personnalisée.
+export const STATS_RANGES = ["7d", "30d", "month", "custom"] as const;
+export type StatsRange = (typeof STATS_RANGES)[number];
+export const STATS_DEFAULT_RANGE: StatsRange = "30d";
+
+export const STATS_LIMITS = {
+  maxRangeDays: 366,
+  topServicesLimit: 5,
+} as const;

@@ -1852,3 +1852,59 @@ pas encore installée).
 - La CSP SPA est documentée pour le proxy, non appliquée par Express (décision).
 - `express-rate-limit` clé par IP ; derrière un proxy, renseigner
   `TRUST_PROXY_HOPS` pour éviter un bucket partagé.
+
+---
+
+# Suivi — issue #20 : statistiques et tableau de bord d'activité du barber
+
+État : passe B implémentée (lot serveur + lot client minimal). Aucun commit /
+push / PR / issue / migration / dépendance. Commandes de vérification
+volontairement NON lancées (attente validation).
+
+## Décisions appliquées
+
+- Route `GET /api/barber/stats` réservée à BARBER (CLIENT et ADMIN → 403).
+- `refused = CANCELLED + cancelled_by = BARBER` ; taux en fractions 0..1 sur le
+  total de la période.
+- `range=month` = du 1er du mois local au jour local courant ; plage custom max
+  366 jours inclus.
+- `topServices` compte toutes les réservations ; `busiest*` exclut les CANCELLED ;
+  revenus = COMPLETED uniquement ; rating global permanent.
+- Fuseau obligatoire → `409 BARBER_TIMEZONE_MISSING`.
+- `computeBarberStats` pur (bucketing local via `utcToZonedParts`) ;
+  `statsService.ts` orchestre seulement. Aucune donnée personnelle de client.
+
+## Fichiers créés
+
+- `shared/src/stats.ts`
+- `shared/src/validation/stats.ts`
+- `server/src/modules/barber/statsService.ts`
+- `tests/src/barber-stats.test.ts`
+- `tests/src/barber-stats.integration.test.ts`
+- `client/src/pages/barber/StatsPage.tsx`
+
+## Fichiers modifiés
+
+- `shared/src/constants.ts` (STATS_RANGES, STATS_DEFAULT_RANGE, STATS_LIMITS)
+- `shared/src/types.ts` (BarberStatsResponse + sous-types)
+- `shared/src/validation/index.ts` (export stats)
+- `shared/package.json` (export `./stats`)
+- `server/src/modules/barber/routes.ts` (route GET /stats)
+- `client/src/lib/apiClient.ts` (barberApi.getStats)
+- `client/src/app/router.tsx` (route /pro/stats)
+- `client/src/pages/barber/DashboardPage.tsx` (lien « Mes statistiques »)
+- `README.md`, `suiviDeepseek.md`
+
+## Commandes NON lancées (attente validation)
+
+`npm install`, `npm run typecheck`, `npm test`, `npm run lint`, `npm run build`,
+`npm run db:generate`, `npm run db:migrate`.
+
+## Points d'attention
+
+- Aucune migration : le lot lit uniquement les tables existantes (`bookings`,
+  `reviews`, `barber_profiles`).
+- Aucune dépendance : graphiques en CSS/Tailwind pur avec alternative textuelle.
+- `appointmentsByWeek`/`appointmentsByMonth` comptent toutes les réservations
+  (annulées incluses), comme le total de la période ; seuls les jours/heures
+  « chargés » excluent les annulées.

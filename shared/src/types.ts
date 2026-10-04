@@ -211,3 +211,70 @@ export interface BarberReviewsResponse {
     totalPages: number;
   };
 }
+
+// --- Statistiques d'activité du barber (issue #20) ---
+// Agrégats uniquement : aucune donnée personnelle de client. Les buckets sont
+// complets (même à zéro) et ordonnés pour un rendu client stable. Les clés sont
+// des codes stables (`YYYY-Www`, `YYYY-MM`, `1`..`7`, `0`..`23`) ; `label` est
+// le libellé d'affichage français. Les taux sont des fractions 0..1.
+export interface BarberStatsPeriod {
+  from: string; // AAAA-MM-JJ (fuseau du barber)
+  to: string; // AAAA-MM-JJ (fuseau du barber)
+  timezone: string;
+}
+
+export interface BarberStatsTotals {
+  bookings: number;
+  completed: number;
+  cancelled: number;
+  refused: number; // CANCELLED + cancelledBy === "BARBER"
+  revenueMinor: number; // COMPLETED uniquement
+}
+
+export interface BarberStatsRates {
+  cancellationRate: number; // 0..1
+  refusalRate: number; // 0..1
+}
+
+export interface BarberStatsBucket {
+  key: string;
+  label: string;
+  count: number;
+}
+
+export interface BarberStatsRevenueBucket {
+  key: string;
+  label: string;
+  revenueMinor: number;
+}
+
+export interface BarberStatsTopService {
+  serviceName: string;
+  count: number;
+  revenueMinor: number;
+}
+
+export interface BarberStatsRating {
+  averageRating: number | null;
+  totalReviews: number;
+}
+
+export interface BarberStatsClients {
+  newClients: number;
+  returningClients: number;
+}
+
+export interface BarberStatsResponse {
+  currency: Currency;
+  period: BarberStatsPeriod;
+  totals: BarberStatsTotals;
+  rates: BarberStatsRates;
+  appointmentsByWeek: BarberStatsBucket[];
+  appointmentsByMonth: BarberStatsBucket[];
+  revenueByMonth: BarberStatsRevenueBucket[];
+  topServices: BarberStatsTopService[];
+  busiestWeekdays: BarberStatsBucket[];
+  busiestHours: BarberStatsBucket[];
+  rating: BarberStatsRating;
+  clients: BarberStatsClients;
+}
