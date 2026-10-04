@@ -13,6 +13,7 @@ import { BarberWorkingHoursPage } from "../pages/barber/WorkingHoursPage";
 import { BarberTimeOffPage } from "../pages/barber/TimeOffPage";
 import { BarberBookingsPage } from "../pages/barber/BookingsPage";
 import { BarberStatsPage } from "../pages/barber/StatsPage";
+import { BarberGalleryPage } from "../pages/barber/GalleryPage";
 import { AdminDashboardPage } from "../pages/admin/DashboardPage";
 import { AdminUsersPage } from "../pages/admin/UsersPage";
 import { AdminBookingsPage } from "../pages/admin/BookingsPage";
@@ -98,6 +99,14 @@ export function AppRoutes() {
         element={
           <RequireRole roles={["BARBER"]}>
             <BarberStatsPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/pro/gallery"
+        element={
+          <RequireRole roles={["BARBER"]}>
+            <BarberGalleryPage />
           </RequireRole>
         }
       />

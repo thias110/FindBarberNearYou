@@ -45,10 +45,12 @@ import type {
 import { AppError, isUniqueViolation } from "../../lib/errors.js";
 import { escapeLikePattern } from "../../lib/like.js";
 import { approximateCoordinates } from "../../lib/location.js";
+import { publicUploadPath } from "../../lib/storage.js";
 
 function toOwnProfile(
   profile: BarberProfile,
   places: ServicePlace[],
+  avatarPath: string | null,
 ): OwnBarberProfile {
   return {
     id: profile.id,
@@ -64,6 +66,7 @@ function toOwnProfile(
     timezone: profile.timezone,
     travelRadiusKm: profile.travelRadiusKm,
     places,
+    avatarPath: avatarPath ? publicUploadPath(avatarPath) : null,
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
   };
@@ -72,6 +75,7 @@ function toOwnProfile(
 function toPublicProfile(
   profile: BarberProfile,
   places: ServicePlace[],
+  avatarPath: string | null,
 ): PublicBarberProfile {
   // Coordonnées publiques approximatives : jamais le point privé exact.
   const { latitude, longitude } = approximateCoordinates(
@@ -89,6 +93,7 @@ function toPublicProfile(
     longitude,
     currency: profile.currency,
     places,
+    avatarPath: avatarPath ? publicUploadPath(avatarPath) : null,
     createdAt: profile.createdAt.toISOString(),
   };
 }
@@ -194,10 +199,21 @@ async function getOwnProfileRow(userId: string): Promise<BarberProfile> {
   return profile;
 }
 
+// Avatar de l'utilisateur propriétaire (chemin relatif de stockage).
+async function loadOwnerAvatarPath(userId: string): Promise<string | null> {
+  const [owner] = await db
+    .select({ avatarPath: users.avatarPath })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return owner?.avatarPath ?? null;
+}
+
 export async function getOwnProfile(userId: string): Promise<OwnBarberProfile> {
   const profile = await getOwnProfileRow(userId);
   const places = (await loadPlaces([profile.id])).get(profile.id) ?? [];
-  return toOwnProfile(profile, places);
+  const avatarPath = await loadOwnerAvatarPath(profile.userId);
+  return toOwnProfile(profile, places, avatarPath);
 }
 
 // Upsert atomique fondé sur la contrainte unique `userId`. Deux créations
@@ -274,7 +290,13 @@ export async function upsertProfile(
       })),
     );
 
-    return toOwnProfile(profile, input.places);
+    const [owner] = await tx
+      .select({ avatarPath: users.avatarPath })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    return toOwnProfile(profile, input.places, owner?.avatarPath ?? null);
   });
 }
 
@@ -659,7 +681,11 @@ export async function getPublicProfile(
   }
 
   const [owner] = await db
-    .select({ status: users.status, role: users.role })
+    .select({
+      status: users.status,
+      role: users.role,
+      avatarPath: users.avatarPath,
+    })
     .from(users)
     .where(eq(users.id, profile.userId))
     .limit(1);
@@ -688,7 +714,7 @@ export async function getPublicProfile(
   const places = (await loadPlaces([barberId])).get(barberId) ?? [];
 
   return {
-    profile: toPublicProfile(profile, places),
+    profile: toPublicProfile(profile, places, owner.avatarPath),
     services: services.map((service) =>
       toPublicService(
         service,

@@ -42,6 +42,8 @@ export interface PublicBarberProfile {
   longitude: number;
   currency: Currency;
   places: ServicePlace[];
+  // URL publique relative de l'avatar du professionnel (`/uploads/avatars/...`).
+  avatarPath: string | null;
   createdAt: string;
 }
 

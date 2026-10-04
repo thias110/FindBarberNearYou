@@ -2097,3 +2097,52 @@ lancées (attente validation).
   métier (autorisations, suspension, annulation inchangées).
 - Pas de tests DOM (infrastructure non configurée) : seuls les helpers purs
   (`client/src/lib/admin.ts`) sont testés unitairement.
+
+---
+
+# Suivi — issue #8 : LOT 2 (UI avatar + galerie)
+
+État : interface implémentée côté client (aucune dépendance ajoutée). Aucun
+commit / push / branche / PR. Commandes de vérification volontairement NON
+lancées (attente validation).
+
+## Décisions appliquées
+
+- Avatar : section dédiée sur le tableau de bord barber (upload/suppression,
+  pré-validation client format + taille, le serveur reste la référence).
+- Galerie barber : page `/pro/gallery` — grille responsive (pas de carrousel),
+  ajout (image + légende), suppression avec confirmation, compteur 15 max.
+- Galerie publique : section « Galerie » + avatar sur le profil public
+  (`/barbers/:barberId`), alimentée par `GET /api/barbers/:id/photos`.
+- `resolveUploadUrl(...)` (client) résout `/uploads/...` vers l'origine API.
+- Erreurs 400/401/403/404/409/413 : message serveur affiché, 401 reformulé
+  (« Session expirée ») ; pré-validation 400/413 côté client.
+- `PublicBarberProfile.avatarPath` exposé (URL `/uploads/avatars/...`) via
+  `barber/service.ts`, sans toucher aux routes publiques ni à la recherche.
+
+## Fichiers modifiés
+
+- `client/src/lib/apiClient.ts` (`resolveUploadUrl`, `validateImageFile`,
+  `apiErrorMessage`, upload multipart, `userApi`, galerie `barberApi`/`barbersApi`)
+- `client/src/app/router.tsx` (route `/pro/gallery` protégée BARBER)
+- `client/src/pages/barber/DashboardPage.tsx` (avatar + lien galerie)
+- `client/src/pages/client/BarberProfilePage.tsx` (avatar + galerie publique)
+- `shared/src/types.ts` (`PublicBarberProfile.avatarPath`)
+- `server/src/modules/barber/service.ts` (avatar dans profils public/interne)
+
+## Fichiers créés
+
+- `client/src/pages/barber/GalleryPage.tsx`
+
+## Commandes NON lancées (attente validation)
+
+`npm install`, `npm run db:generate`, `npm run typecheck`, `npm test`,
+`npm run lint`, `npm run build`.
+
+## Points d'attention
+
+- La mise à jour de l'avatar ne rafraîchit pas le contexte d'auth global
+  (pas de setter dans `AuthProvider`) : l'état local est mis à jour, le contexte
+  se resynchronise au prochain `GET /api/auth/me`.
+- `publicRoutes.ts`, `barber/routes.ts` et la recherche publique ne sont pas
+  modifiés par ce lot.

@@ -1,8 +1,21 @@
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type ChangeEvent,
+} from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { LIMITS, UPLOAD_IMAGE_MIME_TYPES } from "@findbarber/shared/constants";
 import type { OwnBarberProfile } from "@findbarber/shared/types";
 import { useAuth } from "../../app/auth-context";
-import { ApiError, barberApi } from "../../lib/apiClient";
+import {
+  ApiError,
+  apiErrorMessage,
+  barberApi,
+  resolveUploadUrl,
+  userApi,
+  validateImageFile,
+} from "../../lib/apiClient";
 
 export function BarberDashboardPage() {
   const { user, logout } = useAuth();
@@ -13,6 +26,14 @@ export function BarberDashboardPage() {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [avatarPath, setAvatarPath] = useState<string | null>(
+    user?.avatarPath ?? null,
+  );
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarMessage, setAvatarMessage] = useState<{
+    kind: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const loadProfile = useCallback(() => {
     setLoading(true);
@@ -43,6 +64,44 @@ export function BarberDashboardPage() {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+    const selected = event.target.files?.[0];
+    event.target.value = "";
+    if (!selected) return;
+    const validation = validateImageFile(selected);
+    if (validation) {
+      setAvatarMessage({ kind: "error", text: validation });
+      return;
+    }
+    setAvatarBusy(true);
+    setAvatarMessage(null);
+    try {
+      const res = await userApi.updateAvatar(selected);
+      setAvatarPath(res.user.avatarPath);
+      setAvatarMessage({ kind: "success", text: "Avatar mis à jour." });
+    } catch (err: unknown) {
+      // 400 (format), 401 (session), 403 (CSRF), 413 (taille) via le serveur.
+      setAvatarMessage({ kind: "error", text: apiErrorMessage(err) });
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
+  async function handleAvatarDelete() {
+    if (!window.confirm("Supprimer votre avatar ?")) return;
+    setAvatarBusy(true);
+    setAvatarMessage(null);
+    try {
+      const res = await userApi.deleteAvatar();
+      setAvatarPath(res.user.avatarPath);
+      setAvatarMessage({ kind: "success", text: "Avatar supprimé." });
+    } catch (err: unknown) {
+      setAvatarMessage({ kind: "error", text: apiErrorMessage(err) });
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
 
   const publicLink = profile
     ? `${window.location.origin}/barbers/${profile.id}`
@@ -80,6 +139,57 @@ export function BarberDashboardPage() {
           </button>
         </div>
         <p className="text-gray-700">Connecté en tant que {user?.email}.</p>
+
+        <section className="rounded-2xl bg-white p-6 shadow">
+          <h2 className="font-semibold text-brand-900">Mon avatar</h2>
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            {avatarPath ? (
+              <img
+                src={resolveUploadUrl(avatarPath) ?? ""}
+                alt="Mon avatar"
+                className="h-16 w-16 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 text-lg font-semibold text-brand-800">
+                {(user?.name ?? user?.email ?? "?").charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept={UPLOAD_IMAGE_MIME_TYPES.join(",")}
+                disabled={avatarBusy}
+                onChange={(event) => void handleAvatarChange(event)}
+                className="block text-sm"
+              />
+              {avatarPath && (
+                <button
+                  type="button"
+                  disabled={avatarBusy}
+                  onClick={() => void handleAvatarDelete()}
+                  className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-700 disabled:opacity-50"
+                >
+                  Supprimer l'avatar
+                </button>
+              )}
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            JPEG, PNG ou WebP, {Math.round(LIMITS.uploadMaxBytes / 1_048_576)} Mo
+            max.
+          </p>
+          {avatarMessage && (
+            <p
+              className={`mt-2 text-sm ${
+                avatarMessage.kind === "success"
+                  ? "text-green-700"
+                  : "text-red-700"
+              }`}
+            >
+              {avatarMessage.text}
+            </p>
+          )}
+        </section>
 
         <nav className="grid gap-3 sm:grid-cols-2">
           <Link
@@ -140,6 +250,15 @@ export function BarberDashboardPage() {
             </span>
             <span className="mt-1 block text-sm text-gray-600">
               Revenus, rendez-vous, services et avis
+            </span>
+          </Link>
+          <Link
+            to="/pro/gallery"
+            className="rounded-2xl bg-white p-5 shadow transition hover:shadow-md"
+          >
+            <span className="font-semibold text-brand-900">Ma galerie</span>
+            <span className="mt-1 block text-sm text-gray-600">
+              Photos de vos réalisations
             </span>
           </Link>
         </nav>

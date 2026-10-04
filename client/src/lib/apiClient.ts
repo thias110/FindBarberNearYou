@@ -12,8 +12,11 @@ import type {
   BookingDetails,
   BookingsResponse,
   BookingSlotsResponse,
+  OwnBarberPhoto,
+  OwnBarberPhotosResponse,
   OwnBarberProfile,
   OwnBarberService,
+  PublicBarberPhotosResponse,
   PublicBarberProfileWithServices,
   PublicReview,
   PublicUser,
@@ -21,7 +24,12 @@ import type {
   TimeOffResponse,
   WorkingHoursResponse,
 } from "@findbarber/shared/types";
-import type { BookingStatus, ServicePlace } from "@findbarber/shared/constants";
+import {
+  LIMITS,
+  UPLOAD_IMAGE_MIME_TYPES,
+  type BookingStatus,
+  type ServicePlace,
+} from "@findbarber/shared/constants";
 import type {
   BookingCreateInput,
   ProfileInput,
@@ -49,6 +57,63 @@ export class ApiError extends Error {
 function readCsrfToken(): string | null {
   const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : null;
+}
+
+const ACCEPTED_UPLOAD_TYPES = UPLOAD_IMAGE_MIME_TYPES as readonly string[];
+
+/** Pré-validation client d'un fichier image (le serveur reste la référence). */
+export function validateImageFile(file: File): string | null {
+  if (!ACCEPTED_UPLOAD_TYPES.includes(file.type)) {
+    return "Format accepté : JPEG, PNG ou WebP.";
+  }
+  if (file.size > LIMITS.uploadMaxBytes) {
+    return `Image trop volumineuse (${Math.round(
+      LIMITS.uploadMaxBytes / 1_048_576,
+    )} Mo maximum).`;
+  }
+  return null;
+}
+
+// Résout une URL publique d'upload (ex. `/uploads/avatars/<uuid>.webp`) vers
+// l'origine de l'API. Les URLs absolues sont renvoyées telles quelles.
+export function resolveUploadUrl(
+  path: string | null | undefined,
+): string | null {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+// Message d'erreur prêt à afficher. Les statuts 400/403/404/409/413 portent un
+// message serveur explicite (français) ; 401 reçoit un message clair côté client.
+export function apiErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 401) {
+      return "Session expirée. Reconnectez-vous.";
+    }
+    return err.message;
+  }
+  return err instanceof Error ? err.message : "Une erreur est survenue.";
+}
+
+async function parseResponse<T>(res: Response): Promise<T> {
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  const data = (await res.json().catch(() => null)) as {
+    error?: { code: string; message: string };
+  } | null;
+
+  if (!res.ok) {
+    throw new ApiError(
+      res.status,
+      data?.error?.code ?? "UNKNOWN",
+      data?.error?.message ?? "Request failed.",
+    );
+  }
+
+  return data as T;
 }
 
 interface ApiOptions {
@@ -85,23 +150,28 @@ export async function apiFetch<T>(
     signal: options.signal,
   });
 
-  if (res.status === 204) {
-    return undefined as T;
-  }
+  return parseResponse<T>(res);
+}
 
-  const data = (await res.json().catch(() => null)) as {
-    error?: { code: string; message: string };
-  } | null;
+// Upload multipart : ne fixe JAMAIS `Content-Type` (le navigateur ajoute le
+// boundary). Le jeton CSRF est posé dans l'en-tête comme pour `apiFetch`.
+async function apiUpload<T>(
+  path: string,
+  formData: FormData,
+  method: "POST" | "PUT" = "POST",
+): Promise<T> {
+  const headers: Record<string, string> = {};
+  const csrf = readCsrfToken();
+  if (csrf) headers["X-CSRF-Token"] = csrf;
 
-  if (!res.ok) {
-    throw new ApiError(
-      res.status,
-      data?.error?.code ?? "UNKNOWN",
-      data?.error?.message ?? "Request failed.",
-    );
-  }
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers,
+    credentials: "include",
+    body: formData,
+  });
 
-  return data as T;
+  return parseResponse<T>(res);
 }
 
 export interface AuthApi {
@@ -134,6 +204,26 @@ export const authApi: AuthApi = {
   logout: () => apiFetch<void>("/api/auth/logout", { method: "POST" }),
 };
 
+// Avatar générique de l'utilisateur connecté (issue #8).
+export interface UserApi {
+  updateAvatar(file: File): Promise<{ user: PublicUser }>;
+  deleteAvatar(): Promise<{ user: PublicUser }>;
+}
+
+export const userApi: UserApi = {
+  updateAvatar: (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    return apiUpload<{ user: PublicUser }>(
+      "/api/users/me/avatar",
+      formData,
+      "PUT",
+    );
+  },
+  deleteAvatar: () =>
+    apiFetch<{ user: PublicUser }>("/api/users/me/avatar", { method: "DELETE" }),
+};
+
 export interface BarberStatsParams {
   range?: "7d" | "30d" | "month" | "custom";
   from?: string;
@@ -143,6 +233,9 @@ export interface BarberStatsParams {
 export interface BarberApi {
   getProfile(): Promise<{ profile: OwnBarberProfile }>;
   getStats(params?: BarberStatsParams): Promise<BarberStatsResponse>;
+  getPhotos(): Promise<OwnBarberPhotosResponse>;
+  addPhoto(file: File, caption?: string): Promise<{ photo: OwnBarberPhoto }>;
+  deletePhoto(photoId: string): Promise<void>;
   updateProfile(input: ProfileInput): Promise<{ profile: OwnBarberProfile }>;
   getServices(): Promise<{ services: OwnBarberService[] }>;
   createService(input: ServiceCreateInput): Promise<{ service: OwnBarberService }>;
@@ -170,6 +263,18 @@ export const barberApi: BarberApi = {
       `/api/barber/stats${qs ? `?${qs}` : ""}`,
     );
   },
+  getPhotos: () => apiFetch<OwnBarberPhotosResponse>("/api/barber/photos"),
+  addPhoto: (file, caption) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const trimmed = caption?.trim();
+    if (trimmed) formData.append("caption", trimmed);
+    return apiUpload<{ photo: OwnBarberPhoto }>("/api/barber/photos", formData);
+  },
+  deletePhoto: (photoId) =>
+    apiFetch<void>(`/api/barber/photos/${encodeURIComponent(photoId)}`, {
+      method: "DELETE",
+    }),
   updateProfile: (input) =>
     apiFetch<{ profile: OwnBarberProfile }>("/api/barber/profile", {
       method: "PUT",
@@ -294,6 +399,7 @@ export interface BarbersSearchParams {
 
 export interface PublicBarbersApi {
   getProfile(barberId: string): Promise<PublicBarberProfileWithServices>;
+  getPhotos(barberId: string): Promise<PublicBarberPhotosResponse>;
   getSlots(
     barberId: string,
     params: { serviceId: string; date: string; place: ServicePlace },
@@ -313,6 +419,10 @@ export const barbersApi: PublicBarbersApi = {
   getProfile: (barberId) =>
     apiFetch<PublicBarberProfileWithServices>(
       `/api/barbers/${encodeURIComponent(barberId)}`,
+    ),
+  getPhotos: (barberId) =>
+    apiFetch<PublicBarberPhotosResponse>(
+      `/api/barbers/${encodeURIComponent(barberId)}/photos`,
     ),
   getSlots: (barberId, params, signal) => {
     const sp = new URLSearchParams({

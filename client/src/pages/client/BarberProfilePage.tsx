@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import type {
   BarberReviewsResponse,
+  PublicBarberPhoto,
   PublicBarberProfileWithServices,
 } from "@findbarber/shared/types";
 import { COUNTRY_NAME_BY_CODE } from "@findbarber/shared/countries";
@@ -11,7 +12,7 @@ import {
   SERVICE_PLACE_LABELS,
   TECHNIQUE_LABELS,
 } from "@findbarber/shared/constants";
-import { barbersApi } from "../../lib/apiClient";
+import { apiErrorMessage, barbersApi, resolveUploadUrl } from "../../lib/apiClient";
 import { formatCurrency, formatDateTime, formatDuration } from "../../lib/formatters";
 import { BookingForm } from "../../components/BookingForm";
 
@@ -25,6 +26,11 @@ export function PublicBarberProfilePage() {
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
   const [reviewsReload, setReviewsReload] = useState(0);
+
+  const [photos, setPhotos] = useState<PublicBarberPhoto[]>([]);
+  const [photosLoading, setPhotosLoading] = useState(true);
+  const [photosError, setPhotosError] = useState<string | null>(null);
+  const [photosReload, setPhotosReload] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,6 +87,30 @@ export function PublicBarberProfilePage() {
     };
   }, [barberId, reviewsReload]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!barberId) {
+      setPhotosLoading(false);
+      return;
+    }
+    setPhotosLoading(true);
+    setPhotosError(null);
+    barbersApi
+      .getPhotos(barberId)
+      .then((res) => {
+        if (!cancelled) setPhotos(res.photos);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setPhotosError(apiErrorMessage(err));
+      })
+      .finally(() => {
+        if (!cancelled) setPhotosLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [barberId, photosReload]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-brand-50 p-8 text-center text-gray-500">
@@ -109,9 +139,25 @@ export function PublicBarberProfilePage() {
     <div className="min-h-screen bg-brand-50 p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <section className="rounded-2xl bg-white p-6 shadow">
-          <h1 className="text-2xl font-semibold text-brand-900">
-            {profile.displayName}
-          </h1>
+          <div className="flex items-center gap-4">
+            {profile.avatarPath ? (
+              <img
+                src={resolveUploadUrl(profile.avatarPath) ?? ""}
+                alt={`Avatar de ${profile.displayName}`}
+                className="h-20 w-20 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <div
+                aria-hidden="true"
+                className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-brand-100 text-2xl font-semibold text-brand-800"
+              >
+                {profile.displayName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <h1 className="text-2xl font-semibold text-brand-900">
+              {profile.displayName}
+            </h1>
+          </div>
           <p className="mt-2 whitespace-pre-line text-gray-700">
             {profile.description}
           </p>
@@ -203,6 +249,48 @@ export function PublicBarberProfilePage() {
                       {formatDuration(service.durationMinutes)}
                     </p>
                   </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="rounded-2xl bg-white p-6 shadow">
+          <h2 className="font-semibold text-brand-900">Galerie</h2>
+          {photosLoading ? (
+            <p className="mt-2 text-gray-600">Chargement de la galerie…</p>
+          ) : photosError ? (
+            <div className="mt-2">
+              <p className="text-sm text-red-700">{photosError}</p>
+              <button
+                type="button"
+                onClick={() => setPhotosReload((n) => n + 1)}
+                className="mt-2 rounded-lg border border-brand-700 px-3 py-1 text-brand-700"
+              >
+                Réessayer
+              </button>
+            </div>
+          ) : photos.length === 0 ? (
+            <p className="mt-2 text-gray-600">Aucune photo pour le moment.</p>
+          ) : (
+            // Grille responsive, sans carrousel.
+            <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {photos.map((photo) => (
+                <li
+                  key={photo.id}
+                  className="overflow-hidden rounded-xl bg-gray-50"
+                >
+                  <img
+                    src={resolveUploadUrl(photo.imagePath) ?? ""}
+                    alt={photo.caption ?? "Photo de réalisation"}
+                    loading="lazy"
+                    className="h-40 w-full object-cover"
+                  />
+                  {photo.caption && (
+                    <p className="p-2 text-xs text-gray-600">
+                      {photo.caption}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>
