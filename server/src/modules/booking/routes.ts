@@ -40,10 +40,7 @@ bookingRouter.get(
   requireAuth,
   requireRole("CLIENT", "BARBER"),
   async (req, res) => {
-    const bookings = await listBookings({
-      id: req.user!.id,
-      role: req.user!.role,
-    });
+    const bookings = await listBookings(req.user!);
     res.json({ bookings });
   },
 );
@@ -56,7 +53,7 @@ bookingRouter.get(
   requireRole("CLIENT", "BARBER", "ADMIN"),
   async (req, res) => {
     const booking = await getBookingDetails(
-      { id: req.user!.id, role: req.user!.role },
+      req.user!,
       req.params.bookingId as string,
     );
     res.json({ booking });
@@ -106,7 +103,7 @@ bookingRouter.post(
       throw validationError(parsed.error);
     }
     const review = await createReview(
-      req.user!.id,
+      req.user!,
       req.params.bookingId as string,
       parsed.data,
     );
@@ -122,7 +119,7 @@ bookingRouter.post(
   csrfProtection,
   async (req, res) => {
     const booking = await cancelBooking(
-      { id: req.user!.id, role: req.user!.role },
+      req.user!,
       req.params.bookingId as string,
     );
     res.json({ booking });

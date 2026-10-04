@@ -25,7 +25,6 @@ import type {
   Booking,
   BookingDetails,
   BookingSlotDto,
-  Role,
 } from "@findbarber/shared/types";
 import type {
   BookingCreateInput,
@@ -43,6 +42,11 @@ import {
   isValidLongitude,
 } from "../../lib/location.js";
 import { AppError } from "../../lib/errors.js";
+import {
+  assertBookingReadAccess,
+  bookingNotFound,
+  type AuthUser,
+} from "../../lib/authorization.js";
 
 const MS_PER_HOUR = 3_600_000;
 
@@ -438,33 +442,48 @@ export async function createBooking(
   });
 }
 
-export async function listBookings(user: {
-  id: string;
-  role: Role;
-}): Promise<Booking[]> {
+// --- Résolution du profil barber de l'utilisateur connecté ---
+// Point unique pour ancrer les contrôles d'ownership : aucun identifiant de
+// profil n'est jamais accepté du frontend. Retourne `null` si l'utilisateur
+// n'a pas encore de profil (l'appelant choisit alors le code d'erreur adapté).
+async function findOwnBarberProfileId(userId: string): Promise<string | null> {
+  const [profile] = await db
+    .select({ id: barberProfiles.id })
+    .from(barberProfiles)
+    .where(eq(barberProfiles.userId, userId))
+    .limit(1);
+  return profile?.id ?? null;
+}
+
+async function requireOwnBarberProfileId(userId: string): Promise<string> {
+  const profileId = await findOwnBarberProfileId(userId);
+  if (!profileId) {
+    throw new AppError(
+      404,
+      "BARBER_PROFILE_NOT_FOUND",
+      "Aucun profil professionnel.",
+    );
+  }
+  return profileId;
+}
+
+export async function listBookings(user: AuthUser): Promise<Booking[]> {
   if (user.role === "BARBER") {
-    const [profile] = await db
-      .select({ id: barberProfiles.id })
-      .from(barberProfiles)
-      .where(eq(barberProfiles.userId, user.id))
-      .limit(1);
-    if (!profile) {
-      throw new AppError(
-        404,
-        "BARBER_PROFILE_NOT_FOUND",
-        "Aucun profil professionnel.",
-      );
-    }
+    const profileId = await requireOwnBarberProfileId(user.id);
     const rows = await db
       .select({ booking: bookings, clientName: users.name, reviewId: reviews.id })
       .from(bookings)
       .leftJoin(users, eq(users.id, bookings.clientUserId))
       .leftJoin(reviews, eq(reviews.bookingId, bookings.id))
-      .where(eq(bookings.barberProfileId, profile.id))
+      .where(eq(bookings.barberProfileId, profileId))
       .orderBy(asc(bookings.startAt));
     return rows.map((row) =>
       toBooking(row.booking, row.clientName, row.reviewId !== null),
     );
+  }
+
+  if (user.role !== "CLIENT") {
+    throw new AppError(403, "FORBIDDEN", "Insufficient permissions.");
   }
 
   const rows = await db
@@ -483,7 +502,7 @@ export async function listBookings(user: {
 // réservées au CLIENT propriétaire, au BARBER concerné et à ADMIN. Tout autre
 // appel reçoit 404 (aucune fuite d'existence ni d'adresse).
 export async function getBookingDetails(
-  user: { id: string; role: Role },
+  user: AuthUser,
   bookingId: string,
 ): Promise<BookingDetails> {
   const [row] = await db
@@ -492,24 +511,15 @@ export async function getBookingDetails(
     .where(eq(bookings.id, bookingId))
     .limit(1);
   if (!row) {
-    throw new AppError(404, "BOOKING_NOT_FOUND", "Réservation introuvable.");
+    throw bookingNotFound();
   }
 
-  if (user.role === "CLIENT") {
-    if (row.clientUserId !== user.id) {
-      throw new AppError(404, "BOOKING_NOT_FOUND", "Réservation introuvable.");
-    }
-  } else if (user.role === "BARBER") {
-    const [profile] = await db
-      .select({ id: barberProfiles.id })
-      .from(barberProfiles)
-      .where(eq(barberProfiles.userId, user.id))
-      .limit(1);
-    if (!profile || profile.id !== row.barberProfileId) {
-      throw new AppError(404, "BOOKING_NOT_FOUND", "Réservation introuvable.");
-    }
-  }
-  // ADMIN : autorisé sans contrôle de propriété.
+  // Un BARBER sans profil n'obtient PAS `BARBER_PROFILE_NOT_FOUND` ici : la
+  // policy renvoie le même 404 `BOOKING_NOT_FOUND` que pour un non-propriétaire
+  // (aucune fuite sur l'existence du profil ni de la réservation).
+  const barberProfileId =
+    user.role === "BARBER" ? await findOwnBarberProfileId(user.id) : null;
+  assertBookingReadAccess(user, row, barberProfileId);
 
   const [client] = await db
     .select({ name: users.name })
@@ -528,18 +538,7 @@ export async function confirmBooking(
   barberUserId: string,
   bookingId: string,
 ): Promise<Booking> {
-  const [profile] = await db
-    .select({ id: barberProfiles.id })
-    .from(barberProfiles)
-    .where(eq(barberProfiles.userId, barberUserId))
-    .limit(1);
-  if (!profile) {
-    throw new AppError(
-      404,
-      "BARBER_PROFILE_NOT_FOUND",
-      "Aucun profil professionnel.",
-    );
-  }
+  const profileId = await requireOwnBarberProfileId(barberUserId);
 
   const [existing] = await db
     .select()
@@ -547,12 +546,12 @@ export async function confirmBooking(
     .where(
       and(
         eq(bookings.id, bookingId),
-        eq(bookings.barberProfileId, profile.id),
+        eq(bookings.barberProfileId, profileId),
       ),
     )
     .limit(1);
   if (!existing) {
-    throw new AppError(404, "BOOKING_NOT_FOUND", "Réservation introuvable.");
+    throw bookingNotFound();
   }
   if (existing.status !== "PENDING") {
     throw new AppError(
@@ -568,7 +567,7 @@ export async function confirmBooking(
     .where(
       and(
         eq(bookings.id, bookingId),
-        eq(bookings.barberProfileId, profile.id),
+        eq(bookings.barberProfileId, profileId),
       ),
     )
     .returning();
@@ -587,18 +586,7 @@ export async function completeBooking(
   barberUserId: string,
   bookingId: string,
 ): Promise<Booking> {
-  const [profile] = await db
-    .select({ id: barberProfiles.id })
-    .from(barberProfiles)
-    .where(eq(barberProfiles.userId, barberUserId))
-    .limit(1);
-  if (!profile) {
-    throw new AppError(
-      404,
-      "BARBER_PROFILE_NOT_FOUND",
-      "Aucun profil professionnel.",
-    );
-  }
+  const profileId = await requireOwnBarberProfileId(barberUserId);
 
   const [existing] = await db
     .select()
@@ -606,12 +594,12 @@ export async function completeBooking(
     .where(
       and(
         eq(bookings.id, bookingId),
-        eq(bookings.barberProfileId, profile.id),
+        eq(bookings.barberProfileId, profileId),
       ),
     )
     .limit(1);
   if (!existing) {
-    throw new AppError(404, "BOOKING_NOT_FOUND", "Réservation introuvable.");
+    throw bookingNotFound();
   }
   if (existing.status !== "CONFIRMED") {
     throw new AppError(
@@ -627,7 +615,7 @@ export async function completeBooking(
     .where(
       and(
         eq(bookings.id, bookingId),
-        eq(bookings.barberProfileId, profile.id),
+        eq(bookings.barberProfileId, profileId),
       ),
     )
     .returning();
@@ -640,35 +628,24 @@ export async function completeBooking(
 }
 
 export async function cancelBooking(
-  user: { id: string; role: Role },
+  user: AuthUser,
   bookingId: string,
 ): Promise<Booking> {
   let existing: BookingRow | undefined;
 
   if (user.role === "BARBER") {
-    const [profile] = await db
-      .select({ id: barberProfiles.id })
-      .from(barberProfiles)
-      .where(eq(barberProfiles.userId, user.id))
-      .limit(1);
-    if (!profile) {
-      throw new AppError(
-        404,
-        "BARBER_PROFILE_NOT_FOUND",
-        "Aucun profil professionnel.",
-      );
-    }
+    const profileId = await requireOwnBarberProfileId(user.id);
     [existing] = await db
       .select()
       .from(bookings)
       .where(
         and(
           eq(bookings.id, bookingId),
-          eq(bookings.barberProfileId, profile.id),
+          eq(bookings.barberProfileId, profileId),
         ),
       )
       .limit(1);
-  } else {
+  } else if (user.role === "CLIENT") {
     [existing] = await db
       .select()
       .from(bookings)
@@ -679,10 +656,12 @@ export async function cancelBooking(
         ),
       )
       .limit(1);
+  } else {
+    throw new AppError(403, "FORBIDDEN", "Insufficient permissions.");
   }
 
   if (!existing) {
-    throw new AppError(404, "BOOKING_NOT_FOUND", "Réservation introuvable.");
+    throw bookingNotFound();
   }
   if (existing.status !== "PENDING" && existing.status !== "CONFIRMED") {
     throw new AppError(

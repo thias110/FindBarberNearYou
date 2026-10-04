@@ -17,6 +17,11 @@ import type {
   ReviewListQuery,
 } from "@findbarber/shared/validation";
 import { AppError, isUniqueViolation } from "../../lib/errors.js";
+import {
+  assertBookingClientOwner,
+  bookingNotFound,
+  type AuthUser,
+} from "../../lib/authorization.js";
 
 // Whitelist publique stricte : jamais d'email, hash, userId interne, adresse,
 // identifiant de réservation ni coordonnées. `clientName` = users.name (nullable).
@@ -38,7 +43,7 @@ function toPublicReview(
 // identifiant de barber/client n'est accepté du frontend. L'unicité par booking
 // est garantie en base (index unique) et rattrapée ici en cas de concurrence.
 export async function createReview(
-  clientUserId: string,
+  user: AuthUser,
   bookingId: string,
   input: ReviewCreateInput,
 ): Promise<PublicReview> {
@@ -50,9 +55,10 @@ export async function createReview(
 
   // Anti-IDOR : introuvable OU appartenant à un autre client → 404 (aucune
   // fuite d'existence). Le barber noté est implicitement `booking.barberProfileId`.
-  if (!booking || booking.clientUserId !== clientUserId) {
-    throw new AppError(404, "BOOKING_NOT_FOUND", "Réservation introuvable.");
+  if (!booking) {
+    throw bookingNotFound();
   }
+  assertBookingClientOwner(user, booking);
 
   if (booking.status !== "COMPLETED") {
     throw new AppError(
@@ -78,7 +84,7 @@ export async function createReview(
     const [client] = await db
       .select({ name: users.name })
       .from(users)
-      .where(eq(users.id, clientUserId))
+      .where(eq(users.id, user.id))
       .limit(1);
     return toPublicReview(created, client?.name ?? null);
   } catch (err) {

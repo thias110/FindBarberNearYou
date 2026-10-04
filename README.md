@@ -410,6 +410,33 @@ peut déposer **un unique avis** public sur le professionnel.
   `bookings` `ON DELETE CASCADE`, CHECK `rating BETWEEN 1 AND 5` et
   `char_length(comment) <= 1000`, index sur `created_at`.
 
+### Autorisation et anti-IDOR
+
+Toutes les décisions d'accès sont prises **côté serveur** ; les gardes frontend
+ne sont jamais une source de vérité.
+
+- **Convention d'erreurs** : `401` requête non authentifiée (`requireAuth`) ;
+  `403` refus global de rôle (`requireRole`), CSRF invalide ou compte suspendu ;
+  `404` ressource privée **inexistante ou non possédée**. Un `404` d'ownership
+  ne révèle jamais l'existence d'une réservation, d'un service ou d'une
+  indisponibilité (pas de `403` dans ces cas).
+- **Outils** : middlewares `requireAuth` / `requireRole` pour les refus globaux,
+  `csrfProtection` sur les mutations, et des politiques pures d'ownership dans
+  `server/src/lib/authorization.ts` (`assertBookingReadAccess`,
+  `assertBookingClientOwner`, `bookingNotFound`).
+- **Réservations** : un `CLIENT` n'accède qu'à ses propres réservations ; un
+  `BARBER` qu'à celles de son profil, **résolu depuis la session** (jamais depuis
+  un identifiant du body). `ADMIN` ne dispose que d'un droit de **lecture du
+  détail** (`GET /api/bookings/:bookingId`) : aucune action `confirm` /
+  `complete` / `cancel` / `review`.
+- **Mutations** : filtrage SQL scopé (`barber_profile_id` / `client_user_id`) en
+  défense en profondeur ; tout identifiant non possédé renvoie `404`
+  (`SERVICE_NOT_FOUND`, `TIME_OFF_NOT_FOUND`, `BOOKING_NOT_FOUND`).
+- **DTO publics** : whitelist stricte (jamais d'adresse, coordonnée exacte,
+  email, hash ni identifiant interne). Les routes publiques (`/api/barbers`,
+  `/api/barbers/:id`, `/:id/slots`, `/:id/reviews`) ne fuient aucune donnée
+  privée.
+
 ## Carte (MapLibre GL JS + MapTiler)
 
 La page `/barbers` affiche une carte limitée aux résultats de la page courante (indication

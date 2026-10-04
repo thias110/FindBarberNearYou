@@ -1723,3 +1723,75 @@ NON lancés (attente validation). Migration Drizzle `0010_*` générée (non app
   mais pas le contenu de l'avis.
 - Le profil public charge les avis via un second appel (`getReviews`) pour rester paginable.
 - La note moyenne est calculée en SQL (`avg(rating)::float8`) et arrondie en JS à 2 décimales.
+
+---
+
+# Suivi — lot 13 : policies d'autorisation et contrôle d'accès strict (anti-IDOR)
+
+État : refactor d'autorisation ciblé sur l'ownership des réservations + tests et
+documentation. Aucun commit / branche / push / PR / issue. Typecheck, tests, lint
+et build volontairement NON lancés (attente validation). Aucune migration touchée.
+
+## Décisions appliquées
+
+- Nouvelle couche pure `server/src/lib/authorization.ts` : `AuthUser`,
+  `BookingOwnership`, `bookingNotFound`, `isBookingClientOwner`,
+  `isBookingBarberOwner`, `assertBookingReadAccess`, `assertBookingClientOwner`.
+  Pas de framework générique ni de sur-abstraction.
+- `requireRole` reste la source des refus globaux en **403** ; l'ownership renvoie
+  toujours **404** (ressource inexistante ou non possédée) pour ne pas divulguer
+  l'existence.
+- Convention ADMIN inchangée : lecture du détail booking uniquement
+  (`GET /api/bookings/:bookingId`), aucun autre droit.
+- Résolution du profil barber de l'utilisateur connecté centralisée dans
+  `booking/service.ts` (`findOwnBarberProfileId` / `requireOwnBarberProfileId`),
+  utilisée par `listBookings`, `getBookingDetails`, `confirmBooking`,
+  `completeBooking`, `cancelBooking`.
+- Branches de rôle fragiles rendues explicites : `listBookings` et `cancelBooking`
+  distinguent désormais `BARBER` / `CLIENT` / sinon `403 FORBIDDEN` (défensif).
+- Mutations barber (services `:serviceId`, time-off `:timeOffId`) conservées en
+  queries SQL scopées par profil (aucun SELECT d'ownership supplémentaire).
+- Codes publics inchangés (`BARBER_NOT_FOUND` vs `BARBER_PROFILE_NOT_FOUND`).
+- DTO publics et migrations non touchés.
+
+## Fichiers créés
+
+- `server/src/lib/authorization.ts`
+- `tests/src/authorization.test.ts` (policies pures)
+- `tests/src/authorization.integration.test.ts` (matrice anti-IDOR)
+
+## Fichiers modifiés
+
+- `server/src/modules/booking/service.ts` (helpers de profil + policies + branches explicites)
+- `server/src/modules/review/service.ts` (`createReview` via `assertBookingClientOwner`)
+- `server/src/modules/booking/routes.ts` (passage de `req.user` à la policy)
+- `README.md` (section « Autorisation et anti-IDOR »)
+- `suiviDeepseek.md`
+
+## Convention d'erreurs documentée
+
+- 401 : non authentifié.
+- 403 : refus global de rôle, CSRF invalide, compte suspendu.
+- 404 : ressource privée inexistante OU non possédée (anti-IDOR, pas de fuite).
+
+## Plan de tests
+
+- Unitaires : prédicats d'ownership et asserts (404 `BOOKING_NOT_FOUND` pour
+  non-propriétaire / BARBER sans profil ; ADMIN autorisé en lecture seule).
+- Intégration : client B / barber B sur réservation de A (détail, cancel, confirm,
+  complete, review), refus de rôle (CLIENT/BARBER/ADMIN → 403), 401 anonyme,
+  IDOR services et time-off (404), non-fuite de l'adresse `AT_CLIENT` dans les
+  routes publiques.
+
+## Commandes NON lancées (attente validation)
+
+`npm run typecheck`, `npm test`, `npm run lint`, `npm run build`,
+`npm run db:generate`, `npm run db:migrate`.
+
+## Risques / points d'attention
+
+- Aucune faille IDOR n'existait avant ce lot : il s'agit d'un durcissement et
+  d'une centralisation, pas d'une correction de vulnérabilité active.
+- `getBookingDetails` conserve le `404 BOOKING_NOT_FOUND` (et non
+  `BARBER_PROFILE_NOT_FOUND`) lorsqu'un BARBER n'a pas de profil, pour ne rien
+  divulguer.
