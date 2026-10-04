@@ -10,6 +10,7 @@ import {
 import { isCountryCode } from "../countries";
 import { compareCalendarDates, inclusiveDayCount, isValidCalendarDate } from "../dates";
 import { classifyIanaTimeZone } from "../timezones";
+import { safeText } from "./safeText";
 
 const currencySchema = z.enum(SUPPORTED_CURRENCIES);
 
@@ -101,33 +102,27 @@ export const timezoneSchema = z
 
 export const profileSchema = z
   .object({
-    displayName: z
-      .string()
-      .trim()
-      .min(1, "Le nom affiché est requis.")
-      .max(LIMITS.profileDisplayName, "Le nom affiché est trop long."),
-    description: z
-      .string()
-      .trim()
-      .min(1, "La description est requise.")
-      .max(LIMITS.profileDescription, "La description est trop longue."),
+    displayName: safeText(
+      LIMITS.profileDisplayName,
+      "Le nom affiché est trop long.",
+    ).min(1, "Le nom affiché est requis."),
+    description: safeText(
+      LIMITS.profileDescription,
+      "La description est trop longue.",
+    ).min(1, "La description est requise."),
     // Adresse privée facultative. Vide → null. Requise par la règle
     // conditionnelle ci-dessous si SALON ou AT_PROVIDER est sélectionné.
-    address: z
-      .string()
-      .trim()
-      .max(LIMITS.profileAddress, "L'adresse est trop longue.")
+    address: safeText(LIMITS.profileAddress, "L'adresse est trop longue.")
       .nullish()
       .transform((value) => (value ? value : null)),
-    city: z
-      .string()
-      .trim()
-      .min(1, "La ville est requise.")
-      .max(LIMITS.profileCity, "La ville est trop longue."),
-    postalCode: z
-      .string()
-      .trim()
-      .max(LIMITS.profilePostalCode, "Le code postal est trop long.")
+    city: safeText(LIMITS.profileCity, "La ville est trop longue.").min(
+      1,
+      "La ville est requise.",
+    ),
+    postalCode: safeText(
+      LIMITS.profilePostalCode,
+      "Le code postal est trop long.",
+    )
       .nullish()
       .transform((value) => (value ? value : null)),
     countryCode: countryCodeSchema,
@@ -187,15 +182,14 @@ export const profileSchema = z
 
 export const serviceCreateSchema = z
   .object({
-    name: z
-      .string()
-      .trim()
-      .min(1, "Le nom du service est requis.")
-      .max(LIMITS.serviceName, "Le nom du service est trop long."),
-    description: z
-      .string()
-      .trim()
-      .max(LIMITS.serviceDescription, "La description du service est trop longue.")
+    name: safeText(LIMITS.serviceName, "Le nom du service est trop long.").min(
+      1,
+      "Le nom du service est requis.",
+    ),
+    description: safeText(
+      LIMITS.serviceDescription,
+      "La description du service est trop longue.",
+    )
       .nullish()
       .transform((value) => (value ? value : null)),
     durationMinutes: z
@@ -219,16 +213,13 @@ export const serviceCreateSchema = z
 
 export const serviceUpdateSchema = z
   .object({
-    name: z
-      .string()
-      .trim()
+    name: safeText(LIMITS.serviceName, "Le nom du service est trop long.")
       .min(1, "Le nom du service est requis.")
-      .max(LIMITS.serviceName, "Le nom du service est trop long.")
       .optional(),
-    description: z
-      .string()
-      .trim()
-      .max(LIMITS.serviceDescription, "La description du service est trop longue.")
+    description: safeText(
+      LIMITS.serviceDescription,
+      "La description du service est trop longue.",
+    )
       .nullable()
       .optional()
       .transform((value) => (value === "" ? null : value)),
@@ -429,13 +420,10 @@ export const timeOffCreateSchema = z
   .object({
     startDate: calendarDateSchema,
     endDate: calendarDateSchema,
-    reason: z
-      .string()
-      .trim()
-      .max(
-        LIMITS.timeOffReason,
-        `Le motif ne peut pas dépasser ${LIMITS.timeOffReason} caractères.`,
-      )
+    reason: safeText(
+      LIMITS.timeOffReason,
+      `Le motif ne peut pas dépasser ${LIMITS.timeOffReason} caractères.`,
+    )
       .nullish()
       .transform((value) => {
         if (value === undefined || value === null) return null;

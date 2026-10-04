@@ -5,7 +5,8 @@ Trouver un barbier à côté de toi — marketplace géolocalisée de coiffeurs/
 Stack : React 18 + Vite + Tailwind (client), Express 5 + TypeScript + Zod (serveur),
 Drizzle ORM, PostgreSQL en production / PGlite en local et en test, JWT dans un cookie
 HttpOnly, bcryptjs (coût 12, limite 72 octets), protection CSRF sur les mutations
-authentifiées, rate limiting sur `login`/`register`.
+authentifiées, en-têtes de sécurité (helmet) et rate limiting distincts
+(`login` / `register` / mutations sensibles).
 
 ## Prérequis
 
@@ -436,6 +437,42 @@ ne sont jamais une source de vérité.
   email, hash ni identifiant interne). Les routes publiques (`/api/barbers`,
   `/api/barbers/:id`, `/:id/slots`, `/:id/reviews`) ne fuient aucune donnée
   privée.
+
+### Durcissement HTTP (issue #12)
+
+- **En-têtes de sécurité sur `/api`** (helmet) : `X-Content-Type-Options:
+  nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, CSP JSON
+  minimale (`default-src 'none'`), suppression de `X-Powered-By`.
+  `Strict-Transport-Security` **uniquement** en `NODE_ENV=production`
+  (`max-age=31536000; includeSubDomains`, sans `preload`).
+- **Rate limiting** (buckets distincts, réponse `429 RATE_LIMITED`) :
+  - login : `LOGIN_RATE_LIMIT_MAX` / 60 s (défaut 5) ;
+  - register : `REGISTER_RATE_LIMIT_MAX` / 10 min (défaut 5) ;
+  - mutations sensibles (`/api/bookings` et `/api/barber`, méthodes
+    POST/PUT/PATCH/DELETE) : `MUTATION_RATE_LIMIT_MAX` / 15 min (défaut 60).
+  En test, chaque bucket est désactivé tant qu'aucune option `rateLimits.*`
+  n'est fournie à `createApp`.
+- **Trust proxy** : `TRUST_PROXY_HOPS` optionnel, entier positif uniquement.
+  Absent → aucun trust proxy (jamais `app.set("trust proxy", true)`).
+- **XSS / champs libres** : validés par `safeText` (trim + longueur + rejet des
+  caractères de contrôle). Le texte n'est **pas** transformé : le rendu React
+  échappe par défaut, aucun `dangerouslySetInnerHTML` avec des données
+  utilisateur.
+- **CSP SPA (à poser au proxy)** : l'API Express ne sert pas le HTML ; la CSP du
+  SPA appartient au reverse proxy (Nginx). Valeur compatible MapLibre :
+
+  ```
+  default-src 'self'; script-src 'self'; worker-src 'self' blob:;
+  child-src 'self' blob:; style-src 'self' 'unsafe-inline';
+  img-src 'self' data: blob: https://api.maptiler.com;
+  connect-src 'self' https://api.maptiler.com <ORIGINE_API>;
+  font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';
+  frame-ancestors 'none'
+  ```
+
+  (`worker-src blob:` est requis par MapLibre ; `style-src 'unsafe-inline'`
+  pour ses contrôles ; remplacer `<ORIGINE_API>` par l'origine de l'API si elle
+  diffère du SPA.)
 
 ## Carte (MapLibre GL JS + MapTiler)
 

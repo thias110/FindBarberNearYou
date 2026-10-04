@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { LIMITS, REVIEW_LIMITS } from "../constants";
 import { integerParam } from "./barber";
+import { safeText } from "./safeText";
 
 // --- Création d'un avis (lot 11) ---
 // Le client ne fournit QUE la note et un commentaire facultatif. `barberId` et
@@ -14,13 +15,10 @@ export const reviewCreateSchema = z
       .int("La note doit être un entier.")
       .min(LIMITS.reviewRatingMin, "La note doit être comprise entre 1 et 5.")
       .max(LIMITS.reviewRatingMax, "La note doit être comprise entre 1 et 5."),
-    comment: z
-      .string()
-      .trim()
-      .max(
-        LIMITS.reviewComment,
-        `Le commentaire ne peut pas dépasser ${LIMITS.reviewComment} caractères.`,
-      )
+    comment: safeText(
+      LIMITS.reviewComment,
+      `Le commentaire ne peut pas dépasser ${LIMITS.reviewComment} caractères.`,
+    )
       .nullish()
       .transform((value) => {
         if (value === undefined || value === null) return null;

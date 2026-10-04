@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { LIMITS, SERVICE_PLACES } from "../constants";
 import { isValidCalendarDate } from "../dates";
+import { safeText } from "./safeText";
 
 const objectIdSchema = z
   .string()
@@ -21,11 +22,10 @@ const servicePlaceSchema = z.enum(SERVICE_PLACES);
 // Adresse client privée, géocodée côté serveur. Requise uniquement pour
 // `AT_CLIENT` ; interdite pour les autres lieux. Les coordonnées ne sont JAMAIS
 // acceptées du navigateur : seules celles du géocodeur serveur font foi.
-const clientAddressSchema = z
-  .string()
-  .trim()
-  .min(1, "L'adresse est requise.")
-  .max(LIMITS.clientAddress, "L'adresse est trop longue.");
+const clientAddressSchema = safeText(
+  LIMITS.clientAddress,
+  "L'adresse est trop longue.",
+).min(1, "L'adresse est requise.");
 
 // --- Réservation (création) ---
 // Le client ne choisit QUE la date et la minute murale locale : le serveur

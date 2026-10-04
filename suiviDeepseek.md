@@ -1795,3 +1795,60 @@ et build volontairement NON lancés (attente validation). Aucune migration touch
 - `getBookingDetails` conserve le `404 BOOKING_NOT_FOUND` (et non
   `BARBER_PROFILE_NOT_FOUND`) lorsqu'un BARBER n'a pas de profil, pour ne rien
   divulguer.
+
+---
+
+# Suivi — issue #12 : durcissement HTTP (rate limiting, en-têtes, anti-brute-force)
+
+État : passe B implémentée côté Express (helmet, trust proxy configurable,
+3 rate limiters, `safeText`). Aucun commit / push / PR / issue / migration.
+Commandes de vérification volontairement NON lancées (attente validation).
+Aucune dépendance ajoutée autre que `helmet` (déclarée dans `server/package.json`,
+pas encore installée).
+
+## Décisions appliquées
+
+- Helmet configuré pour `/api` uniquement : nosniff, X-Frame-Options DENY,
+  Referrer-Policy no-referrer, CSP JSON `default-src 'none'`, suppression
+  X-Powered-By. HSTS uniquement en `NODE_ENV=production`.
+- `TRUST_PROXY_HOPS` optionnel, entier positif (`z.coerce.number().int().positive()`),
+  jamais `true`. Absent → aucun trust proxy.
+- 3 rate limiters distincts : login (60 s / 5), register (10 min / 5),
+  mutations sensibles (`/api/bookings` + `/api/barber`, méthodes mutantes,
+  15 min / 60). Skip par défaut en test tant qu'aucune option `rateLimits.*`.
+- `safeText(max)` : trim + max + rejet des caractères de contrôle ; appliqué aux
+  champs libres (nom, profil, services, time-off, adresse client, avis). Le texte
+  n'est pas transformé.
+- CSP SPA (MapLibre) documentée au niveau proxy (README), non appliquée par Express.
+
+## Fichiers créés
+
+- `server/src/middleware/security.ts`
+- `server/src/middleware/rateLimit.ts`
+- `shared/src/validation/safeText.ts`
+- `tests/src/security-headers.test.ts`
+- `tests/src/rate-limit.integration.test.ts`
+- `tests/src/safe-text.validation.test.ts`
+
+## Fichiers modifiés
+
+- `server/src/app.ts` (helmet, trust proxy, 3 limiters, `AppOptions.rateLimits`)
+- `server/src/config/env.ts` (LOGIN/REGISTER/MUTATION_RATE_LIMIT_*, TRUST_PROXY_HOPS)
+- `server/package.json` (helmet)
+- `shared/src/validation/{auth,barber,booking,review}.ts` (safeText)
+- `shared/src/validation/index.ts` (export safeText)
+- `tests/src/auth.integration.test.ts` (option `rateLimits.register`)
+- `.env.example`, `README.md`, `suiviDeepseek.md`
+
+## Commandes NON lancées (attente validation)
+
+`npm install`, `npm run typecheck`, `npm test`, `npm run lint`, `npm run build`,
+`npm run db:generate`, `npm run db:migrate`.
+
+## Points d'attention
+
+- `helmet` est déclaré mais **non installé** : `npm install` est requis avant
+  typecheck/tests/build.
+- La CSP SPA est documentée pour le proxy, non appliquée par Express (décision).
+- `express-rate-limit` clé par IP ; derrière un proxy, renseigner
+  `TRUST_PROXY_HOPS` pour éviter un bucket partagé.

@@ -34,12 +34,28 @@ const envSchema = z.object({
     .positive()
     .max(30 * 24 * 60 * 60)
     .default(7 * 24 * 60 * 60),
-  AUTH_RATE_LIMIT_WINDOW_MS: z.coerce
+  // Rate limiting anti-brute-force (issue #12) : buckets distincts. Login court
+  // (anti brute-force), inscription moyen, mutations sensibles global.
+  LOGIN_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
+  LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  REGISTER_RATE_LIMIT_WINDOW_MS: z.coerce
     .number()
     .int()
     .positive()
-    .default(15 * 60 * 1000),
-  AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+    .default(600_000),
+  REGISTER_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  MUTATION_RATE_LIMIT_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(900_000),
+  MUTATION_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
+  // Nombre de hops de proxy de confiance (optionnel, entier positif uniquement).
+  // Absent ou vide → aucun trust proxy (défaut Express `false`, jamais `true`).
+  TRUST_PROXY_HOPS: z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    z.coerce.number().int().positive().max(10).optional(),
+  ),
   // Clé API MapTiler côté SERVEUR pour géocoder l'adresse client (AT_CLIENT).
   // Secret serveur : jamais exposé au navigateur. Absente → géocodage
   // indisponible et réservations AT_CLIENT refusées.

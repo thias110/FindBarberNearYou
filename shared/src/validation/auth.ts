@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { safeText } from "./safeText";
 
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_BYTES = 72; // bcrypt only considers the first 72 bytes
@@ -29,11 +30,8 @@ export const registerSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   role: z.enum(["CLIENT", "BARBER", "ADMIN"]).default("CLIENT"),
-  name: z
-    .string()
-    .trim()
+  name: safeText(100, "Name is too long.")
     .min(1, "Name cannot be empty.")
-    .max(100, "Name is too long.")
     .optional(),
 });
 

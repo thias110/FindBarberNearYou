@@ -351,7 +351,9 @@ describe("role-based access control", () => {
 
 describe("auth rate limiting", () => {
   it("returns 429 after exceeding the limit on /api/auth/register", async () => {
-    const limitedApp = createApp({ authRateLimit: { windowMs: 60_000, limit: 3 } });
+    const limitedApp = createApp({
+      rateLimits: { register: { windowMs: 60_000, limit: 3 } },
+    });
 
     for (let i = 0; i < 3; i += 1) {
       const res = await request(limitedApp)
