@@ -40,7 +40,7 @@ let pglite: PGlite | undefined;
 let pool: Pool | undefined;
 
 export const driverKind: DriverKind =
-  env.NODE_ENV === "production" ? "postgres" : "pglite";
+  env.DB_DRIVER ?? (env.NODE_ENV === "production" ? "postgres" : "pglite");
 
 function createDb(): Db {
   if (driverKind === "postgres") {

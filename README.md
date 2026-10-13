@@ -10,7 +10,7 @@ authentifiées, en-têtes de sécurité (helmet) et rate limiting distincts
 
 ## Prérequis
 
-- Node.js `>= 20.11` (Node 24 testé)
+- Node.js `>= 22.12` (Node 22 LTS recommandé, Node 24 testé)
 - npm
 
 ## Installation
@@ -20,6 +20,27 @@ npm install
 cp .env.example .env
 # puis renseigner JWT_SECRET (>= 32 caractères) dans .env
 ```
+
+## Démo Docker (PostgreSQL + seed)
+
+Lancement reproductible avec PostgreSQL, migrations, seed et persistance des
+uploads (voir `docker-compose.yml` et `Dockerfile`) :
+
+```bash
+docker compose up -d db app web                 # PostgreSQL + API + Nginx
+docker compose run --rm app node server/dist/scripts/seed-demo.js   # seed idempotent
+docker compose down -v                          # reset complet (données + uploads)
+```
+
+L'application est servie sur http://localhost:8080 (Nginx fait le proxy
+`/api` et `/uploads` vers l'API). En HTTP local, l'API tourne en
+`NODE_ENV=development` avec `DB_DRIVER=postgres` (cookies non `Secure`).
+
+Comptes de démo (mot de passe `Demo1234!`) : `admin@demo.ch`,
+`karim.plainpalais@demo.ch` (salon Plainpalais), `marco.eauxvives@demo.ch`
+(domicile Eaux-Vives), `client@demo.ch` (historique vide) et
+`client2@demo.ch` (réservation + avis). Voir `docs/demo-script.md` pour le
+script de 8 minutes et `docs/npm-audit-triage.md` pour le tri des alertes npm.
 
 ## Variables d'environnement
 
@@ -34,6 +55,10 @@ Le pilote est sélectionné automatiquement et de façon centralisée dans
 - **production** (`NODE_ENV=production`) : PostgreSQL via `DATABASE_URL`
   (drizzle-orm/node-postgres + `pg`). Le démarrage échoue avec une erreur claire si
   `DATABASE_URL` est absent en production.
+
+La variable optionnelle `DB_DRIVER` (`pglite` | `postgres`) force le pilote
+indépendamment de `NODE_ENV` (utile pour PostgreSQL en HTTP local, cf. démo
+Docker).
 
 Générer les migrations (après toute modification de `shared/src/schema.ts`) :
 
@@ -64,6 +89,20 @@ npm start       # node server/dist/index.js (aucun recours à tsx)
 ```
 
 Le serveur compilé répond sur `GET /api/health`.
+
+## Performance
+
+Budget de performance (Lot 0, voir `client/vite.config.ts`) :
+
+| Chunk | Budget minifié | Budget gzip | État |
+|---|---|---|---|
+| Principal (React + Router + app) | ≤ 500 Ko | ~113 Ko | OK (~407 Ko) |
+| Carte (maplibre-gl, lazy-loadé) | ≤ 1 100 Ko | ~285 Ko | OK (~1 043 Ko) |
+
+La carte est chargée en différé (`lazy()` dans `BarbersSearchPage`) et reste un
+chunk séparé. Le seuil d'alerte Vite est fixé à 500 Ko ; le dépassement du chunk
+carte est volontaire et accepté pour le lancement web. À revoir avant tout
+lancement mobile.
 
 ### Fallback SPA (profil public `/barbers/:id`)
 

@@ -1,6 +1,12 @@
 # FindBarberNearYou — Audit et architecture cible
 
-Document de cadrage (Phase 1 + Phase 2) avant implémentation. Il sera versionné dans le dépôt sous `docs/ARCHITECTURE.md` une fois la stack validée.
+Document de cadrage (Phase 1 + Phase 2) rédigé **avant** implémentation.
+
+> **Note de statut (mise à jour)** : l'application full-stack décrite en cible a
+> depuis été réalisée et testée. `README.md` est la source de vérité actuelle ;
+> `docs/demo-script.md` et `docs/npm-audit-triage.md` documentent la démo et le
+> tri des alertes npm. Les sections 2 à 9 restent la **cible** de référence ;
+> seule la section 1 est actualisée ci-dessous.
 
 ---
 
@@ -8,17 +14,18 @@ Document de cadrage (Phase 1 + Phase 2) avant implémentation. Il sera versionn�
 
 ### Dépôt
 - Dépôt connecté : **GitHub** `thias110/FindBarberNearYou` (branche `main`, public). Aucun dépôt GitLab n'a été fourni.
-- Contenu : **un seul fichier `README.md`**. Aucun code, aucune dépendance, aucune base de données, aucune API.
-- 14 issues ouvertes (backlog déjà structuré en 3 phases) : #1 Auth, #2 Profil barber, #3 Recherche/carte, #4 Réservation anti-chevauchement, #5 Avis, #6 DevOps/Seeders, #7 Admin, #8 Galerie, #9 Notifications, #10 Paiement, #11 API mobile, #12 Durcissement sécurité, #13 Policies/anti-IDOR, #14 nLPD/RGPD.
+- Contenu initial (au moment de ce cadrage) : **un seul fichier `README.md`**, aucun code.
+- **État actuel** : monorepo npm full-stack TypeScript (`client/` React+Vite, `server/` Express+Drizzle, `shared/`, `tests/`) avec les parcours CLIENT, BARBER et ADMIN. Les 4 contrôles passent : `typecheck`, `lint`, `test` (44 fichiers / 412 tests), `build`.
+- Issues ouvertes au moment de la mise à jour : **8** — #6 DevOps/Docker+seed, #9 Notifications/e-mails, #10 Paiement, #11 API mobile, #14 nLPD/RGPD, #16 Design system, #17 UX, #18 Accessibilité. Closes depuis le cadrage : #1 Auth, #2 Profil barber, #3 Recherche/carte, #4 Réservation, #5 Avis, #7 Admin, #8 Galerie, #12 Sécurité HTTP, #13 Anti-IDOR.
 
 ### Images / maquettes
 - Aucune image ou capture d'écran n'a été jointe à la demande. Les seules références visuelles disponibles sont les captures de la démo statique réalisée précédemment (palette crème / vert profond, typographie General Sans + Satoshi, cartes salons, flow de réservation en modale).
 
 ### Environnement de build disponible
-- Node.js 20 + npm disponibles. PHP, Composer, PostgreSQL serveur et Docker **ne sont pas disponibles** dans l'environnement d'exécution utilisé pour construire, tester et prévisualiser l'application.
+- Node.js **22 LTS** (>= 22.12, standardisé via `.nvmrc`/`.node-version`/`engines`) + npm. PHP et Composer ne sont pas disponibles. PostgreSQL serveur n'est pas requis en local (PGlite) ; **Docker Compose** est fourni (`docker-compose.yml` : PostgreSQL + API + Nginx) pour la démo et le déploiement.
 
 ### Conséquence
-Il n'y a rien à préserver ni à migrer : on part d'une page blanche, en respectant le backlog des 14 issues. Le seul vrai choix structurant est la stack.
+Au moment du cadrage, rien n'était à préserver : le seul choix structurant était la stack (Option A, retenue). Depuis, l'application a été implémentée et testée ; le travail restant est suivi via les 8 issues ouvertes.
 
 ---
 

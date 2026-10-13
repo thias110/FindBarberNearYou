@@ -1,4 +1,4 @@
-import sharp from "sharp";
+import sharp, { type ResizeOptions } from "sharp";
 import { LIMITS } from "@findbarber/shared/constants";
 import { AppError } from "./errors.js";
 
@@ -9,7 +9,7 @@ import { AppError } from "./errors.js";
 
 async function toWebp(
   buffer: Buffer,
-  resize: sharp.ResizeOptions,
+  resize: ResizeOptions,
 ): Promise<Buffer> {
   try {
     return await sharp(buffer)

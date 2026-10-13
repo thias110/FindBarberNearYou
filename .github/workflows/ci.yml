@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    name: Typecheck, lint, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # Audit contrôlé : informatif tant que le tri des 17 alertes (Lot 0)
+      # n'est pas terminé. À rendre bloquant sur "critical" (production uniquement)
+      # une fois le tri documenté.
+      - name: Audit npm (production, informatif)
+        run: npm audit --omit=dev --audit-level=critical
+        continue-on-error: true

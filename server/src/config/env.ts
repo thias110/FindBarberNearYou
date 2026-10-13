@@ -27,6 +27,11 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().min(1).default("http://localhost:5173"),
   DATABASE_URL: z.string().optional(),
   PGLITE_DATA_DIR: z.string().optional(),
+  // Pilote de base de données. Absent → déduit de NODE_ENV (postgres en
+  // production, pglite sinon). Sert à exécuter PostgreSQL sans activer les
+  // comportements de production (cookies Secure, HSTS…) — utile pour la démo
+  // Docker locale en HTTP.
+  DB_DRIVER: z.enum(["pglite", "postgres"]).optional(),
   // Répertoire racine des fichiers uploadés (avatars, galerie), servi sous
   // `/uploads`. Relatif à la racine d'exécution par défaut.
   UPLOAD_DIR: z.string().min(1).default("./data/uploads"),

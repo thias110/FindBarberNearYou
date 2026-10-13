@@ -13,4 +13,12 @@ export default defineConfig({
     host: true,
     port: 5173,
   },
+  build: {
+    // Budget de performance (Lot 0) :
+    // - chunk principal (React + Router + app) : 500 Ko minifié (~113 Ko gzip)
+    // - chunk carte (maplibre-gl, lazy-loadé via BarbersSearchPage) :
+    //   1 100 Ko minifié (~285 Ko gzip) — accepté pour le lancement web,
+    //   à revoir avant tout lancement mobile (voir README, section Performance).
+    chunkSizeWarningLimit: 500,
+  },
 });
