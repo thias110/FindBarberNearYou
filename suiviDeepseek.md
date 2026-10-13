@@ -2372,3 +2372,97 @@ Rappel des décisions et fichiers pour mémoire.
   `server/src/scripts/seed-demo.ts`, `genreVisuelSite/*.png`.
 - Aucune nouvelle dépendance, aucun secret ajouté ; `VITE_MAP_STYLE_DARK_URL`
   reste optionnelle et vide par défaut.
+
+---
+
+# Suivi — 2026-10-13 : launch 0/1 + vérification email + notifications
+
+## État général
+
+Journée consacrée à :
+- la stabilisation et publication des lots techniques de lancement ;
+- la vérification email (backend + frontend) ;
+- les notifications (backend + frontend) ;
+- la préparation de la QA manuelle sans exécution navigateur.
+
+## Git / publication
+
+- Un commit des lots launch 0/1 a été créé puis poussé sur `main`.
+- Commit observé après push :
+  - `ad474cd6 chore(launch): Lot 0 (Node 22, tri npm, CI, budget perf) + Lot 1 (Docker, seed démo Genève)`
+- Ce commit regroupe notamment :
+  - standardisation Node 22 ;
+  - mise à jour npm / dépendances ;
+  - CI GitHub ;
+  - budget de performance Vite ;
+  - Dockerfile / docker-compose / nginx ;
+  - variable `DB_DRIVER` ;
+  - seed de démonstration Genève ;
+  - documentation technique associée.
+
+## Vérification email
+
+Travail réalisé :
+- backend de vérification email ;
+- frontend de vérification email ;
+- mise à jour de `.env.example` et de la documentation associée.
+
+Scénarios visés :
+- inscription avec écran « Vérifiez votre email » ;
+- blocage du login avant vérification ;
+- validation par lien ;
+- refus de réutilisation du lien ;
+- renvoi de lien avec message générique selon les cas.
+
+## Notifications
+
+Travail réalisé :
+- backend notifications ;
+- frontend notifications ;
+- commit local observé ensuite :
+  - `07c556e feat(notifications-ui): add notification bell and panel`
+
+Scénarios visés :
+- notification de réservation côté BARBER ;
+- badge de non-lues ;
+- marquage unitaire comme lue ;
+- marquage global comme lu ;
+- notifications de confirmation / fin de rendez-vous côté CLIENT ;
+- fermeture du panneau avec `Escape` et clic extérieur.
+
+## QA / tests manuels
+
+Aucun test navigateur réel n’a été exécuté aujourd’hui.
+
+Contexte :
+- arbre Git propre au moment de la préparation QA ;
+- aucun navigateur pilotable disponible dans l’environnement de l’agent ;
+- `npm run dev` non lancé pour éviter un démarrage local déclenchant `migrateDb()` sans nécessité immédiate.
+
+Conséquence :
+- tous les scénarios de QA navigateur ont été préparés ;
+- tous ont été explicitement marqués **NON TESTÉ** ;
+- aucun résultat n’a été simulé ;
+- aucun bug navigateur n’a été constaté à ce stade.
+
+## Points validés de méthode
+
+- pas de faux test ;
+- pas de validation visuelle inventée ;
+- pas de commit supplémentaire pendant la passe QA ;
+- état Git final propre après la revue QA préparatoire.
+
+## Reste à faire
+
+Prochaine session :
+1. lancer l’environnement local avec prudence ;
+2. exécuter la QA navigateur réelle :
+   - inscription / vérification / renvoi ;
+   - login avant / après vérification ;
+   - cloche notifications ;
+   - badge et lecture ;
+   - `Escape`, clic extérieur, focus visible ;
+   - thème sombre ;
+   - responsive mobile ;
+3. corriger uniquement les bugs réellement observés ;
+4. reprendre ensuite le lot BARBER `/pro`.
