@@ -8,6 +8,15 @@ import type { Booking, BookingDetails } from "@findbarber/shared/types";
 import { ApiError, bookingApi } from "../../lib/apiClient";
 import { formatDateTime } from "../../lib/formatters";
 import { BookingStatusBadge } from "../../components/BookingStatusBadge";
+import { Alert } from "../../components/ui/Alert";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Skeleton } from "../../components/ui/Skeleton";
+import { ProPageHeader } from "../../components/barber/ProPageHeader";
+
+// Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
+const PRIMARY_LINK_CLASS =
+  "inline-flex min-h-[44px] items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 export function BarberBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -118,8 +127,21 @@ export function BarberBookingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-8 text-center text-foreground-muted">
-        Chargement…
+      <div className="min-h-screen bg-background p-4 sm:p-8">
+        <div className="mx-auto max-w-3xl space-y-6">
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-8 w-52" />
+            <Skeleton className="h-11 w-44" />
+          </div>
+          <Card className="space-y-4 p-6" aria-busy="true">
+            <span className="sr-only" role="status">
+              Chargement des réservations…
+            </span>
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </Card>
+        </div>
       </div>
     );
   }
@@ -127,20 +149,17 @@ export function BarberBookingsPage() {
   if (profileMissing) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 text-center shadow">
-          <h1 className="text-xl font-semibold text-brand-900">
-            Mes réservations
-          </h1>
-          <p className="mt-2 text-gray-700">
-            Créez d'abord votre profil professionnel pour gérer vos
-            réservations.
-          </p>
-          <Link
-            to="/pro/profile"
-            className="mt-4 inline-block rounded-lg bg-brand-700 px-4 py-2 text-white"
-          >
-            Créer mon profil
-          </Link>
+        <div className="mx-auto max-w-2xl space-y-6">
+          <ProPageHeader title="Mes réservations" />
+          <Card className="p-6 text-center">
+            <p className="text-foreground">
+              Créez d'abord votre profil professionnel pour gérer vos
+              réservations.
+            </p>
+            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
+              Créer mon profil
+            </Link>
+          </Card>
         </div>
       </div>
     );
@@ -151,163 +170,158 @@ export function BarberBookingsPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-900">
-            Mes réservations
-          </h1>
-          <p className="mt-1 text-sm text-gray-600">
-            <Link to="/pro/dashboard" className="text-brand-700 underline">
-              Retour au tableau de bord
-            </Link>
-          </p>
-        </div>
+      <div className="mx-auto max-w-3xl space-y-6">
+        <ProPageHeader
+          title="Mes réservations"
+          description="Demandes en attente, confirmations et annulations."
+        />
 
         {error && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          <Alert variant="danger">
             <p>{error}</p>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              className="mt-3 min-h-[44px]"
               onClick={() => void loadBookings()}
-              className="mt-2 rounded-lg border border-brand-700 px-3 py-1 text-brand-700"
             >
               Réessayer
-            </button>
-          </div>
+            </Button>
+          </Alert>
         )}
-        {detailError && (
-          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-            {detailError}
-          </p>
-        )}
+        {detailError && <Alert variant="danger">{detailError}</Alert>}
 
         {bookings.length === 0 && !error ? (
-          <div className="rounded-2xl bg-white p-6 text-center shadow">
-            <p className="text-gray-600">Aucune réservation pour le moment.</p>
-          </div>
+          <Card className="p-6 text-center">
+            <p className="text-foreground-muted">
+              Aucune réservation pour le moment.
+            </p>
+          </Card>
         ) : (
           <ul className="space-y-3">
             {bookings.map((booking) => {
               const detail = details[booking.id];
               const busy = actionId === booking.id;
               return (
-                <li key={booking.id} className="rounded-xl bg-white p-4 shadow">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-brand-900">
-                        {booking.serviceName}
-                      </p>
-                      {booking.clientName && (
-                        <p className="text-sm text-gray-600">
-                          Client : {booking.clientName}
+                <li key={booking.id}>
+                  <Card className="p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground">
+                          {booking.serviceName}
                         </p>
-                      )}
-                      <p className="mt-1 text-sm text-gray-700">
-                        {formatDateTime(booking.startAt)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {SERVICE_PLACE_LABELS[booking.servicePlace]}
-                      </p>
-                      {booking.status === "CANCELLED" && booking.cancelledBy && (
-                        <p className="mt-1 text-xs text-gray-500">
-                          Annulée par{" "}
-                          {booking.cancelledBy === "CLIENT"
-                            ? "le client"
-                            : booking.cancelledBy === "ADMIN"
-                              ? "l'administration"
-                              : "vous"}
-                          .
+                        {booking.clientName && (
+                          <p className="text-sm text-foreground-muted">
+                            Client : {booking.clientName}
+                          </p>
+                        )}
+                        <p className="mt-1 text-sm text-foreground">
+                          {formatDateTime(booking.startAt)}
                         </p>
-                      )}
+                        <p className="text-sm text-foreground-muted">
+                          {SERVICE_PLACE_LABELS[booking.servicePlace]}
+                        </p>
+                        {booking.status === "CANCELLED" &&
+                          booking.cancelledBy && (
+                            <p className="mt-1 text-xs text-foreground-muted">
+                              Annulée par{" "}
+                              {booking.cancelledBy === "CLIENT"
+                                ? "le client"
+                                : booking.cancelledBy === "ADMIN"
+                                  ? "l'administration"
+                                  : "vous"}
+                              .
+                            </p>
+                          )}
+                      </div>
+                      <BookingStatusBadge status={booking.status} />
                     </div>
-                    <BookingStatusBadge status={booking.status} />
-                  </div>
 
-                  {booking.servicePlace === "AT_CLIENT" && (
-                    <div className="mt-3 border-t border-gray-100 pt-3">
-                      {detail ? (
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                            Adresse du client
-                          </p>
-                          <p className="mt-1 text-sm text-gray-800">
-                            {detail.clientAddress ?? "Adresse non renseignée."}
-                          </p>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={detailLoadingId === booking.id}
-                          onClick={() => void handleShowAddress(booking)}
-                          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50"
-                        >
-                          {detailLoadingId === booking.id
-                            ? "Chargement…"
-                            : "Voir l'adresse"}
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {cancellable(booking.status) && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {booking.status === "PENDING" && (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void handleConfirm(booking.id)}
-                          className="rounded-lg bg-brand-700 px-3 py-1.5 text-sm text-white disabled:opacity-50"
-                        >
-                          {busy ? "Confirmation…" : "Confirmer"}
-                        </button>
-                      )}
-                      {booking.status === "CONFIRMED" && (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void handleComplete(booking.id)}
-                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
-                        >
-                          {completingId === booking.id
-                            ? "Terminaison…"
-                            : "Marquer comme terminé"}
-                        </button>
-                      )}
-                      {cancellable(booking.status) &&
-                        (confirmingId === booking.id ? (
-                          <>
-                            <span className="self-center text-xs text-red-700">
-                              Annuler cette réservation ?
-                            </span>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => setConfirmingId(null)}
-                              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50"
-                            >
-                              Non
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => void handleCancel(booking.id)}
-                              className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
-                            >
-                              {busy ? "Annulation…" : "Confirmer l'annulation"}
-                            </button>
-                          </>
+                    {booking.servicePlace === "AT_CLIENT" && (
+                      <div className="mt-3 border-t border-border pt-3">
+                        {detail ? (
+                          <div>
+                            <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
+                              Adresse du client
+                            </p>
+                            <p className="mt-1 text-sm text-foreground">
+                              {detail.clientAddress ??
+                                "Adresse non renseignée."}
+                            </p>
+                          </div>
                         ) : (
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => setConfirmingId(booking.id)}
-                            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50"
+                          <Button
+                            variant="secondary"
+                            className="min-h-[44px]"
+                            disabled={detailLoadingId === booking.id}
+                            isLoading={detailLoadingId === booking.id}
+                            onClick={() => void handleShowAddress(booking)}
                           >
-                            Annuler
-                          </button>
-                        ))}
-                    </div>
-                  )}
+                            {detailLoadingId === booking.id
+                              ? "Chargement…"
+                              : "Voir l'adresse"}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
+                    {cancellable(booking.status) && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {booking.status === "PENDING" && (
+                          <Button
+                            className="min-h-[44px]"
+                            disabled={busy}
+                            onClick={() => void handleConfirm(booking.id)}
+                          >
+                            {busy ? "Confirmation…" : "Confirmer"}
+                          </Button>
+                        )}
+                        {booking.status === "CONFIRMED" && (
+                          <Button
+                            className="min-h-[44px]"
+                            disabled={busy}
+                            onClick={() => void handleComplete(booking.id)}
+                          >
+                            {completingId === booking.id
+                              ? "Terminaison…"
+                              : "Marquer comme terminé"}
+                          </Button>
+                        )}
+                        {cancellable(booking.status) &&
+                          (confirmingId === booking.id ? (
+                            <>
+                              <span className="self-center text-sm text-danger">
+                                Annuler cette réservation ?
+                              </span>
+                              <Button
+                                variant="secondary"
+                                className="min-h-[44px]"
+                                disabled={busy}
+                                onClick={() => setConfirmingId(null)}
+                              >
+                                Non
+                              </Button>
+                              <Button
+                                variant="danger"
+                                className="min-h-[44px]"
+                                disabled={busy}
+                                onClick={() => void handleCancel(booking.id)}
+                              >
+                                {busy ? "Annulation…" : "Confirmer l'annulation"}
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="secondary"
+                              className="min-h-[44px]"
+                              disabled={busy}
+                              onClick={() => setConfirmingId(booking.id)}
+                            >
+                              Annuler
+                            </Button>
+                          ))}
+                      </div>
+                    )}
+                  </Card>
                 </li>
               );
             })}
