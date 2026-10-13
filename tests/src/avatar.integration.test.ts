@@ -67,6 +67,7 @@ async function createUser(email: string): Promise<{ id: string }> {
       passwordHash,
       role: "CLIENT",
       status: "ACTIVE",
+      emailVerifiedAt: new Date(),
     })
     .returning({ id: users.id });
   return row;

@@ -69,7 +69,14 @@ async function createUser(
   const passwordHash = await bcrypt.hash(PASSWORD, 12);
   const [row] = await db
     .insert(users)
-    .values({ id: randomUUID(), email, passwordHash, role, status: "ACTIVE" })
+    .values({
+      id: randomUUID(),
+      email,
+      passwordHash,
+      role,
+      status: "ACTIVE",
+      emailVerifiedAt: new Date(),
+    })
     .returning({ id: users.id });
   return row;
 }

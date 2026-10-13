@@ -206,7 +206,13 @@ async function upsertUser(
   if (existing) {
     const [updated] = await db
       .update(users)
-      .set({ passwordHash, role, status: "ACTIVE", name })
+      .set({
+        passwordHash,
+        role,
+        status: "ACTIVE",
+        name,
+        emailVerifiedAt: new Date(),
+      })
       .where(eq(users.id, existing.id))
       .returning();
     return { id: updated.id, email: updated.email };
@@ -221,6 +227,7 @@ async function upsertUser(
       role,
       status: "ACTIVE",
       name,
+      emailVerifiedAt: new Date(),
     })
     .returning();
   return { id: created.id, email: created.email };

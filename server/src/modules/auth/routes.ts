@@ -1,12 +1,22 @@
 import { Router } from "express";
 import type { ZodError } from "zod";
-import { registerSchema, loginSchema } from "@findbarber/shared/validation";
+import {
+  loginSchema,
+  registerSchema,
+  resendVerificationSchema,
+  verifyEmailSchema,
+} from "@findbarber/shared/validation";
 import { requireAuth } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
 import { AppError } from "../../lib/errors.js";
 import { AUTH_COOKIE, CSRF_COOKIE } from "../../lib/cookies.js";
 import { env } from "../../config/env.js";
-import { registerUser, loginUser } from "./service.js";
+import {
+  loginUser,
+  registerUser,
+  resendVerification,
+  verifyEmail,
+} from "./service.js";
 
 export const authRouter = Router();
 
@@ -53,6 +63,27 @@ authRouter.post("/logout", requireAuth, csrfProtection, (_req, res) => {
   res.clearCookie(AUTH_COOKIE, { path: "/" });
   res.clearCookie(CSRF_COOKIE, { path: "/" });
   res.status(204).end();
+});
+
+// Vérification d'email : endpoint public (aucun CSRF, aucune session). Le
+// jeton est le secret porteur d'intention ; il est consommé une seule fois.
+authRouter.post("/verify-email", async (req, res) => {
+  const parsed = verifyEmailSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw validationError(parsed.error);
+  }
+  await verifyEmail(parsed.data.token);
+  res.json({ verified: true });
+});
+
+// Renvoi du lien de vérification : réponse générique anti-énumération.
+authRouter.post("/resend-verification", async (req, res) => {
+  const parsed = resendVerificationSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw validationError(parsed.error);
+  }
+  await resendVerification(parsed.data.email);
+  res.json({ ok: true });
 });
 
 authRouter.get("/me", requireAuth, (req, res) => {

@@ -13,6 +13,7 @@ import {
   barberTimeOff,
   barberWorkingHours,
   bookings,
+  emailVerificationTokens,
   reviews,
   users,
 } from "@findbarber/shared/schema";
@@ -28,6 +29,7 @@ export const schema = {
   barberTimeOff,
   barberWorkingHours,
   bookings,
+  emailVerificationTokens,
   reviews,
 };
 

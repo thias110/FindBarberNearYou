@@ -15,6 +15,7 @@ import {
   users,
 } from "@findbarber/shared/schema";
 import { weekdayFromCalendarDate } from "@findbarber/shared/dates";
+import { markEmailVerified } from "./auth-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -56,6 +57,7 @@ async function register(email: string, role: "CLIENT" | "BARBER") {
     .post("/api/auth/register")
     .send({ email, password: PASSWORD, role });
   expect(res.status).toBe(201);
+  await markEmailVerified(email);
   return res.body.user as { id: string; email: string };
 }
 
@@ -198,6 +200,7 @@ describe("POST /api/bookings/:bookingId/complete", () => {
       passwordHash,
       role: "ADMIN",
       status: "ACTIVE",
+      emailVerifiedAt: new Date(),
     });
     const admin = await login("admin-complete@example.com");
     const adminRes = await admin.agent

@@ -15,6 +15,7 @@ import {
   users,
 } from "@findbarber/shared/schema";
 import type { BookingStatus } from "@findbarber/shared/constants";
+import { markEmailVerified } from "./auth-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -56,6 +57,7 @@ async function register(email: string, role: "CLIENT" | "BARBER") {
     .post("/api/auth/register")
     .send({ email, password: PASSWORD, role });
   expect(res.status).toBe(201);
+  await markEmailVerified(email);
   return res.body.user as { id: string; email: string };
 }
 

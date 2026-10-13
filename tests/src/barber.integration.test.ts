@@ -7,6 +7,7 @@ import { db } from "../../server/src/db/client";
 import { migrateDb } from "../../server/src/db/migrate";
 import { barberProfiles, barberServices, users } from "@findbarber/shared/schema";
 import { classifyIanaTimeZone } from "@findbarber/shared/timezones";
+import { markEmailVerified } from "./auth-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -53,6 +54,7 @@ async function registerBarber(email: string) {
     .post("/api/auth/register")
     .send({ email, password: PASSWORD, role: "BARBER" });
   expect(res.status).toBe(201);
+  await markEmailVerified(email);
   return res.body.user as { id: string; email: string };
 }
 
@@ -573,6 +575,7 @@ describe("access control", () => {
     await request(app)
       .post("/api/auth/register")
       .send({ email: "client@example.com", password: PASSWORD, role: "CLIENT" });
+    await markEmailVerified("client@example.com");
     const { agent } = await login("client@example.com");
 
     const res = await agent.get("/api/barber/profile");

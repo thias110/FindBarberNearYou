@@ -84,6 +84,8 @@ async function main(): Promise<void> {
       passwordHash,
       role: "ADMIN",
       status: "ACTIVE",
+      // Compte créé par un opérateur de confiance : considéré vérifié.
+      emailVerifiedAt: new Date(),
     });
   } catch (err) {
     if (isUniqueViolation(err)) {

@@ -12,6 +12,7 @@ import {
   barberWorkingHours,
   users,
 } from "@findbarber/shared/schema";
+import { markEmailVerified } from "./auth-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -50,6 +51,7 @@ async function registerBarber(email: string) {
     .post("/api/auth/register")
     .send({ email, password: PASSWORD, role: "BARBER" });
   expect(res.status).toBe(201);
+  await markEmailVerified(email);
   return res.body.user as { id: string; email: string };
 }
 
@@ -296,6 +298,7 @@ describe("service places — accès", () => {
     await request(app)
       .post("/api/auth/register")
       .send({ email: "client-place@example.com", password: PASSWORD, role: "CLIENT" });
+    await markEmailVerified("client-place@example.com");
     const client = await login("client-place@example.com");
     expect((await client.agent.get("/api/barber/profile")).status).toBe(403);
     expect(

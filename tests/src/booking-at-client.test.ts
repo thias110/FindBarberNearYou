@@ -16,6 +16,7 @@ import {
 import { weekdayFromCalendarDate } from "@findbarber/shared/dates";
 import { setGeocoder, type Geocoder } from "../../server/src/lib/geocoding";
 import { AppError } from "../../server/src/lib/errors";
+import { markEmailVerified } from "./auth-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -77,6 +78,7 @@ async function register(email: string, role: "CLIENT" | "BARBER") {
     .post("/api/auth/register")
     .send({ email, password: PASSWORD, role });
   expect(res.status).toBe(201);
+  await markEmailVerified(email);
   return res.body.user as { id: string; email: string };
 }
 
@@ -375,6 +377,7 @@ describe("private booking details access", () => {
       email,
       passwordHash,
       role: "ADMIN",
+      emailVerifiedAt: new Date(),
     });
     return login(email);
   }

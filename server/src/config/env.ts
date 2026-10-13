@@ -58,6 +58,37 @@ const envSchema = z.object({
     .positive()
     .default(900_000),
   MUTATION_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
+  // Vérification d'email (mission A). Origine du SPA pour construire le lien de
+  // vérification (jamais un secret), expéditeur affiché, TTL du jeton et
+  // cooldown de renvoi par compte.
+  FRONTEND_URL: z.string().min(1).default("http://localhost:5173"),
+  EMAIL_FROM: z
+    .string()
+    .min(1)
+    .default("FindBarber <no-reply@findbarber.local>"),
+  EMAIL_VERIFICATION_TOKEN_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(24 * 60 * 60),
+  EMAIL_RESEND_COOLDOWN_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(60),
+  // Rate limiting du renvoi (bucket IP) et de la consommation du jeton.
+  EMAIL_RESEND_RATE_LIMIT_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(600_000),
+  EMAIL_RESEND_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  EMAIL_VERIFY_RATE_LIMIT_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(900_000),
+  EMAIL_VERIFY_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
   // Nombre de hops de proxy de confiance (optionnel, entier positif uniquement).
   // Absent ou vide → aucun trust proxy (défaut Express `false`, jamais `true`).
   TRUST_PROXY_HOPS: z.preprocess(

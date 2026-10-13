@@ -47,6 +47,10 @@ export const users = pgTable(
     // (`avatars/<uuid>.webp`), jamais exposé tel quel (URL publique
     // `/uploads/<path>`). Nullable : aucun avatar par défaut en base.
     avatarPath: text("avatar_path"),
+    // Vérification d'email (mission A) : NULL tant que l'adresse n'a pas été
+    // confirmée via un lien de vérification. Les comptes existants sont
+    // backfillés comme vérifiés par la migration dédiée.
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -59,6 +63,34 @@ export const users = pgTable(
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+// Jetons de vérification d'email (mission A). Le jeton brut n'est JAMAIS
+// stocké : seul son empreinte SHA-256 (`token_hash`) l'est. Un jeton est à
+// usage unique (`consumed_at`) et expire (`expires_at`). La ligne est rattachée
+// à l'utilisateur pour pouvoir le marquer vérifié lors de la consommation.
+export const emailVerificationTokens = pgTable(
+  "email_verification_tokens",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("email_verification_tokens_hash_unique").on(table.tokenHash),
+    index("email_verification_tokens_user_idx").on(table.userId),
+  ],
+);
+
+export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
+export type NewEmailVerificationToken =
+  typeof emailVerificationTokens.$inferInsert;
 
 export const barberProfiles = pgTable(
   "barber_profiles",

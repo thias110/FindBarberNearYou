@@ -11,6 +11,7 @@ import {
   barberServiceTechniques,
   users,
 } from "@findbarber/shared/schema";
+import { markEmailVerified } from "./auth-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -61,6 +62,7 @@ async function registerBarber(email: string) {
     .post("/api/auth/register")
     .send({ email, password: PASSWORD, role: "BARBER" });
   expect(res.status).toBe(201);
+  await markEmailVerified(email);
   return res.body.user as { id: string; email: string };
 }
 

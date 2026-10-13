@@ -43,5 +43,18 @@ export const loginSchema = z.object({
     .max(1024, "Password is too long."),
 });
 
+// Jeton de vérification d'email : chaîne hexadécimale de 64 caractères
+// (256 bits). On tolère jusqu'à 512 caractères pour rester robuste aux
+// évolutions futures sans exposer de limite utile à un attaquant.
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1, "Token is required.").max(512, "Token is too long."),
+});
+
+export const resendVerificationSchema = z.object({
+  email: emailSchema,
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;

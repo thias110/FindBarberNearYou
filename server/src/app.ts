@@ -23,6 +23,8 @@ export interface AppOptions {
     login?: RateLimitOverride;
     register?: RateLimitOverride;
     mutation?: RateLimitOverride;
+    resendVerification?: RateLimitOverride;
+    verifyEmail?: RateLimitOverride;
   };
 }
 
@@ -83,8 +85,30 @@ export function createApp(options: AppOptions = {}): express.Express {
     skipWhen: (req) => !MUTATING_METHODS.has(req.method),
   });
 
+  const resendVerificationLimiter = createRateLimiter({
+    windowMs:
+      options.rateLimits?.resendVerification?.windowMs ??
+      env.EMAIL_RESEND_RATE_LIMIT_WINDOW_MS,
+    limit:
+      options.rateLimits?.resendVerification?.limit ??
+      env.EMAIL_RESEND_RATE_LIMIT_MAX,
+    skip:
+      !options.rateLimits?.resendVerification && env.NODE_ENV === "test",
+  });
+
+  const verifyEmailLimiter = createRateLimiter({
+    windowMs:
+      options.rateLimits?.verifyEmail?.windowMs ??
+      env.EMAIL_VERIFY_RATE_LIMIT_WINDOW_MS,
+    limit:
+      options.rateLimits?.verifyEmail?.limit ?? env.EMAIL_VERIFY_RATE_LIMIT_MAX,
+    skip: !options.rateLimits?.verifyEmail && env.NODE_ENV === "test",
+  });
+
   app.use("/api/auth/login", loginLimiter);
   app.use("/api/auth/register", registerLimiter);
+  app.use("/api/auth/resend-verification", resendVerificationLimiter);
+  app.use("/api/auth/verify-email", verifyEmailLimiter);
   app.use("/api/bookings", mutationLimiter);
   app.use("/api/barber", mutationLimiter);
   // Modérations admin (suspend/reactivate/hide) : même bucket mutations que

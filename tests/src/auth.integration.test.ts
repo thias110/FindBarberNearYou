@@ -7,6 +7,7 @@ import { createApp } from "../../server/src/app";
 import { db } from "../../server/src/db/client";
 import { migrateDb } from "../../server/src/db/migrate";
 import { users } from "@findbarber/shared/schema";
+import { markEmailVerified } from "./auth-helpers";
 
 const app = createApp();
 
@@ -19,6 +20,17 @@ beforeEach(async () => {
 });
 
 const PASSWORD = "password123";
+
+async function registerVerified(
+  email: string,
+  role: "CLIENT" | "BARBER" = "CLIENT",
+): Promise<void> {
+  const res = await request(app)
+    .post("/api/auth/register")
+    .send({ email, password: PASSWORD, role });
+  expect(res.status).toBe(201);
+  await markEmailVerified(email);
+}
 
 describe("POST /api/auth/register", () => {
   it("registers a CLIENT", async () => {
@@ -102,9 +114,7 @@ describe("POST /api/auth/register", () => {
 
 describe("POST /api/auth/login", () => {
   beforeEach(async () => {
-    await request(app)
-      .post("/api/auth/register")
-      .send({ email: "login@example.com", password: PASSWORD, role: "CLIENT" });
+    await registerVerified("login@example.com", "CLIENT");
   });
 
   it("logs in successfully and sets HttpOnly + CSRF cookies", async () => {
@@ -189,9 +199,7 @@ describe("GET /api/auth/me", () => {
   });
 
   it("returns the current user when authenticated", async () => {
-    await request(app)
-      .post("/api/auth/register")
-      .send({ email: "me@example.com", password: PASSWORD, role: "CLIENT" });
+    await registerVerified("me@example.com", "CLIENT");
 
     const agent = request.agent(app);
     await agent
@@ -205,9 +213,7 @@ describe("GET /api/auth/me", () => {
   });
 
   it("returns 403 when the account is suspended", async () => {
-    await request(app)
-      .post("/api/auth/register")
-      .send({ email: "suspend@example.com", password: PASSWORD, role: "CLIENT" });
+    await registerVerified("suspend@example.com", "CLIENT");
 
     const agent = request.agent(app);
     await agent
@@ -228,9 +234,7 @@ describe("GET /api/auth/me", () => {
 
 describe("POST /api/auth/logout", () => {
   it("logs out and invalidates the session", async () => {
-    await request(app)
-      .post("/api/auth/register")
-      .send({ email: "out@example.com", password: PASSWORD, role: "CLIENT" });
+    await registerVerified("out@example.com", "CLIENT");
 
     const agent = request.agent(app);
     const loginRes = await agent
@@ -250,9 +254,7 @@ describe("POST /api/auth/logout", () => {
   });
 
   it("refuses logout without a CSRF token (403)", async () => {
-    await request(app)
-      .post("/api/auth/register")
-      .send({ email: "csrf@example.com", password: PASSWORD, role: "CLIENT" });
+    await registerVerified("csrf@example.com", "CLIENT");
 
     const agent = request.agent(app);
     await agent
@@ -266,9 +268,7 @@ describe("POST /api/auth/logout", () => {
   });
 
   it("refuses logout with an incorrect CSRF token (403)", async () => {
-    await request(app)
-      .post("/api/auth/register")
-      .send({ email: "csrf2@example.com", password: PASSWORD, role: "CLIENT" });
+    await registerVerified("csrf2@example.com", "CLIENT");
 
     const agent = request.agent(app);
     await agent
@@ -291,9 +291,7 @@ describe("role-based access control", () => {
   });
 
   it("returns 403 when an authenticated user lacks the required role", async () => {
-    await request(app)
-      .post("/api/auth/register")
-      .send({ email: "client-role@example.com", password: PASSWORD, role: "CLIENT" });
+    await registerVerified("client-role@example.com", "CLIENT");
 
     const agent = request.agent(app);
     await agent
@@ -314,6 +312,7 @@ describe("role-based access control", () => {
       passwordHash,
       role: "ADMIN",
       status: "ACTIVE",
+      emailVerifiedAt: new Date(),
     });
 
     const agent = request.agent(app);
@@ -328,9 +327,7 @@ describe("role-based access control", () => {
   });
 
   it("uses the current DB role (role changes take effect immediately)", async () => {
-    await request(app)
-      .post("/api/auth/register")
-      .send({ email: "role-change@example.com", password: PASSWORD, role: "CLIENT" });
+    await registerVerified("role-change@example.com", "CLIENT");
 
     const agent = request.agent(app);
     await agent
