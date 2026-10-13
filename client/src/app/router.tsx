@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { RequireRole } from "./RequireRole";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
+import { ResendVerificationPage } from "../pages/auth/ResendVerificationPage";
+import { VerifyEmailPage } from "../pages/auth/VerifyEmailPage";
 import { ClientHomePage } from "../pages/client/HomePage";
 import { PublicBarberProfilePage } from "../pages/client/BarberProfilePage";
 import { BarbersSearchPage } from "../pages/client/BarbersSearchPage";
@@ -25,6 +27,8 @@ export function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/resend-verification" element={<ResendVerificationPage />} />
 
       {/* Recherche et profil public : accessibles sans connexion. */}
       <Route path="/barbers" element={<BarbersSearchPage />} />

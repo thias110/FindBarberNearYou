@@ -4,6 +4,7 @@ import { authApi } from "../../lib/apiClient";
 import { authErrorMessage } from "../../lib/authMessages";
 import { cn } from "../../lib/cn";
 import { AuthLayout } from "../../components/auth/AuthLayout";
+import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
@@ -67,6 +68,7 @@ export function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
     document.title = "Inscription — FindBarber";
@@ -106,13 +108,47 @@ export function RegisterPage() {
         password,
         role,
       });
-      // Pas d'auto-login : on renvoie vers la connexion avec un message de succès.
-      navigate("/login", { replace: true, state: { registered: true } });
+      // Pas d'auto-login : on affiche l'état « Vérifiez votre email ».
+      setRegistered(true);
     } catch (err) {
       setError(authErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (registered) {
+    return (
+      <AuthLayout>
+        <h1 className="text-2xl font-semibold text-foreground">
+          Vérifiez votre adresse email.
+        </h1>
+
+        <Alert variant="info" role="status" className="mt-4">
+          Un lien de vérification vient d'être envoyé à votre adresse email.
+          Cliquez dessus pour activer votre compte. Pensez à vérifier vos
+          courriers indésirables.
+        </Alert>
+
+        <div className="mt-6 space-y-4">
+          <Button
+            onClick={() => navigate("/resend-verification", { replace: true })}
+            className="min-h-[44px] w-full"
+          >
+            Renvoyer le lien de vérification
+          </Button>
+          <p className="text-center text-sm text-foreground-muted">
+            Vous avez déjà vérifié votre email ?{" "}
+            <Link
+              to="/login"
+              className="rounded text-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Se connecter
+            </Link>
+          </p>
+        </div>
+      </AuthLayout>
+    );
   }
 
   return (

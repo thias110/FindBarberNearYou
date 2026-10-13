@@ -187,6 +187,8 @@ export interface AuthApi {
     password: string;
   }): Promise<{ user: PublicUser; csrfToken: string }>;
   logout(): Promise<void>;
+  verifyEmail(input: { token: string }): Promise<{ verified: boolean }>;
+  resendVerification(input: { email: string }): Promise<{ ok: boolean }>;
 }
 
 export const authApi: AuthApi = {
@@ -202,6 +204,16 @@ export const authApi: AuthApi = {
       body: input,
     }),
   logout: () => apiFetch<void>("/api/auth/logout", { method: "POST" }),
+  verifyEmail: (input) =>
+    apiFetch<{ verified: boolean }>("/api/auth/verify-email", {
+      method: "POST",
+      body: input,
+    }),
+  resendVerification: (input) =>
+    apiFetch<{ ok: boolean }>("/api/auth/resend-verification", {
+      method: "POST",
+      body: input,
+    }),
 };
 
 // Avatar générique de l'utilisateur connecté (issue #8).

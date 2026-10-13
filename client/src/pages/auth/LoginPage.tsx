@@ -2,8 +2,10 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ROLE_HOME } from "@findbarber/shared/constants";
 import { useAuth } from "../../app/auth-context";
+import { ApiError } from "../../lib/apiClient";
 import { authErrorMessage } from "../../lib/authMessages";
 import { AuthLayout } from "../../components/auth/AuthLayout";
+import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
@@ -63,6 +65,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [notVerified, setNotVerified] = useState(false);
 
   const registered =
     (location.state as { registered?: boolean } | null)?.registered === true;
@@ -101,6 +104,7 @@ export function LoginPage() {
     event.preventDefault();
     if (submitting) return;
     setError(null);
+    setNotVerified(false);
     const errors = validate();
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -110,7 +114,13 @@ export function LoginPage() {
       const user = await login(email, password);
       navigate(ROLE_HOME[user.role], { replace: true });
     } catch (err) {
-      setError(authErrorMessage(err));
+      if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
+        setNotVerified(true);
+        setError(null);
+      } else {
+        setNotVerified(false);
+        setError(authErrorMessage(err));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -132,6 +142,18 @@ export function LoginPage() {
         >
           {successMessage}
         </div>
+      )}
+
+      {notVerified && (
+        <Alert variant="warning" role="alert" className="mt-4">
+          Votre adresse email n'est pas encore vérifiée.{" "}
+          <Link
+            to="/resend-verification"
+            className="rounded text-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            Renvoyer le lien de vérification
+          </Link>
+        </Alert>
       )}
 
       {error && (

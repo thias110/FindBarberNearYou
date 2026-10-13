@@ -5,6 +5,10 @@ import { ApiError } from "./apiClient";
 // reste la référence, on ne le masque jamais).
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   INVALID_CREDENTIALS: "Email ou mot de passe incorrect.",
+  EMAIL_NOT_VERIFIED:
+    "Votre adresse email n'est pas encore vérifiée. Renvoyez le lien de vérification pour activer votre compte.",
+  INVALID_VERIFICATION_TOKEN:
+    "Ce lien de vérification est invalide ou expiré.",
   ACCOUNT_SUSPENDED: "Ce compte est suspendu. Contactez l'administration.",
   EMAIL_TAKEN: "Un compte existe déjà avec cet email.",
   ADMIN_REGISTRATION_FORBIDDEN:
