@@ -18,9 +18,11 @@ import type {
   OwnBarberService,
   PublicBarberPhotosResponse,
   PublicBarberProfileWithServices,
+  Notification,
   PublicReview,
   PublicUser,
   TimeOff,
+  UnreadCountResponse,
   TimeOffResponse,
   WorkingHoursResponse,
 } from "@findbarber/shared/types";
@@ -234,6 +236,27 @@ export const userApi: UserApi = {
   },
   deleteAvatar: () =>
     apiFetch<{ user: PublicUser }>("/api/users/me/avatar", { method: "DELETE" }),
+};
+
+// Notifications in-app (MVP) : lectures/mutations scopées côté serveur.
+export interface NotificationApi {
+  list(): Promise<{ notifications: Notification[] }>;
+  unreadCount(): Promise<UnreadCountResponse>;
+  markRead(id: string): Promise<void>;
+  markAllRead(): Promise<void>;
+}
+
+export const notificationApi: NotificationApi = {
+  list: () =>
+    apiFetch<{ notifications: Notification[] }>("/api/notifications"),
+  unreadCount: () =>
+    apiFetch<UnreadCountResponse>("/api/notifications/unread-count"),
+  markRead: (id) =>
+    apiFetch<void>(`/api/notifications/${encodeURIComponent(id)}/read`, {
+      method: "POST",
+    }),
+  markAllRead: () =>
+    apiFetch<void>("/api/notifications/read-all", { method: "POST" }),
 };
 
 export interface BarberStatsParams {
