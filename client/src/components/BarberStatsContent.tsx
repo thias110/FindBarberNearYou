@@ -1,6 +1,10 @@
 import type { BarberStatsResponse } from "@findbarber/shared/types";
 import { formatCurrency } from "../lib/formatters";
 import { formatCalendarDateRange } from "../lib/date";
+import { Button } from "./ui/Button";
+import { Card } from "./ui/Card";
+import { Field } from "./ui/Field";
+import { Input } from "./ui/Input";
 
 export type StatsRange = "7d" | "30d" | "month" | "custom";
 
@@ -11,7 +15,9 @@ const STATS_RANGES: { value: StatsRange; label: string }[] = [
   { value: "custom", label: "Personnalisé" },
 ];
 
-// Sélecteur de période partagé entre l'espace barber et l'admin.
+// Sélecteur de période partagé entre l'espace barber et l'admin. Props et
+// valeurs de `StatsRange` inchangées : seule la présentation utilise le design
+// system (Button, Field, Input).
 export function StatsRangeSelector({
   range,
   onRangeChange,
@@ -29,43 +35,50 @@ export function StatsRangeSelector({
 }) {
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        {STATS_RANGES.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => onRangeChange(option.value)}
-            className={`rounded-lg px-3 py-1.5 text-sm ${
-              range === option.value
-                ? "bg-brand-700 text-white"
-                : "border border-gray-300 text-gray-700"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
+      <div
+        role="group"
+        aria-label="Période des statistiques"
+        className="flex flex-wrap gap-2"
+      >
+        {STATS_RANGES.map((option) => {
+          const isActive = range === option.value;
+          return (
+            <Button
+              key={option.value}
+              variant={isActive ? "primary" : "secondary"}
+              size="sm"
+              className="min-h-[44px]"
+              aria-pressed={isActive}
+              onClick={() => onRangeChange(option.value)}
+            >
+              {option.label}
+            </Button>
+          );
+        })}
       </div>
 
       {range === "custom" && (
         <div className="flex flex-wrap items-end gap-3">
-          <label className="text-sm text-gray-700">
-            Du
-            <input
-              type="date"
-              value={from}
-              onChange={(event) => onFromChange(event.target.value)}
-              className="mt-1 block rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-            />
-          </label>
-          <label className="text-sm text-gray-700">
-            Au
-            <input
-              type="date"
-              value={to}
-              onChange={(event) => onToChange(event.target.value)}
-              className="mt-1 block rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
-            />
-          </label>
+          <Field label="Du" className="w-40">
+            {(control) => (
+              <Input
+                {...control}
+                type="date"
+                value={from}
+                onChange={(event) => onFromChange(event.target.value)}
+              />
+            )}
+          </Field>
+          <Field label="Au" className="w-40">
+            {(control) => (
+              <Input
+                {...control}
+                type="date"
+                value={to}
+                onChange={(event) => onToChange(event.target.value)}
+              />
+            )}
+          </Field>
         </div>
       )}
     </>
@@ -87,14 +100,18 @@ function Bars({ data }: { data: BarDatum[] }) {
     <dl className="space-y-2">
       {data.map((item) => (
         <div key={item.key} className="flex items-center gap-3">
-          <dt className="w-32 shrink-0 text-sm text-gray-600">{item.label}</dt>
+          <dt className="w-32 shrink-0 text-sm text-foreground-muted">
+            {item.label}
+          </dt>
           <dd className="flex min-w-0 flex-1 items-center gap-2">
             <div
               aria-hidden="true"
-              className="h-4 shrink-0 rounded bg-brand-300"
+              className="h-4 shrink-0 rounded bg-accent"
               style={{ width: `${(item.value / max) * 100}%` }}
             />
-            <span className="shrink-0 text-sm text-gray-800">{item.display}</span>
+            <span className="shrink-0 text-sm text-foreground">
+              {item.display}
+            </span>
           </dd>
         </div>
       ))}
@@ -104,12 +121,12 @@ function Bars({ data }: { data: BarDatum[] }) {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <Card className="p-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
         {label}
       </p>
-      <p className="mt-1 text-xl font-semibold text-brand-900">{value}</p>
-    </div>
+      <p className="mt-1 text-xl font-semibold text-foreground">{value}</p>
+    </Card>
   );
 }
 
@@ -120,12 +137,12 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
 
   return (
     <>
-      <div className="rounded-2xl bg-white p-4 shadow">
-        <p className="text-sm text-gray-600">
+      <Card className="p-4">
+        <p className="text-sm text-foreground-muted">
           Période : {formatCalendarDateRange(stats.period.from, stats.period.to)}{" "}
           ({stats.period.timezone})
         </p>
-      </div>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Rendez-vous" value={String(stats.totals.bookings)} />
@@ -163,8 +180,8 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
         />
       </div>
 
-      <section className="rounded-2xl bg-white p-4 shadow">
-        <h2 className="mb-3 font-semibold text-brand-900">
+      <Card className="p-4">
+        <h2 className="mb-3 font-semibold text-foreground">
           Rendez-vous par semaine
         </h2>
         <Bars
@@ -175,10 +192,10 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
             display: String(bucket.count),
           }))}
         />
-      </section>
+      </Card>
 
-      <section className="rounded-2xl bg-white p-4 shadow">
-        <h2 className="mb-3 font-semibold text-brand-900">
+      <Card className="p-4">
+        <h2 className="mb-3 font-semibold text-foreground">
           Rendez-vous par mois
         </h2>
         <Bars
@@ -189,10 +206,12 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
             display: String(bucket.count),
           }))}
         />
-      </section>
+      </Card>
 
-      <section className="rounded-2xl bg-white p-4 shadow">
-        <h2 className="mb-3 font-semibold text-brand-900">Revenus par mois</h2>
+      <Card className="p-4">
+        <h2 className="mb-3 font-semibold text-foreground">
+          Revenus par mois
+        </h2>
         <Bars
           data={stats.revenueByMonth.map((bucket) => ({
             key: bucket.key,
@@ -201,32 +220,32 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
             display: formatCurrency(bucket.revenueMinor, stats.currency),
           }))}
         />
-      </section>
+      </Card>
 
-      <section className="rounded-2xl bg-white p-4 shadow">
-        <h2 className="mb-3 font-semibold text-brand-900">
+      <Card className="p-4">
+        <h2 className="mb-3 font-semibold text-foreground">
           Services les plus demandés
         </h2>
         <ul className="space-y-2">
           {stats.topServices.map((service) => (
             <li
               key={service.serviceName}
-              className="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-100 pb-2 text-sm"
+              className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-2 text-sm last:border-0"
             >
-              <span className="font-medium text-gray-800">
+              <span className="font-medium text-foreground">
                 {service.serviceName}
               </span>
-              <span className="text-gray-600">
+              <span className="text-foreground-muted">
                 {service.count} rdv ·{" "}
                 {formatCurrency(service.revenueMinor, stats.currency)}
               </span>
             </li>
           ))}
         </ul>
-      </section>
+      </Card>
 
-      <section className="rounded-2xl bg-white p-4 shadow">
-        <h2 className="mb-3 font-semibold text-brand-900">
+      <Card className="p-4">
+        <h2 className="mb-3 font-semibold text-foreground">
           Jours les plus chargés
         </h2>
         <Bars
@@ -237,10 +256,10 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
             display: String(bucket.count),
           }))}
         />
-      </section>
+      </Card>
 
-      <section className="rounded-2xl bg-white p-4 shadow">
-        <h2 className="mb-3 font-semibold text-brand-900">
+      <Card className="p-4">
+        <h2 className="mb-3 font-semibold text-foreground">
           Heures les plus chargées
         </h2>
         <Bars
@@ -251,7 +270,7 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
             display: String(bucket.count),
           }))}
         />
-      </section>
+      </Card>
     </>
   );
 }

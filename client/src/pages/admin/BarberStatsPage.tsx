@@ -8,6 +8,10 @@ import {
   StatsRangeSelector,
   type StatsRange,
 } from "../../components/BarberStatsContent";
+import { Alert } from "../../components/ui/Alert";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Skeleton } from "../../components/ui/Skeleton";
 
 export function AdminBarberStatsPage() {
   const { barberId } = useParams<{ barberId: string }>();
@@ -72,11 +76,14 @@ export function AdminBarberStatsPage() {
     <AdminLayout>
       <div className="space-y-4">
         <div>
-          <h2 className="text-xl font-semibold text-brand-900">
+          <h2 className="text-xl font-semibold text-foreground">
             Statistiques d'un professionnel
           </h2>
-          <p className="mt-1 text-sm text-gray-600">
-            <Link to="/admin/users" className="text-brand-700 underline">
+          <p className="mt-1 text-sm text-foreground-muted">
+            <Link
+              to="/admin/users"
+              className="font-medium text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
               Retour aux utilisateurs
             </Link>
           </p>
@@ -92,24 +99,35 @@ export function AdminBarberStatsPage() {
         />
 
         {loading ? (
-          <div className="rounded-2xl bg-white p-6 text-center text-gray-500">
-            Chargement…
-          </div>
+          <Card className="space-y-4 p-6" aria-busy="true">
+            <span className="sr-only" role="status">
+              Chargement des statistiques…
+            </span>
+            <Skeleton className="h-6 w-2/3" />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          </Card>
         ) : error ? (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700">
+          <Alert variant="danger">
             <p>{error}</p>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              className="mt-3 min-h-[44px]"
               onClick={() => setRetryKey((key) => key + 1)}
-              className="mt-2 rounded-lg border border-brand-700 px-3 py-1 text-brand-700"
             >
               Réessayer
-            </button>
-          </div>
+            </Button>
+          </Alert>
         ) : !canFetch ? (
-          <div className="rounded-2xl bg-white p-6 text-center text-gray-600 shadow">
-            Choisissez une plage de dates.
-          </div>
+          <Card className="p-6 text-center">
+            <p className="text-foreground-muted">Choisissez une plage de dates.</p>
+          </Card>
         ) : stats ? (
           <BarberStatsContent stats={stats} />
         ) : null}
