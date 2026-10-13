@@ -5,6 +5,17 @@ import type { TimeOff } from "@findbarber/shared/types";
 import { timeOffCreateSchema } from "@findbarber/shared/validation";
 import { ApiError, barberApi } from "../../lib/apiClient";
 import { formatCalendarDateRange } from "../../lib/date";
+import { Alert } from "../../components/ui/Alert";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Field } from "../../components/ui/Field";
+import { Input } from "../../components/ui/Input";
+import { Skeleton } from "../../components/ui/Skeleton";
+import { ProPageHeader } from "../../components/barber/ProPageHeader";
+
+// Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
+const PRIMARY_LINK_CLASS =
+  "inline-flex min-h-[44px] items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 function sortTimeOff(items: TimeOff[]): TimeOff[] {
   return [...items].sort((a, b) => {
@@ -156,8 +167,21 @@ export function BarberTimeOffPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-8 text-center text-foreground-muted">
-        Chargement…
+      <div className="min-h-screen bg-background p-4 sm:p-8">
+        <div className="mx-auto max-w-2xl space-y-6">
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-11 w-44" />
+          </div>
+          <Card className="space-y-4 p-6" aria-busy="true">
+            <span className="sr-only" role="status">
+              Chargement des indisponibilités…
+            </span>
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-2/3" />
+          </Card>
+        </div>
       </div>
     );
   }
@@ -165,20 +189,17 @@ export function BarberTimeOffPage() {
   if (profileMissing) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 text-center shadow">
-          <h1 className="text-xl font-semibold text-brand-900">
-            Mes indisponibilités
-          </h1>
-          <p className="mt-2 text-gray-700">
-            Créez d'abord votre profil professionnel pour gérer vos
-            indisponibilités.
-          </p>
-          <Link
-            to="/pro/profile"
-            className="mt-4 inline-block rounded-lg bg-brand-700 px-4 py-2 text-white"
-          >
-            Créer mon profil
-          </Link>
+        <div className="mx-auto max-w-2xl space-y-6">
+          <ProPageHeader title="Mes indisponibilités" />
+          <Card className="p-6 text-center">
+            <p className="text-foreground">
+              Créez d'abord votre profil professionnel pour gérer vos
+              indisponibilités.
+            </p>
+            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
+              Créer mon profil
+            </Link>
+          </Card>
         </div>
       </div>
     );
@@ -189,184 +210,175 @@ export function BarberTimeOffPage() {
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-900">
-            Mes indisponibilités
-          </h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Congés et fermetures exceptionnelles, en journées entières.{" "}
-            <Link to="/pro/dashboard" className="text-brand-700 underline">
-              Retour au tableau de bord
-            </Link>
-          </p>
-        </div>
+        <ProPageHeader
+          title="Mes indisponibilités"
+          description="Congés et fermetures exceptionnelles, en journées entières."
+        />
 
         {timezoneStatus === "loaded" && timezone ? (
-          <p className="rounded-lg bg-brand-50 p-3 text-sm text-brand-800">
+          <Alert variant="info">
             Votre fuseau horaire : {timezone}. Les jours indisponibles sont des
             dates civiles dans ce fuseau.
-          </p>
+          </Alert>
         ) : timezoneStatus === "loaded" ? (
-          <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+          <Alert variant="warning">
             Votre fuseau horaire n'est pas renseigné : vous pouvez enregistrer
             vos jours indisponibles, mais ils ne seront interprétés qu'une fois
             votre fuseau défini.{" "}
-            <Link to="/pro/profile" className="text-brand-700 underline">
+            <Link
+              to="/pro/profile"
+              className="font-medium text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
               Définir mon fuseau
             </Link>
-          </p>
+          </Alert>
         ) : timezoneStatus === "error" ? (
-          <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
-            Votre fuseau horaire est indisponible pour le moment. Vos jours
-            indisponibles restent enregistrés.{" "}
-            <button
-              type="button"
+          <Alert variant="warning">
+            <p>
+              Votre fuseau horaire est indisponible pour le moment. Vos jours
+              indisponibles restent enregistrés.
+            </p>
+            <Button
+              variant="secondary"
+              className="mt-3 min-h-[44px]"
               onClick={() => void retryTimezone()}
-              className="text-brand-700 underline"
             >
               Réessayer
-            </button>
-          </p>
+            </Button>
+          </Alert>
         ) : null}
 
-        {error && (
-          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
-        )}
-        {success && (
-          <p className="rounded-lg bg-green-50 p-3 text-sm text-green-700">
-            {success}
-          </p>
-        )}
+        {error && <Alert variant="danger">{error}</Alert>}
+        {success && <Alert variant="success">{success}</Alert>}
 
-        <section className="space-y-3 rounded-xl bg-white p-4 shadow">
-          <h2 className="font-semibold text-brand-900">
+        <Card className="space-y-4 p-6">
+          <h2 className="text-lg font-semibold text-foreground">
             Ajouter des jours indisponibles
           </h2>
           <div className="flex flex-wrap items-end gap-3">
-            <label className="block">
-              <span className="text-xs text-gray-600">Début</span>
-              <input
-                type="date"
-                value={startDate}
-                disabled={busy}
-                onChange={(event) => {
-                  setStartDate(event.target.value);
-                  clearFieldError("startDate");
-                }}
-                className="mt-1 rounded-lg border border-gray-300 px-2 py-1.5 disabled:bg-gray-100"
-              />
-              {fieldErrors.startDate && (
-                <p className="mt-1 text-xs text-red-600">
-                  {fieldErrors.startDate}
-                </p>
+            <Field label="Début" className="w-40" error={fieldErrors.startDate}>
+              {(control) => (
+                <Input
+                  {...control}
+                  type="date"
+                  value={startDate}
+                  disabled={busy}
+                  onChange={(event) => {
+                    setStartDate(event.target.value);
+                    clearFieldError("startDate");
+                  }}
+                />
               )}
-            </label>
-            <label className="block">
-              <span className="text-xs text-gray-600">Fin</span>
-              <input
-                type="date"
-                value={endDate}
-                disabled={busy}
-                onChange={(event) => {
-                  setEndDate(event.target.value);
-                  clearFieldError("endDate");
-                }}
-                className="mt-1 rounded-lg border border-gray-300 px-2 py-1.5 disabled:bg-gray-100"
-              />
-              {fieldErrors.endDate && (
-                <p className="mt-1 text-xs text-red-600">
-                  {fieldErrors.endDate}
-                </p>
+            </Field>
+            <Field label="Fin" className="w-40" error={fieldErrors.endDate}>
+              {(control) => (
+                <Input
+                  {...control}
+                  type="date"
+                  value={endDate}
+                  disabled={busy}
+                  onChange={(event) => {
+                    setEndDate(event.target.value);
+                    clearFieldError("endDate");
+                  }}
+                />
               )}
-            </label>
+            </Field>
           </div>
-          <label className="block">
-            <span className="text-xs text-gray-600">
-              Motif (facultatif, privé)
-            </span>
-            <input
-              type="text"
-              value={reason}
-              disabled={busy}
-              maxLength={LIMITS.timeOffReason}
-              placeholder="Congés, fermeture exceptionnelle…"
-              onChange={(event) => {
-                setReason(event.target.value);
-                clearFieldError("reason");
-              }}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-2 py-1.5 disabled:bg-gray-100"
-            />
-            {fieldErrors.reason && (
-              <p className="mt-1 text-xs text-red-600">{fieldErrors.reason}</p>
+          <Field
+            label="Motif (facultatif, privé)"
+            error={fieldErrors.reason}
+          >
+            {(control) => (
+              <Input
+                {...control}
+                type="text"
+                value={reason}
+                disabled={busy}
+                maxLength={LIMITS.timeOffReason}
+                placeholder="Congés, fermeture exceptionnelle…"
+                onChange={(event) => {
+                  setReason(event.target.value);
+                  clearFieldError("reason");
+                }}
+              />
             )}
-          </label>
-          <p className="text-xs text-gray-500">
+          </Field>
+          <p className="text-xs text-foreground-muted">
             Début et fin inclus. Une journée unique se saisit avec la même date.
             La période ne peut pas dépasser {LIMITS.timeOffMaxRangeDays} jours.
           </p>
-          <button
-            type="button"
-            onClick={() => void handleCreate()}
+          <Button
+            className="min-h-[44px]"
+            isLoading={saving}
             disabled={busy}
-            className="rounded-lg bg-brand-700 px-4 py-2 text-white disabled:opacity-50"
+            onClick={() => void handleCreate()}
           >
             {saving ? "Enregistrement…" : "Ajouter"}
-          </button>
-        </section>
+          </Button>
+        </Card>
 
-        <section className="space-y-3 rounded-xl bg-white p-4 shadow">
-          <h2 className="font-semibold text-brand-900">Jours indisponibles</h2>
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">
+            Jours indisponibles
+          </h2>
           {timeOff.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              Aucune indisponibilité enregistrée.
-            </p>
+            <Card className="p-6 text-center">
+              <p className="text-foreground-muted">
+                Aucune indisponibilité enregistrée.
+              </p>
+            </Card>
           ) : (
             <ul className="space-y-2">
               {timeOff.map((item) => (
-                <li
-                  key={item.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-brand-900">
-                      {formatCalendarDateRange(item.startDate, item.endDate)}
-                    </p>
-                    {item.reason && (
-                      <p className="text-xs text-gray-600">{item.reason}</p>
-                    )}
-                  </div>
-                  {confirmingId === item.id ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-red-700">
-                        Supprimer cette indisponibilité ?
-                      </span>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => setConfirmingId(null)}
-                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50"
-                      >
-                        Annuler
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => void handleDelete(item.id)}
-                        className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
-                      >
-                        {deletingId === item.id ? "Suppression…" : "Confirmer"}
-                      </button>
+                <li key={item.id}>
+                  <Card className="p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground">
+                          {formatCalendarDateRange(item.startDate, item.endDate)}
+                        </p>
+                        {item.reason && (
+                          <p className="mt-1 text-sm text-foreground-muted">
+                            {item.reason}
+                          </p>
+                        )}
+                      </div>
+                      {confirmingId === item.id ? (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm text-foreground">
+                            Supprimer cette indisponibilité ?
+                          </span>
+                          <Button
+                            variant="secondary"
+                            className="min-h-[44px]"
+                            disabled={busy}
+                            onClick={() => setConfirmingId(null)}
+                          >
+                            Annuler
+                          </Button>
+                          <Button
+                            variant="danger"
+                            className="min-h-[44px]"
+                            disabled={busy}
+                            isLoading={deletingId === item.id}
+                            onClick={() => void handleDelete(item.id)}
+                          >
+                            {deletingId === item.id ? "Suppression…" : "Confirmer"}
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          className="min-h-[44px]"
+                          disabled={busy}
+                          onClick={() => setConfirmingId(item.id)}
+                        >
+                          Supprimer
+                        </Button>
+                      )}
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => setConfirmingId(item.id)}
-                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50"
-                    >
-                      Supprimer
-                    </button>
-                  )}
+                  </Card>
                 </li>
               ))}
             </ul>
