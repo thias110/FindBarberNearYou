@@ -9,6 +9,22 @@ import {
   resolveUploadUrl,
   validateImageFile,
 } from "../../lib/apiClient";
+import { Alert } from "../../components/ui/Alert";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Field } from "../../components/ui/Field";
+import { Input } from "../../components/ui/Input";
+import { Skeleton } from "../../components/ui/Skeleton";
+import { ProPageHeader } from "../../components/barber/ProPageHeader";
+
+// Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
+const PRIMARY_LINK_CLASS =
+  "inline-flex min-h-[44px] items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+
+// Champ fichier restylé via les variantes `file:` de Tailwind (même contrôle,
+// même comportement d'upload).
+const FILE_INPUT_CLASS =
+  "block w-full cursor-pointer rounded-lg border border-border bg-surface text-sm text-foreground file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-2 file:text-sm file:font-medium file:text-accent-foreground hover:file:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50";
 
 export function BarberGalleryPage() {
   const [photos, setPhotos] = useState<OwnBarberPhoto[]>([]);
@@ -101,140 +117,150 @@ export function BarberGalleryPage() {
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-4xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-900">Ma galerie</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            <Link to="/pro/dashboard" className="text-brand-700 underline">
-              Retour au tableau de bord
-            </Link>
-          </p>
-        </div>
+        <ProPageHeader
+          title="Ma galerie"
+          description="Photos de vos réalisations."
+        />
 
         {loading ? (
-          <div className="rounded-2xl bg-white p-6 text-center text-gray-500">
-            Chargement…
-          </div>
+          <Card className="space-y-4 p-6" aria-busy="true">
+            <span className="sr-only" role="status">
+              Chargement de la galerie…
+            </span>
+            <Skeleton className="h-10 w-2/3" />
+            <Skeleton className="h-10 w-full" />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+          </Card>
         ) : profileMissing ? (
-          <div className="rounded-2xl bg-white p-6 text-center shadow">
-            <p className="text-gray-700">
+          <Card className="p-6 text-center">
+            <p className="text-foreground">
               Créez d'abord votre profil professionnel pour gérer votre galerie.
             </p>
-            <Link
-              to="/pro/profile"
-              className="mt-4 inline-block rounded-lg bg-brand-700 px-4 py-2 text-white"
-            >
+            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
               Créer mon profil
             </Link>
-          </div>
+          </Card>
         ) : error ? (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700">
+          <Alert variant="danger">
             <p>{error}</p>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              className="mt-3 min-h-[44px]"
               onClick={() => setReloadKey((key) => key + 1)}
-              className="mt-2 rounded-lg border border-brand-700 px-3 py-1 text-brand-700"
             >
               Réessayer
-            </button>
-          </div>
+            </Button>
+          </Alert>
         ) : (
           <>
-            <form
-              onSubmit={(event) => void handleSubmit(event)}
-              className="space-y-3 rounded-2xl bg-white p-6 shadow"
-            >
-              <h2 className="font-semibold text-brand-900">
-                Ajouter une photo
-              </h2>
-              <p className="text-sm text-gray-600">
-                {photos.length} / {LIMITS.galleryMaxPhotos} photos · JPEG, PNG
-                ou WebP, {maxMegabytes} Mo max.
-              </p>
-
-              <label className="block text-sm text-gray-700">
-                Image
-                <input
-                  type="file"
-                  accept={UPLOAD_IMAGE_MIME_TYPES.join(",")}
-                  disabled={uploading || limitReached}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                    setFile(event.target.files?.[0] ?? null)
-                  }
-                  className="mt-1 block w-full text-sm"
-                />
-              </label>
-
-              <label className="block text-sm text-gray-700">
-                Légende (facultative)
-                <input
-                  type="text"
-                  value={caption}
-                  maxLength={LIMITS.galleryCaption}
-                  disabled={uploading || limitReached}
-                  onChange={(event) => setCaption(event.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                />
-              </label>
-
-              {limitReached && (
-                <p className="text-sm text-amber-700">
-                  La limite de {LIMITS.galleryMaxPhotos} photos est atteinte.
-                  Supprimez une photo pour en ajouter une autre.
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={uploading || limitReached}
-                className="rounded-lg bg-brand-700 px-4 py-2 text-white disabled:opacity-50"
+            <Card className="p-6">
+              <form
+                onSubmit={(event) => void handleSubmit(event)}
+                className="space-y-4"
               >
-                {uploading ? "Envoi…" : "Ajouter la photo"}
-              </button>
-            </form>
+                <h2 className="text-lg font-semibold text-foreground">
+                  Ajouter une photo
+                </h2>
+                <p className="text-sm text-foreground-muted">
+                  {photos.length} / {LIMITS.galleryMaxPhotos} photos
+                </p>
+
+                <Field
+                  label="Image"
+                  hint={`JPEG, PNG ou WebP, ${maxMegabytes} Mo max.`}
+                >
+                  {(control) => (
+                    <input
+                      {...control}
+                      type="file"
+                      accept={UPLOAD_IMAGE_MIME_TYPES.join(",")}
+                      disabled={uploading || limitReached}
+                      onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                        setFile(event.target.files?.[0] ?? null)
+                      }
+                      className={FILE_INPUT_CLASS}
+                    />
+                  )}
+                </Field>
+
+                <Field label="Légende (facultative)">
+                  {(control) => (
+                    <Input
+                      {...control}
+                      type="text"
+                      value={caption}
+                      maxLength={LIMITS.galleryCaption}
+                      disabled={uploading || limitReached}
+                      onChange={(event) => setCaption(event.target.value)}
+                    />
+                  )}
+                </Field>
+
+                {limitReached && (
+                  <Alert variant="warning">
+                    La limite de {LIMITS.galleryMaxPhotos} photos est atteinte.
+                    Supprimez une photo pour en ajouter une autre.
+                  </Alert>
+                )}
+
+                <Button
+                  type="submit"
+                  className="min-h-[44px]"
+                  isLoading={uploading}
+                  disabled={uploading || limitReached}
+                >
+                  {uploading ? "Envoi…" : "Ajouter la photo"}
+                </Button>
+              </form>
+            </Card>
 
             {message && (
-              <p
-                className={`rounded-lg p-3 text-sm ${
-                  message.kind === "success"
-                    ? "bg-green-50 text-green-700"
-                    : "bg-red-50 text-red-700"
-                }`}
+              <Alert
+                variant={message.kind === "success" ? "success" : "danger"}
               >
                 {message.text}
-              </p>
+              </Alert>
             )}
 
             {photos.length === 0 ? (
-              <div className="rounded-2xl bg-white p-6 text-center text-gray-600">
-                Aucune photo pour le moment.
-              </div>
+              <Card className="p-6 text-center">
+                <p className="text-foreground-muted">
+                  Aucune photo pour le moment.
+                </p>
+              </Card>
             ) : (
               // Grille responsive, sans carrousel.
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {photos.map((photo) => (
-                  <li
-                    key={photo.id}
-                    className="overflow-hidden rounded-xl bg-white shadow"
-                  >
-                    <img
-                      src={resolveUploadUrl(photo.imagePath) ?? ""}
-                      alt={photo.caption ?? "Photo de galerie"}
-                      loading="lazy"
-                      className="h-40 w-full object-cover"
-                    />
-                    <div className="space-y-2 p-3">
-                      {photo.caption && (
-                        <p className="text-sm text-gray-700">{photo.caption}</p>
-                      )}
-                      <button
-                        type="button"
-                        disabled={deletingId === photo.id}
-                        onClick={() => void handleDelete(photo)}
-                        className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-700 disabled:opacity-50"
-                      >
-                        {deletingId === photo.id ? "Suppression…" : "Supprimer"}
-                      </button>
-                    </div>
+                  <li key={photo.id}>
+                    <Card className="overflow-hidden">
+                      <img
+                        src={resolveUploadUrl(photo.imagePath) ?? ""}
+                        alt={photo.caption ?? "Photo de galerie"}
+                        loading="lazy"
+                        className="h-40 w-full object-cover"
+                      />
+                      <div className="space-y-2 p-3">
+                        {photo.caption && (
+                          <p className="text-sm text-foreground">
+                            {photo.caption}
+                          </p>
+                        )}
+                        <Button
+                          variant="danger"
+                          className="min-h-[44px]"
+                          disabled={deletingId === photo.id}
+                          isLoading={deletingId === photo.id}
+                          onClick={() => void handleDelete(photo)}
+                        >
+                          {deletingId === photo.id ? "Suppression…" : "Supprimer"}
+                        </Button>
+                      </div>
+                    </Card>
                   </li>
                 ))}
               </ul>
