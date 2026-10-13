@@ -39,6 +39,7 @@ import type {
   AdminUserListQuery,
 } from "@findbarber/shared/validation";
 import { AppError } from "../../lib/errors.js";
+import { notifyBookingEvent } from "../notification/service.js";
 
 function pagination(
   page: number,
@@ -264,6 +265,20 @@ export async function suspendUser(
         .limit(1);
       if (profile) {
         barberProfileId = profile.id;
+
+        // Lire les réservations futures actives AVANT l'annulation, pour
+        // notifier chaque CLIENT concerné dans la même transaction.
+        const affected = await tx
+          .select({ id: bookings.id, clientUserId: bookings.clientUserId })
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.barberProfileId, profile.id),
+              inArray(bookings.status, [...ACTIVE_BOOKING_STATUSES]),
+              gte(bookings.startAt, now),
+            ),
+          );
+
         await tx
           .update(bookings)
           .set({
@@ -279,6 +294,15 @@ export async function suspendUser(
               gte(bookings.startAt, now),
             ),
           );
+
+        for (const booking of affected) {
+          await notifyBookingEvent(tx as unknown as typeof db, {
+            recipientUserId: booking.clientUserId,
+            actorUserId,
+            bookingId: booking.id,
+            type: "BOOKING_CANCELLED_BY_ADMIN",
+          });
+        }
       }
     }
 

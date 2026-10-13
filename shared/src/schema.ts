@@ -17,6 +17,7 @@ import {
   AUDIENCES,
   BOOKING_STATUSES,
   LIMITS,
+  NOTIFICATION_TYPES,
   ROLES,
   SERVICE_PLACES,
   SUPPORTED_CURRENCIES,
@@ -32,6 +33,9 @@ export const techniqueEnum = pgEnum("technique", [...TECHNIQUES]);
 export const servicePlaceEnum = pgEnum("service_place", [...SERVICE_PLACES]);
 export const bookingStatusEnum = pgEnum("booking_status", [
   ...BOOKING_STATUSES,
+]);
+export const notificationTypeEnum = pgEnum("notification_type", [
+  ...NOTIFICATION_TYPES,
 ]);
 
 export const users = pgTable(
@@ -528,3 +532,42 @@ export const barberPhotos = pgTable(
 
 export type BarberPhotoRow = typeof barberPhotos.$inferSelect;
 export type NewBarberPhotoRow = typeof barberPhotos.$inferInsert;
+
+// Notifications in-app persistées (MVP, lot notifications Mission A). Pas de
+// payload JSON : le libellé d'affichage se dérive du type et du booking joint.
+// `user_id` = destinataire ; `actor_user_id` = auteur de la transition (nullable,
+// mis à NULL si l'auteur est supprimé) ; `booking_id` = réservation concernée
+// (nullable, cascade si la réservation disparaît). L'index unique
+// (user_id, type, booking_id) garantit l'absence de doublon par événement.
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    actorUserId: text("actor_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    bookingId: text("booking_id").references(() => bookings.id, {
+      onDelete: "cascade",
+    }),
+    type: notificationTypeEnum("type").notNull(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("notifications_user_created_idx").on(table.userId, table.createdAt),
+    index("notifications_user_read_idx").on(table.userId, table.readAt),
+    uniqueIndex("notifications_user_type_booking_unique").on(
+      table.userId,
+      table.type,
+      table.bookingId,
+    ),
+  ],
+);
+
+export type NotificationRow = typeof notifications.$inferSelect;
+export type NewNotificationRow = typeof notifications.$inferInsert;

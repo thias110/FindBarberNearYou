@@ -2,6 +2,7 @@ import type {
   Audience,
   BookingStatus,
   Currency,
+  NotificationType,
   ROLES,
   ServicePlace,
   Technique,
@@ -214,6 +215,26 @@ export interface BarberReviewsResponse {
     total: number;
     totalPages: number;
   };
+}
+
+// --- Notifications de réservation (MVP, lot notifications Mission A) ---
+// DTO de lecture pour le destinataire uniquement. `actorUserId` n'est pas
+// exposé (le type encode déjà l'acteur). `bookingId` permet le lien profond
+// côté frontend ; le libellé d'affichage est dérivé du type + booking.
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  bookingId: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+}
+
+export interface UnreadCountResponse {
+  count: number;
 }
 
 // --- Statistiques d'activité du barber (issue #20) ---

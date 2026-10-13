@@ -3,6 +3,7 @@ export * from "./auth";
 export * from "./barber";
 export * from "./booking";
 export * from "./gallery";
+export * from "./notifications";
 export * from "./review";
 export * from "./safeText";
 export * from "./stats";

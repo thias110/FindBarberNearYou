@@ -108,6 +108,20 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
 
 export const ACTIVE_BOOKING_STATUSES = ["PENDING", "CONFIRMED"] as const;
 
+// --- Notifications de réservation (MVP, lot notifications Mission A) ---
+// Types persistés dans `notifications.type`. Chaque type encode l'événement et
+// l'acteur de la transition ; le destinataire se déduit du type.
+export const NOTIFICATION_TYPES = [
+  "BOOKING_REQUESTED",
+  "BOOKING_CONFIRMED",
+  "BOOKING_COMPLETED",
+  "BOOKING_CANCELLED_BY_CLIENT",
+  "BOOKING_CANCELLED_BY_BARBER",
+  "BOOKING_CANCELLED_BY_ADMIN",
+] as const;
+
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
 // Mention obligatoire de l'arrondi des coordonnées publiques. Cet arrondi
 // réduit la précision mais ne garantit pas l'anonymat.
 export const APPROXIMATE_LOCATION_LABEL = "Localisation approximative";

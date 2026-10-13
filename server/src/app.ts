@@ -7,6 +7,7 @@ import { adminRouter } from "./modules/admin/routes.js";
 import { barberRouter } from "./modules/barber/routes.js";
 import { barbersRouter } from "./modules/barber/publicRoutes.js";
 import { bookingRouter } from "./modules/booking/routes.js";
+import { notificationRouter } from "./modules/notification/routes.js";
 import { userRouter } from "./modules/user/routes.js";
 import { errorHandler } from "./middleware/error.js";
 import { resolveUploadDir } from "./lib/storage.js";
@@ -127,6 +128,7 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api/barber", barberRouter);
   app.use("/api/barbers", barbersRouter);
   app.use("/api/bookings", bookingRouter);
+  app.use("/api/notifications", notificationRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: "NOT_FOUND", message: "Route not found." } });

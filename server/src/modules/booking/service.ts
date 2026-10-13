@@ -47,6 +47,7 @@ import {
   bookingNotFound,
   type AuthUser,
 } from "../../lib/authorization.js";
+import { notifyBookingEvent } from "../notification/service.js";
 
 const MS_PER_HOUR = 3_600_000;
 
@@ -433,6 +434,14 @@ export async function createBooking(
       })
       .returning();
 
+    // Notification BARBER : nouvelle demande de réservation (même transaction).
+    await notifyBookingEvent(runner, {
+      recipientUserId: profile.userId,
+      actorUserId: clientUserId,
+      bookingId: row.id,
+      type: "BOOKING_REQUESTED",
+    });
+
     const [client] = await runner
       .select({ name: users.name })
       .from(users)
@@ -561,16 +570,30 @@ export async function confirmBooking(
     );
   }
 
-  const [updated] = await db
-    .update(bookings)
-    .set({ status: "CONFIRMED", updatedAt: new Date() })
-    .where(
-      and(
-        eq(bookings.id, bookingId),
-        eq(bookings.barberProfileId, profileId),
-      ),
-    )
-    .returning();
+  const updated = await db.transaction(async (tx) => {
+    const runner = tx as unknown as typeof db;
+    const [row] = await runner
+      .update(bookings)
+      .set({ status: "CONFIRMED", updatedAt: new Date() })
+      .where(
+        and(
+          eq(bookings.id, bookingId),
+          eq(bookings.barberProfileId, profileId),
+        ),
+      )
+      .returning();
+
+    // Notification CLIENT : réservation confirmée (même transaction).
+    await notifyBookingEvent(runner, {
+      recipientUserId: row.clientUserId,
+      actorUserId: barberUserId,
+      bookingId: row.id,
+      type: "BOOKING_CONFIRMED",
+    });
+
+    return row;
+  });
+
   const [client] = await db
     .select({ name: users.name })
     .from(users)
@@ -609,16 +632,30 @@ export async function completeBooking(
     );
   }
 
-  const [updated] = await db
-    .update(bookings)
-    .set({ status: "COMPLETED", updatedAt: new Date() })
-    .where(
-      and(
-        eq(bookings.id, bookingId),
-        eq(bookings.barberProfileId, profileId),
-      ),
-    )
-    .returning();
+  const updated = await db.transaction(async (tx) => {
+    const runner = tx as unknown as typeof db;
+    const [row] = await runner
+      .update(bookings)
+      .set({ status: "COMPLETED", updatedAt: new Date() })
+      .where(
+        and(
+          eq(bookings.id, bookingId),
+          eq(bookings.barberProfileId, profileId),
+        ),
+      )
+      .returning();
+
+    // Notification CLIENT : réservation terminée (même transaction).
+    await notifyBookingEvent(runner, {
+      recipientUserId: row.clientUserId,
+      actorUserId: barberUserId,
+      bookingId: row.id,
+      type: "BOOKING_COMPLETED",
+    });
+
+    return row;
+  });
+
   const [client] = await db
     .select({ name: users.name })
     .from(users)
@@ -632,6 +669,7 @@ export async function cancelBooking(
   bookingId: string,
 ): Promise<Booking> {
   let existing: BookingRow | undefined;
+  let barberUserId: string | null = null;
 
   if (user.role === "BARBER") {
     const profileId = await requireOwnBarberProfileId(user.id);
@@ -656,6 +694,14 @@ export async function cancelBooking(
         ),
       )
       .limit(1);
+    if (existing) {
+      const [profile] = await db
+        .select({ userId: barberProfiles.userId })
+        .from(barberProfiles)
+        .where(eq(barberProfiles.id, existing.barberProfileId))
+        .limit(1);
+      barberUserId = profile?.userId ?? null;
+    }
   } else {
     throw new AppError(403, "FORBIDDEN", "Insufficient permissions.");
   }
@@ -684,16 +730,40 @@ export async function cancelBooking(
     }
   }
 
-  const [updated] = await db
-    .update(bookings)
-    .set({
-      status: "CANCELLED",
-      cancelledBy: user.role,
-      cancelledAt: now,
-      updatedAt: now,
-    })
-    .where(eq(bookings.id, bookingId))
-    .returning();
+  const updated = await db.transaction(async (tx) => {
+    const runner = tx as unknown as typeof db;
+    const [row] = await runner
+      .update(bookings)
+      .set({
+        status: "CANCELLED",
+        cancelledBy: user.role,
+        cancelledAt: now,
+        updatedAt: now,
+      })
+      .where(eq(bookings.id, bookingId))
+      .returning();
+
+    if (user.role === "CLIENT") {
+      if (barberUserId) {
+        await notifyBookingEvent(runner, {
+          recipientUserId: barberUserId,
+          actorUserId: user.id,
+          bookingId: row.id,
+          type: "BOOKING_CANCELLED_BY_CLIENT",
+        });
+      }
+    } else {
+      await notifyBookingEvent(runner, {
+        recipientUserId: row.clientUserId,
+        actorUserId: user.id,
+        bookingId: row.id,
+        type: "BOOKING_CANCELLED_BY_BARBER",
+      });
+    }
+
+    return row;
+  });
+
   const [client] = await db
     .select({ name: users.name })
     .from(users)
