@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../app/auth-context";
+import { cn } from "../lib/cn";
+import { Button } from "./ui/Button";
 
 const NAV_ITEMS: { to: string; label: string; end?: boolean }[] = [
   { to: "/admin", label: "Tableau de bord", end: true },
@@ -8,6 +10,15 @@ const NAV_ITEMS: { to: string; label: string; end?: boolean }[] = [
   { to: "/admin/bookings", label: "Réservations" },
   { to: "/admin/reviews", label: "Avis" },
 ];
+
+// Base commune des liens de navigation : cible tactile >= 44px, focus clavier
+// visible et transition douce. Les états actif/inactif sont ajoutés par le
+// NavLink et pilotés par les tokens sémantiques (jamais de couleurs en dur).
+const NAV_LINK_BASE =
+  "inline-flex min-h-[44px] items-center justify-center rounded-lg px-4 text-sm " +
+  "font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 " +
+  "focus-visible:ring-accent focus-visible:ring-offset-2 " +
+  "focus-visible:ring-offset-background";
 
 // Coque commune des pages d'administration : en-tête, navigation et logout.
 // L'autorisation reste portée par RequireRole + le serveur, pas par ce layout.
@@ -26,14 +37,16 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold text-foreground">Espace admin</h1>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm text-foreground-muted">{user?.email}</span>
-            <button
-              type="button"
+            <span className="min-w-0 break-all text-sm text-foreground-muted">
+              {user?.email}
+            </span>
+            <Button
+              variant="primary"
               onClick={handleLogout}
-              className="rounded-lg bg-brand-700 px-4 py-2 text-white"
+              className="min-h-[44px]"
             >
               Se déconnecter
-            </button>
+            </Button>
           </div>
         </header>
 
@@ -47,11 +60,12 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `rounded-lg px-3 py-1.5 text-sm ${
+                cn(
+                  NAV_LINK_BASE,
                   isActive
-                    ? "bg-brand-700 text-white"
-                    : "border border-border text-foreground"
-                }`
+                    ? "bg-accent text-accent-foreground hover:bg-accent-hover"
+                    : "border border-border bg-surface text-foreground hover:bg-surface-muted",
+                )
               }
             >
               {item.label}
