@@ -18,6 +18,19 @@ import {
   parseTimeToMinutes,
   splitEndMinute,
 } from "../../lib/time";
+import { Alert } from "../../components/ui/Alert";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Field } from "../../components/ui/Field";
+import { Input } from "../../components/ui/Input";
+import { Skeleton } from "../../components/ui/Skeleton";
+import { ProPageHeader } from "../../components/barber/ProPageHeader";
+
+const CHECKBOX_CLASS = "h-4 w-4 accent-accent";
+
+// Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
+const PRIMARY_LINK_CLASS =
+  "inline-flex min-h-[44px] items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 interface IntervalDraft {
   key: string;
@@ -337,8 +350,21 @@ export function BarberWorkingHoursPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-8 text-center text-foreground-muted">
-        Chargement…
+      <div className="min-h-screen bg-background p-4 sm:p-8">
+        <div className="mx-auto max-w-2xl space-y-6">
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-11 w-44" />
+          </div>
+          <Card className="space-y-4 p-6" aria-busy="true">
+            <span className="sr-only" role="status">
+              Chargement du planning…
+            </span>
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </Card>
+        </div>
       </div>
     );
   }
@@ -346,17 +372,16 @@ export function BarberWorkingHoursPage() {
   if (profileMissing) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 text-center shadow">
-          <h1 className="text-xl font-semibold text-brand-900">Mes horaires</h1>
-          <p className="mt-2 text-gray-700">
-            Créez d'abord votre profil professionnel pour définir vos horaires.
-          </p>
-          <Link
-            to="/pro/profile"
-            className="mt-4 inline-block rounded-lg bg-brand-700 px-4 py-2 text-white"
-          >
-            Créer mon profil
-          </Link>
+        <div className="mx-auto max-w-2xl space-y-6">
+          <ProPageHeader title="Mes horaires" />
+          <Card className="p-6 text-center">
+            <p className="text-foreground">
+              Créez d'abord votre profil professionnel pour définir vos horaires.
+            </p>
+            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
+              Créer mon profil
+            </Link>
+          </Card>
         </div>
       </div>
     );
@@ -367,58 +392,64 @@ export function BarberWorkingHoursPage() {
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-900">Mes horaires</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            <Link to="/pro/dashboard" className="text-brand-700 underline">
-              Retour au tableau de bord
-            </Link>
-          </p>
-        </div>
+        <ProPageHeader
+          title="Mes horaires"
+          description="Jours et plages de travail, en heures locales du salon."
+        />
 
         {timezoneStatus === "loaded" && timezone ? (
-          <p className="rounded-lg bg-brand-50 p-3 text-sm text-brand-800">
+          <Alert variant="info">
             Heures locales du salon ({timezone}). Ce fuseau est choisi sur votre
             profil et servira à calculer vos créneaux de réservation.
-          </p>
+          </Alert>
         ) : timezoneStatus === "loaded" ? (
-          <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+          <Alert variant="warning">
             Fuseau non renseigné : la réservation en ligne restera indisponible
             tant que vous n'aurez pas choisi votre fuseau.{" "}
-            <Link to="/pro/profile" className="text-brand-700 underline">
+            <Link
+              to="/pro/profile"
+              className="font-medium text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
               Définir mon fuseau
             </Link>
-          </p>
+          </Alert>
         ) : timezoneStatus === "error" ? (
-          <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
-            Fuseau horaire indisponible pour le moment. Votre planning reste
-            enregistré en heures murales.{" "}
-            <button
-              type="button"
+          <Alert variant="warning">
+            <p>
+              Fuseau horaire indisponible pour le moment. Votre planning reste
+              enregistré en heures murales.
+            </p>
+            <Button
+              variant="secondary"
+              className="mt-3 min-h-[44px]"
               onClick={() => void retryTimezone()}
-              className="text-brand-700 underline"
             >
               Réessayer
-            </button>
-          </p>
+            </Button>
+          </Alert>
         ) : null}
 
-        {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-        {success && (
-          <p className="rounded-lg bg-green-50 p-3 text-sm text-green-700">{success}</p>
+        {error && <Alert variant="danger">{error}</Alert>}
+        {success && <Alert variant="success">{success}</Alert>}
+
+        {!hasContent && (
+          <Alert variant="info">
+            Aucune plage horaire définie. Activez un jour puis ajoutez une plage.
+          </Alert>
         )}
 
         <div className="space-y-3">
           {days.map((day) => (
-            <section key={day.weekday} className="rounded-xl bg-white p-4 shadow">
+            <Card key={day.weekday} className="p-4">
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
+                  className={CHECKBOX_CLASS}
                   checked={day.enabled}
                   disabled={saving}
                   onChange={() => toggleDay(day.weekday)}
                 />
-                <span className="font-semibold text-brand-900">
+                <span className="font-semibold text-foreground">
                   {WEEKDAY_LABELS[day.weekday]}
                 </span>
               </label>
@@ -426,141 +457,152 @@ export function BarberWorkingHoursPage() {
               {day.enabled && (
                 <div className="mt-3 space-y-2">
                   {day.intervals.length === 0 && (
-                    <p className="text-sm text-gray-500">Aucune plage ce jour.</p>
+                    <p className="text-sm text-foreground-muted">
+                      Aucune plage ce jour.
+                    </p>
                   )}
-                  {day.intervals.map((row) => (
-                    <div
-                      key={row.key}
-                      className="flex flex-wrap items-end gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3"
-                    >
-                      <label className="block">
-                        <span className="text-xs text-gray-600">Début</span>
-                        <input
-                          type="time"
-                          value={row.start}
-                          disabled={saving}
-                          onChange={(event) =>
-                            updateInterval(day.weekday, row.key, {
-                              start: event.target.value,
-                            })
-                          }
-                          className="mt-1 rounded-lg border border-gray-300 px-2 py-1.5 disabled:bg-gray-100"
-                        />
-                      </label>
-                      <label className="flex items-center gap-1 pb-2 text-sm text-gray-700">
-                        <input
-                          type="checkbox"
-                          checked={row.endOfDay}
-                          disabled={saving}
-                          onChange={(event) =>
-                            updateInterval(day.weekday, row.key, {
-                              endOfDay: event.target.checked,
-                              end: "",
-                            })
-                          }
-                        />
-                        Fin de journée (24:00)
-                      </label>
-                      <label className="block">
-                        <span className="text-xs text-gray-600">Fin</span>
-                        <input
-                          type="time"
-                          disabled={saving || row.endOfDay}
-                          value={row.end}
-                          onChange={(event) =>
-                            updateInterval(day.weekday, row.key, {
-                              end: event.target.value,
-                            })
-                          }
-                          className="mt-1 rounded-lg border border-gray-300 px-2 py-1.5 disabled:bg-gray-100"
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        disabled={saving}
-                        onClick={() => removeInterval(day.weekday, row.key)}
-                        className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-700 disabled:opacity-50"
+                  {day.intervals.map((row) => {
+                    const startMinute = parseTimeToMinutes(row.start);
+                    const endMinute = joinEndMinute(row.endOfDay, row.end);
+                    const hasInput =
+                      row.start !== "" || row.endOfDay || row.end !== "";
+                    const preview =
+                      hasInput && startMinute !== null && endMinute !== null
+                        ? formatMinutesRange(startMinute, endMinute)
+                        : null;
+                    return (
+                      <div
+                        key={row.key}
+                        className="rounded-lg border border-border bg-surface-muted p-3"
                       >
-                        Supprimer
-                      </button>
-                      {(row.start !== "" || row.endOfDay || row.end !== "") &&
-                        (() => {
-                          const startMinute = parseTimeToMinutes(row.start);
-                          const endMinute = joinEndMinute(row.endOfDay, row.end);
-                          return startMinute !== null && endMinute !== null ? (
-                            <span className="pb-2 text-sm text-gray-600">
-                              {formatMinutesRange(startMinute, endMinute)}
+                        <div className="flex flex-wrap items-end gap-3">
+                          <Field label="Début" className="w-32">
+                            {(control) => (
+                              <Input
+                                {...control}
+                                type="time"
+                                value={row.start}
+                                disabled={saving}
+                                onChange={(event) =>
+                                  updateInterval(day.weekday, row.key, {
+                                    start: event.target.value,
+                                  })
+                                }
+                              />
+                            )}
+                          </Field>
+                          <Field label="Fin" className="w-32">
+                            {(control) => (
+                              <Input
+                                {...control}
+                                type="time"
+                                value={row.end}
+                                disabled={saving || row.endOfDay}
+                                onChange={(event) =>
+                                  updateInterval(day.weekday, row.key, {
+                                    end: event.target.value,
+                                  })
+                                }
+                              />
+                            )}
+                          </Field>
+                          <label className="flex items-center gap-2 pb-2 text-sm text-foreground">
+                            <input
+                              type="checkbox"
+                              className={CHECKBOX_CLASS}
+                              checked={row.endOfDay}
+                              disabled={saving}
+                              onChange={(event) =>
+                                updateInterval(day.weekday, row.key, {
+                                  endOfDay: event.target.checked,
+                                  end: "",
+                                })
+                              }
+                            />
+                            Fin de journée (24:00)
+                          </label>
+                          <Button
+                            variant="ghost"
+                            className="min-h-[44px]"
+                            disabled={saving}
+                            onClick={() => removeInterval(day.weekday, row.key)}
+                          >
+                            Supprimer
+                          </Button>
+                          {preview && (
+                            <span className="pb-2 text-sm text-foreground-muted">
+                              {preview}
                             </span>
-                          ) : null;
-                        })()}
-                      {rowErrors[row.key] && (
-                        <p className="w-full text-xs text-red-600">
-                          {rowErrors[row.key]}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                  {day.intervals.length < LIMITS.workingHoursMaxIntervalsPerDay && (
-                    <button
-                      type="button"
+                          )}
+                        </div>
+                        {rowErrors[row.key] && (
+                          <p role="alert" className="mt-2 text-xs text-danger">
+                            {rowErrors[row.key]}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {day.intervals.length <
+                    LIMITS.workingHoursMaxIntervalsPerDay && (
+                    <Button
+                      variant="secondary"
+                      className="min-h-[44px]"
                       disabled={saving}
                       onClick={() => addInterval(day.weekday)}
-                      className="rounded-lg border border-brand-700 px-3 py-1.5 text-sm text-brand-700 disabled:opacity-50"
                     >
                       Ajouter une plage
-                    </button>
+                    </Button>
                   )}
                 </div>
               )}
-            </section>
+            </Card>
           ))}
         </div>
 
         {confirmingClear && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-            <p className="text-sm text-red-800">
-              Effacer tous vos horaires enregistrés ?
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button
-                type="button"
+          <Alert variant="danger">
+            <p>Effacer tous vos horaires enregistrés ?</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                className="min-h-[44px]"
                 onClick={() => setConfirmingClear(false)}
-                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700"
               >
                 Annuler
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="danger"
+                className="min-h-[44px]"
                 disabled={saving}
+                isLoading={saving}
                 onClick={() => {
                   setConfirmingClear(false);
                   void handleClearAll();
                 }}
-                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
               >
                 Confirmer
-              </button>
+              </Button>
             </div>
-          </div>
+          </Alert>
         )}
 
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
+          <Button
+            className="min-h-[44px]"
+            isLoading={saving}
             onClick={() => void handleSave()}
-            disabled={saving}
-            className="rounded-lg bg-brand-700 px-4 py-2 text-white disabled:opacity-50"
           >
             {saving ? "Enregistrement…" : "Enregistrer le planning"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmingClear(true)}
+          </Button>
+          <Button
+            variant="secondary"
+            className="min-h-[44px]"
             disabled={saving || !hasContent}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 disabled:opacity-50"
+            onClick={() => setConfirmingClear(true)}
           >
             Tout effacer
-          </button>
+          </Button>
         </div>
       </div>
     </div>
