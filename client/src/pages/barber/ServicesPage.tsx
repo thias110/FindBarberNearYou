@@ -18,6 +18,20 @@ import {
   minorToInputValue,
   parsePriceToMinor,
 } from "../../lib/formatters";
+import { Alert } from "../../components/ui/Alert";
+import { Badge } from "../../components/ui/Badge";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Field } from "../../components/ui/Field";
+import { Input } from "../../components/ui/Input";
+import { Skeleton } from "../../components/ui/Skeleton";
+import { ProPageHeader } from "../../components/barber/ProPageHeader";
+
+const CHECKBOX_CLASS = "h-4 w-4 accent-accent";
+
+// Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
+const PRIMARY_LINK_CLASS =
+  "inline-flex min-h-[44px] items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 interface ServiceFormValues {
   name: string;
@@ -113,61 +127,69 @@ function ServiceForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4"
+      className="space-y-4 rounded-xl border border-border bg-surface-muted p-4"
     >
-      {localError && <p className="text-sm text-red-600">{localError}</p>}
-      <label className="block">
-        <span className="text-sm text-gray-700">Nom du service</span>
-        <input
-          required
-          maxLength={LIMITS.serviceName}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-        />
-      </label>
-      <label className="block">
-        <span className="text-sm text-gray-700">Description (facultative)</span>
-        <input
-          maxLength={LIMITS.serviceDescription}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
-        />
-      </label>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block">
-          <span className="text-sm text-gray-700">Durée (minutes)</span>
-          <input
+      {localError && <Alert variant="danger">{localError}</Alert>}
+      <Field label="Nom du service">
+        {(control) => (
+          <Input
+            {...control}
             required
-            type="number"
-            inputMode="numeric"
-            min={LIMITS.serviceDurationMin}
-            max={LIMITS.serviceDurationMax}
-            value={durationMinutes}
-            onChange={(e) => setDurationMinutes(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            maxLength={LIMITS.serviceName}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
-        </label>
-        <label className="block">
-          <span className="text-sm text-gray-700">Prix</span>
-          <input
-            required
-            inputMode="decimal"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            placeholder="25.50"
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+        )}
+      </Field>
+      <Field label="Description (facultative)">
+        {(control) => (
+          <Input
+            {...control}
+            maxLength={LIMITS.serviceDescription}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
-        </label>
+        )}
+      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Durée (minutes)">
+          {(control) => (
+            <Input
+              {...control}
+              required
+              type="number"
+              inputMode="numeric"
+              min={LIMITS.serviceDurationMin}
+              max={LIMITS.serviceDurationMax}
+              value={durationMinutes}
+              onChange={(e) => setDurationMinutes(e.target.value)}
+            />
+          )}
+        </Field>
+        <Field label="Prix">
+          {(control) => (
+            <Input
+              {...control}
+              required
+              inputMode="decimal"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="25.50"
+            />
+          )}
+        </Field>
       </div>
-      <fieldset className="space-y-1">
-        <legend className="text-sm text-gray-700">Publics</legend>
-        <div className="flex flex-wrap gap-x-4 gap-y-1">
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-foreground">Publics</legend>
+        <div className="flex flex-wrap gap-x-4 gap-y-2">
           {AUDIENCES.map((code) => (
-            <label key={code} className="flex items-center gap-1 text-sm">
+            <label
+              key={code}
+              className="flex items-center gap-2 text-sm text-foreground"
+            >
               <input
                 type="checkbox"
+                className={CHECKBOX_CLASS}
                 checked={audiences.includes(code)}
                 onChange={() => toggleAudience(code)}
               />
@@ -176,13 +198,19 @@ function ServiceForm({
           ))}
         </div>
       </fieldset>
-      <fieldset className="space-y-1">
-        <legend className="text-sm text-gray-700">Techniques / prestations</legend>
-        <div className="flex flex-wrap gap-x-4 gap-y-1">
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-foreground">
+          Techniques / prestations
+        </legend>
+        <div className="flex flex-wrap gap-x-4 gap-y-2">
           {TECHNIQUES.map((code) => (
-            <label key={code} className="flex items-center gap-1 text-sm">
+            <label
+              key={code}
+              className="flex items-center gap-2 text-sm text-foreground"
+            >
               <input
                 type="checkbox"
+                className={CHECKBOX_CLASS}
                 checked={techniques.includes(code)}
                 onChange={() => toggleTechnique(code)}
               />
@@ -191,22 +219,18 @@ function ServiceForm({
           ))}
         </div>
       </fieldset>
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-lg bg-brand-700 px-4 py-2 text-white disabled:opacity-50"
-        >
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" isLoading={submitting} className="min-h-[44px]">
           {submitting ? "Enregistrement…" : submitLabel}
-        </button>
+        </Button>
         {onCancel && (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            className="min-h-[44px]"
             onClick={onCancel}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700"
           >
             Annuler
-          </button>
+          </Button>
         )}
       </div>
     </form>
@@ -293,8 +317,21 @@ export function BarberServicesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-8 text-center text-foreground-muted">
-        Chargement…
+      <div className="min-h-screen bg-background p-4 sm:p-8">
+        <div className="mx-auto max-w-3xl space-y-6">
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-11 w-44" />
+          </div>
+          <Card className="space-y-4 p-6" aria-busy="true">
+            <span className="sr-only" role="status">
+              Chargement des services…
+            </span>
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </Card>
+        </div>
       </div>
     );
   }
@@ -302,17 +339,16 @@ export function BarberServicesPage() {
   if (profileMissing) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-xl rounded-2xl bg-white p-6 text-center shadow">
-          <h1 className="text-xl font-semibold text-brand-900">Mes services</h1>
-          <p className="mt-2 text-gray-700">
-            Créez d'abord votre profil professionnel pour gérer vos services.
-          </p>
-          <Link
-            to="/pro/profile"
-            className="mt-4 inline-block rounded-lg bg-brand-700 px-4 py-2 text-white"
-          >
-            Créer mon profil
-          </Link>
+        <div className="mx-auto max-w-2xl space-y-6">
+          <ProPageHeader title="Mes services" />
+          <Card className="p-6 text-center">
+            <p className="text-foreground">
+              Créez d'abord votre profil professionnel pour gérer vos services.
+            </p>
+            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
+              Créer mon profil
+            </Link>
+          </Card>
         </div>
       </div>
     );
@@ -322,37 +358,46 @@ export function BarberServicesPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-brand-900">Mes services</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            <Link to="/pro/dashboard" className="text-brand-700 underline">
-              Retour au tableau de bord
-            </Link>
-          </p>
-        </div>
+      <div className="mx-auto max-w-3xl space-y-6">
+        <ProPageHeader
+          title="Mes services"
+          description="Prestations, durées et tarifs."
+        />
 
-        {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-        {success && (
-          <p className="rounded-lg bg-green-50 p-3 text-sm text-green-700">{success}</p>
-        )}
+        {error && <Alert variant="danger">{error}</Alert>}
+        {success && <Alert variant="success">{success}</Alert>}
 
-        <section>
-          <h2 className="mb-2 font-semibold text-brand-900">Ajouter un service</h2>
-          <ServiceForm
-            initial={{ name: "", description: "", durationMinutes: "", price: "", audiences: [], techniques: [] }}
-            submitLabel="Ajouter"
-            submitting={submitting}
-            onSubmit={(values) => void handleCreate(values)}
-          />
-        </section>
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-foreground">
+            Ajouter un service
+          </h2>
+          <div className="mt-4">
+            <ServiceForm
+              initial={{
+                name: "",
+                description: "",
+                durationMinutes: "",
+                price: "",
+                audiences: [],
+                techniques: [],
+              }}
+              submitLabel="Ajouter"
+              submitting={submitting}
+              onSubmit={(values) => void handleCreate(values)}
+            />
+          </div>
+        </Card>
 
         <section className="space-y-3">
-          <h2 className="font-semibold text-brand-900">
+          <h2 className="text-lg font-semibold text-foreground">
             Services ({services.length})
           </h2>
           {services.length === 0 ? (
-            <p className="text-gray-600">Aucun service pour le moment.</p>
+            <Card className="p-6 text-center">
+              <p className="text-foreground-muted">
+                Aucun service pour le moment.
+              </p>
+            </Card>
           ) : (
             services.map((service) =>
               editingService?.id === service.id ? (
@@ -372,50 +417,45 @@ export function BarberServicesPage() {
                   onCancel={() => setEditingId(null)}
                 />
               ) : (
-                <div
-                  key={service.id}
-                  className="rounded-xl bg-white p-4 shadow"
-                >
+                <Card key={service.id} className="p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-brand-900">{service.name}</p>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground">
+                        {service.name}
+                      </p>
                       {service.description && (
-                        <p className="mt-1 text-sm text-gray-600">
+                        <p className="mt-1 text-sm text-foreground-muted">
                           {service.description}
                         </p>
                       )}
-                      <p className="mt-1 text-sm text-gray-700">
+                      <p className="mt-1 text-sm text-foreground">
                         {formatDuration(service.durationMinutes)} ·{" "}
                         {currency
                           ? formatCurrency(service.priceMinor, currency)
                           : `${service.priceMinor}`}
                       </p>
                     </div>
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs ${
-                        service.isActive
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-200 text-gray-600"
-                      }`}
-                    >
+                    <Badge variant={service.isActive ? "success" : "neutral"}>
                       {service.isActive ? "Actif" : "Inactif"}
-                    </span>
+                    </Badge>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <button
+                    <Button
+                      variant="secondary"
+                      className="min-h-[44px]"
                       onClick={() => setEditingId(service.id)}
-                      className="rounded-lg border border-brand-700 px-3 py-1 text-sm text-brand-700"
                     >
                       Modifier
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="min-h-[44px]"
                       onClick={() => void handleToggle(service)}
-                      className="rounded-lg border border-gray-300 px-3 py-1 text-sm text-gray-700"
                     >
                       {service.isActive ? "Désactiver" : "Réactiver"}
-                    </button>
+                    </Button>
                   </div>
-                </div>
+                </Card>
               ),
             )
           )}
