@@ -31,7 +31,11 @@ const envSchema = z.object({
   // production, pglite sinon). Sert à exécuter PostgreSQL sans activer les
   // comportements de production (cookies Secure, HSTS…) — utile pour la démo
   // Docker locale en HTTP.
-  DB_DRIVER: z.enum(["pglite", "postgres"]).optional(),
+  // Vide (`DB_DRIVER=` comme dans .env.example) équivaut à absent.
+  DB_DRIVER: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.enum(["pglite", "postgres"]).optional(),
+  ),
   // Répertoire racine des fichiers uploadés (avatars, galerie), servi sous
   // `/uploads`. Relatif à la racine d'exécution par défaut.
   UPLOAD_DIR: z.string().min(1).default("./data/uploads"),
