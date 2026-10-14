@@ -427,7 +427,8 @@ async function loadAdminReview(reviewId: string): Promise<AdminReview> {
   return toAdminReview(row.review, row.clientName, row.barberDisplayName);
 }
 
-// Masquage réversible : on pose `hidden_at`, jamais de DELETE.
+// Masquage non destructif : on pose `hidden_at`, jamais de DELETE. Aucune
+// restauration n'est exposée (API ou interface) à ce jour.
 export async function hideReview(reviewId: string): Promise<AdminReview> {
   const [review] = await db
     .select()

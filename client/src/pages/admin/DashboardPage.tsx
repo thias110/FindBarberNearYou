@@ -116,7 +116,7 @@ export function AdminDashboardPage() {
             >
               <span className="font-semibold text-brand-900">Avis</span>
               <span className="mt-1 block text-sm text-gray-600">
-                Modération et masquage réversible
+                Modération et masquage des avis
               </span>
             </Link>
           </nav>

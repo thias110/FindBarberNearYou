@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ApiError, authApi } from "../../lib/apiClient";
+import { authApi } from "../../lib/apiClient";
+import { runEmailVerification } from "../../lib/emailVerification";
 import { AuthLayout } from "../../components/auth/AuthLayout";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 
 type Phase = "verifying" | "success" | "error";
-
-const INVALID_TOKEN_MESSAGE = "Ce lien de vérification est invalide ou expiré.";
-const NETWORK_MESSAGE =
-  "Impossible de joindre le serveur. Vérifiez votre connexion puis réessayez.";
 
 export function VerifyEmailPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -41,38 +38,21 @@ export function VerifyEmailPage() {
       setSearchParams(next, { replace: true });
     }
 
-    if (!token) {
-      setPhase("error");
-      setErrorMessage(INVALID_TOKEN_MESSAGE);
-      return;
-    }
-
-    let cancelled = false;
-    authApi
-      .verifyEmail({ token })
-      .then(() => {
-        if (!cancelled) setPhase("success");
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        if (err instanceof ApiError) {
-          if (err.code === "RATE_LIMITED") {
-            setErrorMessage(
-              "Trop de tentatives. Réessayez dans quelques instants.",
-            );
-          } else {
-            // Expiré / déjà utilisé / invalide : message public uniforme.
-            setErrorMessage(INVALID_TOKEN_MESSAGE);
-          }
+    // Pas d'annulation au nettoyage de l'effet : retirer le jeton de l'URL
+    // relance cet effet (nouveau `searchParams`), et un drapeau « annulé »
+    // ferait ignorer l'unique réponse — la page resterait alors bloquée sur
+    // « Vérification en cours… ». La requête n'est émise qu'une fois
+    // (`startedRef`) et son résultat est toujours appliqué.
+    void runEmailVerification(token, (input) => authApi.verifyEmail(input)).then(
+      (outcome) => {
+        if (outcome.phase === "success") {
+          setPhase("success");
         } else {
-          setErrorMessage(NETWORK_MESSAGE);
+          setErrorMessage(outcome.message);
+          setPhase("error");
         }
-        setPhase("error");
-      });
-
-    return () => {
-      cancelled = true;
-    };
+      },
+    );
   }, [searchParams, setSearchParams]);
 
   return (

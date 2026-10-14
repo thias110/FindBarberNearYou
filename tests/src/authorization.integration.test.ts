@@ -21,6 +21,7 @@ import {
 import { weekdayFromCalendarDate } from "@findbarber/shared/dates";
 import { setGeocoder, type Geocoder } from "../../server/src/lib/geocoding";
 import { markEmailVerified } from "./auth-helpers";
+import { moveBookingToPast } from "./booking-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -261,9 +262,11 @@ describe("actions booking — anti-IDOR", () => {
     await barberA.agent
       .post(`/api/bookings/${bookingId}/confirm`)
       .set("X-CSRF-Token", barberA.csrf);
-    await barberA.agent
+    await moveBookingToPast(bookingId);
+    const completed = await barberA.agent
       .post(`/api/bookings/${bookingId}/complete`)
       .set("X-CSRF-Token", barberA.csrf);
+    expect(completed.status).toBe(200);
 
     await register("idor-review-client-b@example.com", "CLIENT");
     const clientB = await login("idor-review-client-b@example.com");
