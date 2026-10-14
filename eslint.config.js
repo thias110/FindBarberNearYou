@@ -27,6 +27,13 @@ export default [
     },
   },
   {
+    // Scripts Node en ESM (ex. e2e/start-server.mjs).
+    files: ["**/*.mjs"],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
     // Scripts statiques servis tels quels par Vite/Nginx (ex. theme-init.js).
     files: ["client/public/**/*.js"],
     languageOptions: {

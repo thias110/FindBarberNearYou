@@ -149,6 +149,7 @@ npm run create:admin
 npm run typecheck   # TypeScript
 npm run lint        # ESLint
 npm test            # Vitest (intégration auth + permissions + redirections + rate limit)
+npm run test:e2e    # Playwright : parcours réels au clavier + axe WCAG AA (clair/sombre)
 npm run build       # build serveur (tsup) + client (vite)
 npm start           # démarre le serveur compilé
 ```

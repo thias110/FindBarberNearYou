@@ -9,3 +9,5 @@ data/
 .DS_Store
 coverage/
 claude/
+test-results/
+playwright-report/
