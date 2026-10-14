@@ -85,7 +85,7 @@ export function BarberResultCard({
 
         <Link
           to={`/barbers/${barber.id}`}
-          className="pointer-events-auto mt-3 inline-flex min-h-[44px] items-center rounded-lg border border-accent px-4 text-sm font-medium text-accent transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="pointer-events-auto mt-3 inline-flex min-h-[44px] items-center rounded-lg border border-accent px-4 text-sm font-medium text-accent-strong transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           Voir le profil
         </Link>

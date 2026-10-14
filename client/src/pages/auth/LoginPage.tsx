@@ -149,7 +149,7 @@ export function LoginPage() {
           Votre adresse email n'est pas encore vérifiée.{" "}
           <Link
             to="/resend-verification"
-            className="rounded text-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             Renvoyer le lien de vérification
           </Link>
@@ -222,7 +222,7 @@ export function LoginPage() {
         Pas encore de compte ?{" "}
         <Link
           to="/register"
-          className="rounded text-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           Créer un compte
         </Link>

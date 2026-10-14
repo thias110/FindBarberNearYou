@@ -90,7 +90,7 @@ export function ReviewForm({
           disabled={submitting}
           rows={3}
           maxLength={LIMITS.reviewComment}
-          className="mt-1 min-h-[44px] w-full rounded-lg border border-border bg-surface-muted p-2 text-sm text-foreground placeholder:text-foreground-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-1 min-h-[44px] w-full rounded-lg border border-border-strong bg-surface-muted p-2 text-sm text-foreground placeholder:text-foreground-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
         />
         {errors.comment && (
           <p role="alert" className="mt-1 text-xs text-danger">

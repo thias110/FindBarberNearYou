@@ -359,7 +359,7 @@ export default function BarbersMap({
           <button
             type="button"
             onClick={onShowList}
-            className="mt-1 inline-flex min-h-[44px] items-center rounded-lg border border-accent px-3 text-sm text-accent lg:hidden"
+            className="mt-1 inline-flex min-h-[44px] items-center rounded-lg border border-accent px-3 text-sm text-accent-strong lg:hidden"
           >
             Revenir à la liste
           </button>
@@ -381,7 +381,7 @@ export default function BarbersMap({
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex min-h-[44px] items-center rounded-lg border border-accent px-3 text-sm text-accent"
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-accent px-3 text-sm text-accent-strong"
             >
               Réessayer la carte
             </button>

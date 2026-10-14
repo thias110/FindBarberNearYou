@@ -57,7 +57,7 @@ export function AuthBrandPanel() {
               key={benefit}
               className="flex items-start gap-3 text-sm text-foreground"
             >
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-strong">
                 <CheckIcon />
               </span>
               <span>{benefit}</span>

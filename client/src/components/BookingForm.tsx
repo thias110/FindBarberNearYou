@@ -31,7 +31,7 @@ import { Skeleton } from "./ui/Skeleton";
 
 // Champs tokenisés : surfaces sombres lisibles, cible tactile ≥ 44px.
 const FIELD_CLASSES =
-  "mt-1 block w-full min-h-[44px] rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground " +
+  "mt-1 block w-full min-h-[44px] rounded-lg border border-border-strong bg-surface-muted px-3 py-2 text-sm text-foreground " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
   "focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
   "disabled:cursor-not-allowed disabled:opacity-50";
@@ -384,7 +384,7 @@ export function BookingForm({
 
         {!user && (
           <Alert variant="info">
-            <Link to="/login" className="font-medium text-accent underline">
+            <Link to="/login" className="font-medium text-accent-strong underline">
               Connectez-vous
             </Link>{" "}
             pour envoyer une réservation.

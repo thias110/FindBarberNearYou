@@ -141,7 +141,7 @@ export function RegisterPage() {
             Vous avez déjà vérifié votre email ?{" "}
             <Link
               to="/login"
-              className="rounded text-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Se connecter
             </Link>
@@ -270,7 +270,7 @@ export function RegisterPage() {
         Vous avez déjà un compte ?{" "}
         <Link
           to="/login"
-          className="rounded text-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           Se connecter
         </Link>

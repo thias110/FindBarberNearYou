@@ -25,7 +25,7 @@ const PRIMARY_LINK_CLASS =
 // Champ fichier restylé via les variantes `file:` de Tailwind (même contrôle,
 // même comportement d'upload).
 const FILE_INPUT_CLASS =
-  "block w-full cursor-pointer rounded-lg border border-border bg-surface text-sm text-foreground file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-2 file:text-sm file:font-medium file:text-accent-foreground hover:file:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50";
+  "block w-full cursor-pointer rounded-lg border border-border-strong bg-surface text-sm text-foreground file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-2 file:text-sm file:font-medium file:text-accent-foreground hover:file:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50";
 
 export function BarberGalleryPage() {
   const [photos, setPhotos] = useState<OwnBarberPhoto[]>([]);

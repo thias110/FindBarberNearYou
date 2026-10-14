@@ -104,7 +104,7 @@ export function ResendVerificationPage() {
       <p className="mt-4 text-center text-sm text-foreground-muted">
         <Link
           to="/login"
-          className="rounded text-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           Retour à la connexion
         </Link>

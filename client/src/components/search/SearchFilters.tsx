@@ -41,7 +41,7 @@ const COUNTRIES_SORTED = [...COUNTRIES].sort((a, b) =>
 
 // Selects HTML natifs (aucun composant Select dédié) stylés avec les tokens.
 const SELECT_CLASSES =
-  "block w-full min-h-[44px] rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground " +
+  "block w-full min-h-[44px] rounded-lg border border-border-strong bg-surface-muted px-3 py-2 text-sm text-foreground " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
   "focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 

@@ -52,7 +52,7 @@ const KNOWN_TIMEZONES = new Set(listIanaTimeZones());
 // Classes alignées sur `components/ui/Input` pour les `<select>`/`<textarea>`
 // (aucun composant ui équivalent dans le design system).
 const CONTROL_CLASS =
-  "block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50";
+  "block w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50";
 
 const CHECKBOX_CLASS = "h-4 w-4 accent-accent";
 

@@ -207,8 +207,8 @@ export function NotificationBell() {
                 onClick={() => void handleMarkAllRead()}
                 disabled={markAllBusy}
                 className={cn(
-                  "inline-flex min-h-[44px] items-center rounded-lg px-2 text-sm font-medium text-accent underline",
-                  "transition-colors hover:text-accent-hover",
+                  "inline-flex min-h-[44px] items-center rounded-lg px-2 text-sm font-medium text-accent-strong underline",
+                  "transition-colors hover:text-accent-strong",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   "disabled:pointer-events-none disabled:opacity-50",
                 )}
@@ -284,8 +284,8 @@ export function NotificationBell() {
                         onClick={() => void handleMarkRead(notification.id)}
                         disabled={actionId === notification.id}
                         className={cn(
-                          "inline-flex min-h-[44px] shrink-0 items-center rounded-lg px-2 text-xs font-medium text-accent underline",
-                          "transition-colors hover:text-accent-hover",
+                          "inline-flex min-h-[44px] shrink-0 items-center rounded-lg px-2 text-xs font-medium text-accent-strong underline",
+                          "transition-colors hover:text-accent-strong",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                           "disabled:pointer-events-none disabled:opacity-50",
                         )}

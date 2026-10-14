@@ -25,11 +25,14 @@ export default {
         foreground: "rgb(var(--fb-foreground) / <alpha-value>)",
         "foreground-muted": "rgb(var(--fb-foreground-muted) / <alpha-value>)",
         border: "rgb(var(--fb-border) / <alpha-value>)",
+        "border-strong": "rgb(var(--fb-border-strong) / <alpha-value>)",
         accent: {
           DEFAULT: "rgb(var(--fb-accent) / <alpha-value>)",
           hover: "rgb(var(--fb-accent-hover) / <alpha-value>)",
           soft: "rgb(var(--fb-accent-soft) / <alpha-value>)",
           foreground: "rgb(var(--fb-accent-foreground) / <alpha-value>)",
+          // Texte cuivré lisible (liens, mentions) ; `accent` reste pour les fonds.
+          strong: "rgb(var(--fb-accent-strong) / <alpha-value>)",
         },
         gold: {
           DEFAULT: "rgb(var(--fb-gold) / <alpha-value>)",

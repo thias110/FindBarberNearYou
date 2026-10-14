@@ -170,7 +170,7 @@ export function ClientBookingsPage() {
             Mes rendez-vous
           </h1>
           <p className="mt-1 text-sm text-foreground-muted">
-            <Link to="/barbers" className="text-accent underline">
+            <Link to="/barbers" className="text-accent-strong underline">
               Rechercher un barbier
             </Link>
           </p>

@@ -47,7 +47,7 @@ export function HomeHero({ user, onSubmitCity }: HomeHeroProps) {
           ) : (
             <span
               aria-hidden="true"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-lg font-semibold text-accent"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-lg font-semibold text-accent-strong"
             >
               {initial}
             </span>
