@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
+import { btree_gist } from "@electric-sql/pglite/contrib/btree_gist";
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
 import type { PgliteDatabase } from "drizzle-orm/pglite";
 import { drizzle as drizzleNodePg } from "drizzle-orm/node-postgres";
@@ -56,7 +57,9 @@ function createDb(): Db {
   if (dataDir) {
     mkdirSync(dataDir, { recursive: true });
   }
-  pglite = new PGlite(dataDir);
+  // btree_gist : requis par la contrainte d'exclusion `bookings_no_overlap`.
+  // (forme objet : `new PGlite(undefined, opts)` ignore les extensions).
+  pglite = new PGlite({ dataDir, extensions: { btree_gist } });
   return drizzlePglite(pglite, { schema });
 }
 

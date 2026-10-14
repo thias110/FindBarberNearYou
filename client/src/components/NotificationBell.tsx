@@ -24,6 +24,8 @@ const NOTIFICATION_LABELS: Record<NotificationType, string> = {
   BOOKING_CANCELLED_BY_CLIENT: "Réservation annulée par le client",
   BOOKING_CANCELLED_BY_BARBER: "Réservation annulée par le professionnel",
   BOOKING_CANCELLED_BY_ADMIN: "Réservation annulée par l'administration",
+  BOOKING_DECLINED: "Demande de réservation refusée",
+  BOOKING_EXPIRED: "Demande de réservation expirée (sans réponse)",
 };
 
 export function NotificationBell() {

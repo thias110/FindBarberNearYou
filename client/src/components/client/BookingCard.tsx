@@ -87,6 +87,25 @@ export function BookingCard({
               Annulée par {cancelledByLabel(booking.cancelledBy)}.
             </p>
           )}
+          {booking.status === "DECLINED" && (
+            <p className="mt-1 text-xs text-foreground-muted">
+              Refusée par le professionnel
+              {booking.declineReason
+                ? ` : ${booking.declineReason}`
+                : "."}{" "}
+              Le créneau est libéré.
+            </p>
+          )}
+          {booking.status === "EXPIRED" && (
+            <p className="mt-1 text-xs text-foreground-muted">
+              Le professionnel n'a pas répondu à temps : la demande a expiré.
+            </p>
+          )}
+          {booking.status === "PENDING" && booking.expiresAt && (
+            <p className="mt-1 text-xs text-foreground-muted">
+              En attente de réponse jusqu'au {formatDateTime(booking.expiresAt)}.
+            </p>
+          )}
         </div>
         <BookingStatusBadge status={booking.status} />
       </div>

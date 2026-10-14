@@ -161,6 +161,11 @@ export interface Booking {
   hasReview: boolean;
   cancelledBy: string | null;
   cancelledAt: string | null;
+  // Refus par le barber (lot 4 rouvert) : motif facultatif visible du client.
+  declinedAt: string | null;
+  declineReason: string | null;
+  // Échéance d'une demande PENDING (24 h ou début du rendez-vous) ; null sinon.
+  expiresAt: string | null;
   createdAt: string;
 }
 

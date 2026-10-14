@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  LIMITS,
   SERVICE_PLACE_LABELS,
   type BookingStatus,
 } from "@findbarber/shared/constants";
@@ -12,6 +13,7 @@ import { BookingStatusBadge } from "../../components/BookingStatusBadge";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 
@@ -28,6 +30,8 @@ export function BarberBookingsPage() {
   const [actionId, setActionId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [completingId, setCompletingId] = useState<string | null>(null);
+  const [decliningId, setDecliningId] = useState<string | null>(null);
+  const [declineReason, setDeclineReason] = useState("");
 
   const [details, setDetails] = useState<Record<string, BookingDetails>>({});
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
@@ -67,6 +71,25 @@ export function BarberBookingsPage() {
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Confirmation échouée.");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function handleDecline(bookingId: string) {
+    setError(null);
+    setActionId(bookingId);
+    try {
+      const res = await bookingApi.decline(bookingId, declineReason);
+      setBookings((current) =>
+        current.map((booking) =>
+          booking.id === bookingId ? res.booking : booking,
+        ),
+      );
+      setDecliningId(null);
+      setDeclineReason("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Refus échoué.");
     } finally {
       setActionId(null);
     }
@@ -233,6 +256,18 @@ export function BarberBookingsPage() {
                               .
                             </p>
                           )}
+                        {booking.status === "DECLINED" &&
+                          booking.declineReason && (
+                            <p className="mt-1 text-xs text-foreground-muted">
+                              Motif du refus : {booking.declineReason}
+                            </p>
+                          )}
+                        {booking.status === "PENDING" && booking.expiresAt && (
+                          <p className="mt-1 text-xs text-foreground-muted">
+                            Sans réponse, la demande expire le{" "}
+                            {formatDateTime(booking.expiresAt)}.
+                          </p>
+                        )}
                       </div>
                       <BookingStatusBadge status={booking.status} />
                     </div>
@@ -276,6 +311,52 @@ export function BarberBookingsPage() {
                             {busy ? "Confirmation…" : "Confirmer"}
                           </Button>
                         )}
+                        {booking.status === "PENDING" &&
+                          (decliningId === booking.id ? (
+                            <div className="flex w-full flex-wrap items-center gap-2">
+                              <Input
+                                aria-label="Motif du refus (facultatif, visible par le client)"
+                                placeholder="Motif (facultatif, visible par le client)"
+                                maxLength={LIMITS.bookingDeclineReason}
+                                value={declineReason}
+                                onChange={(event) =>
+                                  setDeclineReason(event.target.value)
+                                }
+                                className="min-w-0 flex-1"
+                              />
+                              <Button
+                                variant="secondary"
+                                className="min-h-[44px]"
+                                disabled={busy}
+                                onClick={() => {
+                                  setDecliningId(null);
+                                  setDeclineReason("");
+                                }}
+                              >
+                                Non
+                              </Button>
+                              <Button
+                                variant="danger"
+                                className="min-h-[44px]"
+                                disabled={busy}
+                                onClick={() => void handleDecline(booking.id)}
+                              >
+                                {busy ? "Refus…" : "Confirmer le refus"}
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="secondary"
+                              className="min-h-[44px]"
+                              disabled={busy}
+                              onClick={() => {
+                                setDecliningId(booking.id);
+                                setDeclineReason("");
+                              }}
+                            >
+                              Refuser
+                            </Button>
+                          ))}
                         {booking.status === "CONFIRMED" &&
                           (isBookingEnded(booking.endAt, new Date()) ? (
                             <Button

@@ -217,7 +217,9 @@ describe("suspension d'un barber — cycle de vie des bookings", () => {
       barberProfileId: barber.profileId,
       serviceId: barber.serviceId,
       clientUserId: client.id,
-      startAt: future,
+      // Décalée d'1 h : deux réservations actives ne peuvent plus se
+      // chevaucher (contrainte `bookings_no_overlap`).
+      startAt: new Date(future.getTime() + 3_600_000),
       status: "CONFIRMED",
     });
     await insertBooking({
@@ -289,7 +291,9 @@ describe("suspension d'un barber — cycle de vie des bookings", () => {
       barberProfileId: barber.profileId,
       serviceId: barber.serviceId,
       clientUserId: client.id,
-      startAt: future,
+      // Décalée d'1 h : deux réservations actives ne peuvent plus se
+      // chevaucher (contrainte `bookings_no_overlap`).
+      startAt: new Date(future.getTime() + 3_600_000),
       status: "CONFIRMED",
     });
 
