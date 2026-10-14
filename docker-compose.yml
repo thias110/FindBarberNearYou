@@ -1,15 +1,19 @@
+# Démo locale. Variables lues depuis l'environnement ou le fichier `.env` à la
+# racine (voir la section « Docker » de `.env.example`). Aucun secret réel ici :
+# JWT_SECRET est obligatoire, les identifiants PostgreSQL ont des valeurs de
+# démo par défaut (base non exposée hors du réseau Docker).
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: findbarber
-      POSTGRES_PASSWORD: findbarber
-      POSTGRES_DB: findbarber
+      POSTGRES_USER: ${POSTGRES_USER:-findbarber}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-findbarber}
+      POSTGRES_DB: ${POSTGRES_DB:-findbarber}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U findbarber -d findbarber"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -24,12 +28,15 @@ services:
       # Le pilote PostgreSQL est forcé via DB_DRIVER (découplé de NODE_ENV).
       NODE_ENV: development
       DB_DRIVER: postgres
-      DATABASE_URL: postgresql://findbarber:findbarber@db:5432/findbarber
-      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-0123456789abcdef}
-      CORS_ORIGIN: http://localhost:8080
+      DATABASE_URL: postgresql://${POSTGRES_USER:-findbarber}:${POSTGRES_PASSWORD:-findbarber}@db:5432/${POSTGRES_DB:-findbarber}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant - le definir dans .env (voir .env.example)}
+      # Origine publique du SPA (CORS + liens de vérification d'email).
+      CORS_ORIGIN: ${WEB_ORIGIN:-http://localhost:8080}
+      FRONTEND_URL: ${WEB_ORIGIN:-http://localhost:8080}
       UPLOAD_DIR: /app/data/uploads
       PORT: 4000
       TRUST_PROXY_HOPS: 1
+      MAPTILER_GEOCODING_API_KEY: ${MAPTILER_GEOCODING_API_KEY:-}
     volumes:
       - uploads:/app/data/uploads
     depends_on:
@@ -44,7 +51,7 @@ services:
       target: web
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "${WEB_PORT:-8080}:80"
     depends_on:
       - app
 

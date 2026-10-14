@@ -8,8 +8,14 @@
 //   # local (PGlite)
 //   cd server && npx tsx src/scripts/seed-demo.ts
 //
-//   # PostgreSQL (Docker / production)
-//   cd server && NODE_ENV=production DATABASE_URL=postgresql://... npx tsx src/scripts/seed-demo.ts
+//   # PostgreSQL (hors Docker)
+//   cd server && DB_DRIVER=postgres DATABASE_URL=postgresql://... npx tsx src/scripts/seed-demo.ts
+//
+//   # Docker (voir README)
+//   docker compose run --rm app node server/dist/scripts/seed-demo.js
+//
+// Refusé si NODE_ENV=production (il réinitialise les mots de passe des
+// comptes de démo), sauf ALLOW_DEMO_SEED=true explicite.
 //
 // Comptes de démo (mot de passe unique : Demo1234!)
 //   ADMIN   admin@demo.ch
@@ -456,6 +462,15 @@ async function insertBooking(seed: BookingSeed) {
 }
 
 async function main(): Promise<void> {
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.ALLOW_DEMO_SEED !== "true"
+  ) {
+    throw new Error(
+      "Seed de démo refusé en production (NODE_ENV=production). Définir ALLOW_DEMO_SEED=true pour forcer.",
+    );
+  }
+
   await migrateDb();
   console.log("Migrations appliquées.\n");
 

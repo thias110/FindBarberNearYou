@@ -26,6 +26,11 @@ cp .env.example .env
 Lancement reproductible avec PostgreSQL, migrations, seed et persistance des
 uploads (voir `docker-compose.yml` et `Dockerfile`) :
 
+Prérequis : un fichier `.env` à la racine avec au moins `JWT_SECRET`
+(>= 32 caractères ; `docker compose` refuse de démarrer sans). Les variables
+`POSTGRES_*`, `WEB_PORT` et `WEB_ORIGIN` sont optionnelles (voir la section
+« Docker » de `.env.example`).
+
 ```bash
 docker compose up -d db app web                 # PostgreSQL + API + Nginx
 docker compose run --rm app node server/dist/scripts/seed-demo.js   # seed idempotent
@@ -35,6 +40,10 @@ docker compose down -v                          # reset complet (données + uplo
 L'application est servie sur http://localhost:8080 (Nginx fait le proxy
 `/api` et `/uploads` vers l'API). En HTTP local, l'API tourne en
 `NODE_ENV=development` avec `DB_DRIVER=postgres` (cookies non `Secure`).
+Nginx ajoute les en-têtes de sécurité du SPA (CSP, X-Frame-Options, nosniff,
+Referrer-Policy, HSTS derrière HTTPS) ; un style de carte hébergé ailleurs que
+sur `api.maptiler.com` doit être ajouté à la CSP dans `nginx.conf`. Le seed
+refuse de tourner avec `NODE_ENV=production` (sauf `ALLOW_DEMO_SEED=true`).
 
 Comptes de démo (mot de passe `Demo1234!`) : `admin@demo.ch`,
 `karim.plainpalais@demo.ch` (salon Plainpalais), `marco.eauxvives@demo.ch`
