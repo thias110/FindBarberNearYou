@@ -3,7 +3,7 @@
 // cohérent et centré sur Genève pour la démo produit :
 //   - 1 ADMIN, 2 BARBERS (Plainpalais + Eaux-Vives), 2 CLIENTS
 //   - réservations passées (CONFIRMED à terminer, COMPLETED avec avis)
-//   - avis visible pour la modération admin (masquage/restauration)
+//   - avis visible pour la modération admin (masquage)
 //
 //   # local (PGlite)
 //   cd server && npx tsx src/scripts/seed-demo.ts
@@ -543,7 +543,7 @@ async function main(): Promise<void> {
   });
   console.log(`✓ Réservation CONFIRMED (à terminer) : Karim / Coupe + barbe (${confirmedStart.toISOString()})`);
 
-  // Réservation COMPLETED + avis visible (modération admin : masquer/restaurer).
+  // Réservation COMPLETED + avis visible (modération admin : masquer).
   const completedService = await getService(karim.profileId, "Dégradé");
   if (!completedService) throw new Error("Service « Dégradé » introuvable.");
   const completedStart = zonedDateTimeAt(-10, 840, karim.timezone); // il y a 10 jours, 14:00

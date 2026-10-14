@@ -16,6 +16,7 @@ import {
 } from "@findbarber/shared/schema";
 import { weekdayFromCalendarDate } from "@findbarber/shared/dates";
 import { markEmailVerified } from "./auth-helpers";
+import { moveBookingToPast } from "./booking-helpers";
 import { notifyBookingEvent } from "../../server/src/modules/notification/service";
 
 const app = createApp();
@@ -193,6 +194,7 @@ describe("création des notifications sur les transitions", () => {
     await barber
       .post(`/api/bookings/${booking.id}/confirm`)
       .set("X-CSRF-Token", barberCsrf);
+    await moveBookingToPast(booking.id);
     const completed = await barber
       .post(`/api/bookings/${booking.id}/complete`)
       .set("X-CSRF-Token", barberCsrf);

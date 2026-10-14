@@ -124,3 +124,12 @@ export function computeBookingSlots(
   }
   return slots;
 }
+
+// --- Terminaison d'une réservation ---
+// Une réservation n'est terminable qu'une fois CONFIRMÉE ET après la fin réelle
+// de la prestation (`endAt` atteint). Règle partagée : le serveur fait autorité,
+// l'interface s'en sert pour ne pas proposer l'action trop tôt.
+export function isBookingEnded(endAt: Date | string, now: Date): boolean {
+  const endMs = new Date(endAt).getTime();
+  return Number.isFinite(endMs) && endMs <= now.getTime();
+}
