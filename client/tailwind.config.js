@@ -47,6 +47,14 @@ export default {
       fontFamily: {
         sans: ["var(--fb-font-sans)"],
       },
+      // Rayons pilotés par les tokens (`--fb-radius-*`) : les classes
+      // existantes (`rounded-lg`, `rounded-2xl`…) suivent le design system.
+      borderRadius: {
+        md: "var(--fb-radius-sm)",
+        lg: "var(--fb-radius-control)",
+        xl: "var(--fb-radius-panel)",
+        "2xl": "var(--fb-radius-card)",
+      },
       boxShadow: {
         card: "var(--fb-shadow-md)",
         "card-sm": "var(--fb-shadow-sm)",
