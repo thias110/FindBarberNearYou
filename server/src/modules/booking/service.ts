@@ -30,7 +30,7 @@ import type {
   BookingCreateInput,
   BookingSlotsQuery,
 } from "@findbarber/shared/validation";
-import { computeBookingSlots } from "@findbarber/shared/booking";
+import { computeBookingSlots, isBookingEnded } from "@findbarber/shared/booking";
 import {
   calendarDateToUtcMillis,
   weekdayFromCalendarDate,
@@ -629,6 +629,15 @@ export async function completeBooking(
       409,
       "INVALID_STATUS_TRANSITION",
       "Seule une réservation confirmée peut être marquée comme terminée.",
+    );
+  }
+  // Jamais avant la fin réelle de la prestation : sinon un avis pourrait être
+  // déposé pour un rendez-vous qui n'a pas encore eu lieu.
+  if (!isBookingEnded(existing.endAt, new Date())) {
+    throw new AppError(
+      409,
+      "BOOKING_NOT_ENDED",
+      "Une réservation ne peut être marquée comme terminée qu'après la fin de la prestation.",
     );
   }
 

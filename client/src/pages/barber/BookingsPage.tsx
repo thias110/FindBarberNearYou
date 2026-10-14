@@ -4,6 +4,7 @@ import {
   SERVICE_PLACE_LABELS,
   type BookingStatus,
 } from "@findbarber/shared/constants";
+import { isBookingEnded } from "@findbarber/shared/booking";
 import type { Booking, BookingDetails } from "@findbarber/shared/types";
 import { ApiError, bookingApi } from "../../lib/apiClient";
 import { formatDateTime } from "../../lib/formatters";
@@ -275,17 +276,23 @@ export function BarberBookingsPage() {
                             {busy ? "Confirmation…" : "Confirmer"}
                           </Button>
                         )}
-                        {booking.status === "CONFIRMED" && (
-                          <Button
-                            className="min-h-[44px]"
-                            disabled={busy}
-                            onClick={() => void handleComplete(booking.id)}
-                          >
-                            {completingId === booking.id
-                              ? "Terminaison…"
-                              : "Marquer comme terminé"}
-                          </Button>
-                        )}
+                        {booking.status === "CONFIRMED" &&
+                          (isBookingEnded(booking.endAt, new Date()) ? (
+                            <Button
+                              className="min-h-[44px]"
+                              disabled={busy}
+                              onClick={() => void handleComplete(booking.id)}
+                            >
+                              {completingId === booking.id
+                                ? "Terminaison…"
+                                : "Marquer comme terminé"}
+                            </Button>
+                          ) : (
+                            <span className="self-center text-sm text-foreground-muted">
+                              Pourra être marquée comme terminée après la fin
+                              du rendez-vous.
+                            </span>
+                          ))}
                         {cancellable(booking.status) &&
                           (confirmingId === booking.id ? (
                             <>

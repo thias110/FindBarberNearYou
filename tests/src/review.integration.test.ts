@@ -16,6 +16,7 @@ import {
 } from "@findbarber/shared/schema";
 import { weekdayFromCalendarDate } from "@findbarber/shared/dates";
 import { markEmailVerified } from "./auth-helpers";
+import { moveBookingToPast } from "./booking-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -148,6 +149,7 @@ describe("POST /api/bookings/:bookingId/complete", () => {
     await agent
       .post(`/api/bookings/${id}/confirm`)
       .set("X-CSRF-Token", csrf);
+    await moveBookingToPast(id);
 
     const res = await agent
       .post(`/api/bookings/${id}/complete`)
@@ -155,6 +157,67 @@ describe("POST /api/bookings/:bookingId/complete", () => {
     expect(res.status).toBe(200);
     expect(res.body.booking.status).toBe("COMPLETED");
     expect(res.body.booking.hasReview).toBe(false);
+  });
+
+  it("rejects completing before the real end of the service, so no review can be posted", async () => {
+    const date = futureDate(7);
+    const { agent, csrf, barberId, serviceId } = await setupBookableBarber(
+      "complete-early@example.com",
+      date,
+    );
+    await register("complete-early-client@example.com", "CLIENT");
+    const client = await login("complete-early-client@example.com");
+    const id = await createBooking(client, barberId, serviceId, date);
+    await agent
+      .post(`/api/bookings/${id}/confirm`)
+      .set("X-CSRF-Token", csrf);
+
+    const early = await agent
+      .post(`/api/bookings/${id}/complete`)
+      .set("X-CSRF-Token", csrf);
+    expect(early.status).toBe(409);
+    expect(early.body.error.code).toBe("BOOKING_NOT_ENDED");
+
+    const [row] = await db
+      .select({ status: bookings.status })
+      .from(bookings)
+      .where(eq(bookings.id, id));
+    expect(row.status).toBe("CONFIRMED");
+
+    const review = await client.agent
+      .post(`/api/bookings/${id}/review`)
+      .set("X-CSRF-Token", client.csrf)
+      .send({ rating: 1 });
+    expect(review.status).toBe(409);
+    expect(review.body.error.code).toBe("BOOKING_NOT_COMPLETED");
+  });
+
+  it("rejects completing a booking that has started but not yet ended", async () => {
+    const date = futureDate(7);
+    const { agent, csrf, barberId, serviceId } = await setupBookableBarber(
+      "complete-ongoing@example.com",
+      date,
+    );
+    await register("complete-ongoing-client@example.com", "CLIENT");
+    const client = await login("complete-ongoing-client@example.com");
+    const id = await createBooking(client, barberId, serviceId, date);
+    await agent
+      .post(`/api/bookings/${id}/confirm`)
+      .set("X-CSRF-Token", csrf);
+    const now = Date.now();
+    await db
+      .update(bookings)
+      .set({
+        startAt: new Date(now - 10 * 60 * 1000),
+        endAt: new Date(now + 20 * 60 * 1000),
+      })
+      .where(eq(bookings.id, id));
+
+    const res = await agent
+      .post(`/api/bookings/${id}/complete`)
+      .set("X-CSRF-Token", csrf);
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe("BOOKING_NOT_ENDED");
   });
 
   it("rejects completing a non-CONFIRMED booking", async () => {

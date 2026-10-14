@@ -504,8 +504,9 @@ bucket de rate limiting « mutations » s'applique sur `/api/admin`.
 - `POST /api/admin/users/:id/reactivate` — réactivation.
 - `GET /api/admin/bookings?status=&page=&pageSize=` — réservations globales.
 - `GET /api/admin/reviews?page=&pageSize=` — avis (masqués inclus).
-- `POST /api/admin/reviews/:id/hide` — masquage réversible (`hidden_at`, jamais
-  de suppression). Les avis masqués sont exclus des lectures publiques et des
+- `POST /api/admin/reviews/:id/hide` — masquage non destructif (`hidden_at`,
+  jamais de suppression). Aucune restauration n'est exposée (ni API ni
+  interface) : un avis masqué le reste. Les avis masqués sont exclus des lectures publiques et des
   agrégats de note.
 - `GET /api/admin/barbers/:id/stats?range=...` — statistiques d'un barber ciblé,
   réutilisant `computeBarberStats` (aucune donnée personnelle de client).
@@ -514,7 +515,7 @@ bucket de rate limiting « mutations » s'applique sur `/api/admin`.
 navigation responsive et logout ; tableau de bord (`metrics`, dont les barbiers
 actifs) ; listes paginées utilisateurs (filtre rôle, suspension/réactivation
 avec confirmation, lien vers les stats du profil), réservations (filtre statut,
-responsable d'annulation, aucune adresse privée) et avis (masquage réversible) ;
+responsable d'annulation, aucune adresse privée) et avis (masquage, sans restauration) ;
 page de statistiques d'un professionnel réutilisant le rendu partagé
 `BarberStatsContent`. Le frontend ne duplique aucune autorisation :
 `RequireRole` masque l'accès, le serveur reste la source de vérité.

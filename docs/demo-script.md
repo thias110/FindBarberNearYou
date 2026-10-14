@@ -53,7 +53,9 @@ montre la modération.
 ### 6. Contrôle ADMIN — 1 min
 - Se connecter `admin@demo.ch`, ouvrir `/admin`.
 - Montrer les métriques, la liste des utilisateurs.
-- Masquer l'avis de démo (5 étoiles) puis le restaurer.
+- Masquer l'avis de démo (5 étoiles) : il disparaît du profil public.
+  Le masquage n'est pas annulable depuis l'interface ; re-seeder pour
+  retrouver l'avis (voir « Réinitialisation »).
 
 ## Réinitialisation
 

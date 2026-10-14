@@ -62,7 +62,7 @@ export function AdminReviewsPage() {
   async function handleHide(review: AdminReview) {
     if (
       !window.confirm(
-        "Masquer cet avis ? Il ne sera plus visible publiquement.",
+        "Masquer cet avis ? Il ne sera plus visible publiquement. Cette action ne peut pas être annulée depuis l'interface.",
       )
     ) {
       return;

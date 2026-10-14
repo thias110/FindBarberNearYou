@@ -455,7 +455,8 @@ export type NewBookingRow = typeof bookings.$inferInsert;
 // création : aucun `barber_profile_id`/`client_user_id` redondant n'est stocké
 // ici (le booking reste la seule source de vérité, via sa FK). La note est un
 // entier 1..5 (CHECK), le commentaire est public, facultatif et borné (CHECK).
-// `hidden_at` (issue #7, LOT 1) : masquage réversible par l'administration.
+// `hidden_at` (issue #7, LOT 1) : masquage non destructif par l'administration
+// (aucune restauration exposée à ce jour).
 // Nullable, sans suppression physique : les lectures publiques et agrégats
 // excluent les avis dont `hidden_at` est non nul.
 export const reviews = pgTable(

@@ -9,7 +9,12 @@ import { ThemeToggle } from "./components/ThemeToggle";
 
 // Sur ces routes, la coque AuthLayout porte elle-même Logo + ThemeToggle :
 // le header global ne doit donc pas être rendu (aucun doublon).
-const AUTH_ROUTES = new Set(["/login", "/register"]);
+const AUTH_ROUTES = new Set([
+  "/login",
+  "/register",
+  "/verify-email",
+  "/resend-verification",
+]);
 
 function AppShell() {
   const { pathname } = useLocation();
