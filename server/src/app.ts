@@ -117,6 +117,8 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api/admin", mutationLimiter);
   // Avatar (PUT/DELETE /api/users/me/avatar) : même bucket mutations.
   app.use("/api/users", mutationLimiter);
+  // Marquage lu / tout lu des notifications : même bucket mutations.
+  app.use("/api/notifications", mutationLimiter);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true });

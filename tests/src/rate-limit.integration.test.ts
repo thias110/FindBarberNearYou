@@ -90,4 +90,19 @@ describe("mutation rate limiting", () => {
     expect(blocked.status).toBe(429);
     expect(blocked.body.error.code).toBe("RATE_LIMITED");
   });
+
+  it("compte les mutations de notifications dans le même bucket", async () => {
+    const app = createApp({
+      rateLimits: { mutation: { windowMs: 60_000, limit: 2 } },
+    });
+
+    for (let i = 0; i < 2; i += 1) {
+      const res = await request(app).post("/api/notifications/read-all");
+      expect(res.status).toBe(401);
+    }
+
+    const blocked = await request(app).post("/api/notifications/read-all");
+    expect(blocked.status).toBe(429);
+    expect(blocked.body.error.code).toBe("RATE_LIMITED");
+  });
 });

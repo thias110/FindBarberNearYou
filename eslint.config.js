@@ -27,6 +27,14 @@ export default [
     },
   },
   {
+    // Scripts statiques servis tels quels par Vite/Nginx (ex. theme-init.js).
+    files: ["client/public/**/*.js"],
+    languageOptions: {
+      sourceType: "script",
+      globals: globals.browser,
+    },
+  },
+  {
     files: ["client/**/*.{ts,tsx}"],
     plugins: {
       "react-hooks": reactHooks,
