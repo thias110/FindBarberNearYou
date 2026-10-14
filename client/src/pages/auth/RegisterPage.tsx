@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { authApi } from "../../lib/apiClient";
 import { authErrorMessage } from "../../lib/authMessages";
 import { cn } from "../../lib/cn";
@@ -63,7 +63,12 @@ export function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"CLIENT" | "BARBER">("CLIENT");
+  // `?role=BARBER` (lien « Vous êtes barber ? » de l'accueil) présélectionne
+  // le rôle ; toute autre valeur retombe sur CLIENT.
+  const [searchParams] = useSearchParams();
+  const [role, setRole] = useState<"CLIENT" | "BARBER">(
+    searchParams.get("role") === "BARBER" ? "BARBER" : "CLIENT",
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);

@@ -51,7 +51,7 @@ function AppShell() {
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
           <Link
-            to={user ? ROLE_HOME[user.role] : "/barbers"}
+            to={user ? ROLE_HOME[user.role] : "/"}
             aria-label="FindBarber, retour à l'accueil"
             className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
@@ -61,6 +61,14 @@ function AppShell() {
             <ThemeToggle />
             {/* L'API des notifications est réservée aux CLIENT et BARBER. */}
             {user && user.role !== "ADMIN" && <NotificationBell />}
+            {!user && (
+              <Link
+                to="/login"
+                className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-foreground hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                Se connecter
+              </Link>
+            )}
           </div>
         </div>
       </header>

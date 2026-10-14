@@ -38,7 +38,7 @@ export function HomeHero({ user, onSubmitCity }: HomeHeroProps) {
 
       <div className="relative">
         <div className="flex items-center gap-3">
-          {avatarUrl ? (
+          {!user ? null : avatarUrl ? (
             <img
               src={avatarUrl}
               alt=""

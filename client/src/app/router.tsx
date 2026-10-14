@@ -1,4 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { ROLE_HOME } from "@findbarber/shared/constants";
+import { useAuth } from "./auth-context";
 import { RequireRole } from "./RequireRole";
 import { LoginPage } from "../pages/auth/LoginPage";
 import { RegisterPage } from "../pages/auth/RegisterPage";
@@ -23,6 +25,24 @@ import { AdminReviewsPage } from "../pages/admin/ReviewsPage";
 import { AdminBarberStatsPage } from "../pages/admin/BarberStatsPage";
 import { AdminAuditLogPage } from "../pages/admin/AuditLogPage";
 
+function HomeRoute() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div
+        role="status"
+        className="min-h-screen bg-background p-8 text-center text-foreground-muted"
+      >
+        Chargement…
+      </div>
+    );
+  }
+  if (user && user.role !== "CLIENT") {
+    return <Navigate to={ROLE_HOME[user.role]} replace />;
+  }
+  return <ClientHomePage />;
+}
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -35,14 +55,8 @@ export function AppRoutes() {
       <Route path="/barbers" element={<BarbersSearchPage />} />
       <Route path="/barbers/:barberId" element={<PublicBarberProfilePage />} />
 
-      <Route
-        path="/"
-        element={
-          <RequireRole roles={["CLIENT"]}>
-            <ClientHomePage />
-          </RequireRole>
-        }
-      />
+      {/* Accueil : public (visiteurs) et CLIENT ; BARBER/ADMIN redirigés. */}
+      <Route path="/" element={<HomeRoute />} />
       <Route
         path="/appointments"
         element={
