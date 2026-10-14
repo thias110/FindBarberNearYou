@@ -43,6 +43,15 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
     if (user.status === "SUSPENDED") {
       throw new AppError(403, "ACCOUNT_SUSPENDED", "Account suspended.");
     }
+    // Session émise avant le dernier changement de mot de passe : révoquée
+    // (issue #9). Précision à la seconde, comme `iat`.
+    if (
+      user.passwordChangedAt &&
+      typeof payload.iat === "number" &&
+      payload.iat < Math.floor(user.passwordChangedAt.getTime() / 1000)
+    ) {
+      throw new AppError(401, "UNAUTHORIZED", "Session expired. Please log in again.");
+    }
 
     req.user = {
       id: user.id,

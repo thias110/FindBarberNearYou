@@ -5,13 +5,17 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
   emailVerificationTokens,
+  passwordResetTokens,
   users,
   type User,
 } from "@findbarber/shared/schema";
 import type { PublicUser, Role } from "@findbarber/shared/types";
 import { env } from "../../config/env.js";
 import { AppError, isUniqueViolation } from "../../lib/errors.js";
-import { sendVerificationEmail } from "../../lib/email.js";
+import {
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from "../../lib/email.js";
 import { publicUploadPath } from "../../lib/storage.js";
 
 const BCRYPT_COST = 12;
@@ -63,6 +67,7 @@ export async function registerUser(input: {
 
   const passwordHash = await bcrypt.hash(input.password, BCRYPT_COST);
 
+  let created: User;
   try {
     const [user] = await db
       .insert(users)
@@ -75,17 +80,20 @@ export async function registerUser(input: {
       })
       .returning();
 
-    // Compte créé NON vérifié : émission immédiate du lien de vérification.
-    const token = await issueEmailVerificationToken(user.id);
-    await sendVerificationEmail({ to: user.email, token });
-
-    return toPublicUser(user);
+    created = user;
   } catch (err) {
     if (isUniqueViolation(err)) {
       throw new AppError(409, "EMAIL_TAKEN", "This email is already registered.");
     }
     throw err;
   }
+
+  // Compte créé NON vérifié : émission immédiate du lien de vérification. Un
+  // échec d'envoi n'échoue pas l'inscription (lien redemandable).
+  const token = await issueEmailVerificationToken(created.id);
+  await sendVerificationEmail({ to: created.email, token });
+
+  return toPublicUser(created);
 }
 
 export async function loginUser(input: {
@@ -222,4 +230,101 @@ export async function resendVerification(email: string): Promise<void> {
 
   const token = await issueEmailVerificationToken(user.id);
   await sendVerificationEmail({ to: user.email, token });
+}
+
+// --- Mot de passe oublié (issue #9) ---
+
+/**
+ * Demande de réinitialisation. Réponse neutre côté route : on ne révèle jamais
+ * si l'adresse existe. Rien n'est envoyé pour un compte inconnu ou suspendu,
+ * ni pendant le délai de renvoi (silencieux, comme pour la vérification).
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, normalizeEmail(email)))
+    .limit(1);
+  if (!user || user.status !== "ACTIVE") return;
+
+  const [last] = await db
+    .select({ createdAt: passwordResetTokens.createdAt })
+    .from(passwordResetTokens)
+    .where(eq(passwordResetTokens.userId, user.id))
+    .orderBy(desc(passwordResetTokens.createdAt))
+    .limit(1);
+  const cooldownMs = env.EMAIL_RESEND_COOLDOWN_SECONDS * 1000;
+  if (last && Date.now() - last.createdAt.getTime() < cooldownMs) return;
+
+  const token = generateEmailToken();
+  await db.insert(passwordResetTokens).values({
+    id: randomUUID(),
+    userId: user.id,
+    tokenHash: hashEmailToken(token),
+    expiresAt: new Date(Date.now() + env.PASSWORD_RESET_TOKEN_TTL_SECONDS * 1000),
+  });
+  await sendPasswordResetEmail({ to: user.email, token });
+}
+
+function invalidResetToken(): AppError {
+  return new AppError(
+    400,
+    "INVALID_RESET_TOKEN",
+    "Ce lien de réinitialisation est invalide ou a expiré.",
+  );
+}
+
+/**
+ * Réinitialise le mot de passe avec un jeton valide, en une transaction :
+ * consommation atomique du jeton (usage unique + expiration), nouveau hash,
+ * `password_changed_at` (révoque toutes les sessions existantes), invalidation
+ * des autres jetons du compte. Le lien prouve la possession de l'adresse :
+ * un compte non vérifié devient vérifié.
+ */
+export async function resetPassword(token: string, password: string): Promise<void> {
+  const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
+  const tokenHash = hashEmailToken(token);
+
+  await db.transaction(async (tx) => {
+    const now = new Date();
+    const [consumed] = await tx
+      .update(passwordResetTokens)
+      .set({ consumedAt: now })
+      .where(
+        and(
+          eq(passwordResetTokens.tokenHash, tokenHash),
+          isNull(passwordResetTokens.consumedAt),
+          gt(passwordResetTokens.expiresAt, now),
+        ),
+      )
+      .returning({ userId: passwordResetTokens.userId });
+    if (!consumed) throw invalidResetToken();
+
+    const [user] = await tx
+      .select({ status: users.status, emailVerifiedAt: users.emailVerifiedAt })
+      .from(users)
+      .where(eq(users.id, consumed.userId))
+      .limit(1);
+    if (!user || user.status !== "ACTIVE") throw invalidResetToken();
+
+    await tx
+      .update(users)
+      .set({
+        passwordHash,
+        passwordChangedAt: now,
+        emailVerifiedAt: user.emailVerifiedAt ?? now,
+        updatedAt: now,
+      })
+      .where(eq(users.id, consumed.userId));
+
+    await tx
+      .update(passwordResetTokens)
+      .set({ consumedAt: now })
+      .where(
+        and(
+          eq(passwordResetTokens.userId, consumed.userId),
+          isNull(passwordResetTokens.consumedAt),
+        ),
+      );
+  });
 }

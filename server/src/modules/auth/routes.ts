@@ -1,8 +1,10 @@
 import { Router } from "express";
 import type { ZodError } from "zod";
 import {
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
+  resetPasswordSchema,
   resendVerificationSchema,
   verifyEmailSchema,
 } from "@findbarber/shared/validation";
@@ -14,7 +16,9 @@ import { env } from "../../config/env.js";
 import {
   loginUser,
   registerUser,
+  requestPasswordReset,
   resendVerification,
+  resetPassword,
   verifyEmail,
 } from "./service.js";
 
@@ -88,4 +92,27 @@ authRouter.post("/resend-verification", async (req, res) => {
 
 authRouter.get("/me", requireAuth, (req, res) => {
   res.json({ user: req.user });
+});
+
+// Mot de passe oublié (issue #9) : réponse neutre, que l'adresse existe ou non.
+authRouter.post("/forgot-password", async (req, res) => {
+  const parsed = forgotPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw validationError(parsed.error);
+  }
+  await requestPasswordReset(parsed.data.email);
+  res.status(202).json({ ok: true });
+});
+
+// Réinitialisation par jeton : public (le jeton est le secret porteur). Toutes
+// les sessions existantes sont révoquées ; celle de ce navigateur est effacée.
+authRouter.post("/reset-password", async (req, res) => {
+  const parsed = resetPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw validationError(parsed.error);
+  }
+  await resetPassword(parsed.data.token, parsed.data.password);
+  res.clearCookie(AUTH_COOKIE, { path: "/" });
+  res.clearCookie(CSRF_COOKIE, { path: "/" });
+  res.json({ reset: true });
 });

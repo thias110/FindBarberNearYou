@@ -54,7 +54,21 @@ export const resendVerificationSchema = z.object({
   email: emailSchema,
 });
 
+// Mot de passe oublié (issue #9) : réponse toujours neutre côté serveur.
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
+
+// Réinitialisation : jeton porteur (même format que la vérification d'email)
+// et nouveau mot de passe soumis aux mêmes règles qu'à l'inscription.
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Token is required.").max(512, "Token is too long."),
+  password: passwordSchema,
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
