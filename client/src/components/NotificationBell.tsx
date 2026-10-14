@@ -66,8 +66,19 @@ export function NotificationBell() {
     }
   }, []);
 
+  // Compteur rafraîchi au montage, puis chaque minute et au retour sur
+  // l'onglet (uniquement quand la page est visible).
   useEffect(() => {
     void loadCount();
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") void loadCount();
+    };
+    const timer = window.setInterval(refreshIfVisible, 60_000);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
   }, [loadCount]);
 
   useEffect(() => {

@@ -4,7 +4,17 @@ import { test } from "@playwright/test";
 import { ACCOUNTS, expectNoA11yViolations, loginByApi } from "./helpers";
 
 const PAGES: { role: keyof typeof ACCOUNTS | "visiteur"; paths: string[] }[] = [
-  { role: "visiteur", paths: ["/", "/barbers", "/login", "/register"] },
+  {
+    role: "visiteur",
+    paths: [
+      "/",
+      "/barbers",
+      "/login",
+      "/register",
+      "/forgot-password",
+      "/reset-password?token=e2e",
+    ],
+  },
   { role: "client", paths: ["/", "/barbers", "/appointments"] },
   {
     role: "barber",
@@ -21,7 +31,13 @@ const PAGES: { role: keyof typeof ACCOUNTS | "visiteur"; paths: string[] }[] = [
   },
   {
     role: "admin",
-    paths: ["/admin", "/admin/users", "/admin/bookings", "/admin/reviews", "/admin/audit"],
+    paths: [
+      "/admin",
+      "/admin/users",
+      "/admin/bookings",
+      "/admin/reviews",
+      "/admin/audit",
+    ],
   },
 ];
 

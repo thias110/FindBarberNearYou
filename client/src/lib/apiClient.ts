@@ -193,6 +193,11 @@ export interface AuthApi {
   logout(): Promise<void>;
   verifyEmail(input: { token: string }): Promise<{ verified: boolean }>;
   resendVerification(input: { email: string }): Promise<{ ok: boolean }>;
+  forgotPassword(input: { email: string }): Promise<{ ok: boolean }>;
+  resetPassword(input: {
+    token: string;
+    password: string;
+  }): Promise<{ reset: boolean }>;
 }
 
 export const authApi: AuthApi = {
@@ -215,6 +220,16 @@ export const authApi: AuthApi = {
     }),
   resendVerification: (input) =>
     apiFetch<{ ok: boolean }>("/api/auth/resend-verification", {
+      method: "POST",
+      body: input,
+    }),
+  forgotPassword: (input) =>
+    apiFetch<{ ok: boolean }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: input,
+    }),
+  resetPassword: (input) =>
+    apiFetch<{ reset: boolean }>("/api/auth/reset-password", {
       method: "POST",
       body: input,
     }),

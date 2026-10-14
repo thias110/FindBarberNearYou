@@ -9,6 +9,8 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
     "Votre adresse email n'est pas encore vérifiée. Renvoyez le lien de vérification pour activer votre compte.",
   INVALID_VERIFICATION_TOKEN:
     "Ce lien de vérification est invalide ou expiré.",
+  INVALID_RESET_TOKEN:
+    "Ce lien de réinitialisation est invalide ou a expiré. Demandez-en un nouveau.",
   ACCOUNT_SUSPENDED: "Ce compte est suspendu. Contactez l'administration.",
   EMAIL_TAKEN: "Un compte existe déjà avec cet email.",
   ADMIN_REGISTRATION_FORBIDDEN:

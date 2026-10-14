@@ -28,6 +28,8 @@ export const AUTH_ROUTES = new Set([
   "/register",
   "/verify-email",
   "/resend-verification",
+  "/forgot-password",
+  "/reset-password",
 ]);
 
 export function pageTitle(pathname: string): string | null {

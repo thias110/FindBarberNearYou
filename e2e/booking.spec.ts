@@ -4,9 +4,15 @@ import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS, API, DEMO_PASSWORD, loginByApi, tabTo } from "./helpers";
 
 /** Premier jour (J+1 à J+21) où Karim a des créneaux en salon. */
-async function findBookableDate(page: Page, barberId: string, serviceId: string) {
+async function findBookableDate(
+  page: Page,
+  barberId: string,
+  serviceId: string,
+) {
   for (let offset = 1; offset <= 21; offset += 1) {
-    const date = new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+    const date = new Date(Date.now() + offset * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
     const res = await page.request.get(
       `${API}/api/barbers/${barberId}/slots?serviceId=${serviceId}&date=${date}&place=SALON`,
     );
@@ -15,7 +21,10 @@ async function findBookableDate(page: Page, barberId: string, serviceId: string)
   throw new Error("Aucune date réservable trouvée.");
 }
 
-test("réserver au clavier, puis confirmation par le barber", async ({ page, browser }) => {
+test("réserver au clavier, puis confirmation par le barber", async ({
+  page,
+  browser,
+}) => {
   // Connexion au clavier.
   await page.goto("/login");
   await tabTo(page, page.getByRole("textbox", { name: "Email" }));
@@ -38,7 +47,9 @@ test("réserver au clavier, puis confirmation par le barber", async ({ page, bro
   await expect(page).toHaveURL(/\/barbers\/[^/]+$/);
   const barberId = page.url().split("/").pop()!;
 
-  const services = await (await page.request.get(`${API}/api/barbers/${barberId}`)).json();
+  const services = await (
+    await page.request.get(`${API}/api/barbers/${barberId}`)
+  ).json();
   const service = services.services[0];
   const date = await findBookableDate(page, barberId, service.id);
 
@@ -90,5 +101,7 @@ test("réserver au clavier, puis confirmation par le barber", async ({ page, bro
   await expect(page.getByRole("heading", { name: "À venir" })).toBeVisible();
   await expect(page.getByText(service.name).first()).toBeVisible();
   await expect(page.getByText("Confirmée", { exact: true })).toBeVisible();
-  await expect(page.getByText("En attente de confirmation", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByText("En attente de confirmation", { exact: true }),
+  ).toHaveCount(0);
 });
