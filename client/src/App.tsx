@@ -1,4 +1,5 @@
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { ROLE_HOME } from "@findbarber/shared/constants";
 import { useAuth } from "./app/auth-context";
 import { AuthProvider } from "./app/AuthProvider";
 import { ThemeProvider } from "./app/ThemeProvider";
@@ -26,10 +27,17 @@ function AppShell() {
       {!isAuthRoute && (
         <header className="border-b border-border bg-surface">
           <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
-            <Logo />
+            <Link
+              to={user ? ROLE_HOME[user.role] : "/barbers"}
+              aria-label="FindBarber, retour à l'accueil"
+              className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <Logo />
+            </Link>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              {user && <NotificationBell />}
+              {/* L'API des notifications est réservée aux CLIENT et BARBER. */}
+              {user && user.role !== "ADMIN" && <NotificationBell />}
             </div>
           </div>
         </header>

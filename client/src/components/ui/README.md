@@ -26,7 +26,9 @@ Fondations visuelles de FindBarber (issue #16). Aucune dépendance npm ajoutée.
 - `ThemeProvider` (`client/src/app/ThemeProvider.tsx`) gère la préférence
   `system` / `light` / `dark`, persistée dans `localStorage` sous `fb-theme`.
 - `darkMode: "class"` : la classe `dark` est posée sur `<html>`.
-- Un script anti-flash dans `client/index.html` applique le thème avant React.
+- Un script anti-flash (`client/public/theme-init.js`, chargé en bloquant
+  depuis `client/index.html`) applique le thème avant React. Il est externe
+  pour rester compatible avec la CSP `script-src 'self'` de Nginx.
 - `useTheme()` (`client/src/app/theme-context.ts`) expose `theme`,
   `resolvedTheme` et `setTheme`.
 - Le mode `system` suit `prefers-color-scheme` et réagit aux changements.
@@ -42,6 +44,23 @@ Fondations visuelles de FindBarber (issue #16). Aucune dépendance npm ajoutée.
 - `Badge` — variantes `neutral | accent | gold | success | warning | danger |
   info` (statuts en fond translucide tokenisé, `bg-{statut}/15`).
 - `Skeleton` — placeholder décoratif (`aria-hidden`).
+- `Select` / `Textarea` — contrôles natifs stylés comme `Input` (classes
+  partagées dans `control.ts`, bordure `danger` via `aria-invalid`).
+  `Select` fait au moins 44 px de haut.
+- `Alert` — `info | success | warning | danger` ; `role="alert"` pour
+  `danger`, `status` sinon.
+- `EmptyState` — état vide d'une liste (titre, description, action optionnelle).
+- `ConfirmDialog` — confirmation modale basée sur `<dialog>` + `showModal()`
+  (piège de focus, `Escape` et fond inerte natifs ; focus initial sur
+  « Annuler », retour du focus au déclencheur). Remplace `window.confirm`.
+  `tone="danger"` pour les actions destructives.
+- `Button` transmet sa `ref` (`forwardRef`).
+
+## Logo
+
+Point d'insertion unique : `client/src/components/Logo.tsx` (header, écrans
+d'authentification). Le favicon `client/public/favicon.svg` reprend le même
+dessin avec des couleurs en dur : le mettre à jour en même temps.
 
 ## Conventions
 

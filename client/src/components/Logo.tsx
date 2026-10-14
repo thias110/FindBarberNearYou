@@ -6,8 +6,13 @@ export interface LogoProps {
   showWordmark?: boolean;
 }
 
-// Logo provisoire : marque carrée accent + « F » blanc, accompagnée du nom
-// visible FindBarber. Le nom technique du dépôt reste FindBarberNearYou.
+// Logo provisoire : marque carrée accent + « F », accompagnée du nom visible
+// FindBarber. Le nom technique du dépôt reste FindBarberNearYou.
+//
+// Point d'insertion unique du logo dans l'interface (header, écrans
+// d'authentification). Pour remplacer le logo : modifier ce composant ET
+// `client/public/favicon.svg` (même dessin, couleurs en dur car un favicon ne
+// lit pas les tokens CSS).
 export function Logo({ className, showWordmark = true }: LogoProps) {
   return (
     <span

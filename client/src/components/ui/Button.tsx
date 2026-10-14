@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "../../lib/cn";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
@@ -30,31 +30,37 @@ const VARIANTS: Record<ButtonVariant, string> = {
   danger: "border border-danger bg-transparent text-danger hover:bg-danger/10",
 };
 
-export function Button({
-  className,
-  variant = "primary",
-  size = "md",
-  type = "button",
-  isLoading = false,
-  disabled,
-  children,
-  ...props
-}: ButtonProps) {
-  return (
-    <button
-      type={type}
-      disabled={disabled || isLoading}
-      aria-busy={isLoading || undefined}
-      className={cn(BASE, SIZES[size], VARIANTS[variant], className)}
-      {...props}
-    >
-      {isLoading && (
-        <span
-          aria-hidden="true"
-          className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
-        />
-      )}
-      {children}
-    </button>
-  );
-}
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(
+    {
+      className,
+      variant = "primary",
+      size = "md",
+      type = "button",
+      isLoading = false,
+      disabled,
+      children,
+      ...props
+    },
+    ref,
+  ) {
+    return (
+      <button
+        ref={ref}
+        type={type}
+        disabled={disabled || isLoading}
+        aria-busy={isLoading || undefined}
+        className={cn(BASE, SIZES[size], VARIANTS[variant], className)}
+        {...props}
+      >
+        {isLoading && (
+          <span
+            aria-hidden="true"
+            className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+          />
+        )}
+        {children}
+      </button>
+    );
+  },
+);
