@@ -18,7 +18,8 @@ const BASE =
 
 const SIZES: Record<ButtonSize, string> = {
   sm: "px-3 py-1.5 text-sm",
-  md: "px-4 py-2 text-sm",
+  // >= 44 px de haut (cible tactile, issue #18). `sm` reste pour les zones denses.
+  md: "min-h-11 px-4 py-2 text-sm",
 };
 
 const VARIANTS: Record<ButtonVariant, string> = {
