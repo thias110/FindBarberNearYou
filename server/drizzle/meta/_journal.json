@@ -120,6 +120,13 @@
       "when": 1792007889524,
       "tag": "0016_lovely_iceman",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792010347770,
+      "tag": "0017_public_warhawk",
+      "breakpoints": true
     }
   ]
 }

@@ -12,7 +12,8 @@ export interface LogoProps {
 // Point d'insertion unique du logo dans l'interface (header, écrans
 // d'authentification). Pour remplacer le logo : modifier ce composant ET
 // `client/public/favicon.svg` (même dessin, couleurs en dur car un favicon ne
-// lit pas les tokens CSS).
+// lit pas les tokens CSS), puis régénérer `client/public/email-logo.png`
+// (voir components/ui/README.md).
 export function Logo({ className, showWordmark = true }: LogoProps) {
   return (
     <span

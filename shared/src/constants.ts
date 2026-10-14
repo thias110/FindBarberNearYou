@@ -129,6 +129,30 @@ export const NOTIFICATION_TYPES = [
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
+// --- Emails transactionnels (issue #9) ---
+// Emails de réservation passant par la file `email_outbox` (écrite dans la
+// transaction de la mutation, envoyée ensuite avec nouvelles tentatives).
+// Les emails à jeton (vérification, mot de passe) n'y transitent jamais.
+export const EMAIL_KINDS = [
+  "BOOKING_REQUESTED",
+  "BOOKING_CONFIRMED",
+  "BOOKING_DECLINED",
+  "BOOKING_CANCELLED_BY_CLIENT",
+  "BOOKING_CANCELLED_BY_BARBER",
+  "BOOKING_CANCELLED_BY_ADMIN",
+  "BOOKING_EXPIRED",
+  "BOOKING_REMINDER",
+] as const;
+export type EmailKind = (typeof EMAIL_KINDS)[number];
+
+export const EMAIL_OUTBOX_STATUSES = [
+  "PENDING",
+  "SENDING",
+  "SENT",
+  "FAILED",
+] as const;
+export type EmailOutboxStatus = (typeof EMAIL_OUTBOX_STATUSES)[number];
+
 // --- Journal d'audit (issue #13) ---
 // Actions sensibles tracées dans `audit_logs`, dans la même transaction que la
 // mutation. Un acteur nul signifie une action système (ex. expiration).
@@ -241,6 +265,10 @@ export const LIMITS = {
   bookingPendingTtlHours: 24,
   // Motif de refus facultatif, visible par le client.
   bookingDeclineReason: 500,
+  // Rappel email (issue #9) : envoyé une seule fois quand le rendez-vous
+  // CONFIRMED commence dans moins de 24 h (et pas dans moins d'une heure).
+  bookingReminderHoursBefore: 24,
+  bookingReminderMinMinutesBefore: 60,
   // Adresse client privée (lot 9 passe A, issue #19) : chaîne libre géocodée
   // côté serveur pour `AT_CLIENT`, jamais exposée publiquement.
   clientAddress: 200,

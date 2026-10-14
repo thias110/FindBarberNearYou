@@ -51,6 +51,24 @@ Comptes de démo (mot de passe `Demo1234!`) : `admin@demo.ch`,
 `client2@demo.ch` (réservation + avis). Voir `docs/demo-script.md` pour le
 script de 8 minutes et `docs/npm-audit-triage.md` pour le tri des alertes npm.
 
+## Emails (issue #9)
+
+- **Développement** : `MAIL_TRANSPORT=log` (défaut) affiche sujet et
+  destinataire dans la console du serveur, sans rien envoyer ni journaliser les
+  liens à jeton.
+- **Production** : `MAIL_TRANSPORT=smtp` et `SMTP_*` sont obligatoires (le
+  serveur refuse de démarrer sinon). N'importe quel fournisseur SMTP convient
+  (Resend, Brevo…) ; `EMAIL_FROM` doit être sur un domaine vérifié (SPF/DKIM).
+- **Emails envoyés** : vérification d'adresse et mot de passe oublié (envoi
+  direct, lien à usage unique) ; pour les réservations, demande → barber,
+  confirmation / refus / expiration → client, annulation → l'autre partie,
+  rappel au client 24 h avant (une seule fois).
+- **Fiabilité** : les emails de réservation passent par la table
+  `email_outbox`, écrite dans la transaction de la réservation puis envoyée par
+  un répartiteur (toutes les 30 s et juste après chaque action) avec nouvelles
+  tentatives espacées (6 au maximum). Une panne SMTP ne bloque jamais une
+  réservation. Les emails envoyés sont purgés après 7 jours.
+
 ## Variables d'environnement
 
 Voir `.env.example`. Aucun secret réel ne doit être commité ; `.env` est ignoré par git.

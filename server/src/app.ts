@@ -13,6 +13,7 @@ import { errorHandler } from "./middleware/error.js";
 import { resolveUploadDir } from "./lib/storage.js";
 import { configureTrustProxy, securityHeaders } from "./middleware/security.js";
 import { createRateLimiter, MUTATING_METHODS } from "./middleware/rateLimit.js";
+import { kickEmailDispatch } from "./modules/email/outbox.js";
 
 export interface RateLimitOverride {
   windowMs: number;
@@ -26,6 +27,7 @@ export interface AppOptions {
     mutation?: RateLimitOverride;
     resendVerification?: RateLimitOverride;
     verifyEmail?: RateLimitOverride;
+    passwordReset?: RateLimitOverride;
   };
 }
 
@@ -106,7 +108,31 @@ export function createApp(options: AppOptions = {}): express.Express {
     skip: !options.rateLimits?.verifyEmail && env.NODE_ENV === "test",
   });
 
+  // Mot de passe oublié / réinitialisation : un bucket IP partagé.
+  const passwordResetLimiter = createRateLimiter({
+    windowMs:
+      options.rateLimits?.passwordReset?.windowMs ??
+      env.PASSWORD_RESET_RATE_LIMIT_WINDOW_MS,
+    limit:
+      options.rateLimits?.passwordReset?.limit ??
+      env.PASSWORD_RESET_RATE_LIMIT_MAX,
+    skip: !options.rateLimits?.passwordReset && env.NODE_ENV === "test",
+  });
+
+  // Emails de réservation (issue #9) : après toute mutation réussie, la file
+  // `email_outbox` est traitée sans attendre l'intervalle du répartiteur.
+  app.use("/api", (req, res, next) => {
+    if (MUTATING_METHODS.has(req.method)) {
+      res.on("finish", () => {
+        if (res.statusCode < 400) kickEmailDispatch();
+      });
+    }
+    next();
+  });
+
   app.use("/api/auth/login", loginLimiter);
+  app.use("/api/auth/forgot-password", passwordResetLimiter);
+  app.use("/api/auth/reset-password", passwordResetLimiter);
   app.use("/api/auth/register", registerLimiter);
   app.use("/api/auth/resend-verification", resendVerificationLimiter);
   app.use("/api/auth/verify-email", verifyEmailLimiter);

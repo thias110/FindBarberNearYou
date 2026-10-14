@@ -19,6 +19,8 @@ import {
   AUDIT_ACTIONS,
   AUDIT_TARGET_TYPES,
   BOOKING_STATUSES,
+  EMAIL_KINDS,
+  EMAIL_OUTBOX_STATUSES,
   LIMITS,
   NOTIFICATION_TYPES,
   ROLES,
@@ -39,6 +41,10 @@ export const bookingStatusEnum = pgEnum("booking_status", [
 ]);
 export const notificationTypeEnum = pgEnum("notification_type", [
   ...NOTIFICATION_TYPES,
+]);
+export const emailKindEnum = pgEnum("email_kind", [...EMAIL_KINDS]);
+export const emailOutboxStatusEnum = pgEnum("email_outbox_status", [
+  ...EMAIL_OUTBOX_STATUSES,
 ]);
 export const auditActionEnum = pgEnum("audit_action", [...AUDIT_ACTIONS]);
 export const auditTargetTypeEnum = pgEnum("audit_target_type", [
@@ -62,6 +68,9 @@ export const users = pgTable(
     // confirmée via un lien de vérification. Les comptes existants sont
     // backfillés comme vérifiés par la migration dédiée.
     emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    // Dernier changement de mot de passe (issue #9) : toute session émise
+    // avant cette date est refusée (révocation après réinitialisation).
+    passwordChangedAt: timestamp("password_changed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -102,6 +111,30 @@ export const emailVerificationTokens = pgTable(
 export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
 export type NewEmailVerificationToken =
   typeof emailVerificationTokens.$inferInsert;
+
+// Jetons de réinitialisation de mot de passe (issue #9) : même modèle que la
+// vérification d'email (empreinte SHA-256 seulement, usage unique, expiration).
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("password_reset_tokens_hash_unique").on(table.tokenHash),
+    index("password_reset_tokens_user_idx").on(table.userId),
+  ],
+);
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 
 export const barberProfiles = pgTable(
   "barber_profiles",
@@ -415,6 +448,9 @@ export const bookings = pgTable(
     // visible par le client.
     declinedAt: timestamp("declined_at", { withTimezone: true }),
     declineReason: text("decline_reason"),
+    // Rappel email (issue #9) : posé dans la transaction qui met le rappel en
+    // file, ce qui garantit un seul rappel par réservation.
+    reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -623,3 +659,47 @@ export const auditLogs = pgTable(
 
 export type AuditLogRow = typeof auditLogs.$inferSelect;
 export type NewAuditLogRow = typeof auditLogs.$inferInsert;
+
+// --- File d'envoi des emails de réservation (issue #9) ---
+// Écrite dans la transaction de la mutation (jamais d'email pour une action
+// annulée, jamais d'action sans email), puis envoyée par le répartiteur avec
+// nouvelles tentatives espacées. Le contenu est rendu à la mise en file.
+// `dedupe_key` empêche un double envoi (ex. rappel). Les lignes envoyées sont
+// purgées après quelques jours (données personnelles).
+export const emailOutbox = pgTable(
+  "email_outbox",
+  {
+    id: text("id").primaryKey(),
+    recipientUserId: text("recipient_user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    toEmail: text("to_email").notNull(),
+    kind: emailKindEnum("kind").notNull(),
+    bookingId: text("booking_id").references(() => bookings.id, {
+      onDelete: "cascade",
+    }),
+    dedupeKey: text("dedupe_key").notNull(),
+    subject: text("subject").notNull(),
+    textBody: text("text_body").notNull(),
+    htmlBody: text("html_body").notNull(),
+    status: emailOutboxStatusEnum("status").notNull().default("PENDING"),
+    attempts: integer("attempts").notNull().default(0),
+    lastError: text("last_error"),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("email_outbox_dedupe_unique").on(table.dedupeKey),
+    index("email_outbox_due_idx").on(table.status, table.nextAttemptAt),
+  ],
+);
+
+export type EmailOutboxRow = typeof emailOutbox.$inferSelect;

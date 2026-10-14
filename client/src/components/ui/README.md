@@ -114,7 +114,13 @@ d'un libellé (jamais la couleur seule).
 
 Point d'insertion unique : `client/src/components/Logo.tsx` (header, écrans
 d'authentification). Le favicon `client/public/favicon.svg` reprend le même
-dessin avec des couleurs en dur : le mettre à jour en même temps.
+dessin avec des couleurs en dur : le mettre à jour en même temps, puis
+régénérer `client/public/email-logo.png` (logo des emails, PNG car les clients
+mail gèrent mal le SVG) :
+
+```bash
+cd server && node -e "require('sharp')('../client/public/favicon.svg',{density:600}).resize(96,96).png().toFile('../client/public/email-logo.png')"
+```
 
 ## Conventions
 

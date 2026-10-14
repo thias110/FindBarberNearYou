@@ -1,25 +1,32 @@
-import { env } from "../config/env.js";
+import { passwordResetEmail, verificationEmail } from "./emailTemplates.js";
+import { sendMail, type MailMessage } from "./mailer.js";
 
-export interface VerificationEmailInput {
-  to: string;
-  token: string;
+// --- Emails à jeton (vérification, réinitialisation) — issue #9 ---
+// Envoyés directement (jamais via `email_outbox`, pour ne pas stocker de jeton
+// brut en base) et APRÈS les écritures en base. Ne lèvent jamais : un échec
+// SMTP est journalisé (sans le jeton) et n'échoue pas la requête ; l'utilisateur
+// peut redemander un lien.
+
+async function sendSafely(message: MailMessage, label: string): Promise<void> {
+  try {
+    await sendMail(message);
+  } catch (err) {
+    console.error(
+      `[email] échec d'envoi (${label}) : ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 }
 
-/**
- * Faux mailer local (mission A) : journalise l'email de vérification au lieu de
- * l'envoyer réellement. Aucune dépendance npm. Le jeton brut n'est JAMAIS écrit
- * dans les logs : on n'affiche que le destinataire et l'URL sans la partie
- * sensible du lien.
- */
-export async function sendVerificationEmail(
-  input: VerificationEmailInput,
-): Promise<void> {
-  const link = `${env.FRONTEND_URL}/verify-email?token=${encodeURIComponent(
-    input.token,
-  )}`;
-  const url = new URL(link);
-  console.log(
-    `[email:log] Vérification d'email demandée pour ${input.to} ` +
-      `(lien ${url.origin}${url.pathname}, jeton masqué)`,
-  );
+export async function sendVerificationEmail(input: {
+  to: string;
+  token: string;
+}): Promise<void> {
+  await sendSafely(verificationEmail(input.to, input.token), "vérification");
+}
+
+export async function sendPasswordResetEmail(input: {
+  to: string;
+  token: string;
+}): Promise<void> {
+  await sendSafely(passwordResetEmail(input.to, input.token), "mot de passe");
 }

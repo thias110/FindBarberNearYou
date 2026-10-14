@@ -9,6 +9,7 @@ import {
 import type { NotificationType } from "@findbarber/shared/constants";
 import type { Notification } from "@findbarber/shared/types";
 import { AppError, isUniqueViolation } from "../../lib/errors.js";
+import { enqueueEmailForNotification } from "../email/outbox.js";
 
 function toNotification(row: NotificationRow): Notification {
   return {
@@ -25,6 +26,8 @@ function toNotification(row: NotificationRow): Notification {
  * que la mutation métier qui l'a déclenchée (atomicité + dédoublonnage).
  * - Ne notifie jamais un destinataire SUSPENDED.
  * - Violation d'unicité (user_id, type, booking_id) → no-op propre.
+ * - Met aussi en file l'email correspondant (issue #9), dans la même
+ *   transaction ; il est envoyé après commit par le répartiteur.
  */
 export async function notifyBookingEvent(
   runner: Db,
@@ -58,6 +61,12 @@ export async function notifyBookingEvent(
     }
     throw err;
   }
+
+  await enqueueEmailForNotification(runner, {
+    recipientUserId: input.recipientUserId,
+    bookingId: input.bookingId,
+    type: input.type,
+  });
 }
 
 export async function listNotifications(

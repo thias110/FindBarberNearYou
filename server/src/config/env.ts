@@ -93,6 +93,33 @@ const envSchema = z.object({
     .positive()
     .default(900_000),
   EMAIL_VERIFY_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+  // Emails (issue #9). Transport : `log` (console, défaut en dev), `smtp`
+  // (obligatoire en production), `memory` (tests, défaut quand NODE_ENV=test).
+  MAIL_TRANSPORT: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.enum(["log", "smtp", "memory"]).optional(),
+  ),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  // true = TLS implicite (port 465) ; false = STARTTLS (port 587).
+  SMTP_SECURE: z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    z.enum(["true", "false"]).default("false"),
+  ),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  // Mot de passe oublié : durée de validité du lien et rate limiting IP.
+  PASSWORD_RESET_TOKEN_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(60 * 60),
+  PASSWORD_RESET_RATE_LIMIT_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(600_000),
+  PASSWORD_RESET_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
   // Nombre de hops de proxy de confiance (optionnel, entier positif uniquement).
   // Absent ou vide → aucun trust proxy (défaut Express `false`, jamais `true`).
   TRUST_PROXY_HOPS: z.preprocess(
@@ -105,7 +132,14 @@ const envSchema = z.object({
   MAPTILER_GEOCODING_API_KEY: z.string().optional(),
 });
 
-export const env = envSchema.parse(process.env);
+const parsedEnv = envSchema.parse(process.env);
+
+export const env = {
+  ...parsedEnv,
+  MAIL_TRANSPORT:
+    parsedEnv.MAIL_TRANSPORT ??
+    (parsedEnv.NODE_ENV === "test" ? ("memory" as const) : ("log" as const)),
+};
 
 const EXAMPLE_SECRETS = [
   "change-me",
@@ -120,6 +154,11 @@ if (env.NODE_ENV === "production") {
   if (!env.DATABASE_URL) {
     throw new Error(
       "DATABASE_URL is required when NODE_ENV=production (PostgreSQL driver).",
+    );
+  }
+  if (env.MAIL_TRANSPORT !== "smtp" || !env.SMTP_HOST) {
+    throw new Error(
+      "MAIL_TRANSPORT=smtp and SMTP_HOST are required when NODE_ENV=production (verification, password reset and booking emails).",
     );
   }
   if (
