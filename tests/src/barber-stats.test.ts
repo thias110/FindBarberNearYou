@@ -77,6 +77,19 @@ describe("computeBarberStats — totaux et taux", () => {
     expect(charged).toBe(1);
     expect(chargedHours).toBe(1);
   });
+
+  it("compte DECLINED comme refus ; DECLINED et EXPIRED n'occupent pas de créneau", () => {
+    const stats = run([
+      booking({ status: "COMPLETED" }),
+      booking({ status: "DECLINED" }),
+      booking({ status: "EXPIRED" }),
+    ]);
+    expect(stats.totals.bookings).toBe(3);
+    expect(stats.totals.refused).toBe(1);
+    expect(stats.totals.cancelled).toBe(0);
+    const charged = stats.busiestWeekdays.reduce((sum, b) => sum + b.count, 0);
+    expect(charged).toBe(1);
+  });
 });
 
 describe("computeBarberStats — bucket local (fuseau)", () => {

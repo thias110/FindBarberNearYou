@@ -223,7 +223,9 @@ describe("POST /api/admin/users/:id/suspend et /reactivate", () => {
       barberProfileId: barber.profileId,
       serviceId: barber.serviceId,
       clientUserId: client.id,
-      startAt: future,
+      // Décalée d'1 h : deux réservations actives ne peuvent plus se
+      // chevaucher (contrainte `bookings_no_overlap`).
+      startAt: new Date(future.getTime() + 3_600_000),
       status: "CONFIRMED",
     });
     await insertBooking({

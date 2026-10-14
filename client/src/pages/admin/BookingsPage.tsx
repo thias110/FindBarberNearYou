@@ -11,7 +11,10 @@ import { AdminLayout } from "../../components/AdminLayout";
 import { AdminPagination } from "../../components/AdminPagination";
 import { BookingStatusBadge } from "../../components/BookingStatusBadge";
 import { AdminListState } from "../../components/admin/AdminListState";
+import { Alert } from "../../components/ui/Alert";
+import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Field } from "../../components/ui/Field";
 import { Select } from "../../components/ui/Select";
 import { bookingClientLabel, cancellationActorLabel } from "../../lib/admin";
@@ -31,6 +34,32 @@ export function AdminBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  // Annulation administrateur (PENDING/CONFIRMED), confirmée par dialogue.
+  const [pendingCancel, setPendingCancel] = useState<AdminBooking | null>(null);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [message, setMessage] = useState<{
+    kind: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  async function handleCancel() {
+    if (!pendingCancel) return;
+    setMessage(null);
+    setCancelBusy(true);
+    try {
+      await adminApi.cancelBooking(pendingCancel.id);
+      setMessage({ kind: "success", text: "Réservation annulée." });
+      setReloadKey((key) => key + 1);
+    } catch (err) {
+      setMessage({
+        kind: "error",
+        text: err instanceof Error ? err.message : "Annulation impossible.",
+      });
+    } finally {
+      setCancelBusy(false);
+      setPendingCancel(null);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +100,12 @@ export function AdminBookingsPage() {
     <AdminLayout>
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-foreground">Réservations</h2>
+
+        {message && (
+          <Alert variant={message.kind === "success" ? "success" : "danger"}>
+            {message.text}
+          </Alert>
+        )}
 
         <Field label="Statut" className="max-w-xs">
           {(control) => (
@@ -131,6 +166,18 @@ export function AdminBookingsPage() {
                       </div>
                       <BookingStatusBadge status={booking.status} />
                     </div>
+                    {(booking.status === "PENDING" ||
+                      booking.status === "CONFIRMED") && (
+                      <div className="mt-3 flex justify-end">
+                        <Button
+                          variant="danger"
+                          className="min-h-11"
+                          onClick={() => setPendingCancel(booking)}
+                        >
+                          Annuler la réservation
+                        </Button>
+                      </div>
+                    )}
                   </Card>
                 </li>
               );
@@ -144,6 +191,19 @@ export function AdminBookingsPage() {
           onPageChange={setPage}
         />
       </div>
+
+      <ConfirmDialog
+        open={pendingCancel !== null}
+        title="Annuler cette réservation ?"
+        confirmLabel="Annuler la réservation"
+        cancelLabel="Garder"
+        tone="danger"
+        isLoading={cancelBusy}
+        onConfirm={() => void handleCancel()}
+        onCancel={() => setPendingCancel(null)}
+      >
+        <p>Le client et le professionnel seront notifiés.</p>
+      </ConfirmDialog>
     </AdminLayout>
   );
 }

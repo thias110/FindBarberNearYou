@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   bookingCreateSchema,
+  bookingDeclineSchema,
   reviewCreateSchema,
 } from "@findbarber/shared/validation";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
@@ -12,6 +13,7 @@ import {
   completeBooking,
   confirmBooking,
   createBooking,
+  declineBooking,
   getBookingDetails,
   listBookings,
 } from "./service.js";
@@ -68,8 +70,28 @@ bookingRouter.post(
   csrfProtection,
   async (req, res) => {
     const booking = await confirmBooking(
-      req.user!.id,
+      req.user!,
       req.params.bookingId as string,
+    );
+    res.json({ booking });
+  },
+);
+
+// Refus : BARBER propriétaire, PENDING → DECLINED, motif facultatif.
+bookingRouter.post(
+  "/:bookingId/decline",
+  requireAuth,
+  requireRole("BARBER"),
+  csrfProtection,
+  async (req, res) => {
+    const parsed = bookingDeclineSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      throw validationError(parsed.error);
+    }
+    const booking = await declineBooking(
+      req.user!,
+      req.params.bookingId as string,
+      parsed.data.reason ? parsed.data.reason : null,
     );
     res.json({ booking });
   },
@@ -83,7 +105,7 @@ bookingRouter.post(
   csrfProtection,
   async (req, res) => {
     const booking = await completeBooking(
-      req.user!.id,
+      req.user!,
       req.params.bookingId as string,
     );
     res.json({ booking });

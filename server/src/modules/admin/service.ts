@@ -39,6 +39,7 @@ import type {
   AdminUserListQuery,
 } from "@findbarber/shared/validation";
 import { AppError } from "../../lib/errors.js";
+import { effectiveBookingStatus } from "@findbarber/shared/booking";
 import { notifyBookingEvent } from "../notification/service.js";
 
 function pagination(
@@ -81,7 +82,7 @@ function toAdminBooking(
     barberDisplayName: row.barberDisplayName,
     serviceName: row.serviceName,
     servicePlace: row.servicePlace,
-    status: row.status,
+    status: effectiveBookingStatus(row, new Date()),
     startAt: row.startAt.toISOString(),
     endAt: row.endAt.toISOString(),
     priceMinor: row.priceMinor,

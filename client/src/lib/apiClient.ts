@@ -380,6 +380,7 @@ export interface AdminApi {
   suspendUser(userId: string): Promise<{ user: AdminUser }>;
   reactivateUser(userId: string): Promise<{ user: AdminUser }>;
   listBookings(params?: AdminBookingsParams): Promise<AdminBookingsResponse>;
+  cancelBooking(bookingId: string): Promise<{ booking: Booking }>;
   listReviews(params?: AdminReviewsParams): Promise<AdminReviewsResponse>;
   hideReview(reviewId: string): Promise<{ review: AdminReview }>;
   getBarberStats(
@@ -405,6 +406,11 @@ export const adminApi: AdminApi = {
   listBookings: (params) =>
     apiFetch<AdminBookingsResponse>(
       `/api/admin/bookings${toQueryString(params)}`,
+    ),
+  cancelBooking: (bookingId) =>
+    apiFetch<{ booking: Booking }>(
+      `/api/admin/bookings/${encodeURIComponent(bookingId)}/cancel`,
+      { method: "POST" },
     ),
   listReviews: (params) =>
     apiFetch<AdminReviewsResponse>(
@@ -501,6 +507,7 @@ export interface BookingApi {
   list(): Promise<BookingsResponse>;
   getDetails(bookingId: string): Promise<{ booking: BookingDetails }>;
   confirm(bookingId: string): Promise<{ booking: Booking }>;
+  decline(bookingId: string, reason: string): Promise<{ booking: Booking }>;
   complete(bookingId: string): Promise<{ booking: Booking }>;
   cancel(bookingId: string): Promise<{ booking: Booking }>;
   createReview(
@@ -524,6 +531,11 @@ export const bookingApi: BookingApi = {
     apiFetch<{ booking: Booking }>(
       `/api/bookings/${encodeURIComponent(bookingId)}/confirm`,
       { method: "POST" },
+    ),
+  decline: (bookingId, reason) =>
+    apiFetch<{ booking: Booking }>(
+      `/api/bookings/${encodeURIComponent(bookingId)}/decline`,
+      { method: "POST", body: reason.trim() ? { reason: reason.trim() } : {} },
     ),
   complete: (bookingId) =>
     apiFetch<{ booking: Booking }>(
