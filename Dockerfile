@@ -25,7 +25,15 @@ COPY client client
 COPY shared shared
 # Démo : API en same-origin via Nginx → le client appelle /api en relatif.
 # (valeur vide ≠ absent : le client retombe sur http://localhost:4000 sinon)
-RUN printf 'VITE_API_URL=\n' > .env.production
+# Carte : clé PUBLIQUE MapTiler et styles optionnels, injectés au build
+# (Vite les inline dans le bundle). Sans clé, la carte reste indisponible.
+ARG VITE_MAP_API_KEY=
+ARG VITE_MAP_STYLE_ID=dataviz-v4
+ARG VITE_MAP_STYLE_URL=
+ARG VITE_MAP_STYLE_DARK_URL=
+RUN printf 'VITE_API_URL=\nVITE_MAP_API_KEY=%s\nVITE_MAP_STYLE_ID=%s\nVITE_MAP_STYLE_URL=%s\nVITE_MAP_STYLE_DARK_URL=%s\n' \
+      "$VITE_MAP_API_KEY" "$VITE_MAP_STYLE_ID" "$VITE_MAP_STYLE_URL" "$VITE_MAP_STYLE_DARK_URL" \
+      > .env.production
 RUN npm run build --workspace client
 
 # ---------- Image API ----------
