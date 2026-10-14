@@ -12,6 +12,7 @@ import { BarberServices } from "../../components/barber/BarberServices";
 import { BarberGallery } from "../../components/barber/BarberGallery";
 import { BarberReviews } from "../../components/barber/BarberReviews";
 import { Card } from "../../components/ui/Card";
+import { Skeleton } from "../../components/ui/Skeleton";
 
 export function PublicBarberProfilePage() {
   const { barberId } = useParams();
@@ -110,8 +111,30 @@ export function PublicBarberProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-8 text-center text-foreground-muted">
-        Chargement…
+      <div className="min-h-screen bg-background p-4 sm:p-8">
+        <div className="mx-auto max-w-5xl space-y-6" aria-busy="true">
+          <span className="sr-only" role="status">
+            Chargement du profil…
+          </span>
+          <Card className="flex items-center gap-4 p-6">
+            <Skeleton className="h-20 w-20 shrink-0 rounded-full" />
+            <div className="w-full space-y-2">
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-4 w-1/3" />
+            </div>
+          </Card>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Card className="space-y-3 p-6 lg:col-span-2">
+              <Skeleton className="h-5 w-1/3" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </Card>
+            <Card className="space-y-3 p-6">
+              <Skeleton className="h-5 w-1/2" />
+              <Skeleton className="h-10 w-full" />
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }

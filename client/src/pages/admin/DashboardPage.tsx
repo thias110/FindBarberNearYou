@@ -3,17 +3,39 @@ import { Link } from "react-router-dom";
 import type { AdminMetrics } from "@findbarber/shared/types";
 import { adminApi } from "../../lib/apiClient";
 import { AdminLayout } from "../../components/AdminLayout";
+import { Alert } from "../../components/ui/Alert";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Skeleton } from "../../components/ui/Skeleton";
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow">
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+    <Card className="p-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
         {label}
       </p>
-      <p className="mt-1 text-xl font-semibold text-brand-900">{value}</p>
-    </div>
+      <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
+    </Card>
   );
 }
+
+const SHORTCUTS = [
+  {
+    to: "/admin/users",
+    title: "Utilisateurs",
+    description: "Liste, rôles et suspension des comptes",
+  },
+  {
+    to: "/admin/bookings",
+    title: "Réservations",
+    description: "Vue globale et filtrage par statut",
+  },
+  {
+    to: "/admin/reviews",
+    title: "Avis",
+    description: "Modération et masquage des avis",
+  },
+] as const;
 
 export function AdminDashboardPage() {
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
@@ -47,81 +69,67 @@ export function AdminDashboardPage() {
 
   return (
     <AdminLayout>
-      {loading ? (
-        <div className="rounded-2xl bg-white p-6 text-center text-gray-500">
-          Chargement…
-        </div>
-      ) : error ? (
-        <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700">
-          <p>{error}</p>
-          <button
-            type="button"
-            onClick={() => setRetryKey((key) => key + 1)}
-            className="mt-2 rounded-lg border border-brand-700 px-3 py-1 text-brand-700"
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-foreground">Tableau de bord</h2>
+
+        {loading ? (
+          <div
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            aria-busy="true"
           >
-            Réessayer
-          </button>
-        </div>
-      ) : metrics ? (
-        <>
+            <span className="sr-only" role="status">
+              Chargement des indicateurs…
+            </span>
+            {[0, 1, 2, 3, 4, 5].map((key) => (
+              <Card key={key} className="space-y-2 p-4">
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-7 w-1/4" />
+              </Card>
+            ))}
+          </div>
+        ) : error ? (
+          <Alert variant="danger">
+            <p>{error}</p>
+            <Button
+              variant="secondary"
+              className="mt-3 min-h-11"
+              onClick={() => setRetryKey((key) => key + 1)}
+            >
+              Réessayer
+            </Button>
+          </Alert>
+        ) : metrics ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <MetricCard
-              label="Utilisateurs"
-              value={String(metrics.users.total)}
-            />
-            <MetricCard
-              label="Barbiers actifs"
-              value={String(metrics.barbers.active)}
-            />
-            <MetricCard
-              label="Réservations"
-              value={String(metrics.bookings.total)}
-            />
+            <MetricCard label="Utilisateurs" value={metrics.users.total} />
+            <MetricCard label="Barbiers actifs" value={metrics.barbers.active} />
+            <MetricCard label="Réservations" value={metrics.bookings.total} />
             <MetricCard
               label="Utilisateurs suspendus"
-              value={String(metrics.users.suspended)}
+              value={metrics.users.suspended}
             />
             <MetricCard
               label="Réservations en attente"
-              value={String(metrics.bookings.pending)}
+              value={metrics.bookings.pending}
             />
-            <MetricCard
-              label="Avis masqués"
-              value={String(metrics.reviews.hidden)}
-            />
+            <MetricCard label="Avis masqués" value={metrics.reviews.hidden} />
           </div>
+        ) : null}
 
-          <nav className="grid gap-3 sm:grid-cols-3">
+        <nav aria-label="Raccourcis administration" className="grid gap-3 sm:grid-cols-3">
+          {SHORTCUTS.map((item) => (
             <Link
-              to="/admin/users"
-              className="rounded-2xl bg-white p-5 shadow transition hover:shadow-md"
+              key={item.to}
+              to={item.to}
+              className="block rounded-2xl border border-border bg-surface p-5 shadow-card transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              <span className="font-semibold text-brand-900">Utilisateurs</span>
-              <span className="mt-1 block text-sm text-gray-600">
-                Liste, rôles et suspension des comptes
+              <span className="font-semibold text-foreground">{item.title}</span>
+              <span className="mt-1 block text-sm text-foreground-muted">
+                {item.description}
               </span>
             </Link>
-            <Link
-              to="/admin/bookings"
-              className="rounded-2xl bg-white p-5 shadow transition hover:shadow-md"
-            >
-              <span className="font-semibold text-brand-900">Réservations</span>
-              <span className="mt-1 block text-sm text-gray-600">
-                Vue globale et filtrage par statut
-              </span>
-            </Link>
-            <Link
-              to="/admin/reviews"
-              className="rounded-2xl bg-white p-5 shadow transition hover:shadow-md"
-            >
-              <span className="font-semibold text-brand-900">Avis</span>
-              <span className="mt-1 block text-sm text-gray-600">
-                Modération et masquage des avis
-              </span>
-            </Link>
-          </nav>
-        </>
-      ) : null}
+          ))}
+        </nav>
+      </div>
     </AdminLayout>
   );
 }

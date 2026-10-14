@@ -14,7 +14,14 @@ export function RequireRole({
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">Chargement…</div>;
+    return (
+      <div
+        role="status"
+        className="min-h-screen bg-background p-8 text-center text-foreground-muted"
+      >
+        Chargement…
+      </div>
+    );
   }
 
   if (!user) {

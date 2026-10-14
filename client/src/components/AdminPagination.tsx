@@ -1,3 +1,5 @@
+import { Button } from "./ui/Button";
+
 // Pagination simple et réutilisable des listes d'administration. La cohérence
 // avec la pagination serveur est garantie par l'appelant (page/totalPages
 // proviennent du DTO).
@@ -17,25 +19,25 @@ export function AdminPagination({
       aria-label="Pagination"
       className="flex items-center justify-center gap-3"
     >
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        className="min-h-11"
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
-        className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50"
       >
         Précédent
-      </button>
-      <span className="text-sm text-gray-600">
+      </Button>
+      <span className="text-sm text-foreground-muted">
         Page {page} / {totalPages}
       </span>
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        className="min-h-11"
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
-        className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 disabled:opacity-50"
       >
         Suivant
-      </button>
+      </Button>
     </nav>
   );
 }

@@ -12,6 +12,7 @@ import {
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
@@ -41,6 +42,9 @@ export function BarberGalleryPage() {
     text: string;
   } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<OwnBarberPhoto | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -96,8 +100,9 @@ export function BarberGalleryPage() {
     }
   }
 
-  async function handleDelete(photo: OwnBarberPhoto) {
-    if (!window.confirm("Supprimer cette photo ?")) return;
+  async function handleDelete() {
+    const photo = pendingDelete;
+    if (!photo) return;
     setDeletingId(photo.id);
     setMessage(null);
     try {
@@ -108,6 +113,7 @@ export function BarberGalleryPage() {
       setMessage({ kind: "error", text: apiErrorMessage(err) });
     } finally {
       setDeletingId(null);
+      setPendingDelete(null);
     }
   }
 
@@ -255,7 +261,7 @@ export function BarberGalleryPage() {
                           className="min-h-[44px]"
                           disabled={deletingId === photo.id}
                           isLoading={deletingId === photo.id}
-                          onClick={() => void handleDelete(photo)}
+                          onClick={() => setPendingDelete(photo)}
                         >
                           {deletingId === photo.id ? "Suppression…" : "Supprimer"}
                         </Button>
@@ -268,6 +274,18 @@ export function BarberGalleryPage() {
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Supprimer cette photo ?"
+        confirmLabel="Supprimer"
+        tone="danger"
+        isLoading={deletingId !== null}
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setPendingDelete(null)}
+      >
+        <p>Elle sera retirée de votre profil public.</p>
+      </ConfirmDialog>
     </div>
   );
 }

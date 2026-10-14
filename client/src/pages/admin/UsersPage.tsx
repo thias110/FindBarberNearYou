@@ -6,6 +6,13 @@ import { adminApi } from "../../lib/apiClient";
 import { useAuth } from "../../app/auth-context";
 import { AdminLayout } from "../../components/AdminLayout";
 import { AdminPagination } from "../../components/AdminPagination";
+import { AdminListState } from "../../components/admin/AdminListState";
+import { FilterChips } from "../../components/admin/FilterChips";
+import { Alert } from "../../components/ui/Alert";
+import { Badge } from "../../components/ui/Badge";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { adminUserDisplayName } from "../../lib/admin";
 import { formatDateTime } from "../../lib/formatters";
 
@@ -20,6 +27,11 @@ const ROLE_FILTERS: { value: RoleFilter; label: string }[] = [
 
 const PAGE_SIZE = 20;
 
+const SECONDARY_LINK_CLASS =
+  "inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+
+type PendingAction = { kind: "suspend" | "reactivate"; user: AdminUser };
+
 export function AdminUsersPage() {
   const { user: currentUser } = useAuth();
   const [role, setRole] = useState<RoleFilter>("ALL");
@@ -28,7 +40,8 @@ export function AdminUsersPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [actionId, setActionId] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{
     kind: "success" | "error";
     text: string;
@@ -70,174 +83,132 @@ export function AdminUsersPage() {
     setPage(1);
   }
 
-  async function handleSuspend(target: AdminUser) {
-    if (
-      !window.confirm(
-        `Suspendre ${target.email} ? Ses réservations futures seront annulées.`,
-      )
-    ) {
-      return;
-    }
-    setActionId(target.id);
+  async function handleConfirm() {
+    if (!pending) return;
+    const { kind, user: target } = pending;
+    setBusy(true);
     setMessage(null);
     try {
-      await adminApi.suspendUser(target.id);
-      setMessage({
-        kind: "success",
-        text: `${target.email} a été suspendu.`,
-      });
+      if (kind === "suspend") {
+        await adminApi.suspendUser(target.id);
+        setMessage({ kind: "success", text: `${target.email} a été suspendu.` });
+      } else {
+        await adminApi.reactivateUser(target.id);
+        setMessage({ kind: "success", text: `${target.email} a été réactivé.` });
+      }
       setReloadKey((key) => key + 1);
     } catch (err) {
       setMessage({
         kind: "error",
-        text: err instanceof Error ? err.message : "Suspension impossible.",
+        text:
+          err instanceof Error
+            ? err.message
+            : kind === "suspend"
+              ? "Suspension impossible."
+              : "Réactivation impossible.",
       });
     } finally {
-      setActionId(null);
-    }
-  }
-
-  async function handleReactivate(target: AdminUser) {
-    if (!window.confirm(`Réactiver ${target.email} ?`)) {
-      return;
-    }
-    setActionId(target.id);
-    setMessage(null);
-    try {
-      await adminApi.reactivateUser(target.id);
-      setMessage({
-        kind: "success",
-        text: `${target.email} a été réactivé.`,
-      });
-      setReloadKey((key) => key + 1);
-    } catch (err) {
-      setMessage({
-        kind: "error",
-        text: err instanceof Error ? err.message : "Réactivation impossible.",
-      });
-    } finally {
-      setActionId(null);
+      setBusy(false);
+      setPending(null);
     }
   }
 
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-brand-900">Utilisateurs</h2>
+        <h2 className="text-xl font-semibold text-foreground">Utilisateurs</h2>
 
-        <div className="flex flex-wrap gap-2">
-          {ROLE_FILTERS.map((filter) => (
-            <button
-              key={filter.value}
-              type="button"
-              onClick={() => handleRoleChange(filter.value)}
-              className={`rounded-lg px-3 py-1.5 text-sm ${
-                role === filter.value
-                  ? "bg-brand-700 text-white"
-                  : "border border-gray-300 text-gray-700"
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
+        <FilterChips
+          label="Filtrer par rôle"
+          options={ROLE_FILTERS}
+          value={role}
+          onChange={handleRoleChange}
+        />
 
         {message && (
-          <p
-            className={`rounded-lg p-3 text-sm ${
-              message.kind === "success"
-                ? "bg-green-50 text-green-700"
-                : "bg-red-50 text-red-700"
-            }`}
-          >
+          <Alert variant={message.kind === "success" ? "success" : "danger"}>
             {message.text}
-          </p>
+          </Alert>
         )}
 
-        {loading ? (
-          <div className="rounded-2xl bg-white p-6 text-center text-gray-500">
-            Chargement…
-          </div>
-        ) : error ? (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700">
-            <p>{error}</p>
-            <button
-              type="button"
-              onClick={() => setReloadKey((key) => key + 1)}
-              className="mt-2 rounded-lg border border-brand-700 px-3 py-1 text-brand-700"
-            >
-              Réessayer
-            </button>
-          </div>
-        ) : users.length === 0 ? (
-          <div className="rounded-2xl bg-white p-6 text-center text-gray-600">
-            Aucun utilisateur pour ce filtre.
-          </div>
-        ) : (
+        <AdminListState
+          loading={loading}
+          error={error}
+          onRetry={() => setReloadKey((key) => key + 1)}
+          isEmpty={users.length === 0}
+          emptyTitle="Aucun utilisateur pour ce filtre."
+          loadingLabel="Chargement des utilisateurs…"
+        >
           <ul className="space-y-3">
             {users.map((item) => {
               const isSelf = item.id === currentUser?.id;
-              const busy = actionId === item.id;
+              const suspended = item.status !== "ACTIVE";
               return (
-                <li
-                  key={item.id}
-                  className="rounded-xl bg-white p-4 shadow"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-brand-900">
-                        {adminUserDisplayName(item)}
-                      </p>
-                      <p className="text-sm text-gray-600">{item.email}</p>
-                      <p className="mt-1 text-sm text-gray-700">
-                        {ROLE_LABELS[item.role]} ·{" "}
-                        {USER_STATUS_LABELS[item.status]}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Inscrit le {formatDateTime(item.createdAt)}
-                      </p>
-                    </div>
+                <li key={item.id}>
+                  <Card className="p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground">
+                          {adminUserDisplayName(item)}
+                        </p>
+                        <p className="break-all text-sm text-foreground-muted">
+                          {item.email}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Badge variant="neutral">{ROLE_LABELS[item.role]}</Badge>
+                          <Badge variant={suspended ? "danger" : "success"}>
+                            {USER_STATUS_LABELS[item.status]}
+                          </Badge>
+                        </div>
+                        <p className="mt-2 text-xs text-foreground-muted">
+                          Inscrit le {formatDateTime(item.createdAt)}
+                        </p>
+                      </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      {item.role === "BARBER" && item.barberProfileId && (
-                        <Link
-                          to={`/admin/barbers/${item.barberProfileId}/stats`}
-                          className="rounded-lg border border-brand-700 px-3 py-1.5 text-sm text-brand-700"
-                        >
-                          Voir les statistiques
-                        </Link>
-                      )}
-                      {item.status === "ACTIVE" ? (
-                        <button
-                          type="button"
-                          disabled={isSelf || busy}
-                          title={
-                            isSelf
-                              ? "Vous ne pouvez pas suspendre votre propre compte."
-                              : undefined
-                          }
-                          onClick={() => void handleSuspend(item)}
-                          className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-700 disabled:opacity-50"
-                        >
-                          {busy ? "Suspension…" : "Suspendre"}
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void handleReactivate(item)}
-                          className="rounded-lg border border-brand-700 px-3 py-1.5 text-sm text-brand-700 disabled:opacity-50"
-                        >
-                          {busy ? "Réactivation…" : "Réactiver"}
-                        </button>
-                      )}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {item.role === "BARBER" && item.barberProfileId && (
+                          <Link
+                            to={`/admin/barbers/${item.barberProfileId}/stats`}
+                            className={SECONDARY_LINK_CLASS}
+                          >
+                            Voir les statistiques
+                          </Link>
+                        )}
+                        {suspended ? (
+                          <Button
+                            variant="secondary"
+                            className="min-h-11"
+                            onClick={() =>
+                              setPending({ kind: "reactivate", user: item })
+                            }
+                          >
+                            Réactiver
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="danger"
+                            className="min-h-11"
+                            disabled={isSelf}
+                            title={
+                              isSelf
+                                ? "Vous ne pouvez pas suspendre votre propre compte."
+                                : undefined
+                            }
+                            onClick={() =>
+                              setPending({ kind: "suspend", user: item })
+                            }
+                          >
+                            Suspendre
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  </Card>
                 </li>
               );
             })}
           </ul>
-        )}
+        </AdminListState>
 
         <AdminPagination
           page={page}
@@ -245,6 +216,29 @@ export function AdminUsersPage() {
           onPageChange={setPage}
         />
       </div>
+
+      <ConfirmDialog
+        open={pending !== null}
+        title={
+          pending?.kind === "suspend"
+            ? "Suspendre ce compte ?"
+            : "Réactiver ce compte ?"
+        }
+        confirmLabel={pending?.kind === "suspend" ? "Suspendre" : "Réactiver"}
+        tone={pending?.kind === "suspend" ? "danger" : "primary"}
+        isLoading={busy}
+        onConfirm={() => void handleConfirm()}
+        onCancel={() => setPending(null)}
+      >
+        {pending?.kind === "suspend" ? (
+          <p>
+            {pending.user.email} ne pourra plus se connecter et ses réservations
+            futures seront annulées.
+          </p>
+        ) : pending ? (
+          <p>{pending.user.email} pourra de nouveau se connecter.</p>
+        ) : null}
+      </ConfirmDialog>
     </AdminLayout>
   );
 }
