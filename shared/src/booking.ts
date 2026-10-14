@@ -12,9 +12,9 @@
 // - les réservations actives sont comparées en intervalles semi-ouverts ;
 // - la conversion murale→UTC gère le DST ; une heure murale inexistante est ignorée.
 
-import type { Weekday } from "./constants";
+import { LIMITS, type BookingStatus, type Weekday } from "./constants";
 import { isValidCalendarDate, weekdayFromCalendarDate } from "./dates";
-import { zonedTimeToUtc } from "./timezones";
+import { utcToZonedParts, zonedTimeToUtc } from "./timezones";
 
 export interface SlotWorkingInterval {
   weekday: Weekday;
@@ -111,6 +111,12 @@ export function computeBookingSlots(
       const startMs = start.getTime();
       if (startMs < earliest || startMs > latest) continue;
       const endMs = startMs + durationMinutes * 60_000;
+      // La grille avance en minutes murales, mais la fin réelle se calcule en
+      // UTC : un jour de changement d'heure, elle peut dépasser la fin murale
+      // de la plage (ex. 01:30 + 60 min → 03:30 le jour du passage à l'été).
+      if (!endsWithinInterval(endMs, date, interval.endMinute, timezone)) {
+        continue;
+      }
       const overlaps = busy.some(
         (b) => b.startAt.getTime() < endMs && startMs < b.endAt.getTime(),
       );
@@ -125,6 +131,19 @@ export function computeBookingSlots(
   return slots;
 }
 
+/** La fin réelle (instant UTC) tombe-t-elle au plus tard à la fin murale de la plage ? */
+function endsWithinInterval(
+  endMs: number,
+  date: string,
+  endMinute: number,
+  timezone: string,
+): boolean {
+  const end = utcToZonedParts(new Date(endMs), timezone);
+  if (end.date === date) return end.minuteOfDay <= endMinute;
+  // Fin exactement à minuit le lendemain, pour une plage ouverte jusqu'à 24:00.
+  return endMinute === 1440 && end.minuteOfDay === 0 && end.date > date;
+}
+
 // --- Terminaison d'une réservation ---
 // Une réservation n'est terminable qu'une fois CONFIRMÉE ET après la fin réelle
 // de la prestation (`endAt` atteint). Règle partagée : le serveur fait autorité,
@@ -132,4 +151,83 @@ export function computeBookingSlots(
 export function isBookingEnded(endAt: Date | string, now: Date): boolean {
   const endMs = new Date(endAt).getTime();
   return Number.isFinite(endMs) && endMs <= now.getTime();
+}
+
+// --- Machine à états des réservations (lot 4 rouvert) ---
+// Source UNIQUE des transitions autorisées et des rôles qui peuvent les
+// déclencher. Le serveur la consulte sous verrou de ligne avant chaque UPDATE
+// (lui-même gardé par le statut attendu) ; l'interface s'en sert seulement pour
+// ne pas proposer d'action impossible. `SYSTEM` = expiration automatique.
+// Les statuts sans transition sortante sont terminaux : ils ne reviennent
+// jamais en arrière (CANCELLED, DECLINED, EXPIRED, COMPLETED, NO_SHOW).
+
+export type BookingActor = "CLIENT" | "BARBER" | "ADMIN" | "SYSTEM";
+
+export const BOOKING_TRANSITIONS: Record<
+  BookingStatus,
+  Partial<Record<BookingStatus, readonly BookingActor[]>>
+> = {
+  PENDING: {
+    CONFIRMED: ["BARBER"],
+    DECLINED: ["BARBER"],
+    CANCELLED: ["CLIENT", "BARBER", "ADMIN"],
+    EXPIRED: ["SYSTEM"],
+  },
+  CONFIRMED: {
+    COMPLETED: ["BARBER"],
+    CANCELLED: ["CLIENT", "BARBER", "ADMIN"],
+  },
+  CANCELLED: {},
+  COMPLETED: {},
+  NO_SHOW: {},
+  DECLINED: {},
+  EXPIRED: {},
+};
+
+export function canTransitionBooking(
+  from: BookingStatus,
+  to: BookingStatus,
+  actor: BookingActor,
+): boolean {
+  return BOOKING_TRANSITIONS[from][to]?.includes(actor) ?? false;
+}
+
+export function isTerminalBookingStatus(status: BookingStatus): boolean {
+  return Object.keys(BOOKING_TRANSITIONS[status]).length === 0;
+}
+
+const MS_PER_HOUR_BOOKING = 3_600_000;
+
+/**
+ * Échéance d'une demande PENDING : 24 h après sa création, ou le début du
+ * rendez-vous s'il arrive avant (une demande ne peut plus être acceptée une
+ * fois le créneau commencé).
+ */
+export function pendingBookingExpiresAt(
+  createdAt: Date | string,
+  startAt: Date | string,
+  ttlHours: number = LIMITS.bookingPendingTtlHours,
+): Date {
+  const ttlEnd = new Date(createdAt).getTime() + ttlHours * MS_PER_HOUR_BOOKING;
+  return new Date(Math.min(ttlEnd, new Date(startAt).getTime()));
+}
+
+/** Une demande PENDING a-t-elle atteint son échéance à l'instant `now` ? */
+export function isPendingBookingExpired(
+  booking: { status: BookingStatus; createdAt: Date | string; startAt: Date | string },
+  now: Date,
+): boolean {
+  return (
+    booking.status === "PENDING" &&
+    pendingBookingExpiresAt(booking.createdAt, booking.startAt).getTime() <=
+      now.getTime()
+  );
+}
+
+/** Statut à présenter : une demande échue est montrée EXPIRED avant le balayage. */
+export function effectiveBookingStatus(
+  booking: { status: BookingStatus; createdAt: Date | string; startAt: Date | string },
+  now: Date,
+): BookingStatus {
+  return isPendingBookingExpired(booking, now) ? "EXPIRED" : booking.status;
 }

@@ -364,9 +364,10 @@ export type NewBarberTimeOff = typeof barberTimeOff.$inferInsert;
 // fuseau IANA. Prix/durée/currency et snapshots texte sont figés à la création.
 // Les colonnes `client_*` (adresse) sont nullables et **inutilisées** dans ce
 // lot : elles préparent le reste de #19. Le lieu réutilise l'enum existant
-// `service_place`. Aucune contrainte d'exclusion : `btree_gist` n'est pas
-// disponible sous PGlite (dev/tests) ; l'anti-double-réservation est assuré par
-// verrou transactionnel applicatif.
+// `service_place`. Anti-double réservation : verrou transactionnel applicatif
+// (`SELECT … FOR UPDATE` sur le profil) ET contrainte d'exclusion
+// `bookings_no_overlap` (btree_gist, migration 0015, écrite à la main car
+// drizzle ne sait pas déclarer `EXCLUDE`) sur les statuts PENDING/CONFIRMED.
 export const bookings = pgTable(
   "bookings",
   {
@@ -403,6 +404,10 @@ export const bookings = pgTable(
     clientLongitude: doublePrecision("client_longitude"),
     cancelledBy: text("cancelled_by"),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    // Refus par le barber (lot 4 rouvert) : horodatage et motif facultatif,
+    // visible par le client.
+    declinedAt: timestamp("declined_at", { withTimezone: true }),
+    declineReason: text("decline_reason"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -417,6 +422,14 @@ export const bookings = pgTable(
     ),
     index("bookings_client_start_idx").on(table.clientUserId, table.startAt),
     index("bookings_status_idx").on(table.status),
+    // Balayage d'expiration des demandes PENDING.
+    index("bookings_status_created_idx").on(table.status, table.createdAt),
+    check(
+      "bookings_decline_reason_length",
+      sql`${table.declineReason} IS NULL OR char_length(${table.declineReason}) <= ${sql.raw(
+        String(LIMITS.bookingDeclineReason),
+      )}`,
+    ),
     check("bookings_period_order", sql`${table.startAt} < ${table.endAt}`),
     check(
       "bookings_duration_range",

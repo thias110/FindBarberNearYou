@@ -76,3 +76,16 @@ export const bookingSlotsQuerySchema = z
   .strict();
 
 export type BookingSlotsQuery = z.infer<typeof bookingSlotsQuerySchema>;
+
+// --- Refus d'une demande par le barber (lot 4 rouvert) ---
+// Motif facultatif, visible par le client. Chaîne vide ou absente = sans motif.
+export const bookingDeclineSchema = z
+  .object({
+    reason: safeText(
+      LIMITS.bookingDeclineReason,
+      "Le motif est trop long.",
+    ).optional(),
+  })
+  .strict();
+
+export type BookingDeclineInput = z.infer<typeof bookingDeclineSchema>;

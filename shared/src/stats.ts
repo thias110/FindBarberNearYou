@@ -183,9 +183,16 @@ export function computeBarberStats(
       totals.cancelled += 1;
       if (booking.cancelledBy === "BARBER") totals.refused += 1;
     }
+    // Refus explicite d'une demande (lot 4 rouvert).
+    if (booking.status === "DECLINED") totals.refused += 1;
 
-    // Jours/heures chargés : toutes les réservations sauf annulées.
-    if (booking.status !== "CANCELLED") {
+    // Jours/heures chargés : réservations qui ont réellement occupé un créneau
+    // (ni annulées, ni refusées, ni expirées).
+    if (
+      booking.status !== "CANCELLED" &&
+      booking.status !== "DECLINED" &&
+      booking.status !== "EXPIRED"
+    ) {
       bump(byWeekday, String(weekdayFromCalendarDate(date)));
       bump(byHour, String(Math.floor(local.minuteOfDay / 60)));
     }

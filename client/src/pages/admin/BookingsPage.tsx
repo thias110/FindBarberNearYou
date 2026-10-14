@@ -27,6 +27,26 @@ export function AdminBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  // Annulation administrateur en deux étapes (lot 4 rouvert).
+  const [cancelId, setCancelId] = useState<string | null>(null);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  async function handleCancel(bookingId: string) {
+    setActionError(null);
+    setCancelBusy(true);
+    try {
+      await adminApi.cancelBooking(bookingId);
+      setCancelId(null);
+      setReloadKey((key) => key + 1);
+    } catch (err) {
+      setActionError(
+        err instanceof Error ? err.message : "Annulation impossible.",
+      );
+    } finally {
+      setCancelBusy(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +87,11 @@ export function AdminBookingsPage() {
     <AdminLayout>
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-brand-900">Réservations</h2>
+        {actionError && (
+          <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+            {actionError}
+          </p>
+        )}
 
         <label className="block text-sm text-gray-700">
           Statut
@@ -137,6 +162,43 @@ export function AdminBookingsPage() {
                     </div>
                     <BookingStatusBadge status={booking.status} />
                   </div>
+                  {(booking.status === "PENDING" ||
+                    booking.status === "CONFIRMED") && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {cancelId === booking.id ? (
+                        <>
+                          <span className="text-sm text-red-700">
+                            Annuler cette réservation ? Client et
+                            professionnel seront notifiés.
+                          </span>
+                          <button
+                            type="button"
+                            className="min-h-[44px] rounded-lg border border-gray-300 px-3 text-sm"
+                            disabled={cancelBusy}
+                            onClick={() => setCancelId(null)}
+                          >
+                            Non
+                          </button>
+                          <button
+                            type="button"
+                            className="min-h-[44px] rounded-lg bg-red-600 px-3 text-sm text-white"
+                            disabled={cancelBusy}
+                            onClick={() => void handleCancel(booking.id)}
+                          >
+                            {cancelBusy ? "Annulation…" : "Confirmer l'annulation"}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className="min-h-[44px] rounded-lg border border-gray-300 px-3 text-sm"
+                          onClick={() => setCancelId(booking.id)}
+                        >
+                          Annuler
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </li>
               );
             })}

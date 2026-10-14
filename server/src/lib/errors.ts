@@ -30,3 +30,20 @@ export function isUniqueViolation(err: unknown): boolean {
   }
   return false;
 }
+
+/** Violation d'une contrainte d'exclusion PostgreSQL (SQLSTATE 23P01). */
+export function isExclusionViolation(err: unknown): boolean {
+  let current: unknown = err;
+  for (let depth = 0; current && depth < 5; depth += 1) {
+    if (typeof current !== "object") break;
+    const e = current as { code?: string; message?: string; cause?: unknown };
+    if (
+      e.code === "23P01" ||
+      /conflicting key value violates exclusion constraint/i.test(e.message ?? "")
+    ) {
+      return true;
+    }
+    current = e.cause;
+  }
+  return false;
+}

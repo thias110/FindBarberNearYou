@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, gt, gte, inArray, lt, lte } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, lt, lte, or } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
   barberProfiles,
@@ -18,6 +18,8 @@ import {
   LIMITS,
 } from "@findbarber/shared/constants";
 import type {
+  BookingStatus,
+  NotificationType,
   ServicePlace,
   Weekday,
 } from "@findbarber/shared/constants";
@@ -30,7 +32,14 @@ import type {
   BookingCreateInput,
   BookingSlotsQuery,
 } from "@findbarber/shared/validation";
-import { computeBookingSlots, isBookingEnded } from "@findbarber/shared/booking";
+import {
+  canTransitionBooking,
+  computeBookingSlots,
+  effectiveBookingStatus,
+  isBookingEnded,
+  isPendingBookingExpired,
+  pendingBookingExpiresAt,
+} from "@findbarber/shared/booking";
 import {
   calendarDateToUtcMillis,
   weekdayFromCalendarDate,
@@ -41,13 +50,14 @@ import {
   isValidLatitude,
   isValidLongitude,
 } from "../../lib/location.js";
-import { AppError } from "../../lib/errors.js";
+import { AppError, isExclusionViolation } from "../../lib/errors.js";
 import {
   assertBookingReadAccess,
   bookingNotFound,
   type AuthUser,
 } from "../../lib/authorization.js";
 import { notifyBookingEvent } from "../notification/service.js";
+import { expireStalePendingBookings } from "./expiry.js";
 
 const MS_PER_HOUR = 3_600_000;
 
@@ -67,13 +77,19 @@ function toBooking(
     priceMinor: row.priceMinor,
     currency: row.currency,
     servicePlace: row.servicePlace,
-    status: row.status,
+    status: effectiveBookingStatus(row, new Date()),
     startAt: row.startAt.toISOString(),
     endAt: row.endAt.toISOString(),
     clientName,
     hasReview,
     cancelledBy: row.cancelledBy,
     cancelledAt: row.cancelledAt ? row.cancelledAt.toISOString() : null,
+    declinedAt: row.declinedAt ? row.declinedAt.toISOString() : null,
+    declineReason: row.declineReason,
+    expiresAt:
+      row.status === "PENDING"
+        ? pendingBookingExpiresAt(row.createdAt, row.startAt).toISOString()
+        : null,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -157,12 +173,19 @@ async function assertActiveBarber(
   }
 }
 
+// Réservations qui occupent un créneau : CONFIRMED, et PENDING non échues.
+// Une demande échue (24 h ou début atteint) libère le créneau dès la lecture,
+// avant même que le balayage ne persiste son statut EXPIRED.
 async function loadBusy(
   runner: typeof db,
   barberProfileId: string,
   date: string,
+  now: Date,
 ): Promise<{ startAt: Date; endAt: Date }[]> {
   const window = busyWindow(date);
+  const ttlStart = new Date(
+    now.getTime() - LIMITS.bookingPendingTtlHours * MS_PER_HOUR,
+  );
   return runner
     .select({ startAt: bookings.startAt, endAt: bookings.endAt })
     .from(bookings)
@@ -170,6 +193,10 @@ async function loadBusy(
       and(
         eq(bookings.barberProfileId, barberProfileId),
         inArray(bookings.status, [...ACTIVE_BOOKING_STATUSES]),
+        or(
+          eq(bookings.status, "CONFIRMED"),
+          and(gt(bookings.createdAt, ttlStart), gt(bookings.startAt, now)),
+        ),
         lt(bookings.startAt, window.end),
         gt(bookings.endAt, window.start),
       ),
@@ -267,10 +294,11 @@ export async function getBookingSlots(
 
   await assertPlaceOffered(profile.id, query.place);
 
+  const now = new Date();
   const [hours, timeOff, busy] = await Promise.all([
     loadWorkingHours(db, profile.id, query.date),
     loadTimeOff(db, profile.id, query.date),
-    loadBusy(db, profile.id, query.date),
+    loadBusy(db, profile.id, query.date, now),
   ]);
   const context = toSlotInputs(hours, timeOff, busy);
 
@@ -279,7 +307,7 @@ export async function getBookingSlots(
     timezone: profile.timezone,
     durationMinutes: service.durationMinutes,
     ...context,
-    now: new Date(),
+    now,
     leadTimeMinutes: LIMITS.bookingLeadTimeMinutes,
     horizonDays: LIMITS.bookingHorizonDays,
   }).map((slot) => ({
@@ -313,6 +341,26 @@ async function assertPlaceOffered(
 }
 
 export async function createBooking(
+  clientUserId: string,
+  input: BookingCreateInput,
+): Promise<Booking> {
+  try {
+    return await createBookingInTransaction(clientUserId, input);
+  } catch (err) {
+    // Filet en base : la contrainte d'exclusion `bookings_no_overlap` a refusé
+    // un chevauchement que le verrou applicatif aurait dû empêcher.
+    if (isExclusionViolation(err)) {
+      throw new AppError(
+        409,
+        "SLOT_UNAVAILABLE",
+        "Ce créneau n'est plus disponible.",
+      );
+    }
+    throw err;
+  }
+}
+
+async function createBookingInTransaction(
   clientUserId: string,
   input: BookingCreateInput,
 ): Promise<Booking> {
@@ -381,16 +429,20 @@ export async function createBooking(
         ? await resolveClientLocation(profile, input.clientAddress as string)
         : null;
 
-    // 4. Contexte de disponibilité, relu SOUS verrou.
+    // 4. Les demandes échues de ce barber passent en EXPIRED (sous verrou) :
+    // elles ne bloquent plus le créneau ni la contrainte d'exclusion.
+    const now = new Date();
+    await expireStalePendingBookings(runner, now, profile.id);
+
+    // 5. Contexte de disponibilité, relu SOUS verrou.
     const [hours, timeOff, busy] = await Promise.all([
       loadWorkingHours(runner, profile.id, input.date),
       loadTimeOff(runner, profile.id, input.date),
-      loadBusy(runner, profile.id, input.date),
+      loadBusy(runner, profile.id, input.date, now),
     ]);
     const context = toSlotInputs(hours, timeOff, busy);
 
-    // 5. Créneau recalculé côté serveur : le client ne peut pas le forger.
-    const now = new Date();
+    // 6. Créneau recalculé côté serveur : le client ne peut pas le forger.
     const slot = computeBookingSlots({
       date: input.date,
       timezone: profile.timezone,
@@ -408,7 +460,7 @@ export async function createBooking(
       );
     }
 
-    // 6. Insertion avec snapshots figés.
+    // 7. Insertion avec snapshots figés.
     const [row] = await runner
       .insert(bookings)
       .values({
@@ -430,6 +482,9 @@ export async function createBooking(
           input.place === "AT_CLIENT" ? (input.clientAddress ?? null) : null,
         clientLatitude: clientLocation?.latitude ?? null,
         clientLongitude: clientLocation?.longitude ?? null,
+        // Horloge applicative (pas `now()` SQL) : l'échéance des 24 h se
+        // calcule avec la même horloge que les contrôles d'expiration.
+        createdAt: now,
         updatedAt: now,
       })
       .returning();
@@ -543,230 +598,188 @@ export async function getBookingDetails(
   return toBookingDetails(row, client?.name ?? null, review !== undefined);
 }
 
-export async function confirmBooking(
-  barberUserId: string,
-  bookingId: string,
-): Promise<Booking> {
-  const profileId = await requireOwnBarberProfileId(barberUserId);
+// --- Transitions de statut (lot 4 rouvert) ---
+// Point d'entrée UNIQUE de toutes les transitions déclenchées par un
+// utilisateur. Dans UNE transaction : verrou de la ligne (`FOR UPDATE`),
+// contrôle d'appartenance, machine à états partagée (`canTransitionBooking`),
+// règles temporelles, puis UPDATE gardé par le statut lu (`AND status = from`).
+// Une transition concurrente ne peut donc jamais être écrasée : c'était le bug
+// « annulée → confirmée » (contrôle hors transaction + UPDATE non gardé).
 
-  const [existing] = await db
-    .select()
-    .from(bookings)
-    .where(
-      and(
-        eq(bookings.id, bookingId),
-        eq(bookings.barberProfileId, profileId),
-      ),
-    )
-    .limit(1);
-  if (!existing) {
-    throw bookingNotFound();
-  }
-  if (existing.status !== "PENDING") {
-    throw new AppError(
-      409,
-      "INVALID_STATUS_TRANSITION",
-      "Seule une réservation en attente peut être confirmée.",
-    );
-  }
+type UserTransitionTarget = "CONFIRMED" | "DECLINED" | "COMPLETED" | "CANCELLED";
 
-  const updated = await db.transaction(async (tx) => {
-    const runner = tx as unknown as typeof db;
-    const [row] = await runner
-      .update(bookings)
-      .set({ status: "CONFIRMED", updatedAt: new Date() })
-      .where(
-        and(
-          eq(bookings.id, bookingId),
-          eq(bookings.barberProfileId, profileId),
-        ),
-      )
-      .returning();
+const INVALID_TRANSITION_MESSAGES: Record<UserTransitionTarget, string> = {
+  CONFIRMED: "Seule une réservation en attente peut être confirmée.",
+  DECLINED: "Seule une réservation en attente peut être refusée.",
+  COMPLETED:
+    "Seule une réservation confirmée peut être marquée comme terminée.",
+  CANCELLED: "Cette réservation ne peut plus être annulée.",
+};
 
-    // Notification CLIENT : réservation confirmée (même transaction).
-    await notifyBookingEvent(runner, {
-      recipientUserId: row.clientUserId,
-      actorUserId: barberUserId,
-      bookingId: row.id,
-      type: "BOOKING_CONFIRMED",
-    });
-
-    return row;
-  });
-
-  const [client] = await db
-    .select({ name: users.name })
-    .from(users)
-    .where(eq(users.id, updated.clientUserId))
-    .limit(1);
-  return toBooking(updated, client?.name ?? null);
+function invalidTransition(to: UserTransitionTarget): AppError {
+  return new AppError(
+    409,
+    "INVALID_STATUS_TRANSITION",
+    INVALID_TRANSITION_MESSAGES[to],
+  );
 }
 
-// Marquage terminé (lot 11) : seul le BARBER propriétaire peut passer
-// CONFIRMED → COMPLETED. Aucun autre statut ne peut devenir COMPLETED ;
-// CLIENT et ADMIN sont bloqués en amont par `requireRole("BARBER")`.
-export async function completeBooking(
-  barberUserId: string,
-  bookingId: string,
-): Promise<Booking> {
-  const profileId = await requireOwnBarberProfileId(barberUserId);
-
-  const [existing] = await db
-    .select()
-    .from(bookings)
-    .where(
-      and(
-        eq(bookings.id, bookingId),
-        eq(bookings.barberProfileId, profileId),
-      ),
-    )
-    .limit(1);
-  if (!existing) {
-    throw bookingNotFound();
-  }
-  if (existing.status !== "CONFIRMED") {
-    throw new AppError(
-      409,
-      "INVALID_STATUS_TRANSITION",
-      "Seule une réservation confirmée peut être marquée comme terminée.",
-    );
-  }
-  // Jamais avant la fin réelle de la prestation : sinon un avis pourrait être
-  // déposé pour un rendez-vous qui n'a pas encore eu lieu.
-  if (!isBookingEnded(existing.endAt, new Date())) {
-    throw new AppError(
-      409,
-      "BOOKING_NOT_ENDED",
-      "Une réservation ne peut être marquée comme terminée qu'après la fin de la prestation.",
-    );
-  }
-
-  const updated = await db.transaction(async (tx) => {
-    const runner = tx as unknown as typeof db;
-    const [row] = await runner
-      .update(bookings)
-      .set({ status: "COMPLETED", updatedAt: new Date() })
-      .where(
-        and(
-          eq(bookings.id, bookingId),
-          eq(bookings.barberProfileId, profileId),
-        ),
-      )
-      .returning();
-
-    // Notification CLIENT : réservation terminée (même transaction).
-    await notifyBookingEvent(runner, {
-      recipientUserId: row.clientUserId,
-      actorUserId: barberUserId,
-      bookingId: row.id,
-      type: "BOOKING_COMPLETED",
-    });
-
-    return row;
-  });
-
-  const [client] = await db
-    .select({ name: users.name })
-    .from(users)
-    .where(eq(users.id, updated.clientUserId))
-    .limit(1);
-  return toBooking(updated, client?.name ?? null);
+interface TransitionRequest {
+  user: AuthUser;
+  bookingId: string;
+  to: UserTransitionTarget;
+  declineReason?: string | null;
 }
 
-export async function cancelBooking(
-  user: AuthUser,
-  bookingId: string,
-): Promise<Booking> {
-  let existing: BookingRow | undefined;
-  let barberUserId: string | null = null;
-
-  if (user.role === "BARBER") {
-    const profileId = await requireOwnBarberProfileId(user.id);
-    [existing] = await db
-      .select()
-      .from(bookings)
-      .where(
-        and(
-          eq(bookings.id, bookingId),
-          eq(bookings.barberProfileId, profileId),
-        ),
-      )
-      .limit(1);
-  } else if (user.role === "CLIENT") {
-    [existing] = await db
-      .select()
-      .from(bookings)
-      .where(
-        and(
-          eq(bookings.id, bookingId),
-          eq(bookings.clientUserId, user.id),
-        ),
-      )
-      .limit(1);
-    if (existing) {
-      const [profile] = await db
-        .select({ userId: barberProfiles.userId })
-        .from(barberProfiles)
-        .where(eq(barberProfiles.id, existing.barberProfileId))
-        .limit(1);
-      barberUserId = profile?.userId ?? null;
-    }
-  } else {
-    throw new AppError(403, "FORBIDDEN", "Insufficient permissions.");
+function notificationsFor(
+  to: UserTransitionTarget,
+  actor: AuthUser["role"],
+  clientUserId: string,
+  barberUserId: string | null,
+): { recipientUserId: string; type: NotificationType }[] {
+  const toClient = (type: NotificationType) => [
+    { recipientUserId: clientUserId, type },
+  ];
+  switch (to) {
+    case "CONFIRMED":
+      return toClient("BOOKING_CONFIRMED");
+    case "DECLINED":
+      return toClient("BOOKING_DECLINED");
+    case "COMPLETED":
+      return toClient("BOOKING_COMPLETED");
+    case "CANCELLED":
+      if (actor === "CLIENT") {
+        return barberUserId
+          ? [{ recipientUserId: barberUserId, type: "BOOKING_CANCELLED_BY_CLIENT" }]
+          : [];
+      }
+      if (actor === "BARBER") return toClient("BOOKING_CANCELLED_BY_BARBER");
+      return [
+        ...toClient("BOOKING_CANCELLED_BY_ADMIN"),
+        ...(barberUserId
+          ? [{ recipientUserId: barberUserId, type: "BOOKING_CANCELLED_BY_ADMIN" as const }]
+          : []),
+      ];
   }
+}
 
-  if (!existing) {
-    throw bookingNotFound();
-  }
-  if (existing.status !== "PENDING" && existing.status !== "CONFIRMED") {
-    throw new AppError(
-      409,
-      "INVALID_STATUS_TRANSITION",
-      "Cette réservation ne peut plus être annulée.",
-    );
-  }
-
-  const now = new Date();
-  if (user.role === "CLIENT") {
-    const deadline =
-      existing.startAt.getTime() - LIMITS.bookingClientCancelMinMinutes * 60_000;
-    if (now.getTime() > deadline) {
-      throw new AppError(
-        409,
-        "CANCELLATION_TOO_LATE",
-        "Annulation trop tardive : le délai est dépassé.",
-      );
-    }
-  }
-
-  const updated = await db.transaction(async (tx) => {
-    const runner = tx as unknown as typeof db;
-    const [row] = await runner
-      .update(bookings)
-      .set({
+function transitionValues(
+  request: TransitionRequest,
+  now: Date,
+): Partial<BookingRow> & { status: BookingStatus } {
+  switch (request.to) {
+    case "CANCELLED":
+      return {
         status: "CANCELLED",
-        cancelledBy: user.role,
+        cancelledBy: request.user.role,
         cancelledAt: now,
         updatedAt: now,
-      })
-      .where(eq(bookings.id, bookingId))
-      .returning();
+      };
+    case "DECLINED":
+      return {
+        status: "DECLINED",
+        declinedAt: now,
+        declineReason: request.declineReason ?? null,
+        updatedAt: now,
+      };
+    default:
+      return { status: request.to, updatedAt: now };
+  }
+}
 
-    if (user.role === "CLIENT") {
-      if (barberUserId) {
-        await notifyBookingEvent(runner, {
-          recipientUserId: barberUserId,
-          actorUserId: user.id,
-          bookingId: row.id,
-          type: "BOOKING_CANCELLED_BY_CLIENT",
-        });
+async function transitionBooking(request: TransitionRequest): Promise<Booking> {
+  const { user, bookingId, to } = request;
+  if (user.role !== "CLIENT" && user.role !== "BARBER" && user.role !== "ADMIN") {
+    throw new AppError(403, "FORBIDDEN", "Insufficient permissions.");
+  }
+  const ownProfileId =
+    user.role === "BARBER" ? await requireOwnBarberProfileId(user.id) : null;
+
+  const updated = await db.transaction(async (tx) => {
+    const runner = tx as unknown as typeof db;
+
+    // 1. Verrou de la ligne : sérialise les transitions concurrentes.
+    const [existing] = await runner
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1)
+      .for("update");
+
+    // 2. Appartenance : 404 unique pour inexistante ou non possédée.
+    const owned =
+      existing &&
+      (user.role === "ADMIN" ||
+        (user.role === "CLIENT" && existing.clientUserId === user.id) ||
+        (user.role === "BARBER" && existing.barberProfileId === ownProfileId));
+    if (!existing || !owned) {
+      throw bookingNotFound();
+    }
+
+    // 3. Demande échue : plus aucune action utilisateur possible.
+    const now = new Date();
+    if (isPendingBookingExpired(existing, now)) {
+      throw new AppError(
+        409,
+        "BOOKING_EXPIRED",
+        "Cette demande a expiré faute de réponse.",
+      );
+    }
+
+    // 4. Machine à états partagée.
+    if (!canTransitionBooking(existing.status, to, user.role)) {
+      throw invalidTransition(to);
+    }
+
+    // 5. Règles temporelles.
+    if (to === "CANCELLED" && user.role === "CLIENT") {
+      const deadline =
+        existing.startAt.getTime() -
+        LIMITS.bookingClientCancelMinMinutes * 60_000;
+      if (now.getTime() > deadline) {
+        throw new AppError(
+          409,
+          "CANCELLATION_TOO_LATE",
+          "Annulation trop tardive : le délai est dépassé.",
+        );
       }
-    } else {
+    }
+    // Jamais avant la fin réelle de la prestation : sinon un avis pourrait être
+    // déposé pour un rendez-vous qui n'a pas encore eu lieu.
+    if (to === "COMPLETED" && !isBookingEnded(existing.endAt, now)) {
+      throw new AppError(
+        409,
+        "BOOKING_NOT_ENDED",
+        "Une réservation ne peut être marquée comme terminée qu'après la fin de la prestation.",
+      );
+    }
+
+    // 6. UPDATE gardé par le statut lu (défense en profondeur).
+    const [row] = await runner
+      .update(bookings)
+      .set(transitionValues(request, now))
+      .where(and(eq(bookings.id, bookingId), eq(bookings.status, existing.status)))
+      .returning();
+    if (!row) {
+      throw invalidTransition(to);
+    }
+
+    // 7. Notifications (même transaction).
+    const [profile] = await runner
+      .select({ userId: barberProfiles.userId })
+      .from(barberProfiles)
+      .where(eq(barberProfiles.id, row.barberProfileId))
+      .limit(1);
+    for (const notification of notificationsFor(
+      to,
+      user.role,
+      row.clientUserId,
+      profile?.userId ?? null,
+    )) {
       await notifyBookingEvent(runner, {
-        recipientUserId: row.clientUserId,
+        ...notification,
         actorUserId: user.id,
         bookingId: row.id,
-        type: "BOOKING_CANCELLED_BY_BARBER",
       });
     }
 
@@ -778,5 +791,40 @@ export async function cancelBooking(
     .from(users)
     .where(eq(users.id, updated.clientUserId))
     .limit(1);
-  return toBooking(updated, client?.name ?? null);
+  const [review] = await db
+    .select({ id: reviews.id })
+    .from(reviews)
+    .where(eq(reviews.bookingId, updated.id))
+    .limit(1);
+  return toBooking(updated, client?.name ?? null, review !== undefined);
+}
+
+// Confirmation : BARBER propriétaire, PENDING → CONFIRMED.
+export function confirmBooking(user: AuthUser, bookingId: string) {
+  return transitionBooking({ user, bookingId, to: "CONFIRMED" });
+}
+
+// Refus : BARBER propriétaire, PENDING → DECLINED, motif facultatif.
+export function declineBooking(
+  user: AuthUser,
+  bookingId: string,
+  reason: string | null,
+) {
+  return transitionBooking({
+    user,
+    bookingId,
+    to: "DECLINED",
+    declineReason: reason,
+  });
+}
+
+// Marquage terminé (lot 11) : BARBER propriétaire, CONFIRMED → COMPLETED,
+// seulement après la fin réelle de la prestation.
+export function completeBooking(user: AuthUser, bookingId: string) {
+  return transitionBooking({ user, bookingId, to: "COMPLETED" });
+}
+
+// Annulation : CLIENT (délai 2 h), BARBER propriétaire ou ADMIN (sans délai).
+export function cancelBooking(user: AuthUser, bookingId: string) {
+  return transitionBooking({ user, bookingId, to: "CANCELLED" });
 }

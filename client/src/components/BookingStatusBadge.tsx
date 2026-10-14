@@ -12,6 +12,8 @@ const STATUS_VARIANTS: Record<BookingStatus, BadgeVariant> = {
   CANCELLED: "neutral",
   COMPLETED: "info",
   NO_SHOW: "danger",
+  DECLINED: "danger",
+  EXPIRED: "neutral",
 };
 
 export function BookingStatusBadge({ status }: { status: BookingStatus }) {

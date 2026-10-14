@@ -85,9 +85,10 @@ export const SERVICE_PLACE_LABELS: Record<ServicePlace, string> = {
   AT_CLIENT: "Chez le client",
 };
 
-// --- Réservations (lot 9) ---
-// Enum complet des statuts dès maintenant ; seules les transitions
-// PENDING→CONFIRMED (barber) et →CANCELLED sont câblées dans ce lot.
+// --- Réservations (lot 9, lot 4 rouvert) ---
+// Les transitions autorisées sont centralisées dans `booking-transitions.ts`.
+// `DECLINED` = refus du barber ; `EXPIRED` = demande PENDING restée sans
+// réponse (24 h ou début du rendez-vous). `NO_SHOW` n'est pas câblé.
 // `ACTIVE_BOOKING_STATUSES` = statuts qui bloquent un créneau.
 export const BOOKING_STATUSES = [
   "PENDING",
@@ -95,6 +96,8 @@ export const BOOKING_STATUSES = [
   "CANCELLED",
   "COMPLETED",
   "NO_SHOW",
+  "DECLINED",
+  "EXPIRED",
 ] as const;
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
@@ -104,6 +107,8 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   CANCELLED: "Annulée",
   COMPLETED: "Terminée",
   NO_SHOW: "Absence",
+  DECLINED: "Refusée",
+  EXPIRED: "Expirée",
 };
 
 export const ACTIVE_BOOKING_STATUSES = ["PENDING", "CONFIRMED"] as const;
@@ -118,6 +123,8 @@ export const NOTIFICATION_TYPES = [
   "BOOKING_CANCELLED_BY_CLIENT",
   "BOOKING_CANCELLED_BY_BARBER",
   "BOOKING_CANCELLED_BY_ADMIN",
+  "BOOKING_DECLINED",
+  "BOOKING_EXPIRED",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -199,6 +206,11 @@ export const LIMITS = {
   bookingLeadTimeMinutes: 30,
   bookingHorizonDays: 60,
   bookingClientCancelMinMinutes: 120,
+  // Une demande PENDING sans réponse expire après ce délai (ou au début du
+  // rendez-vous si celui-ci arrive avant) et libère le créneau.
+  bookingPendingTtlHours: 24,
+  // Motif de refus facultatif, visible par le client.
+  bookingDeclineReason: 500,
   // Adresse client privée (lot 9 passe A, issue #19) : chaîne libre géocodée
   // côté serveur pour `AT_CLIENT`, jamais exposée publiquement.
   clientAddress: 200,

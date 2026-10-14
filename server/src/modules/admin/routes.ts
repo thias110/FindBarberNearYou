@@ -18,6 +18,7 @@ import {
   suspendUser,
 } from "./service.js";
 import { getBarberStatsForAdmin } from "../barber/statsService.js";
+import { cancelBooking } from "../booking/service.js";
 
 export const adminRouter = Router();
 
@@ -71,6 +72,20 @@ adminRouter.get(
       throw validationError(parsed.error);
     }
     res.json(await listAdminBookings(parsed.data));
+  },
+);
+
+// Annulation administrateur (lot 4 rouvert) : toute réservation PENDING ou
+// CONFIRMED, sans délai ; client et barber sont notifiés.
+adminRouter.post(
+  "/bookings/:id/cancel",
+  requireAuth,
+  requireRole("ADMIN"),
+  csrfProtection,
+  async (req, res) => {
+    res.json({
+      booking: await cancelBooking(req.user!, req.params.id as string),
+    });
   },
 );
 
