@@ -34,3 +34,8 @@ Toi
  Et tout ca c'est pour la partie juste developpement de l'appli puis quand elle vas sortir y'auras de nouveau agents specialisée en plus.
 
  Du coup pour chaque partie j'essaye de trouver le meilleur agent pour la partie, chaque agent je vais le imposter en mode qu'il soit fais exprex pour la partie de son project, je veux pouvoir aussi faire en mode que chaque agent soit connecté avec les autres. 
+
+ 
+
+
+
