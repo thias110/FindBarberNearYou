@@ -18,6 +18,7 @@ const EXACT: Record<string, string> = {
   "/admin/users": "Utilisateurs — Administration",
   "/admin/bookings": "Réservations — Administration",
   "/admin/reviews": "Avis — Administration",
+  "/admin/audit": "Journal d'audit — Administration",
 };
 
 // Routes servies par AuthLayout (qui porte son propre header et son <main>) :

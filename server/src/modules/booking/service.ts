@@ -18,6 +18,7 @@ import {
   LIMITS,
 } from "@findbarber/shared/constants";
 import type {
+  AuditAction,
   BookingStatus,
   NotificationType,
   ServicePlace,
@@ -53,9 +54,11 @@ import {
 import { AppError, isExclusionViolation } from "../../lib/errors.js";
 import {
   assertBookingReadAccess,
+  assertBookingTransitionAccess,
   bookingNotFound,
   type AuthUser,
 } from "../../lib/authorization.js";
+import { recordAudit } from "../../lib/audit.js";
 import { notifyBookingEvent } from "../notification/service.js";
 import { expireStalePendingBookings } from "./expiry.js";
 
@@ -624,6 +627,13 @@ function invalidTransition(to: UserTransitionTarget): AppError {
   );
 }
 
+const AUDIT_ACTION_BY_TARGET: Record<UserTransitionTarget, AuditAction> = {
+  CONFIRMED: "BOOKING_CONFIRMED",
+  DECLINED: "BOOKING_DECLINED",
+  COMPLETED: "BOOKING_COMPLETED",
+  CANCELLED: "BOOKING_CANCELLED",
+};
+
 interface TransitionRequest {
   user: AuthUser;
   bookingId: string;
@@ -706,15 +716,9 @@ async function transitionBooking(request: TransitionRequest): Promise<Booking> {
       .limit(1)
       .for("update");
 
-    // 2. Appartenance : 404 unique pour inexistante ou non possédée.
-    const owned =
-      existing &&
-      (user.role === "ADMIN" ||
-        (user.role === "CLIENT" && existing.clientUserId === user.id) ||
-        (user.role === "BARBER" && existing.barberProfileId === ownProfileId));
-    if (!existing || !owned) {
-      throw bookingNotFound();
-    }
+    // 2. Appartenance : 404 unique pour inexistante ou non possédée
+    // (politique centralisée dans lib/authorization).
+    assertBookingTransitionAccess(user, existing, ownProfileId);
 
     // 3. Demande échue : plus aucune action utilisateur possible.
     const now = new Date();
@@ -764,7 +768,16 @@ async function transitionBooking(request: TransitionRequest): Promise<Booking> {
       throw invalidTransition(to);
     }
 
-    // 7. Notifications (même transaction).
+    // 7. Journal d'audit (même transaction, issue #13).
+    await recordAudit(runner, {
+      actor: user,
+      action: AUDIT_ACTION_BY_TARGET[to],
+      targetType: "BOOKING",
+      targetId: row.id,
+      metadata: { from: existing.status, to },
+    });
+
+    // 8. Notifications (même transaction).
     const [profile] = await runner
       .select({ userId: barberProfiles.userId })
       .from(barberProfiles)

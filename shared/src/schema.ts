@@ -6,6 +6,7 @@ import {
   doublePrecision,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -15,6 +16,8 @@ import {
 } from "drizzle-orm/pg-core";
 import {
   AUDIENCES,
+  AUDIT_ACTIONS,
+  AUDIT_TARGET_TYPES,
   BOOKING_STATUSES,
   LIMITS,
   NOTIFICATION_TYPES,
@@ -36,6 +39,10 @@ export const bookingStatusEnum = pgEnum("booking_status", [
 ]);
 export const notificationTypeEnum = pgEnum("notification_type", [
   ...NOTIFICATION_TYPES,
+]);
+export const auditActionEnum = pgEnum("audit_action", [...AUDIT_ACTIONS]);
+export const auditTargetTypeEnum = pgEnum("audit_target_type", [
+  ...AUDIT_TARGET_TYPES,
 ]);
 
 export const users = pgTable(
@@ -585,3 +592,34 @@ export const notifications = pgTable(
 
 export type NotificationRow = typeof notifications.$inferSelect;
 export type NewNotificationRow = typeof notifications.$inferInsert;
+
+// --- Journal d'audit (issue #13) ---
+// Trace append-only des actions sensibles. `actor_user_id` passe à NULL si le
+// compte est supprimé (le rôle de l'acteur reste figé dans `actor_role`). Pas de
+// clé étrangère sur la cible : l'entrée survit à la ressource auditée.
+// `metadata` ne contient jamais de donnée personnelle (ni email, ni adresse).
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: text("id").primaryKey(),
+    actorUserId: text("actor_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    actorRole: userRoleEnum("actor_role"),
+    action: auditActionEnum("action").notNull(),
+    targetType: auditTargetTypeEnum("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("audit_logs_created_idx").on(table.createdAt),
+    index("audit_logs_target_idx").on(table.targetType, table.targetId),
+    index("audit_logs_action_created_idx").on(table.action, table.createdAt),
+  ],
+);
+
+export type AuditLogRow = typeof auditLogs.$inferSelect;
+export type NewAuditLogRow = typeof auditLogs.$inferInsert;

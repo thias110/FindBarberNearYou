@@ -9,6 +9,7 @@ const NAV_ITEMS: { to: string; label: string; end?: boolean }[] = [
   { to: "/admin/users", label: "Utilisateurs" },
   { to: "/admin/bookings", label: "Réservations" },
   { to: "/admin/reviews", label: "Avis" },
+  { to: "/admin/audit", label: "Journal" },
 ];
 
 // Base commune des liens de navigation : cible tactile >= 44px, focus clavier

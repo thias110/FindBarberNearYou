@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { ADMIN_LIMITS, BOOKING_STATUSES, ROLES } from "../constants";
+import {
+  ADMIN_LIMITS,
+  AUDIT_ACTIONS,
+  BOOKING_STATUSES,
+  ROLES,
+} from "../constants";
 import { integerParam } from "./barber";
 
 // Pagination partagée des listes d'administration. `integerParam` réutilise la
@@ -43,6 +48,18 @@ export const adminReviewListQuerySchema = z
   })
   .strict();
 
+// GET /api/admin/audit-logs : filtre optionnel par action, plus récent d'abord.
+export const adminAuditLogListQuerySchema = z
+  .object({
+    action: z.enum(AUDIT_ACTIONS).optional(),
+    page,
+    pageSize,
+  })
+  .strict();
+
 export type AdminUserListQuery = z.infer<typeof adminUserListQuerySchema>;
 export type AdminBookingListQuery = z.infer<typeof adminBookingListQuerySchema>;
 export type AdminReviewListQuery = z.infer<typeof adminReviewListQuerySchema>;
+export type AdminAuditLogListQuery = z.infer<
+  typeof adminAuditLogListQuerySchema
+>;

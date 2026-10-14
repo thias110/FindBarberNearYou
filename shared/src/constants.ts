@@ -129,6 +129,36 @@ export const NOTIFICATION_TYPES = [
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
+// --- Journal d'audit (issue #13) ---
+// Actions sensibles tracées dans `audit_logs`, dans la même transaction que la
+// mutation. Un acteur nul signifie une action système (ex. expiration).
+export const AUDIT_ACTIONS = [
+  "BOOKING_CONFIRMED",
+  "BOOKING_DECLINED",
+  "BOOKING_COMPLETED",
+  "BOOKING_CANCELLED",
+  "BOOKING_EXPIRED",
+  "USER_SUSPENDED",
+  "USER_REACTIVATED",
+  "REVIEW_HIDDEN",
+] as const;
+
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
+export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
+  BOOKING_CONFIRMED: "Réservation confirmée",
+  BOOKING_DECLINED: "Réservation refusée",
+  BOOKING_COMPLETED: "Réservation terminée",
+  BOOKING_CANCELLED: "Réservation annulée",
+  BOOKING_EXPIRED: "Demande expirée",
+  USER_SUSPENDED: "Compte suspendu",
+  USER_REACTIVATED: "Compte réactivé",
+  REVIEW_HIDDEN: "Avis masqué",
+};
+
+export const AUDIT_TARGET_TYPES = ["BOOKING", "USER", "REVIEW"] as const;
+export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[number];
+
 // Mention obligatoire de l'arrondi des coordonnées publiques. Cet arrondi
 // réduit la précision mais ne garantit pas l'anonymat.
 export const APPROXIMATE_LOCATION_LABEL = "Localisation approximative";

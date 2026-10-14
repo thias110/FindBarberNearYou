@@ -6,6 +6,7 @@ import type { PgliteDatabase } from "drizzle-orm/pglite";
 import { drizzle as drizzleNodePg } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import {
+  auditLogs,
   barberProfiles,
   barberProfilePlaces,
   barberServiceAudiences,
@@ -23,6 +24,7 @@ import { env } from "../config/env.js";
 
 export const schema = {
   users,
+  auditLogs,
   barberProfiles,
   barberProfilePlaces,
   barberServices,

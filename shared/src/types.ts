@@ -1,5 +1,7 @@
 import type {
   Audience,
+  AuditAction,
+  AuditTargetType,
   BookingStatus,
   Currency,
   NotificationType,
@@ -381,6 +383,28 @@ export interface AdminReview {
 
 export interface AdminReviewsResponse {
   reviews: AdminReview[];
+  pagination: AdminPagination;
+}
+
+// Entrée du journal d'audit (issue #13), vue ADMIN. `actorEmail` est résolu à
+// la lecture (jamais stocké dans le journal) ; null pour une action système ou
+// un compte supprimé.
+export interface AdminAuditLog {
+  id: string;
+  action: AuditAction;
+  actorUserId: string | null;
+  actorRole: Role | null;
+  actorEmail: string | null;
+  targetType: AuditTargetType;
+  targetId: string;
+  /** Email du compte ciblé (cibles USER uniquement), résolu à la lecture. */
+  targetEmail: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface AdminAuditLogsResponse {
+  entries: AdminAuditLog[];
   pagination: AdminPagination;
 }
 

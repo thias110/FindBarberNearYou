@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  adminAuditLogListQuerySchema,
   adminBookingListQuerySchema,
   adminReviewListQuerySchema,
   adminUserListQuerySchema,
@@ -11,6 +12,7 @@ import { validationError } from "../../lib/validation.js";
 import {
   getAdminMetrics,
   hideReview,
+  listAuditLogs,
   listAdminBookings,
   listAdminReviews,
   listAdminUsers,
@@ -58,7 +60,9 @@ adminRouter.post(
   requireRole("ADMIN"),
   csrfProtection,
   async (req, res) => {
-    res.json({ user: await reactivateUser(req.params.id as string) });
+    res.json({
+      user: await reactivateUser(req.user!.id, req.params.id as string),
+    });
   },
 );
 
@@ -108,7 +112,23 @@ adminRouter.post(
   requireRole("ADMIN"),
   csrfProtection,
   async (req, res) => {
-    res.json({ review: await hideReview(req.params.id as string) });
+    res.json({
+      review: await hideReview(req.user!.id, req.params.id as string),
+    });
+  },
+);
+
+// Journal d'audit (issue #13) : lecture seule, filtre optionnel par action.
+adminRouter.get(
+  "/audit-logs",
+  requireAuth,
+  requireRole("ADMIN"),
+  async (req, res) => {
+    const parsed = adminAuditLogListQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      throw validationError(parsed.error);
+    }
+    res.json(await listAuditLogs(parsed.data));
   },
 );
 

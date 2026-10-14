@@ -68,6 +68,28 @@ export function assertBookingReadAccess(
 }
 
 /**
+ * Partie prenante d'une réservation, pour les TRANSITIONS de statut
+ * (confirmer, refuser, terminer, annuler) : ADMIN, CLIENT propriétaire ou
+ * BARBER propriétaire. Les règles de statut, de rôle et de délai sont ensuite
+ * appliquées par la machine à états partagée (`canTransitionBooking`) dans
+ * `transitionBooking`. Sinon 404 `BOOKING_NOT_FOUND` (aucune fuite).
+ */
+export function assertBookingTransitionAccess(
+  user: AuthUser,
+  booking: BookingOwnership | undefined,
+  ownBarberProfileId: string | null,
+): asserts booking is BookingOwnership {
+  const allowed =
+    booking !== undefined &&
+    (user.role === "ADMIN" ||
+      isBookingClientOwner(user, booking) ||
+      (user.role === "BARBER" &&
+        ownBarberProfileId !== null &&
+        isBookingBarberOwner(ownBarberProfileId, booking)));
+  if (!allowed) throw bookingNotFound();
+}
+
+/**
  * Dépôt d'un avis : seul le CLIENT propriétaire de la réservation.
  * Sinon 404 `BOOKING_NOT_FOUND` (le BARBER/ADMIN n'apprend rien).
  */

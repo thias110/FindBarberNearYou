@@ -2,6 +2,7 @@ import { and, eq, lte, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { barberProfiles, bookings } from "@findbarber/shared/schema";
 import { LIMITS } from "@findbarber/shared/constants";
+import { recordAudit } from "../../lib/audit.js";
 import { notifyBookingEvent } from "../notification/service.js";
 
 // --- Expiration des demandes PENDING (lot 4 rouvert) ---
@@ -48,6 +49,18 @@ export async function expireStalePendingBookings(
       clientUserId: bookings.clientUserId,
       barberUserId: sql<string>`(select ${barberProfiles.userId} from ${barberProfiles} where ${barberProfiles.id} = ${bookings.barberProfileId})`,
     });
+
+  // Action système : aucun acteur (issue #13).
+  await recordAudit(
+    runner,
+    expired.map((row) => ({
+      actor: null,
+      action: "BOOKING_EXPIRED" as const,
+      targetType: "BOOKING" as const,
+      targetId: row.id,
+      metadata: { from: "PENDING", to: "EXPIRED" },
+    })),
+  );
 
   for (const row of expired) {
     for (const recipientUserId of [row.clientUserId, row.barberUserId]) {

@@ -21,6 +21,7 @@ import { AdminUsersPage } from "../pages/admin/UsersPage";
 import { AdminBookingsPage } from "../pages/admin/BookingsPage";
 import { AdminReviewsPage } from "../pages/admin/ReviewsPage";
 import { AdminBarberStatsPage } from "../pages/admin/BarberStatsPage";
+import { AdminAuditLogPage } from "../pages/admin/AuditLogPage";
 
 export function AppRoutes() {
   return (
@@ -143,6 +144,14 @@ export function AppRoutes() {
         element={
           <RequireRole roles={["ADMIN"]}>
             <AdminReviewsPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/admin/audit"
+        element={
+          <RequireRole roles={["ADMIN"]}>
+            <AdminAuditLogPage />
           </RequireRole>
         }
       />

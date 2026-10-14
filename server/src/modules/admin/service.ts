@@ -1,4 +1,5 @@
 import {
+  aliasedTable,
   and,
   asc,
   desc,
@@ -11,10 +12,12 @@ import {
 } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
+  auditLogs,
   barberProfiles,
   bookings,
   reviews,
   users,
+  type AuditLogRow,
   type BookingRow,
   type ReviewRow,
   type User,
@@ -24,6 +27,8 @@ import {
   CANCELLED_BY_ADMIN,
 } from "@findbarber/shared/constants";
 import type {
+  AdminAuditLog,
+  AdminAuditLogsResponse,
   AdminBooking,
   AdminBookingsResponse,
   AdminMetrics,
@@ -34,10 +39,12 @@ import type {
   AdminUsersResponse,
 } from "@findbarber/shared/types";
 import type {
+  AdminAuditLogListQuery,
   AdminBookingListQuery,
   AdminReviewListQuery,
   AdminUserListQuery,
 } from "@findbarber/shared/validation";
+import { recordAudit, type AuditActor } from "../../lib/audit.js";
 import { AppError } from "../../lib/errors.js";
 import { effectiveBookingStatus } from "@findbarber/shared/booking";
 import { notifyBookingEvent } from "../notification/service.js";
@@ -258,6 +265,7 @@ export async function suspendUser(
     }
 
     let barberProfileId: string | null = null;
+    let cancelledBookingIds: string[] = [];
     if (updated.role === "BARBER") {
       const [profile] = await tx
         .select({ id: barberProfiles.id })
@@ -304,48 +312,85 @@ export async function suspendUser(
             type: "BOOKING_CANCELLED_BY_ADMIN",
           });
         }
+        cancelledBookingIds = affected.map((booking) => booking.id);
       }
     }
+
+    // Journal d'audit (issue #13) : la suspension et chaque annulation induite.
+    const actor: AuditActor = { id: actorUserId, role: "ADMIN" };
+    await recordAudit(tx as unknown as typeof db, [
+      {
+        actor,
+        action: "USER_SUSPENDED",
+        targetType: "USER",
+        targetId: updated.id,
+        metadata: {
+          role: updated.role,
+          cancelledBookings: cancelledBookingIds.length,
+        },
+      },
+      ...cancelledBookingIds.map((bookingId) => ({
+        actor,
+        action: "BOOKING_CANCELLED" as const,
+        targetType: "BOOKING" as const,
+        targetId: bookingId,
+        metadata: { to: "CANCELLED", reason: "BARBER_SUSPENDED" },
+      })),
+    ]);
 
     return toAdminUser(updated, barberProfileId);
   });
 }
 
-export async function reactivateUser(targetUserId: string): Promise<AdminUser> {
-  const [target] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, targetUserId))
-    .limit(1);
+export async function reactivateUser(
+  actorUserId: string,
+  targetUserId: string,
+): Promise<AdminUser> {
+  return db.transaction(async (tx) => {
+    const [target] = await tx
+      .select()
+      .from(users)
+      .where(eq(users.id, targetUserId))
+      .limit(1)
+      .for("update");
 
-  if (!target) {
-    throw new AppError(404, "USER_NOT_FOUND", "Utilisateur introuvable.");
-  }
-  if (target.status !== "SUSPENDED") {
-    throw new AppError(
-      409,
-      "USER_NOT_SUSPENDED",
-      "Cet utilisateur n'est pas suspendu.",
-    );
-  }
+    if (!target) {
+      throw new AppError(404, "USER_NOT_FOUND", "Utilisateur introuvable.");
+    }
+    if (target.status !== "SUSPENDED") {
+      throw new AppError(
+        409,
+        "USER_NOT_SUSPENDED",
+        "Cet utilisateur n'est pas suspendu.",
+      );
+    }
 
-  const [updated] = await db
-    .update(users)
-    .set({ status: "ACTIVE", updatedAt: new Date() })
-    .where(eq(users.id, targetUserId))
-    .returning();
+    const [updated] = await tx
+      .update(users)
+      .set({ status: "ACTIVE", updatedAt: new Date() })
+      .where(eq(users.id, targetUserId))
+      .returning();
 
-  let barberProfileId: string | null = null;
-  if (updated.role === "BARBER") {
-    const [profile] = await db
-      .select({ id: barberProfiles.id })
-      .from(barberProfiles)
-      .where(eq(barberProfiles.userId, targetUserId))
-      .limit(1);
-    barberProfileId = profile?.id ?? null;
-  }
+    let barberProfileId: string | null = null;
+    if (updated.role === "BARBER") {
+      const [profile] = await tx
+        .select({ id: barberProfiles.id })
+        .from(barberProfiles)
+        .where(eq(barberProfiles.userId, targetUserId))
+        .limit(1);
+      barberProfileId = profile?.id ?? null;
+    }
 
-  return toAdminUser(updated, barberProfileId);
+    await recordAudit(tx as unknown as typeof db, {
+      actor: { id: actorUserId, role: "ADMIN" },
+      action: "USER_REACTIVATED",
+      targetType: "USER",
+      targetId: updated.id,
+      metadata: { role: updated.role },
+    });
+
+    return toAdminUser(updated, barberProfileId);
+  });
 }
 
 export async function listAdminBookings(
@@ -430,25 +475,102 @@ async function loadAdminReview(reviewId: string): Promise<AdminReview> {
 
 // Masquage non destructif : on pose `hidden_at`, jamais de DELETE. Aucune
 // restauration n'est exposée (API ou interface) à ce jour.
-export async function hideReview(reviewId: string): Promise<AdminReview> {
-  const [review] = await db
-    .select()
-    .from(reviews)
-    .where(eq(reviews.id, reviewId))
-    .limit(1);
+export async function hideReview(
+  actorUserId: string,
+  reviewId: string,
+): Promise<AdminReview> {
+  await db.transaction(async (tx) => {
+    const [review] = await tx
+      .select()
+      .from(reviews)
+      .where(eq(reviews.id, reviewId))
+      .limit(1)
+      .for("update");
 
-  if (!review) {
-    throw new AppError(404, "REVIEW_NOT_FOUND", "Avis introuvable.");
-  }
-  if (review.hiddenAt) {
-    throw new AppError(409, "REVIEW_ALREADY_HIDDEN", "Cet avis est déjà masqué.");
-  }
+    if (!review) {
+      throw new AppError(404, "REVIEW_NOT_FOUND", "Avis introuvable.");
+    }
+    if (review.hiddenAt) {
+      throw new AppError(
+        409,
+        "REVIEW_ALREADY_HIDDEN",
+        "Cet avis est déjà masqué.",
+      );
+    }
 
-  const now = new Date();
-  await db
-    .update(reviews)
-    .set({ hiddenAt: now, updatedAt: now })
-    .where(eq(reviews.id, reviewId));
+    const now = new Date();
+    await tx
+      .update(reviews)
+      .set({ hiddenAt: now, updatedAt: now })
+      .where(eq(reviews.id, reviewId));
+
+    await recordAudit(tx as unknown as typeof db, {
+      actor: { id: actorUserId, role: "ADMIN" },
+      action: "REVIEW_HIDDEN",
+      targetType: "REVIEW",
+      targetId: review.id,
+      metadata: { bookingId: review.bookingId, rating: review.rating },
+    });
+  });
 
   return loadAdminReview(reviewId);
+}
+
+// --- Journal d'audit (issue #13) ---
+// Lecture seule, plus récent d'abord. L'email de l'acteur est résolu à la
+// lecture (jointure), comme celui d'un compte ciblé : jamais copiés dans le
+// journal.
+function toAdminAuditLog(
+  row: AuditLogRow,
+  actorEmail: string | null,
+  targetEmail: string | null,
+): AdminAuditLog {
+  return {
+    id: row.id,
+    action: row.action,
+    actorUserId: row.actorUserId,
+    actorRole: row.actorRole,
+    actorEmail,
+    targetType: row.targetType,
+    targetId: row.targetId,
+    targetEmail: row.targetType === "USER" ? targetEmail : null,
+    metadata: row.metadata ?? null,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+export async function listAuditLogs(
+  query: AdminAuditLogListQuery,
+): Promise<AdminAuditLogsResponse> {
+  const where = query.action ? eq(auditLogs.action, query.action) : undefined;
+  const [totalRow] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(auditLogs)
+    .where(where);
+  const total = Number(totalRow?.total ?? 0);
+
+  const targetUsers = aliasedTable(users, "target_users");
+  const rows = await db
+    .select({
+      entry: auditLogs,
+      actorEmail: users.email,
+      targetEmail: targetUsers.email,
+    })
+    .from(auditLogs)
+    .leftJoin(users, eq(auditLogs.actorUserId, users.id))
+    .leftJoin(
+      targetUsers,
+      and(eq(auditLogs.targetType, "USER"), eq(auditLogs.targetId, targetUsers.id)),
+    )
+    .where(where)
+    .orderBy(desc(auditLogs.createdAt), desc(auditLogs.id))
+    .limit(query.pageSize)
+    .offset((query.page - 1) * query.pageSize);
+
+  return {
+    entries: rows.map((row) =>
+      toAdminAuditLog(row.entry, row.actorEmail, row.targetEmail),
+    ),
+    pagination: pagination(query.page, query.pageSize, total),
+  };
 }

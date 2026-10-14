@@ -1,4 +1,5 @@
 import type {
+  AdminAuditLogsResponse,
   AdminBookingsResponse,
   AdminMetrics,
   AdminReview,
@@ -29,6 +30,7 @@ import type {
 import {
   LIMITS,
   UPLOAD_IMAGE_MIME_TYPES,
+  type AuditAction,
   type BookingStatus,
   type ServicePlace,
 } from "@findbarber/shared/constants";
@@ -374,6 +376,12 @@ export interface AdminReviewsParams {
   pageSize?: number;
 }
 
+export interface AdminAuditLogsParams {
+  action?: AuditAction;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface AdminApi {
   getMetrics(): Promise<AdminMetrics>;
   listUsers(params?: AdminUsersParams): Promise<AdminUsersResponse>;
@@ -383,6 +391,7 @@ export interface AdminApi {
   cancelBooking(bookingId: string): Promise<{ booking: Booking }>;
   listReviews(params?: AdminReviewsParams): Promise<AdminReviewsResponse>;
   hideReview(reviewId: string): Promise<{ review: AdminReview }>;
+  listAuditLogs(params?: AdminAuditLogsParams): Promise<AdminAuditLogsResponse>;
   getBarberStats(
     barberId: string,
     params?: BarberStatsParams,
@@ -420,6 +429,10 @@ export const adminApi: AdminApi = {
     apiFetch<{ review: AdminReview }>(
       `/api/admin/reviews/${encodeURIComponent(reviewId)}/hide`,
       { method: "POST" },
+    ),
+  listAuditLogs: (params) =>
+    apiFetch<AdminAuditLogsResponse>(
+      `/api/admin/audit-logs${toQueryString(params)}`,
     ),
   getBarberStats: (barberId, params) =>
     apiFetch<BarberStatsResponse>(
