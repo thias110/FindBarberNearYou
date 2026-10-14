@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+// MapLibre 6 charge son worker depuis `maplibre-gl-worker.mjs` à côté de son
+// propre module ; une fois bundlé par Vite, ce fichier n'existe pas dans
+// /assets et la carte échoue (« Worker failed to load »). `?worker&url` fait
+// bundler le worker (et ses imports) par Vite et renvoie son URL same-origin,
+// compatible avec la CSP `worker-src 'self'`.
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { getMapSettings, MAP_ATTRIBUTION } from "../lib/mapConfig";
 
@@ -16,6 +22,8 @@ interface BarbersMapProps {
   /** Thème résolu du ThemeProvider (style sombre optionnel). */
   theme: "light" | "dark";
 }
+
+maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 // Une erreur ponctuelle de tuile ne doit pas déclarer la carte en panne. Tant que
