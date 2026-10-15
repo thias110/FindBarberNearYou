@@ -5,6 +5,7 @@ describe("pageTitle", () => {
   it("donne un titre explicite aux routes connues", () => {
     expect(pageTitle("/barbers")).toBe("Rechercher un barber — FindBarber");
     expect(pageTitle("/pro/stats")).toBe("Mes statistiques — FindBarber");
+    expect(pageTitle("/settings")).toBe("Paramètres — FindBarber");
     expect(pageTitle("/admin/users/")).toBe(
       "Utilisateurs — Administration — FindBarber",
     );

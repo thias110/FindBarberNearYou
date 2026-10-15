@@ -28,6 +28,7 @@ import { AdminReviewsPage } from "../pages/admin/ReviewsPage";
 import { AdminBarberStatsPage } from "../pages/admin/BarberStatsPage";
 import { AdminAuditLogPage } from "../pages/admin/AuditLogPage";
 import { AccountPage } from "../pages/AccountPage";
+import { SettingsPage } from "../pages/SettingsPage";
 
 function HomeRoute() {
   const { user, loading } = useAuth();
@@ -68,6 +69,14 @@ export function AppRoutes() {
         element={
           <RequireRole roles={["CLIENT", "BARBER"]}>
             <AccountPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <RequireRole roles={["CLIENT", "BARBER"]}>
+            <SettingsPage />
           </RequireRole>
         }
       />
