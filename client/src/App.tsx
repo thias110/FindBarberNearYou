@@ -7,7 +7,6 @@ import { ThemeProvider } from "./app/ThemeProvider";
 import { AppRoutes } from "./app/router";
 import { Logo } from "./components/Logo";
 import { NotificationBell } from "./components/NotificationBell";
-import { ThemeToggle } from "./components/ThemeToggle";
 import { buttonClasses } from "./components/ui/buttonStyles";
 import { AUTH_ROUTES, pageTitle } from "./lib/pageTitle";
 
@@ -56,13 +55,10 @@ function AppShell() {
             aria-label="FindBarber, retour à l'accueil"
             className="inline-flex min-h-11 min-w-11 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            {/* < 400 px : la marque seule, pour laisser la place aux actions
-                (thème, notifications, compte) en 44 px. Le nom reste annoncé
-                par l'aria-label du lien. */}
-            <Logo wordmarkClassName="max-[399px]:hidden" />
+            <Logo />
           </Link>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+            {/* Le thème se choisit dans Paramètres (issue #30). */}
             {/* L'API des notifications est réservée aux CLIENT et BARBER. */}
             {user && user.role !== "ADMIN" && <NotificationBell />}
             {user && user.role !== "ADMIN" && (

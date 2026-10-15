@@ -1,5 +1,4 @@
 import { Logo } from "../Logo";
-import { ThemeToggle } from "../ThemeToggle";
 
 const BENEFITS = [
   "Réservez simplement, au salon ou à domicile.",
@@ -25,7 +24,7 @@ function CheckIcon() {
 }
 
 // Panneau de marque desktop (deuxième colonne de la coque AuthLayout). Caché
-// sur mobile : l'en-tête compact de AuthLayout porte alors Logo + ThemeToggle.
+// sur mobile : l'en-tête compact de AuthLayout porte alors le logo.
 export function AuthBrandPanel() {
   return (
     <div className="relative flex h-full min-h-screen flex-col justify-between overflow-hidden border-r border-border bg-surface p-10">
@@ -38,9 +37,8 @@ export function AuthBrandPanel() {
         className="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-accent-soft"
       />
 
-      <div className="relative flex items-center justify-between">
+      <div className="relative">
         <Logo />
-        <ThemeToggle />
       </div>
 
       <div className="relative max-w-md">

@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import type { ThemePreference } from "../app/theme-context";
 
-// Options de thème partagées par le sélecteur du header (ThemeToggle) et la
-// page Paramètres (issue #29).
+// Options de thème de la page Paramètres (issue #29). Depuis l'issue #30, le
+// thème ne se choisit plus dans le header.
 
 export interface ThemeOption {
   value: ThemePreference;
