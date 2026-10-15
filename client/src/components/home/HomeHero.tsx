@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import type { PublicUser } from "@findbarber/shared/types";
 import { resolveUploadUrl } from "../../lib/apiClient";
 import { Button } from "../ui/Button";
@@ -30,27 +31,35 @@ export function HomeHero({ user, onSubmitCity }: HomeHeroProps) {
   }
 
   return (
-    <Card className="relative overflow-hidden p-6 sm:p-10">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-accent-soft"
-      />
-
-      <div className="relative">
+    // Plus de boule décorative (issue #60) : elle passait pour un élément
+    // cliquable ou une notification.
+    <Card className="p-6 sm:p-10">
+      <div>
         <div className="flex items-center gap-3">
-          {!user ? null : avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt=""
-              className="h-12 w-12 shrink-0 rounded-full object-cover"
-            />
-          ) : (
-            <span
-              aria-hidden="true"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-lg font-semibold text-accent-strong"
+          {/* Avatar ou initiale : mène à Mon compte, où l'on change sa photo
+              (issues #55 et #60). */}
+          {user && (
+            <Link
+              to="/account"
+              aria-label="Votre compte"
+              title="Votre compte"
+              className="shrink-0 rounded-full transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
-              {initial}
-            </span>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="h-12 w-12 rounded-full object-cover"
+                />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-lg font-semibold text-accent-strong"
+                >
+                  {initial}
+                </span>
+              )}
+            </Link>
           )}
           <p className="text-sm font-medium text-foreground-muted">
             {greetingFor(user)}

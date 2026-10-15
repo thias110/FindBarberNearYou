@@ -24,24 +24,16 @@ function CheckIcon() {
 }
 
 // Panneau de marque desktop (deuxième colonne de la coque AuthLayout). Caché
-// sur mobile : l'en-tête compact de AuthLayout porte alors le logo.
+// sur mobile : l'en-tête compact de AuthLayout porte alors le logo. Sans
+// boules décoratives (issue #60), comme l'accueil.
 export function AuthBrandPanel() {
   return (
-    <div className="relative flex h-full min-h-screen flex-col justify-between overflow-hidden border-r border-border bg-surface p-10">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-accent-soft"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-accent-soft"
-      />
-
-      <div className="relative">
+    <div className="flex h-full min-h-screen flex-col justify-between border-r border-border bg-surface p-10">
+      <div>
         <Logo />
       </div>
 
-      <div className="relative max-w-md">
+      <div className="max-w-md">
         <p className="text-3xl font-semibold leading-tight text-foreground">
           Le bon barber, au bon moment.
         </p>
@@ -64,7 +56,7 @@ export function AuthBrandPanel() {
         </ul>
       </div>
 
-      <p className="relative text-xs text-foreground-muted">
+      <p className="text-xs text-foreground-muted">
         FindBarber — trouvez le bon professionnel près de chez vous.
       </p>
     </div>
