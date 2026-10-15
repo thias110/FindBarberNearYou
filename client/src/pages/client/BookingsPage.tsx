@@ -6,6 +6,7 @@ import { ApiError, bookingApi } from "../../lib/apiClient";
 import { BookingCard } from "../../components/client/BookingCard";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
+import { buttonClasses } from "../../components/ui/buttonStyles";
 import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
 
@@ -231,7 +232,7 @@ export function ClientBookingsPage() {
             </p>
             <Link
               to="/barbers"
-              className="mt-3 inline-flex min-h-[44px] items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className={buttonClasses("primary", "md", "mt-3")}
             >
               Rechercher un barber
             </Link>

@@ -8,6 +8,7 @@ import {
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { audienceChips } from "../lib/barberTags";
 import { Badge } from "./ui/Badge";
+import { buttonClasses } from "./ui/buttonStyles";
 
 interface BarbersMapCardProps {
   barber: PublicBarberSearchItem;
@@ -71,7 +72,7 @@ export function BarbersMapCard({ barber, onClose }: BarbersMapCardProps) {
       </p>
       <Link
         to={`/barbers/${barber.id}`}
-        className="mt-3 inline-flex min-h-[44px] items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className={buttonClasses("primary", "md", "mt-3")}
       >
         Voir le profil
       </Link>

@@ -70,13 +70,15 @@ d'un libellé (jamais la couleur seule).
 - Espacements : échelle Tailwind (multiples de 4 px). Conventions : `p-4`
   dans les cartes de liste, `p-6` dans les cartes de contenu, `space-y-4` /
   `space-y-6` entre blocs, gouttière de page `p-4 sm:p-8`.
-- Cibles tactiles : `min-h-11` (44 px) pour tout élément interactif
-  (`Button` md l'applique par défaut).
+- Cibles tactiles : au moins 44 x 44 px (`min-h-11 min-w-11`) pour tout
+  élément interactif sur mobile. `Button` l'applique dans les deux tailles ;
+  `sm` ne se resserre (36 px) qu'à partir de `sm:`.
 - Rayons (tokens `--fb-radius-*`, appliqués via les classes Tailwind
   redéfinies) : `rounded-md` → `--fb-radius-sm`, `rounded-lg` →
   `--fb-radius-control` (boutons, champs), `rounded-xl` → `--fb-radius-panel`,
   `rounded-2xl` → `--fb-radius-card` (cartes, dialogues), `rounded-full`
-  (pastilles, avatars).
+  (boutons, badges, pastilles, avatars). Depuis l'issue #28 : boutons en
+  pilule, champs et alertes en `rounded-xl`.
 
 ## Thème
 
@@ -94,18 +96,27 @@ d'un libellé (jamais la couleur seule).
 
 - `Button` — variantes `primary | secondary | ghost | danger`, tailles `sm | md`,
   `isLoading`, `type="button"` par défaut, focus-visible et disabled gérés.
-- `Input` — `forwardRef`, bordure d'erreur via `aria-invalid`.
+  En pilule, graisse `font-semibold`.
+- `buttonClasses(variant, size, className)` (`buttonStyles.ts`) — mêmes
+  classes que `Button`, pour un lien présenté comme un bouton
+  (`<Link className={buttonClasses("secondary")}>`). Ne jamais recopier ces
+  classes à la main : `cn()` ne résout pas les conflits Tailwind, donc ne pas
+  surcharger `px-*`, `min-h-*` ou `rounded-*` via `className`.
+- `Input` — `forwardRef`, bordure d'erreur (2 px) via `aria-invalid`. Texte
+  16 px sur mobile (évite le zoom iOS au focus), 14 px à partir de `sm:`.
 - `Field` — label lié, aide et erreur accessibles (render prop qui fournit
-  `id`, `aria-invalid`, `aria-describedby` au contrôle).
-- `Card` — surface arrondie + ombre tokenisée (padding à la charge de l'appelant).
+  `id`, `aria-invalid`, `aria-describedby` au contrôle). L'erreur s'affiche
+  sous le champ avec une icône (pas la couleur seule).
+- `Card` — surface arrondie, bordure et ombre légère `shadow-card-sm`
+  (padding à la charge de l'appelant).
 - `Badge` — variantes `neutral | accent | gold | success | warning | danger |
   info` (statuts en fond translucide tokenisé, `bg-{statut}/15`).
 - `Skeleton` — placeholder décoratif (`aria-hidden`).
 - `Select` / `Textarea` — contrôles natifs stylés comme `Input` (classes
   partagées dans `control.ts`, bordure `danger` via `aria-invalid`).
   `Select` fait au moins 44 px de haut.
-- `Alert` — `info | success | warning | danger` ; `role="alert"` pour
-  `danger`, `status` sinon.
+- `Alert` — `info | success | warning | danger` avec une icône par variante ;
+  `role="alert"` pour `danger`, `status` sinon.
 - `EmptyState` — état vide d'une liste (titre, description, action optionnelle).
 - `ConfirmDialog` — confirmation modale basée sur `<dialog>` + `showModal()`
   (piège de focus, `Escape` et fond inerte natifs ; focus initial sur

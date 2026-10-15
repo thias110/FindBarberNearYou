@@ -12,6 +12,7 @@ import { BookingStatusBadge } from "../BookingStatusBadge";
 import { ReviewForm } from "../ReviewForm";
 import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
+import { buttonClasses } from "../ui/buttonStyles";
 import { Card } from "../ui/Card";
 
 function cancelledByLabel(cancelledBy: string): string {
@@ -135,7 +136,7 @@ export function BookingCard({
           </p>
           <a
             href={booking.checkoutUrl}
-            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className={buttonClasses("primary", "md", "mt-3")}
           >
             Payer maintenant
           </a>

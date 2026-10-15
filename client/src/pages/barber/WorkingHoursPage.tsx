@@ -25,12 +25,12 @@ import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
+import { buttonClasses } from "../../components/ui/buttonStyles";
 
 const CHECKBOX_CLASS = "h-4 w-4 accent-accent";
 
 // Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
-const PRIMARY_LINK_CLASS =
-  "inline-flex min-h-[44px] items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+const PRIMARY_LINK_CLASS = buttonClasses("primary");
 
 interface IntervalDraft {
   key: string;

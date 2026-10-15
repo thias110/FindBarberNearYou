@@ -10,15 +10,12 @@ import { Skeleton } from "../../components/ui/Skeleton";
 import { HomeHero } from "../../components/home/HomeHero";
 import { CategoryChips } from "../../components/home/CategoryChips";
 import { BarberPreviewCard } from "../../components/home/BarberPreviewCard";
+import { buttonClasses } from "../../components/ui/buttonStyles";
 
 const PREVIEW_LIMIT = 3;
 
-const LINK_BASE =
-  "inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
-  "focus-visible:ring-offset-2 focus-visible:ring-offset-background";
-const PRIMARY_LINK_CLASS = `${LINK_BASE} bg-accent text-accent-foreground hover:bg-accent-hover`;
-const SECONDARY_LINK_CLASS = `${LINK_BASE} border border-border bg-surface text-foreground hover:bg-surface-muted`;
+const PRIMARY_LINK_CLASS = buttonClasses("primary");
+const SECONDARY_LINK_CLASS = buttonClasses("secondary");
 
 const STEPS = [
   {
