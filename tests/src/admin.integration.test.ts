@@ -69,6 +69,7 @@ async function seedBarber(email: string, timezone = "UTC") {
   const profileId = randomUUID();
   await db.insert(barberProfiles).values({
     id: profileId,
+    approvedAt: new Date(),
     userId,
     displayName: "Barbier Admin",
     description: "Coupes soignées",

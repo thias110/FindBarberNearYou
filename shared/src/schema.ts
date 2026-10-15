@@ -184,6 +184,10 @@ export const barberProfiles = pgTable(
     // Badge « Certifié » (issue #41) : date d'attribution par un ADMIN, NULL
     // si le barber n'est pas certifié. Jamais modifiable par le barber.
     certifiedAt: timestamp("certified_at", { withTimezone: true }),
+    // Approbation par l'ADMIN (issue #40) : NULL = en attente, invisible du
+    // public. Les profils antérieurs à la fonctionnalité sont repris comme
+    // approuvés par la migration (approved_at = created_at).
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

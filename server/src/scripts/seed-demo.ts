@@ -86,6 +86,8 @@ interface BarberSeed {
   services: ServiceSeed[];
   /** Nombre de photos de galerie à générer (placeholders WebP). */
   galleryCount: number;
+  /** Profil en attente d'approbation admin (issue #40) : invisible du public. */
+  pendingApproval?: boolean;
 }
 
 /** Lun-ven 09:00-12:00 / 14:00-18:00, sam 09:00-17:00. */
@@ -187,6 +189,39 @@ const BARBERS: BarberSeed[] = [
       },
     ],
   },
+  {
+    // Nouveau barber pas encore approuvé (issue #40) : sert à démontrer et
+    // tester le parcours d'approbation par l'admin.
+    email: "nouveau.barber@demo.ch",
+    name: "Lucas Nouveau",
+    pendingApproval: true,
+    profile: {
+      displayName: "Lucas — Nouveau Salon",
+      description: "Nouveau barber à Carouge, profil en cours de validation.",
+      address: "10 rue Saint-Joseph",
+      city: "Carouge",
+      postalCode: "1227",
+      countryCode: "CH",
+      latitude: 46.1846,
+      longitude: 6.1393,
+      currency: "CHF",
+      timezone: "Europe/Zurich",
+      travelRadiusKm: null,
+    },
+    places: ["SALON"],
+    workingHours: standardWeek(),
+    galleryCount: 0,
+    services: [
+      {
+        name: "Coupe homme",
+        description: "Coupe classique.",
+        durationMinutes: 30,
+        priceMinor: 3500,
+        audiences: ["HOMME"],
+        techniques: ["COUPE"],
+      },
+    ],
+  },
 ];
 
 const ADMIN = { email: "admin@demo.ch", name: "Admin Démo" };
@@ -266,6 +301,7 @@ async function upsertBarber(seed: BarberSeed): Promise<{ userId: string; profile
         currency: seed.profile.currency,
         timezone: seed.profile.timezone,
         travelRadiusKm: seed.profile.travelRadiusKm,
+        approvedAt: seed.pendingApproval ? null : (existing.approvedAt ?? now),
         updatedAt: now,
       })
       .where(eq(barberProfiles.id, profileId));
@@ -273,6 +309,7 @@ async function upsertBarber(seed: BarberSeed): Promise<{ userId: string; profile
     profileId = randomUUID();
     await db.insert(barberProfiles).values({
       id: profileId,
+      approvedAt: seed.pendingApproval ? null : new Date(),
       userId: user.id,
       displayName: seed.profile.displayName,
       description: seed.profile.description,

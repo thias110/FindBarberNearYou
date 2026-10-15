@@ -13,6 +13,7 @@ import {
   users,
 } from "@findbarber/shared/schema";
 import { markEmailVerified } from "./auth-helpers";
+import { approveProfile } from "./approval-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -230,6 +231,7 @@ describe("time off cap", () => {
     const { agent, csrf } = await setupBarber("cap-timeoff@example.com");
     const profileRes = await agent.get("/api/barber/profile");
     const profileId = profileRes.body.profile.id as string;
+    await approveProfile(profileId);
 
     // 200 journées consécutives non chevauchantes (amorçage direct en base,
     // seule la 201e passe par l'API pour exercer le plafond du service).
@@ -421,6 +423,7 @@ describe("time off access control", () => {
 
     const profileRes = await agent.get("/api/barber/profile");
     const barberId = profileRes.body.profile.id as string;
+    await approveProfile(barberId);
 
     const publicRes = await request(app).get(`/api/barbers/${barberId}`);
     expect(publicRes.status).toBe(200);
@@ -467,6 +470,7 @@ describe("time off DB constraints", () => {
       .insert(barberProfiles)
       .values({
         id: randomUUID(),
+        approvedAt: new Date(),
         userId: user.id,
         displayName: "Barbier",
         description: "Description",

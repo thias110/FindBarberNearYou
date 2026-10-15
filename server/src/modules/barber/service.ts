@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
+import {
+  isNotNull, and, asc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
   barberPhotos,
@@ -68,6 +69,7 @@ function toOwnProfile(
 ): OwnBarberProfile {
   return {
     id: profile.id,
+    approved: profile.approvedAt !== null,
     displayName: profile.displayName,
     description: profile.description,
     address: profile.address,
@@ -771,8 +773,14 @@ export async function getPublicProfile(
     .where(eq(users.id, profile.userId))
     .limit(1);
 
-  // Les profils des comptes suspendus ou ayant perdu le rôle BARBER ne sont pas exposés.
-  if (!owner || owner.status !== "ACTIVE" || owner.role !== "BARBER") {
+  // Les profils des comptes suspendus ou ayant perdu le rôle BARBER ne sont pas
+  // exposés, ni ceux qui attendent l'approbation de l'admin (issue #40).
+  if (
+    !profile.approvedAt ||
+    !owner ||
+    owner.status !== "ACTIVE" ||
+    owner.role !== "BARBER"
+  ) {
     throw new AppError(404, "BARBER_PROFILE_NOT_FOUND", "Profil introuvable.");
   }
 
@@ -831,6 +839,8 @@ function buildSearchWhere(input: BarberSearchQuery): SQL {
   const conditions: SQL[] = [
     eq(users.status, "ACTIVE"),
     eq(users.role, "BARBER"),
+    // Profil approuvé par l'admin (issue #40).
+    isNotNull(barberProfiles.approvedAt),
   ];
 
   if (input.q) {

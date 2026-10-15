@@ -7,6 +7,7 @@ import {
   gte,
   inArray,
   isNotNull,
+  isNull,
   ne,
   sql,
   type SQL,
@@ -67,6 +68,8 @@ function pagination(
 interface AdminBarberRef {
   id: string;
   certifiedAt: Date | null;
+  // Approbation par l'ADMIN (issue #40) : null = en attente.
+  approvedAt: Date | null;
 }
 
 function toAdminUser(user: User, barber: AdminBarberRef | null): AdminUser {
@@ -79,6 +82,7 @@ function toAdminUser(user: User, barber: AdminBarberRef | null): AdminUser {
     createdAt: user.createdAt.toISOString(),
     barberProfileId: barber?.id ?? null,
     certifiedAt: barber?.certifiedAt ? barber.certifiedAt.toISOString() : null,
+    barberPendingApproval: barber !== null && barber.approvedAt === null,
   };
 }
 
@@ -149,12 +153,23 @@ async function countReviews(where?: SQL): Promise<number> {
   return Number(row?.total ?? 0);
 }
 
+// Profils en attente d'approbation (issue #40), comptes supprimés exclus.
+async function countPendingBarbers(): Promise<number> {
+  const [row] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(barberProfiles)
+    .innerJoin(users, eq(users.id, barberProfiles.userId))
+    .where(and(isNull(barberProfiles.approvedAt), ne(users.status, "DELETED")));
+  return Number(row?.total ?? 0);
+}
+
 export async function getAdminMetrics(): Promise<AdminMetrics> {
   const [
     usersTotal,
     usersActive,
     usersSuspended,
     barbersActive,
+    barbersPending,
     bookingsTotal,
     bookingsPending,
     bookingsConfirmed,
@@ -168,6 +183,7 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
     countUsers(eq(users.status, "ACTIVE")),
     countUsers(eq(users.status, "SUSPENDED")),
     countUsers(and(eq(users.role, "BARBER"), eq(users.status, "ACTIVE"))),
+    countPendingBarbers(),
     countBookings(),
     countBookings(eq(bookings.status, "PENDING")),
     countBookings(eq(bookings.status, "CONFIRMED")),
@@ -179,7 +195,7 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
 
   return {
     users: { total: usersTotal, active: usersActive, suspended: usersSuspended },
-    barbers: { active: barbersActive },
+    barbers: { active: barbersActive, pendingApproval: barbersPending },
     bookings: {
       total: bookingsTotal,
       pending: bookingsPending,
@@ -194,11 +210,21 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
 export async function listAdminUsers(
   query: AdminUserListQuery,
 ): Promise<AdminUsersResponse> {
-  const where = query.role ? eq(users.role, query.role) : undefined;
+  const conditions: SQL[] = [];
+  if (query.role) conditions.push(eq(users.role, query.role));
+  if (query.pendingApproval) {
+    conditions.push(
+      isNotNull(barberProfiles.id),
+      isNull(barberProfiles.approvedAt),
+      ne(users.status, "DELETED"),
+    );
+  }
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const [totalRow] = await db
     .select({ total: sql<number>`count(*)::int` })
     .from(users)
+    .leftJoin(barberProfiles, eq(barberProfiles.userId, users.id))
     .where(where);
   const total = Number(totalRow?.total ?? 0);
 
@@ -207,6 +233,7 @@ export async function listAdminUsers(
       user: users,
       barberProfileId: barberProfiles.id,
       certifiedAt: barberProfiles.certifiedAt,
+      approvedAt: barberProfiles.approvedAt,
     })
     .from(users)
     .leftJoin(barberProfiles, eq(barberProfiles.userId, users.id))
@@ -220,7 +247,11 @@ export async function listAdminUsers(
       toAdminUser(
         row.user,
         row.barberProfileId
-          ? { id: row.barberProfileId, certifiedAt: row.certifiedAt }
+          ? {
+              id: row.barberProfileId,
+              certifiedAt: row.certifiedAt,
+              approvedAt: row.approvedAt,
+            }
           : null,
       ),
     ),
@@ -291,7 +322,11 @@ export async function suspendUser(
     let cancelledBookingIds: string[] = [];
     if (updated.role === "BARBER") {
       const [profile] = await tx
-        .select({ id: barberProfiles.id, certifiedAt: barberProfiles.certifiedAt })
+        .select({
+          id: barberProfiles.id,
+          certifiedAt: barberProfiles.certifiedAt,
+          approvedAt: barberProfiles.approvedAt,
+        })
         .from(barberProfiles)
         .where(eq(barberProfiles.userId, targetUserId))
         .limit(1);
@@ -400,7 +435,11 @@ export async function reactivateUser(
     let barber: AdminBarberRef | null = null;
     if (updated.role === "BARBER") {
       const [profile] = await tx
-        .select({ id: barberProfiles.id, certifiedAt: barberProfiles.certifiedAt })
+        .select({
+          id: barberProfiles.id,
+          certifiedAt: barberProfiles.certifiedAt,
+          approvedAt: barberProfiles.approvedAt,
+        })
         .from(barberProfiles)
         .where(eq(barberProfiles.userId, targetUserId))
         .limit(1);
@@ -449,7 +488,11 @@ export async function setBarberCertification(
       .update(barberProfiles)
       .set({ certifiedAt: certified ? new Date() : null })
       .where(eq(barberProfiles.id, barberProfileId))
-      .returning({ id: barberProfiles.id, certifiedAt: barberProfiles.certifiedAt });
+      .returning({
+        id: barberProfiles.id,
+        certifiedAt: barberProfiles.certifiedAt,
+        approvedAt: barberProfiles.approvedAt,
+      });
 
     await recordAudit(tx as unknown as typeof db, {
       actor: { id: actorUserId, role: "ADMIN" },
@@ -642,4 +685,57 @@ export async function listAuditLogs(
     ),
     pagination: pagination(query.page, query.pageSize, total),
   };
+}
+
+// Approbation d'un profil barber (issue #40) : réservée à l'ADMIN (garde de
+// route), refusée si déjà approuvé (409), tracée dans le journal d'audit.
+export async function approveBarberProfile(
+  actorUserId: string,
+  barberProfileId: string,
+): Promise<AdminUser> {
+  return db.transaction(async (tx) => {
+    const [profile] = await tx
+      .select()
+      .from(barberProfiles)
+      .where(eq(barberProfiles.id, barberProfileId))
+      .limit(1)
+      .for("update");
+    if (!profile) {
+      throw new AppError(404, "BARBER_PROFILE_NOT_FOUND", "Profil introuvable.");
+    }
+    if (profile.approvedAt) {
+      throw new AppError(
+        409,
+        "BARBER_ALREADY_APPROVED",
+        "Ce profil est déjà approuvé.",
+      );
+    }
+    const [owner] = await tx
+      .select()
+      .from(users)
+      .where(eq(users.id, profile.userId))
+      .limit(1);
+    if (!owner || owner.status === "DELETED") {
+      throw new AppError(404, "BARBER_PROFILE_NOT_FOUND", "Profil introuvable.");
+    }
+
+    const now = new Date();
+    await tx
+      .update(barberProfiles)
+      .set({ approvedAt: now })
+      .where(eq(barberProfiles.id, barberProfileId));
+
+    await recordAudit(tx as unknown as typeof db, {
+      actor: { id: actorUserId, role: "ADMIN" },
+      action: "BARBER_APPROVED",
+      targetType: "BARBER_PROFILE",
+      targetId: barberProfileId,
+    });
+
+    return toAdminUser(owner, {
+      id: barberProfileId,
+      certifiedAt: profile.certifiedAt,
+      approvedAt: now,
+    });
+  });
 }

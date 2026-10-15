@@ -41,6 +41,7 @@ function actionVariant(action: AuditAction): BadgeVariant {
       return "neutral";
     case "USER_REACTIVATED":
     case "BARBER_CERTIFIED":
+    case "BARBER_APPROVED":
     case "BOOKING_CONFIRMED":
     case "BOOKING_COMPLETED":
       return "success";

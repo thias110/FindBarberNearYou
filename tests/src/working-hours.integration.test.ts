@@ -12,6 +12,7 @@ import {
   users,
 } from "@findbarber/shared/schema";
 import { markEmailVerified } from "./auth-helpers";
+import { approveProfile } from "./approval-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -77,10 +78,12 @@ async function createProfile(
   csrf: string,
   overrides: Record<string, unknown> = {},
 ) {
-  return agent
+  const res = await agent
     .put("/api/barber/profile")
     .set("X-CSRF-Token", csrf)
     .send(profilePayload(overrides));
+  if (res.status === 200) await approveProfile(res.body.profile.id as string);
+  return res;
 }
 
 async function setupBarber(email: string) {
@@ -301,6 +304,7 @@ describe("working hours DB constraints", () => {
       .insert(barberProfiles)
       .values({
         id: randomUUID(),
+        approvedAt: new Date(),
         userId: user.id,
         displayName: "Barbier",
         description: "Description",

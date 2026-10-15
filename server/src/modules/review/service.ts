@@ -124,7 +124,13 @@ export async function listBarberReviews(
     .where(eq(users.id, profile.userId))
     .limit(1);
 
-  if (!owner || owner.status !== "ACTIVE" || owner.role !== "BARBER") {
+  // Profil en attente d'approbation (issue #40) : avis non exposés.
+  if (
+    !profile.approvedAt ||
+    !owner ||
+    owner.status !== "ACTIVE" ||
+    owner.role !== "BARBER"
+  ) {
     throw new AppError(404, "BARBER_PROFILE_NOT_FOUND", "Profil introuvable.");
   }
 

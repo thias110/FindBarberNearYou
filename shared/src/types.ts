@@ -61,6 +61,8 @@ export interface PublicBarberProfile {
 // coordonnées exactes, fuseau et rayon d'intervention. Seul le propriétaire
 // authentifié reçoit cette vue.
 export interface OwnBarberProfile extends PublicBarberProfile {
+  // Approbation par l'ADMIN (issue #40) : false = profil invisible du public.
+  approved: boolean;
   address: string | null;
   timezone: string | null;
   travelRadiusKm: number | null;
@@ -377,7 +379,7 @@ export interface BarberStatsResponse {
 
 export interface AdminMetrics {
   users: { total: number; active: number; suspended: number };
-  barbers: { active: number };
+  barbers: { active: number; pendingApproval: number };
   bookings: {
     total: number;
     pending: number;
@@ -399,6 +401,8 @@ export interface AdminUser {
   barberProfileId: string | null;
   // Date d'attribution du badge « Certifié » (issue #41), null sinon.
   certifiedAt: string | null;
+  // Profil barber en attente d'approbation (issue #40) ; false sans profil.
+  barberPendingApproval: boolean;
 }
 
 export interface AdminUsersResponse {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { PENDING_FILTER_PARAM } from "./UsersPage";
 import type { AdminMetrics } from "@findbarber/shared/types";
 import { adminApi } from "../../lib/apiClient";
 import { AdminLayout } from "../../components/AdminLayout";
@@ -102,6 +103,10 @@ export function AdminDashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard label="Utilisateurs" value={metrics.users.total} />
             <MetricCard label="Barbiers actifs" value={metrics.barbers.active} />
+            <MetricCard
+              label="Profils à approuver"
+              value={metrics.barbers.pendingApproval}
+            />
             <MetricCard label="Réservations" value={metrics.bookings.total} />
             <MetricCard
               label="Utilisateurs suspendus"
@@ -114,6 +119,22 @@ export function AdminDashboardPage() {
             <MetricCard label="Avis masqués" value={metrics.reviews.hidden} />
           </div>
         ) : null}
+
+        {metrics && metrics.barbers.pendingApproval > 0 && (
+          <Alert variant="warning">
+            <p>
+              {metrics.barbers.pendingApproval === 1
+                ? "1 nouveau profil barber attend votre approbation."
+                : `${metrics.barbers.pendingApproval} nouveaux profils barber attendent votre approbation.`}
+            </p>
+            <Link
+              to={`/admin/users?filtre=${PENDING_FILTER_PARAM}`}
+              className="mt-2 inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
+            >
+              Voir les profils à approuver
+            </Link>
+          </Alert>
+        )}
 
         <nav aria-label="Raccourcis administration" className="grid gap-3 sm:grid-cols-3">
           {SHORTCUTS.map((item) => (

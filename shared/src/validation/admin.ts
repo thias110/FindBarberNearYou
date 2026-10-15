@@ -25,6 +25,8 @@ const pageSize = integerParam(
 export const adminUserListQuerySchema = z
   .object({
     role: z.enum(ROLES).optional(),
+    // Profils barber en attente d'approbation uniquement (issue #40).
+    pendingApproval: z.literal("true").optional(),
     page,
     pageSize,
   })

@@ -86,6 +86,7 @@ async function seedBarber(email: string) {
   const profileId = randomUUID();
   await db.insert(barberProfiles).values({
     id: profileId,
+    approvedAt: new Date(),
     userId: user.id,
     displayName: "Barbier Galerie",
     description: "Coupes soignées",

@@ -10,6 +10,7 @@ import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
 import { validationError } from "../../lib/validation.js";
 import {
+  approveBarberProfile,
   getAdminMetrics,
   hideReview,
   listAuditLogs,
@@ -88,6 +89,23 @@ adminRouter.post(
   async (req, res) => {
     res.json({
       user: await setBarberCertification(req.user!.id, req.params.id as string, false),
+    });
+  },
+);
+
+// Approbation d'un nouveau profil barber (issue #40) : ADMIN uniquement, même
+// par appel direct ; un BARBER ne peut pas approuver son propre profil.
+adminRouter.post(
+  "/barbers/:barberProfileId/approve",
+  requireAuth,
+  requireRole("ADMIN"),
+  csrfProtection,
+  async (req, res) => {
+    res.json({
+      user: await approveBarberProfile(
+        req.user!.id,
+        req.params.barberProfileId as string,
+      ),
     });
   },
 );

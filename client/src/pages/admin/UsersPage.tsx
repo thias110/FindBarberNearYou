@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ROLE_LABELS, USER_STATUS_LABELS } from "@findbarber/shared/constants";
 import type { AdminUser, Role } from "@findbarber/shared/types";
 import { adminApi } from "../../lib/apiClient";
@@ -18,20 +18,25 @@ import { adminUserDisplayName } from "../../lib/admin";
 import { formatDateTime } from "../../lib/formatters";
 import { buttonClasses } from "../../components/ui/buttonStyles";
 
-type RoleFilter = "ALL" | Role;
+// « PENDING » : profils barber en attente d'approbation (issue #40),
+// accessible directement par /admin/users?filtre=a-approuver.
+type RoleFilter = "ALL" | Role | "PENDING";
 
 const ROLE_FILTERS: { value: RoleFilter; label: string }[] = [
   { value: "ALL", label: "Tous" },
   { value: "CLIENT", label: "Clients" },
   { value: "BARBER", label: "Barbiers" },
   { value: "ADMIN", label: "Administrateurs" },
+  { value: "PENDING", label: "À approuver" },
 ];
+
+export const PENDING_FILTER_PARAM = "a-approuver";
 
 const PAGE_SIZE = 20;
 
 const SECONDARY_LINK_CLASS = buttonClasses("secondary");
 
-type ActionKind = "suspend" | "reactivate" | "certify" | "uncertify";
+type ActionKind = "suspend" | "reactivate" | "certify" | "uncertify" | "approve";
 
 type PendingAction = { kind: ActionKind; user: AdminUser };
 
@@ -78,6 +83,17 @@ const ACTIONS: Record<
       `Le badge « Certifié » de ${user.email} apparaîtra sur son profil public et dans la recherche.`,
     run: (user) => adminApi.certifyBarber(user.barberProfileId!),
   },
+  // Approbation d'un nouveau profil barber (issue #40).
+  approve: {
+    title: "Approuver ce profil ?",
+    confirmLabel: "Approuver",
+    tone: "primary",
+    failure: "Approbation impossible.",
+    success: (user) => `${user.email} est approuvé : son profil est en ligne.`,
+    description: (user) =>
+      `Le profil de ${user.email} apparaîtra immédiatement dans la recherche et pourra recevoir des réservations.`,
+    run: (user) => adminApi.approveBarber(user.barberProfileId!),
+  },
   uncertify: {
     title: "Retirer le badge « Certifié » ?",
     confirmLabel: "Retirer le badge",
@@ -92,7 +108,10 @@ const ACTIONS: Record<
 
 export function AdminUsersPage() {
   const { user: currentUser } = useAuth();
-  const [role, setRole] = useState<RoleFilter>("ALL");
+  const [searchParams] = useSearchParams();
+  const [role, setRole] = useState<RoleFilter>(() =>
+    searchParams.get("filtre") === PENDING_FILTER_PARAM ? "PENDING" : "ALL",
+  );
   const [page, setPage] = useState(1);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [totalPages, setTotalPages] = useState(0);
@@ -114,7 +133,8 @@ export function AdminUsersPage() {
       .listUsers({
         page,
         pageSize: PAGE_SIZE,
-        role: role === "ALL" ? undefined : role,
+        role: role === "ALL" || role === "PENDING" ? undefined : role,
+        pendingApproval: role === "PENDING" ? "true" : undefined,
       })
       .then((res) => {
         if (cancelled) return;
@@ -222,6 +242,9 @@ export function AdminUsersPage() {
                           {item.certifiedAt && (
                             <CertifiedBadge />
                           )}
+                          {item.barberPendingApproval && !deleted && (
+                            <Badge variant="warning">En attente d'approbation</Badge>
+                          )}
                         </div>
                         <p className="mt-2 text-xs text-foreground-muted">
                           Inscrit le {formatDateTime(item.createdAt)}
@@ -229,6 +252,16 @@ export function AdminUsersPage() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
+                        {item.barberPendingApproval && !deleted && (
+                          <Button
+                            className="min-h-11"
+                            onClick={() =>
+                              setPending({ kind: "approve", user: item })
+                            }
+                          >
+                            Approuver
+                          </Button>
+                        )}
                         {item.role === "BARBER" &&
                           item.barberProfileId &&
                           !deleted && (

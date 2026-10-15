@@ -100,6 +100,7 @@ describe.skipIf(!PG_URL)("concurrence sur PostgreSQL réel", () => {
     const serviceId = randomUUID();
     await db.insert(barberProfiles).values({
       id: profileId,
+      approvedAt: new Date(),
       userId,
       displayName: "Barbier PG",
       description: "desc",

@@ -222,6 +222,7 @@ export const AUDIT_ACTIONS = [
   "USER_DELETED",
   "BARBER_CERTIFIED",
   "BARBER_UNCERTIFIED",
+  "BARBER_APPROVED",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -238,6 +239,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   USER_DELETED: "Compte supprimé (anonymisé)",
   BARBER_CERTIFIED: "Badge « Certifié » attribué",
   BARBER_UNCERTIFIED: "Badge « Certifié » retiré",
+  BARBER_APPROVED: "Profil barber approuvé",
 };
 
 export const AUDIT_TARGET_TYPES = [

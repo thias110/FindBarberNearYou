@@ -116,7 +116,12 @@ test("client : acompte annoncé, redirection vers le paiement, retour confirmé"
   for (const date of dates) {
     await page.getByLabel("Date").fill(date);
     const slot = page.getByRole("button", { name: /^\d{2}:\d{2}$/ }).first();
-    if (await slot.isVisible({ timeout: 2000 }).catch(() => false)) {
+    // `isVisible` n'attend pas : on attend vraiment les créneaux (chargés par l'API).
+    const found = await slot
+      .waitFor({ state: "visible", timeout: 2000 })
+      .then(() => true)
+      .catch(() => false);
+    if (found) {
       await slot.click();
       break;
     }

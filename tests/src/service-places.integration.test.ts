@@ -13,6 +13,7 @@ import {
   users,
 } from "@findbarber/shared/schema";
 import { markEmailVerified } from "./auth-helpers";
+import { approveProfile } from "./approval-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -74,6 +75,9 @@ async function setupBarber(
     .put("/api/barber/profile")
     .set("X-CSRF-Token", csrf)
     .send(profilePayload(overrides));
+  if (created.status === 200) {
+    await approveProfile(created.body.profile.id as string);
+  }
   return { agent, csrf, created };
 }
 
@@ -180,6 +184,7 @@ describe("service places — profil et confidentialité", () => {
     });
     expect(created.status).toBe(200);
     const barberId = created.body.profile.id as string;
+    await approveProfile(barberId);
 
     const publicProfile = await request(app).get(`/api/barbers/${barberId}`);
     expect(publicProfile.status).toBe(200);
@@ -205,6 +210,7 @@ describe("service places — profil et confidentialité", () => {
     });
     expect(created.status).toBe(200);
     const barberId = created.body.profile.id as string;
+    await approveProfile(barberId);
 
     const publicRes = await request(app).get(`/api/barbers/${barberId}`);
     expect(publicRes.body.profile.latitude).toBe(-33.87);
@@ -242,6 +248,7 @@ describe("service places — recherche et compatibilité", () => {
     const legacyUser = await registerBarber("legacy-place@example.com");
     await db.insert(barberProfiles).values({
       id: randomUUID(),
+      approvedAt: new Date(),
       userId: legacyUser.id,
       displayName: "Legacy",
       description: "Profil historique",

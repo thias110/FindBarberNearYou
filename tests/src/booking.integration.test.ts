@@ -14,6 +14,7 @@ import {
 } from "@findbarber/shared/schema";
 import { weekdayFromCalendarDate } from "@findbarber/shared/dates";
 import { markEmailVerified } from "./auth-helpers";
+import { approveProfile } from "./approval-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -96,6 +97,7 @@ async function setupBookableBarber(
     .send(profilePayload(overrides));
   expect(profile.status).toBe(200);
   const barberId = profile.body.profile.id as string;
+  await approveProfile(barberId);
 
   const service = await agent
     .post("/api/barber/services")

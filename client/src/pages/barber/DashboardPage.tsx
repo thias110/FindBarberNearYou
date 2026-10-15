@@ -173,6 +173,19 @@ export function BarberDashboardPage() {
           </Button>
         </header>
 
+        {/* Profil en attente d'approbation (issue #40) : invisible du public. */}
+        {profile && !profile.approved && (
+          <Alert variant="info">
+            <p className="font-semibold">Votre profil attend une validation.</p>
+            <p className="mt-1">
+              Notre équipe vérifie chaque nouveau profil avant sa mise en ligne.
+              En attendant, il n'apparaît pas dans la recherche et ne peut pas
+              recevoir de réservations. Vous pouvez déjà compléter vos
+              prestations et vos horaires.
+            </p>
+          </Alert>
+        )}
+
         {completion && <ProfileChecklist completion={completion} />}
 
         <Card className="p-6">

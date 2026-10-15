@@ -8,6 +8,7 @@ import { migrateDb } from "../../server/src/db/migrate";
 import { barberProfiles, barberServices, users } from "@findbarber/shared/schema";
 import { classifyIanaTimeZone } from "@findbarber/shared/timezones";
 import { markEmailVerified } from "./auth-helpers";
+import { approveProfile } from "./approval-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -91,6 +92,8 @@ describe("PUT /api/barber/profile", () => {
     expect(created.body.profile.currency).toBe("CHF");
 
     const id = created.body.profile.id as string;
+
+    await approveProfile(id);
     const createdAt = created.body.profile.createdAt as string;
 
     const updated = await createProfile(agent, csrf, {
@@ -528,6 +531,7 @@ describe("DB constraints on barber_services", () => {
       .insert(barberProfiles)
       .values({
         id: randomUUID(),
+        approvedAt: new Date(),
         userId: user.id,
         displayName: "Barbier",
         description: "Description",
@@ -670,6 +674,7 @@ describe("public profile", () => {
       .patch(`/api/barber/services/${inactiveId}`)
       .set("X-CSRF-Token", csrf)
       .send({ isActive: false });
+    await approveProfile(profile.body.profile.id as string);
 
     return { user, profileId: profile.body.profile.id as string };
   }

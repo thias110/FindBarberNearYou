@@ -18,6 +18,7 @@ import { setGeocoder, type Geocoder } from "../../server/src/lib/geocoding";
 import { AppError } from "../../server/src/lib/errors";
 import { decryptField } from "../../server/src/lib/fieldCrypto";
 import { markEmailVerified } from "./auth-helpers";
+import { approveProfile } from "./approval-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -113,6 +114,7 @@ async function setupBookableBarber(
     .send(profilePayload(overrides));
   expect(profile.status).toBe(200);
   const barberId = profile.body.profile.id as string;
+  await approveProfile(barberId);
 
   const service = await agent
     .post("/api/barber/services")

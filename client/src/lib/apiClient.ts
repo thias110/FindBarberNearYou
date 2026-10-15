@@ -397,6 +397,8 @@ function toQueryString(params: object = {}): string {
 
 export interface AdminUsersParams {
   role?: "CLIENT" | "BARBER" | "ADMIN";
+  // Profils barber en attente d'approbation uniquement (issue #40).
+  pendingApproval?: "true";
   page?: number;
   pageSize?: number;
 }
@@ -425,6 +427,7 @@ export interface AdminApi {
   reactivateUser(userId: string): Promise<{ user: AdminUser }>;
   certifyBarber(barberProfileId: string): Promise<{ user: AdminUser }>;
   uncertifyBarber(barberProfileId: string): Promise<{ user: AdminUser }>;
+  approveBarber(barberProfileId: string): Promise<{ user: AdminUser }>;
   listBookings(params?: AdminBookingsParams): Promise<AdminBookingsResponse>;
   cancelBooking(bookingId: string): Promise<{ booking: Booking }>;
   listReviews(params?: AdminReviewsParams): Promise<AdminReviewsResponse>;
@@ -458,6 +461,11 @@ export const adminApi: AdminApi = {
   uncertifyBarber: (barberProfileId) =>
     apiFetch<{ user: AdminUser }>(
       `/api/admin/barbers/${encodeURIComponent(barberProfileId)}/uncertify`,
+      { method: "POST" },
+    ),
+  approveBarber: (barberProfileId) =>
+    apiFetch<{ user: AdminUser }>(
+      `/api/admin/barbers/${encodeURIComponent(barberProfileId)}/approve`,
       { method: "POST" },
     ),
   listBookings: (params) =>

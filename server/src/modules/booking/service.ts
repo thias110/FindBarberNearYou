@@ -178,14 +178,19 @@ function busyWindow(date: string): { start: Date; end: Date } {
   };
 }
 
+// Profil réservable : compte BARBER actif ET profil approuvé par l'admin
+// (issue #40). Sinon 404, comme pour un profil inexistant.
 async function assertActiveBarber(
   runner: typeof db,
-  profileUserId: string,
+  profile: { userId: string; approvedAt: Date | null },
 ): Promise<void> {
+  if (!profile.approvedAt) {
+    throw new AppError(404, "BARBER_NOT_FOUND", "Profil introuvable.");
+  }
   const [owner] = await runner
     .select({ status: users.status, role: users.role })
     .from(users)
-    .where(eq(users.id, profileUserId))
+    .where(eq(users.id, profile.userId))
     .limit(1);
   if (!owner || owner.status !== "ACTIVE" || owner.role !== "BARBER") {
     throw new AppError(404, "BARBER_NOT_FOUND", "Profil introuvable.");
@@ -293,7 +298,7 @@ export async function getBookingSlots(
   if (!profile) {
     throw new AppError(404, "BARBER_NOT_FOUND", "Profil introuvable.");
   }
-  await assertActiveBarber(db, profile.userId);
+  await assertActiveBarber(db, profile);
   if (!profile.timezone) {
     throw new AppError(
       409,
@@ -411,7 +416,7 @@ async function createBookingInTransaction(
     if (!profile) {
       throw new AppError(404, "BARBER_NOT_FOUND", "Profil introuvable.");
     }
-    await assertActiveBarber(runner, profile.userId);
+    await assertActiveBarber(runner, profile);
     if (!profile.timezone) {
       throw new AppError(
         409,
