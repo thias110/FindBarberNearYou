@@ -165,3 +165,17 @@
 .dark .maplibregl-ctrl-attrib-button {
   filter: invert(1);
 }
+
+/* --- Carte plein écran de la recherche (issue #49) ---
+   Sous 1024 px, le panneau de liste replié occupe le bas de l'écran (80 px)
+   et la barre de recherche le haut : les boutons de zoom et l'attribution
+   (obligatoire, CGU MapTiler) remontent au-dessus du panneau. */
+@media (max-width: 1023px) {
+  .fb-search-map .maplibregl-ctrl-top-right {
+    top: auto;
+    bottom: 120px;
+  }
+  .fb-search-map .maplibregl-ctrl-bottom-right {
+    bottom: 80px;
+  }
+}

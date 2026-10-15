@@ -1,6 +1,7 @@
 import {
   lazy,
   Suspense,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -220,6 +221,9 @@ export function BarbersSearchPage() {
       updateParams((next) => next.delete("city"));
     }
   }
+
+  // Stable : la fiche écoute la touche Échap tant qu'elle est ouverte.
+  const closeCard = useCallback(() => setSelectedId(null), []);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -506,7 +510,7 @@ export function BarbersSearchPage() {
       <div
         role="region"
         aria-label="Carte des barbiers (résultats de cette page)"
-        className="absolute inset-0 z-0"
+        className="fb-search-map absolute inset-0 z-0"
       >
         <p className="sr-only">
           La liste des résultats est l'alternative textuelle de cette carte.
@@ -547,12 +551,13 @@ export function BarbersSearchPage() {
         {selectedBarber && (
           <BarbersMapCard
             barber={selectedBarber}
-            onClose={() => setSelectedId(null)}
+            distanceKm={distanceById.get(selectedBarber.id) ?? null}
+            onClose={closeCard}
           />
         )}
         {/* La fiche affiche déjà cette mention : pas de doublon. */}
         {!selectedBarber && (
-          <p className="pointer-events-none absolute bottom-24 right-3 z-10 rounded-full bg-surface/90 px-3 py-1 text-xs text-foreground-muted shadow-sm lg:bottom-8">
+          <p className="pointer-events-none absolute bottom-[7.5rem] left-3 z-10 rounded-full lg:bottom-8 lg:left-auto lg:right-3 bg-surface/90 px-3 py-1 text-xs text-foreground-muted shadow-sm">
             {APPROXIMATE_LOCATION_LABEL}
           </p>
         )}

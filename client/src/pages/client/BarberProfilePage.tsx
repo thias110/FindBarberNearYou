@@ -6,6 +6,7 @@ import type {
   PublicBarberProfileWithServices,
 } from "@findbarber/shared/types";
 import { apiErrorMessage, barbersApi } from "../../lib/apiClient";
+import { useScrollToHash } from "../../lib/useScrollToHash";
 import { BookingForm } from "../../components/BookingForm";
 import { BarberProfileHeader } from "../../components/barber/BarberProfileHeader";
 import { BarberServices } from "../../components/barber/BarberServices";
@@ -109,6 +110,10 @@ export function PublicBarberProfilePage() {
     };
   }, [barberId, photosReload]);
 
+  // « Réserver » depuis la fiche de la carte (issue #53) : `#reserver` amène
+  // le formulaire de réservation en vue une fois le profil chargé.
+  useScrollToHash(!loading && data !== null);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
@@ -186,7 +191,11 @@ export function PublicBarberProfilePage() {
 
           {/* Mobile : la réservation vient juste après l'en-tête.
               Desktop : colonne droite sticky (≈ un tiers de la largeur). */}
-          <aside className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-6">
+          <aside
+            id="reserver"
+            aria-label="Réservation"
+            className="min-w-0 focus:outline-none lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-6"
+          >
             {bookingPanel}
           </aside>
 

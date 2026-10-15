@@ -167,3 +167,29 @@ test("carte plein écran : liste en panneau depuis le bas sur mobile, au clavier
   ).toHaveAttribute("aria-expanded", "true");
   await expect(page.getByText("Karim — Barber Plainpalais")).toBeVisible();
 });
+
+test("fiche barber sur la carte : note, prix et « Réserver » (issue #53)", async ({
+  page,
+}) => {
+  await page.goto("/barbers");
+  // Sélection depuis la liste (même fiche qu'au clic sur le marqueur).
+  await page
+    .getByRole("button", { name: "Afficher Marco — Atelier Eaux-Vives sur la carte" })
+    .click();
+  const card = page.getByRole("region", { name: "Fiche de Marco — Atelier Eaux-Vives" });
+  await expect(card).toBeVisible();
+  // Sans avis : mention explicite, jamais de note inventée.
+  await expect(card.getByText("Pas encore d'avis")).toBeVisible();
+  await expect(card.getByText(/À partir de/)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(card).toBeHidden();
+
+  await page
+    .getByRole("button", { name: "Afficher Karim — Barber Plainpalais sur la carte" })
+    .click();
+  const karim = page.getByRole("region", { name: "Fiche de Karim — Barber Plainpalais" });
+  await expect(karim.getByText(/\(\d+ avis\)/)).toBeVisible();
+  await karim.getByRole("link", { name: "Réserver" }).click();
+  await expect(page).toHaveURL(/\/barbers\/[^/]+#reserver$/);
+  await expect(page.locator("#reserver")).toBeFocused();
+});
