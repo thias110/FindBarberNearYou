@@ -19,6 +19,20 @@ for (const file of envFileCandidates) {
   }
 }
 
+// Variable facultative : vide (`VAR=` comme dans .env.example) équivaut à absente.
+function optionalString<T extends z.ZodTypeAny>(schema: T) {
+  return z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === "" ? undefined : value,
+    schema.optional(),
+  );
+}
+
+const httpsUrl = z
+  .string()
+  .url()
+  .refine((value) => value.startsWith("https://"), "URL https:// attendue.");
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -149,6 +163,17 @@ const envSchema = z.object({
   // Secret serveur : jamais exposé au navigateur. Absente → géocodage
   // indisponible et réservations AT_CLIENT refusées.
   MAPTILER_GEOCODING_API_KEY: z.string().optional(),
+  // Informations publiques du site (issues #58, #59) : affichées dans le
+  // footer et les mentions légales, servies par GET /api/site-config. Vide =
+  // non configuré (le lien correspondant n'est pas affiché).
+  SUPPORT_EMAIL: optionalString(z.string().email()),
+  SOCIAL_INSTAGRAM_URL: optionalString(httpsUrl),
+  SOCIAL_FACEBOOK_URL: optionalString(httpsUrl),
+  SOCIAL_TIKTOK_URL: optionalString(httpsUrl),
+  SOCIAL_LINKEDIN_URL: optionalString(httpsUrl),
+  // Éditeur du site pour les mentions légales (raison sociale ou nom, adresse).
+  LEGAL_OPERATOR_NAME: optionalString(z.string().max(200)),
+  LEGAL_OPERATOR_ADDRESS: optionalString(z.string().max(500)),
 });
 
 const parsedEnv = envSchema.parse(process.env);

@@ -29,6 +29,7 @@ import { AdminBarberStatsPage } from "../pages/admin/BarberStatsPage";
 import { AdminAuditLogPage } from "../pages/admin/AuditLogPage";
 import { AccountPage } from "../pages/AccountPage";
 import { SettingsPage } from "../pages/SettingsPage";
+import { LegalNoticePage } from "../pages/LegalNoticePage";
 
 function HomeRoute() {
   const { user, loading } = useAuth();
@@ -61,6 +62,8 @@ export function AppRoutes() {
       {/* Recherche et profil public : accessibles sans connexion. */}
       <Route path="/barbers" element={<BarbersSearchPage />} />
       <Route path="/barbers/:barberId" element={<PublicBarberProfilePage />} />
+
+      <Route path="/mentions-legales" element={<LegalNoticePage />} />
 
       {/* Accueil : public (visiteurs) et CLIENT ; BARBER/ADMIN redirigés. */}
       <Route path="/" element={<HomeRoute />} />

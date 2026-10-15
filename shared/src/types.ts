@@ -482,3 +482,14 @@ export interface PublicBarberPhotosResponse {
 export interface OwnBarberPhotosResponse {
   photos: OwnBarberPhoto[];
 }
+
+// --- Configuration publique du site (issues #58, #59) ---
+// Valeurs facultatives réglées par variables d'environnement serveur : une
+// valeur absente n'est jamais affichée (aucun lien vide).
+export type SocialNetwork = "instagram" | "facebook" | "tiktok" | "linkedin";
+
+export interface SiteConfigResponse {
+  supportEmail: string | null;
+  socialLinks: { network: SocialNetwork; url: string }[];
+  legal: { operatorName: string | null; operatorAddress: string | null };
+}

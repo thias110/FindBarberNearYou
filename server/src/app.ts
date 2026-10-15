@@ -9,6 +9,7 @@ import { barbersRouter } from "./modules/barber/publicRoutes.js";
 import { bookingRouter } from "./modules/booking/routes.js";
 import { notificationRouter } from "./modules/notification/routes.js";
 import { userRouter } from "./modules/user/routes.js";
+import { siteRouter } from "./modules/site/routes.js";
 import { errorHandler } from "./middleware/error.js";
 import { resolveUploadDir } from "./lib/storage.js";
 import { configureTrustProxy, securityHeaders } from "./middleware/security.js";
@@ -161,6 +162,7 @@ export function createApp(options: AppOptions = {}): express.Express {
     res.json({ ok: true });
   });
 
+  app.use("/api/site-config", siteRouter);
   app.use("/api/auth", authRouter);
   app.use("/api/admin", adminRouter);
   app.use("/api/users", userRouter);

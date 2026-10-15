@@ -24,6 +24,15 @@ const env = {
   LOGIN_RATE_LIMIT_MAX: "1000",
   REGISTER_RATE_LIMIT_MAX: "1000",
   MUTATION_RATE_LIMIT_MAX: "1000",
+  // Footer et mentions légales (#58, #59) : un seul réseau configuré, pour
+  // vérifier que les autres n'apparaissent pas.
+  SUPPORT_EMAIL: "support@demo.ch",
+  SOCIAL_INSTAGRAM_URL: "https://www.instagram.com/findbarber.demo",
+  SOCIAL_FACEBOOK_URL: "",
+  SOCIAL_TIKTOK_URL: "",
+  SOCIAL_LINKEDIN_URL: "",
+  LEGAL_OPERATOR_NAME: "FindBarber Démo",
+  LEGAL_OPERATOR_ADDRESS: "",
 };
 
 const children = [];

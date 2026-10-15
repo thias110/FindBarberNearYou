@@ -7,6 +7,7 @@ import { ThemeProvider } from "./app/ThemeProvider";
 import { AppRoutes } from "./app/router";
 import { Logo } from "./components/Logo";
 import { NotificationBell } from "./components/NotificationBell";
+import { SiteFooter } from "./components/SiteFooter";
 import { buttonClasses } from "./components/ui/buttonStyles";
 import { AUTH_ROUTES, pageTitle } from "./lib/pageTitle";
 
@@ -88,6 +89,7 @@ function AppShell() {
       >
         <AppRoutes />
       </main>
+      <SiteFooter />
     </div>
   );
 }

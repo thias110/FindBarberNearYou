@@ -8,6 +8,7 @@ const EXACT: Record<string, string> = {
   "/appointments": "Mes rendez-vous",
   "/account": "Mon compte",
   "/settings": "Paramètres",
+  "/mentions-legales": "Mentions légales",
   "/pro/dashboard": "Espace professionnel",
   "/pro/profile": "Mon profil professionnel",
   "/pro/services": "Mes prestations",

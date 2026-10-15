@@ -25,6 +25,7 @@ import type {
   Notification,
   PublicReview,
   PublicUser,
+  SiteConfigResponse,
   TimeOff,
   UnreadCountResponse,
   TimeOffResponse,
@@ -240,6 +241,11 @@ export const authApi: AuthApi = {
 };
 
 // Avatar générique de l'utilisateur connecté (issue #8).
+// Configuration publique du site (issues #58, #59) : contact, réseaux, éditeur.
+export const siteApi = {
+  config: () => apiFetch<SiteConfigResponse>("/api/site-config"),
+};
+
 export interface UserApi {
   updateAvatar(file: File): Promise<{ user: PublicUser }>;
   deleteAvatar(): Promise<{ user: PublicUser }>;
