@@ -27,6 +27,7 @@ const PAGES: { role: keyof typeof ACCOUNTS | "visiteur"; paths: string[] }[] = [
       "/pro/bookings",
       "/pro/stats",
       "/pro/gallery",
+      "/pro/payments",
       "/account",
     ],
   },

@@ -21,6 +21,7 @@ import {
   type BookingFormErrors,
   type BookingFormField,
 } from "../lib/booking";
+import { amountDueOnline } from "@findbarber/shared/booking";
 import { cn } from "../lib/cn";
 import { formatCurrency, formatDuration } from "../lib/formatters";
 import { formatMinutes } from "../lib/time";
@@ -64,7 +65,9 @@ export function BookingForm({
   const [success, setSuccess] = useState(false);
 
   const minDate = toLocalISODate(new Date());
-  const maxDate = toLocalISODate(addDays(new Date(), LIMITS.bookingHorizonDays));
+  const maxDate = toLocalISODate(
+    addDays(new Date(), LIMITS.bookingHorizonDays),
+  );
 
   const selectedService = services.find((service) => service.id === serviceId);
 
@@ -171,7 +174,13 @@ export function BookingForm({
 
     setSubmitting(true);
     try {
-      await bookingApi.create(input);
+      const result = await bookingApi.create(input);
+      // Paiement en ligne exigé (issue #10) : direction Stripe Checkout. La
+      // demande n'est transmise au barber qu'une fois le paiement reçu.
+      if (result.checkoutUrl) {
+        window.location.assign(result.checkoutUrl);
+        return;
+      }
       setSuccess(true);
     } catch (err) {
       // Le serveur est la source de vérité : on affiche son message (dont
@@ -187,6 +196,13 @@ export function BookingForm({
   }
 
   const canSubmit = Boolean(user && user.role === "CLIENT");
+  const onlineAmount = selectedService
+    ? amountDueOnline(
+        profile.onlinePayment.mode,
+        profile.onlinePayment.depositPercent,
+        selectedService.priceMinor,
+      )
+    : 0;
   const formIncomplete =
     !serviceId ||
     !place ||
@@ -379,12 +395,24 @@ export function BookingForm({
             {selectedService.name} ·{" "}
             {formatCurrency(selectedService.priceMinor, profile.currency)} ·{" "}
             {formatDuration(selectedService.durationMinutes)}
+            {onlineAmount > 0 && (
+              <span className="mt-1 block">
+                {onlineAmount === selectedService.priceMinor
+                  ? "Paiement en ligne du montant total"
+                  : `Acompte de ${formatCurrency(onlineAmount, profile.currency)} payé en ligne, le reste sur place`}{" "}
+                (carte ou Twint). Remboursé automatiquement si le professionnel
+                refuse ou si vous annulez à temps.
+              </span>
+            )}
           </Alert>
         )}
 
         {!user && (
           <Alert variant="info">
-            <Link to="/login" className="font-medium text-accent-strong underline">
+            <Link
+              to="/login"
+              className="font-medium text-accent-strong underline"
+            >
               Connectez-vous
             </Link>{" "}
             pour envoyer une réservation.
@@ -402,7 +430,11 @@ export function BookingForm({
           disabled={submitting || !canSubmit || formIncomplete}
           className="min-h-[44px] w-full"
         >
-          {submitting ? "Envoi…" : "Réserver"}
+          {submitting
+            ? "Envoi…"
+            : onlineAmount > 0
+              ? "Réserver et payer"
+              : "Réserver"}
         </Button>
       </form>
     </Card>

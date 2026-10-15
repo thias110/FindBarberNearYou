@@ -10,6 +10,8 @@ import type {
   BarbersSearchResponse,
   BarberStatsResponse,
   Booking,
+  BookingCreateResponse,
+  BarberPaymentSettings,
   BookingDetails,
   BookingsResponse,
   BookingSlotsResponse,
@@ -36,6 +38,7 @@ import {
 } from "@findbarber/shared/constants";
 import type {
   BookingCreateInput,
+  PaymentSettingsInput,
   ProfileInput,
   ReviewCreateInput,
   ServiceCreateInput,
@@ -538,7 +541,7 @@ export const barbersApi: PublicBarbersApi = {
 };
 
 export interface BookingApi {
-  create(input: BookingCreateInput): Promise<{ booking: Booking }>;
+  create(input: BookingCreateInput): Promise<BookingCreateResponse>;
   list(): Promise<BookingsResponse>;
   getDetails(bookingId: string): Promise<{ booking: BookingDetails }>;
   confirm(bookingId: string): Promise<{ booking: Booking }>;
@@ -553,7 +556,7 @@ export interface BookingApi {
 
 export const bookingApi: BookingApi = {
   create: (input) =>
-    apiFetch<{ booking: Booking }>("/api/bookings", {
+    apiFetch<BookingCreateResponse>("/api/bookings", {
       method: "POST",
       body: input,
     }),
@@ -587,4 +590,23 @@ export const bookingApi: BookingApi = {
       `/api/bookings/${encodeURIComponent(bookingId)}/review`,
       { method: "POST", body: input },
     ),
+};
+
+// Paiement en ligne côté barber (issue #10, Stripe Connect).
+export interface BarberPaymentsApi {
+  get(): Promise<{ settings: BarberPaymentSettings }>;
+  update(input: PaymentSettingsInput): Promise<{ settings: BarberPaymentSettings }>;
+  /** Lien d'inscription Stripe (création du compte au premier appel). */
+  onboarding(): Promise<{ url: string }>;
+}
+
+export const barberPaymentsApi: BarberPaymentsApi = {
+  get: () => apiFetch<{ settings: BarberPaymentSettings }>("/api/barber/payments"),
+  update: (input) =>
+    apiFetch<{ settings: BarberPaymentSettings }>("/api/barber/payments", {
+      method: "PUT",
+      body: input,
+    }),
+  onboarding: () =>
+    apiFetch<{ url: string }>("/api/barber/payments/onboarding", { method: "POST" }),
 };

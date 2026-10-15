@@ -15,6 +15,7 @@ const EXACT: Record<string, string> = {
   "/pro/bookings": "Mes réservations",
   "/pro/stats": "Mes statistiques",
   "/pro/gallery": "Ma galerie",
+  "/pro/payments": "Paiements en ligne",
   "/admin": "Administration",
   "/admin/users": "Utilisateurs — Administration",
   "/admin/bookings": "Réservations — Administration",

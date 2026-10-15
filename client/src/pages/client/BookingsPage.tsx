@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import type { BookingStatus } from "@findbarber/shared/constants";
 import type { Booking, BookingDetails } from "@findbarber/shared/types";
 import { ApiError, bookingApi } from "../../lib/apiClient";
@@ -10,6 +10,8 @@ import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
 
 export function ClientBookingsPage() {
+  const [searchParams] = useSearchParams();
+  const paymentReturn = searchParams.get("payment");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +46,14 @@ export function ClientBookingsPage() {
       setLoading(false);
     }
   }, []);
+
+  // Retour de paiement : le webhook Stripe peut arriver juste après ; un
+  // second chargement quelques secondes plus tard affiche le bon statut.
+  useEffect(() => {
+    if (paymentReturn !== "success") return;
+    const timer = window.setTimeout(() => void loadBookings(), 4000);
+    return () => window.clearTimeout(timer);
+  }, [paymentReturn, loadBookings]);
 
   useEffect(() => {
     void loadBookings();
@@ -175,6 +185,23 @@ export function ClientBookingsPage() {
             </Link>
           </p>
         </div>
+
+        {/* Retour de Stripe Checkout (issue #10). Le statut réel arrive par
+            webhook : la liste peut afficher « paiement en attente » quelques
+            secondes. */}
+        {paymentReturn === "success" && (
+          <Alert variant="success">
+            Paiement reçu. Votre demande a été envoyée au professionnel, qui doit
+            encore la confirmer.
+          </Alert>
+        )}
+        {paymentReturn === "cancelled" && (
+          <Alert variant="warning">
+            Paiement non effectué. Votre demande reste en attente quelques
+            minutes : vous pouvez encore la payer ci-dessous, sinon le créneau
+            sera libéré.
+          </Alert>
+        )}
 
         {loading ? (
           <div aria-busy="true" className="space-y-3">

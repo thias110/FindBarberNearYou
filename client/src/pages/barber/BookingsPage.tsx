@@ -2,13 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   LIMITS,
+  BOOKING_PAYMENT_STATUS_LABELS,
   SERVICE_PLACE_LABELS,
   type BookingStatus,
 } from "@findbarber/shared/constants";
 import { isBookingEnded } from "@findbarber/shared/booking";
 import type { Booking, BookingDetails } from "@findbarber/shared/types";
 import { ApiError, bookingApi } from "../../lib/apiClient";
-import { formatDateTime } from "../../lib/formatters";
+import { formatCurrency, formatDateTime } from "../../lib/formatters";
 import { BookingStatusBadge } from "../../components/BookingStatusBadge";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
@@ -140,9 +141,7 @@ export function BarberBookingsPage() {
       setDetails((current) => ({ ...current, [booking.id]: res.booking }));
     } catch (err) {
       setDetailError(
-        err instanceof Error
-          ? err.message
-          : "Impossible de charger le détail.",
+        err instanceof Error ? err.message : "Impossible de charger le détail.",
       );
     } finally {
       setDetailLoadingId(null);
@@ -244,6 +243,24 @@ export function BarberBookingsPage() {
                         <p className="text-sm text-foreground-muted">
                           {SERVICE_PLACE_LABELS[booking.servicePlace]}
                         </p>
+                        {booking.amountDueMinor !== null &&
+                          booking.paymentStatus !== "NOT_REQUIRED" && (
+                            <p className="text-sm text-foreground-muted">
+                              {
+                                BOOKING_PAYMENT_STATUS_LABELS[
+                                  booking.paymentStatus
+                                ]
+                              }{" "}
+                              :{" "}
+                              {formatCurrency(
+                                booking.amountDueMinor,
+                                booking.currency,
+                              )}
+                              {booking.amountDueMinor < booking.priceMinor
+                                ? ` sur ${formatCurrency(booking.priceMinor, booking.currency)}`
+                                : ""}
+                            </p>
+                          )}
                         {booking.status === "CANCELLED" &&
                           booking.cancelledBy && (
                             <p className="mt-1 text-xs text-foreground-muted">
@@ -370,8 +387,8 @@ export function BarberBookingsPage() {
                             </Button>
                           ) : (
                             <span className="self-center text-sm text-foreground-muted">
-                              Pourra être marquée comme terminée après la fin
-                              du rendez-vous.
+                              Pourra être marquée comme terminée après la fin du
+                              rendez-vous.
                             </span>
                           ))}
                         {cancellable(booking.status) &&
@@ -394,7 +411,9 @@ export function BarberBookingsPage() {
                                 disabled={busy}
                                 onClick={() => void handleCancel(booking.id)}
                               >
-                                {busy ? "Annulation…" : "Confirmer l'annulation"}
+                                {busy
+                                  ? "Annulation…"
+                                  : "Confirmer l'annulation"}
                               </Button>
                             </>
                           ) : (

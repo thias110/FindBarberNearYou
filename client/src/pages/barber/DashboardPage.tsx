@@ -60,6 +60,11 @@ const PRO_NAV = [
     title: "Ma galerie",
     description: "Photos de vos réalisations",
   },
+  {
+    to: "/pro/payments",
+    title: "Paiements en ligne",
+    description: "Stripe, acompte ou paiement complet à la réservation",
+  },
 ] as const;
 
 export function BarberDashboardPage() {

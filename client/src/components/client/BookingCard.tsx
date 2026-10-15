@@ -1,4 +1,7 @@
-import { SERVICE_PLACE_LABELS } from "@findbarber/shared/constants";
+import {
+  BOOKING_PAYMENT_STATUS_LABELS,
+  SERVICE_PLACE_LABELS,
+} from "@findbarber/shared/constants";
 import type { Booking, BookingDetails } from "@findbarber/shared/types";
 import {
   formatCurrency,
@@ -38,10 +41,7 @@ export interface BookingCardProps {
   onShowAddress: () => void;
   onOpenReview: () => void;
   onCloseReview: () => void;
-  onSubmitReview: (input: {
-    rating: number;
-    comment: string;
-  }) => Promise<void>;
+  onSubmitReview: (input: { rating: number; comment: string }) => Promise<void>;
 }
 
 // Composant présentational : aucun appel API ici, tout l'état et les handlers
@@ -90,25 +90,57 @@ export function BookingCard({
           {booking.status === "DECLINED" && (
             <p className="mt-1 text-xs text-foreground-muted">
               Refusée par le professionnel
-              {booking.declineReason
-                ? ` : ${booking.declineReason}`
-                : "."}{" "}
-              Le créneau est libéré.
+              {booking.declineReason ? ` : ${booking.declineReason}` : "."} Le
+              créneau est libéré.
             </p>
           )}
           {booking.status === "EXPIRED" && (
             <p className="mt-1 text-xs text-foreground-muted">
-              Le professionnel n'a pas répondu à temps : la demande a expiré.
+              {booking.paymentStatus === "CANCELLED"
+                ? "Le paiement n'a pas été effectué à temps : la demande a expiré."
+                : "Le professionnel n'a pas répondu à temps : la demande a expiré."}
             </p>
           )}
-          {booking.status === "PENDING" && booking.expiresAt && (
-            <p className="mt-1 text-xs text-foreground-muted">
-              En attente de réponse jusqu'au {formatDateTime(booking.expiresAt)}.
-            </p>
-          )}
+          {booking.status === "PENDING" &&
+            booking.expiresAt &&
+            booking.paymentStatus !== "REQUIRES_PAYMENT" && (
+              <p className="mt-1 text-xs text-foreground-muted">
+                En attente de réponse jusqu'au{" "}
+                {formatDateTime(booking.expiresAt)}.
+              </p>
+            )}
+          {booking.amountDueMinor !== null &&
+            booking.paymentStatus !== "NOT_REQUIRED" && (
+              <p className="mt-1 text-xs text-foreground-muted">
+                {BOOKING_PAYMENT_STATUS_LABELS[booking.paymentStatus]} ·{" "}
+                {formatCurrency(booking.amountDueMinor, booking.currency)}
+                {booking.amountDueMinor < booking.priceMinor
+                  ? " (acompte)"
+                  : ""}
+              </p>
+            )}
         </div>
         <BookingStatusBadge status={booking.status} />
       </div>
+
+      {booking.checkoutUrl && (
+        <Alert variant="warning" className="mt-3">
+          <p>
+            Paiement en attente : la demande ne sera envoyée au professionnel
+            qu'une fois payée
+            {booking.expiresAt
+              ? ` (avant ${formatDateTime(booking.expiresAt)})`
+              : ""}
+            .
+          </p>
+          <a
+            href={booking.checkoutUrl}
+            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            Payer maintenant
+          </a>
+        </Alert>
+      )}
 
       {booking.servicePlace === "AT_CLIENT" && (
         <div className="mt-3 border-t border-border pt-3">
