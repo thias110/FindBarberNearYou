@@ -10,6 +10,7 @@ import { cn } from "../../lib/cn";
 import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
 import { buttonClasses } from "../ui/buttonStyles";
+import { BarberPhoto, RatingSummary, StartingPrice } from "./BarberHighlights";
 
 interface BarberResultCardProps {
   barber: PublicBarberSearchItem;
@@ -18,7 +19,7 @@ interface BarberResultCardProps {
 }
 
 // Contenu strictement limité à la whitelist publique `PublicBarberSearchItem` :
-// aucun prix, note, distance, disponibilité ni donnée privée.
+// photo, note, prix « à partir de » (#48) ; aucune disponibilité ni donnée privée.
 export function BarberResultCard({
   barber,
   selected,
@@ -43,16 +44,20 @@ export function BarberResultCard({
         className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       />
       <div className="pointer-events-none relative z-10">
-        <h2 className="text-lg font-bold text-foreground">
-          {barber.displayName}
-        </h2>
-        <p className="mt-1 text-sm text-foreground-muted">
-          {barber.city}
-          {barber.countryCode ? `, ${country}` : ""}
-        </p>
-        <p className="mt-1 text-sm text-foreground-muted">
-          {barber.activeServiceCount} service(s) actif(s)
-        </p>
+        <div className="flex items-start gap-4">
+          <BarberPhoto barber={barber} className="h-16 w-16 rounded-2xl text-xl" />
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-foreground">
+              {barber.displayName}
+            </h2>
+            <p className="mt-0.5 text-sm text-foreground-muted">
+              {barber.city}
+              {barber.countryCode ? `, ${country}` : ""}
+            </p>
+            <RatingSummary barber={barber} className="mt-1" />
+            <StartingPrice barber={barber} className="mt-0.5" />
+          </div>
+        </div>
 
         {(audiences.length > 0 || barber.techniques.length > 0) && (
           <div className="mt-2 flex flex-wrap gap-1">

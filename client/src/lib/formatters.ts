@@ -44,6 +44,14 @@ export function formatCurrency(priceMinor: number, currency: Currency): string {
   }).format(priceMinor / 100);
 }
 
+/** Note moyenne sur 5 avec une décimale (« 4,3 »). */
+export function formatRating(average: number): string {
+  return new Intl.NumberFormat("fr-CH", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(average);
+}
+
 /** Affiche un instant ISO 8601 dans le fuseau local du visiteur. */
 export function formatDateTime(iso: string): string {
   const date = new Date(iso);

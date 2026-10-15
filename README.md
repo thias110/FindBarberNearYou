@@ -258,8 +258,11 @@ filtres combinés en AND ; public et technique doivent correspondre au **même**
 seuls les profils ACTIVE + BARBER sont exposés ; tri stable `lower(display_name), id` ;
 réponse paginée (`barbers`, `pagination.{page,pageSize,total,totalPages}`) avec whitelist
 publique (id profil, nom, ville, pays, lieux `places`, coordonnées `latitude`/`longitude`
-**approximatives**, nb services actifs, tags agrégés). L'adresse exacte n'est jamais
-exposée. Sans filtre `place`, les profils historiques sans lieu restent renvoyés ; avec un
+**approximatives**, nb services actifs, tags agrégés, `avatarPath`, `currency`, prix
+« à partir de » `startingPriceMinor` = minimum des services **actifs** (null sans service
+actif), `averageRating` / `reviewCount` = avis liés à une réservation **terminée** et non
+masqués, null/0 sans avis). Ces agrégats sont calculés par sous-requêtes corrélées dans la
+même requête SQL (pas de N+1). L'adresse exacte n'est jamais exposée. Sans filtre `place`, les profils historiques sans lieu restent renvoyés ; avec un
 filtre `place`, seuls ceux ayant ce lieu correspondent.
 
 ### Catégories de prestations

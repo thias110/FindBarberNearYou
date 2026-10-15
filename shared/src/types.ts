@@ -85,11 +85,13 @@ export interface PublicBarberProfileWithServices {
   services: PublicBarberService[];
 }
 
-// --- Recherche publique (lot 3, coordonnées lot 4) ---
-// Whitelist stricte : aucun email, hash, userId interne, adresse, devise ni date.
+// --- Recherche publique (lot 3, coordonnées lot 4, agrégats issue #48) ---
+// Whitelist stricte : aucun email, hash, userId interne, adresse exacte ni date.
 // Les coordonnées sont volontairement exposées : ce sont celles du commerce, déjà
 // publiques via le profil détaillé (`PublicBarberProfile`). Les tags proviennent
-// exclusivement des services actifs.
+// exclusivement des services actifs. Photo, devise, prix « à partir de » et note
+// sont déjà publics ailleurs (profil, services, avis) : ils sont ajoutés ici
+// pour comparer les barbers sans ouvrir chaque profil.
 export interface PublicBarberSearchItem {
   id: string;
   displayName: string;
@@ -101,6 +103,14 @@ export interface PublicBarberSearchItem {
   audiences: Audience[];
   techniques: Technique[];
   places: ServicePlace[];
+  // URL publique relative de l'avatar, ou null.
+  avatarPath: string | null;
+  // Moyenne des avis publics (réservation terminée, non masqués), null sans avis.
+  averageRating: number | null;
+  reviewCount: number;
+  // Prix minimum des services ACTIFS, en unités mineures ; null sans service actif.
+  startingPriceMinor: number | null;
+  currency: Currency;
 }
 
 export interface BarbersSearchResponse {

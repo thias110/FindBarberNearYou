@@ -1,4 +1,5 @@
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { randomUUID } from "node:crypto";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { eq } from "drizzle-orm";
 import { createApp } from "../../server/src/app";
@@ -9,8 +10,11 @@ import {
   barberServiceAudiences,
   barberServices,
   barberServiceTechniques,
+  bookings,
+  reviews,
   users,
 } from "@findbarber/shared/schema";
+import type { BookingStatus } from "@findbarber/shared/constants";
 import { markEmailVerified } from "./auth-helpers";
 
 const app = createApp();
@@ -21,7 +25,9 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  // Ordre des FK : tags -> services -> profils -> users.
+  // Ordre des FK : avis -> réservations -> tags -> services -> profils -> users.
+  await db.delete(reviews);
+  await db.delete(bookings);
   await db.delete(barberServiceAudiences);
   await db.delete(barberServiceTechniques);
   await db.delete(barberServices);
@@ -141,8 +147,33 @@ describe("GET /api/barbers", () => {
     expect(item).not.toHaveProperty("userId");
     expect(item).not.toHaveProperty("passwordHash");
     expect(item).not.toHaveProperty("address");
-    expect(item).not.toHaveProperty("currency");
+    expect(item).not.toHaveProperty("postalCode");
     expect(item).not.toHaveProperty("createdAt");
+    // Champs publics ajoutés par l'issue #48 (liste blanche complète).
+    expect(Object.keys(item).sort()).toEqual(
+      [
+        "activeServiceCount",
+        "audiences",
+        "averageRating",
+        "avatarPath",
+        "city",
+        "countryCode",
+        "currency",
+        "displayName",
+        "id",
+        "latitude",
+        "longitude",
+        "places",
+        "reviewCount",
+        "startingPriceMinor",
+        "techniques",
+      ].sort(),
+    );
+    expect(item.avatarPath).toBeNull();
+    expect(item.averageRating).toBeNull();
+    expect(item.reviewCount).toBe(0);
+    expect(item.startingPriceMinor).toBeNull();
+    expect(item.currency).toBe("CHF");
     // Coordonnées publiques approximatives (lot 8) : arrondies à deux décimales.
     expect(item.latitude).toBe(46.2);
     expect(item.longitude).toBe(6.14);
@@ -416,5 +447,145 @@ describe("service categories lifecycle", () => {
     await expect(
       db.insert(barberServiceAudiences).values({ serviceId: svc.id, audience: "HOMME" }),
     ).resolves.toBeDefined();
+  });
+});
+
+// --- Agrégats publics de la recherche (issue #48) ---
+
+async function createClientUser(email: string): Promise<string> {
+  const res = await request(app)
+    .post("/api/auth/register")
+    .send({ email, password: PASSWORD, role: "CLIENT" });
+  expect(res.status).toBe(201);
+  return res.body.user.id as string;
+}
+
+// Réservation insérée directement (statut arbitraire) + avis éventuel.
+async function insertBookingWithReview(input: {
+  clientUserId: string;
+  barberProfileId: string;
+  serviceId: string;
+  status: BookingStatus;
+  rating?: number;
+  hidden?: boolean;
+  dayOffset: number;
+}) {
+  const startAt = new Date(Date.UTC(2025, 0, 1 + input.dayOffset, 10));
+  const [booking] = await db
+    .insert(bookings)
+    .values({
+      id: randomUUID(),
+      clientUserId: input.clientUserId,
+      barberProfileId: input.barberProfileId,
+      serviceId: input.serviceId,
+      startAt,
+      endAt: new Date(startAt.getTime() + 30 * 60_000),
+      servicePlace: "SALON",
+      status: input.status,
+      barberDisplayName: "Barbier",
+      serviceName: "Coupe classique",
+      serviceDescription: null,
+      durationMinutes: 30,
+      priceMinor: 2500,
+      currency: "CHF",
+    })
+    .returning({ id: bookings.id });
+  if (input.rating !== undefined) {
+    await db.insert(reviews).values({
+      id: randomUUID(),
+      bookingId: booking.id,
+      rating: input.rating,
+      comment: null,
+      hiddenAt: input.hidden ? new Date() : null,
+    });
+  }
+}
+
+describe("GET /api/barbers — photo, note, prix et devise (issue #48)", () => {
+  it("exposes avatar, currency and the starting price of ACTIVE services only", async () => {
+    const x = await setupBarber("price@example.com", {
+      displayName: "Price Barber",
+      currency: "EUR",
+    });
+    await addService(x.agent, x.csrf, { name: "Coupe", priceMinor: 3000 });
+    const cheap = await addService(x.agent, x.csrf, { name: "Barbe", priceMinor: 1000 });
+    await addService(x.agent, x.csrf, { name: "Dégradé", priceMinor: 2000 });
+    // Le service le moins cher est désactivé : il ne compte plus.
+    await x.agent
+      .patch(`/api/barber/services/${cheap.id}`)
+      .set("X-CSRF-Token", x.csrf)
+      .send({ isActive: false });
+    const [owner] = await db.select().from(users).where(eq(users.email, "price@example.com"));
+    await db
+      .update(users)
+      .set({ avatarPath: "avatars/abc.webp" })
+      .where(eq(users.id, owner.id));
+
+    const res = await request(app).get("/api/barbers");
+    expect(res.status).toBe(200);
+    const item = res.body.barbers[0];
+    expect(item.startingPriceMinor).toBe(2000);
+    expect(item.currency).toBe("EUR");
+    expect(item.avatarPath).toBe("/uploads/avatars/abc.webp");
+  });
+
+  it("averages only visible reviews of COMPLETED bookings", async () => {
+    const x = await setupBarber("rated@example.com", { displayName: "Rated Barber" });
+    const svc = await addService(x.agent, x.csrf);
+    const clientId = await createClientUser("client-rating@example.com");
+    const base = { clientUserId: clientId, barberProfileId: x.profileId, serviceId: svc.id };
+
+    await insertBookingWithReview({ ...base, status: "COMPLETED", rating: 5, dayOffset: 0 });
+    await insertBookingWithReview({ ...base, status: "COMPLETED", rating: 4, dayOffset: 1 });
+    await insertBookingWithReview({ ...base, status: "COMPLETED", rating: 4, dayOffset: 2 });
+    // Masqué par l'admin : exclu.
+    await insertBookingWithReview({
+      ...base,
+      status: "COMPLETED",
+      rating: 1,
+      hidden: true,
+      dayOffset: 3,
+    });
+    // Réservation non terminée (incohérence de données) : exclue.
+    await insertBookingWithReview({ ...base, status: "CANCELLED", rating: 1, dayOffset: 4 });
+    // Réservation terminée sans avis : sans effet.
+    await insertBookingWithReview({ ...base, status: "COMPLETED", dayOffset: 5 });
+
+    const other = await setupBarber("unrated@example.com", { displayName: "Zeta Unrated" });
+    expect(other.profileId).toBeTruthy();
+
+    const res = await request(app).get("/api/barbers");
+    const byName = Object.fromEntries(
+      res.body.barbers.map((b: { displayName: string }) => [b.displayName, b]),
+    );
+    expect(byName["Rated Barber"].reviewCount).toBe(3);
+    expect(byName["Rated Barber"].averageRating).toBe(4.33);
+    expect(byName["Zeta Unrated"].reviewCount).toBe(0);
+    expect(byName["Zeta Unrated"].averageRating).toBeNull();
+  });
+
+  it("runs a constant number of SQL queries whatever the number of results", async () => {
+    async function countSelects(): Promise<number> {
+      const spy = vi.spyOn(db, "select");
+      try {
+        const res = await request(app).get("/api/barbers").query({ pageSize: 50 });
+        expect(res.status).toBe(200);
+        return spy.mock.calls.length;
+      } finally {
+        spy.mockRestore();
+      }
+    }
+
+    const first = await setupBarber("n1@example.com", { displayName: "N1" });
+    await addService(first.agent, first.csrf);
+    const withOne = await countSelects();
+
+    for (let i = 2; i <= 6; i += 1) {
+      const b = await setupBarber(`n${i}@example.com`, { displayName: `N${i}` });
+      await addService(b.agent, b.csrf);
+    }
+    const withSix = await countSelects();
+
+    expect(withSix).toBe(withOne);
   });
 });

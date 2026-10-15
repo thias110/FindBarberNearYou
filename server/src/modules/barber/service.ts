@@ -9,6 +9,8 @@ import {
   barberServiceTechniques,
   barberTimeOff,
   barberWorkingHours,
+  bookings,
+  reviews,
   users,
   type BarberProfile,
   type BarberService,
@@ -19,6 +21,7 @@ import type { CountryCode } from "@findbarber/shared/countries";
 import { LIMITS } from "@findbarber/shared/constants";
 import type {
   Audience,
+  Currency,
   ServicePlace,
   Technique,
   Weekday,
@@ -740,6 +743,27 @@ export async function getPublicProfile(
   };
 }
 
+// Avis publics comptés dans la note (issue #48) : liés à une réservation
+// terminée et non masqués par l'admin. Même règle que `listBarberReviews`, avec
+// le statut vérifié explicitement.
+function reviewAggregates() {
+  const publicReviews = sql`FROM ${reviews} r
+    JOIN ${bookings} rb ON rb.id = r.booking_id
+    WHERE rb.barber_profile_id = ${barberProfiles.id}
+      AND rb.status = 'COMPLETED'
+      AND r.hidden_at IS NULL`;
+  return {
+    averageRating: sql<number | null>`(SELECT avg(r.rating)::float8 ${publicReviews})`,
+    reviewCount: sql<number>`(SELECT count(*)::int ${publicReviews})`,
+  };
+}
+
+// Moyenne arrondie à deux décimales (même format que le résumé des avis).
+function roundRating(average: number | null, count: number): number | null {
+  if (count === 0 || average === null) return null;
+  return Number(Number(average).toFixed(2));
+}
+
 function buildSearchWhere(input: BarberSearchQuery): SQL {
   const conditions: SQL[] = [
     eq(users.status, "ACTIVE"),
@@ -834,6 +858,16 @@ export async function searchBarbers(
         FROM ${barberProfilePlaces} bpp
         WHERE bpp.barber_profile_id = ${barberProfiles.id}
       ), ARRAY[]::text[])`,
+      currency: barberProfiles.currency,
+      avatarPath: users.avatarPath,
+      // Agrégats (issue #48) : sous-requêtes corrélées dans la MÊME requête SQL,
+      // donc aucun N+1 quel que soit le nombre de résultats.
+      startingPriceMinor: sql<number | null>`(
+        SELECT min(bs_price.price_minor)::int FROM ${barberServices} bs_price
+        WHERE bs_price.barber_profile_id = ${barberProfiles.id}
+          AND bs_price.is_active = true
+      )`,
+      ...reviewAggregates(),
     })
     .from(barberProfiles)
     .innerJoin(users, eq(barberProfiles.userId, users.id))
@@ -858,6 +892,11 @@ export async function searchBarbers(
       audiences: row.audiences as Audience[],
       techniques: row.techniques as Technique[],
       places: row.places as ServicePlace[],
+      avatarPath: row.avatarPath ? publicUploadPath(row.avatarPath) : null,
+      averageRating: roundRating(row.averageRating, row.reviewCount),
+      reviewCount: row.reviewCount,
+      startingPriceMinor: row.startingPriceMinor,
+      currency: row.currency as Currency,
     };
   });
 
