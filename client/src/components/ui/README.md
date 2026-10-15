@@ -1,23 +1,24 @@
 # Design system FindBarber (`components/ui`)
 
-Fondations visuelles de FindBarber (issue #16). Aucune dépendance npm ajoutée.
+Fondations visuelles de FindBarber (issue #16, palette et police V2 : issue #27).
 
 ## Tokens
 
 - Source unique : `client/src/styles/tokens.css` (variables `--fb-*`, light et
   `.dark`). Les couleurs sont en **canaux RGB séparés par des espaces**
-  (`--fb-accent: 184 107 43;`), consommées via
+  (`--fb-accent: 20 99 243;`), consommées via
   `rgb(var(--fb-x) / <alpha-value>)`.
 - Exposés à Tailwind (`client/tailwind.config.js`) sous des noms sémantiques :
   `bg-background`, `bg-surface`, `bg-surface-muted`, `text-foreground`,
   `text-foreground-muted`, `border-border`, `bg-accent`, `text-accent-foreground`,
   `hover:bg-accent-hover`, `bg-accent-soft`, `border-gold`, `bg-gold-soft`,
   `success`, `warning`, `danger`, `info`, `shadow-card`, `shadow-card-sm`.
-- Direction visuelle : **cuivre / ambre chaud** comme accent de marque et CTA
-  (`accent`, `accent-hover`, `accent-soft`). Le vert n'est plus une couleur de
+- Direction visuelle V2 : fond blanc, texte **bleu nuit**, **bleu vif** comme
+  accent de marque et CTA (`accent`, `accent-hover`, `accent-soft`), réservé au
+  logo, à la recherche et aux boutons principaux. Le vert n'est plus une couleur de
   marque : il est réservé au statut `success` (ex. réservation confirmée).
-- `brand-*` est conservé comme **palette de compatibilité cuivrée**
-  (`brand-50` → `#FBF4EC` … `brand-900` → `#5C3417`), sans renommage de classe.
+- `brand-*` est conservé comme **palette de compatibilité bleue**
+  (`brand-50` → `#F2F6FE` … `brand-900` → `#0E1B3D`), sans renommage de classe.
 - L'or (`gold`) est réservé aux badges, icônes et petites touches premium :
   jamais pour du texte courant.
 
@@ -30,31 +31,33 @@ modification de palette qui casse l'AA fait échouer la CI.
 
 | Token | Usage | Clair | Sombre | Contraste clair / sombre |
 |---|---|---|---|---|
-| `background` | Fond de page | `#F7F6F2` | `#121212` | — |
-| `surface` | Cartes, champs | `#FFFFFF` | `#1B1B1B` | — |
-| `surface-muted` | Fonds secondaires | `#EFEDE7` | `#262626` | — |
-| `foreground` | Texte principal | `#1C1B1A` | `#F5F3EE` | 15.9:1 / 16.9:1 (sur `background`) |
-| `foreground-muted` | Texte secondaire | `#6F6A63` | `#AAA49C` | 5.4:1 / 7.0:1 (sur `surface`) |
-| `accent` | Boutons primaires, anneau de focus | `#B86B2B` | `#D88745` | — |
-| `accent-strong` | Texte cuivré (liens) | `#935622` | `#D88745` | 5.8:1 / 6.1:1 (sur `surface`) |
-| `border` | Séparateurs, bordures de cartes | `#DEDAD2` | `#353535` | — |
-| `border-strong` | Bordures de champs (≥ 3:1) | `#908C84` | `#6E6E6E` | 3.3:1 / 3.4:1 (sur `surface`) |
-| `gold` | Touches premium (jamais du texte) | `#B9923B` | `#D3B260` | — |
-| `success` | Statut positif | `#297052` | `#4CAF7A` | 5.9:1 / 6.3:1 (sur `surface`) |
-| `warning` | En attente | `#895B17` | `#D6A33A` | 5.9:1 / 7.5:1 (sur `surface`) |
+| `background` | Fond de page | `#FFFFFF` | `#0B1220` | — |
+| `surface` | Cartes, champs | `#FFFFFF` | `#111A2E` | — |
+| `surface-muted` | Fonds secondaires | `#F2F5FA` | `#18233B` | — |
+| `foreground` | Texte principal | `#0E1B3D` | `#EAF0FB` | 16.9:1 / 16.4:1 (sur `background`) |
+| `foreground-muted` | Texte secondaire | `#55617D` | `#A3AEC6` | 6.2:1 / 7.8:1 (sur `surface`) |
+| `accent` | Boutons primaires, anneau de focus | `#1463F3` | `#5B93FF` | — |
+| `accent-strong` | Texte d'accent (liens) | `#0F4FC4` | `#8DB4FF` | 7.2:1 / 8.3:1 (sur `surface`) |
+| `border` | Séparateurs, bordures de cartes | `#E1E6EF` | `#24304A` | — |
+| `border-strong` | Bordures de champs (≥ 3:1) | `#7E88A0` | `#687594` | 3.5:1 / 3.8:1 (sur `surface`) |
+| `gold` | Étoiles, badges (jamais du texte) | `#B9923B` | `#D3B260` | — |
+| `success` | Statut positif | `#297052` | `#4CAF7A` | 5.9:1 / 6.4:1 (sur `surface`) |
+| `warning` | En attente | `#895B17` | `#D6A33A` | 5.9:1 / 7.6:1 (sur `surface`) |
 | `danger` | Erreur, action destructive | `#B83B3B` | `#E87676` | 5.6:1 / 6.0:1 (sur `surface`) |
 | `info` | Information | `#3B68A0` | `#6E9ED6` | 5.7:1 / 6.2:1 (sur `surface`) |
-| `accent-foreground` | Texte des boutons primaires | `#121212` | `#121212` | 4.6:1 / 6.7:1 (sur `accent`) |
+| `accent-foreground` | Texte des boutons primaires | `#FFFFFF` | `#071026` | 5.1:1 / 6.4:1 (sur `accent`) |
 
-Règles : `text-accent-strong` pour du texte cuivré (jamais `text-accent`, réservé
+Règles : `text-accent-strong` pour du texte d'accent (jamais `text-accent`, réservé
 aux fonds) ; `border-border-strong` pour les contrôles de formulaire ;
 l'or ne porte jamais de texte courant ; un statut est toujours accompagné
 d'un libellé (jamais la couleur seule).
 
 ## Typographie
 
-- Police : `--fb-font-sans` (Inter local si installé, puis pile système ; aucun
-  téléchargement).
+- Police : `--fb-font-sans`, **Figtree** auto-hébergée via
+  `@fontsource-variable/figtree` (importée dans `main.tsx`, servie depuis notre
+  origine car la CSP n'autorise que `font-src 'self'`), puis pile système.
+  Titres `h1`/`h2` resserrés (`letter-spacing: -0.02em`, dans `index.css`).
 - Échelle : celle de Tailwind, sans tailles arbitraires —
   `text-xs` (12 px, métadonnées), `text-sm` (14 px, corps d'interface, champs,
   boutons), `text-base` (16 px, texte courant), `text-lg` (18 px, titres de

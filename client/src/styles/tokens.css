@@ -1,38 +1,39 @@
-/* --- Tokens de design FindBarber (issue #16) ---
+/* --- Tokens de design FindBarber (issue #16, palette V2 : issue #27) ---
    Source unique des couleurs, ombres et typographie. Les couleurs sont stockées
    en canaux RGB séparés par des espaces afin d'être compatibles avec le motif
    Tailwind `rgb(var(--fb-...) / <alpha-value>)` (modificateurs d'opacité
    inclus). Le thème est appliqué par la classe `dark` sur <html>
-   (darkMode: "class"). */
+   (darkMode: "class"). Les contrastes AA sont vérifiés par
+   tests/src/contrast.test.ts. */
 
 :root {
   color-scheme: light;
 
-  /* Police : Inter en premier choix LOCAL (aucun téléchargement), puis stack
-     système. */
+  /* Police : Figtree auto-hébergée (paquet @fontsource-variable/figtree,
+     importé dans main.tsx ; la CSP n'autorise que `font-src 'self'`), puis
+     stack système. */
   --fb-font-sans:
-    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
-    "Segoe UI Emoji";
+    "Figtree Variable", "Figtree", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji";
 
-  /* Thème clair (défaut) — cuivre / ambre chaud. */
-  --fb-background: 247 246 242;
+  /* Thème clair (défaut) — fond blanc, bleu nuit, bleu vif. */
+  --fb-background: 255 255 255;
   --fb-surface: 255 255 255;
-  --fb-surface-muted: 239 237 231;
-  --fb-foreground: 28 27 26;
-  --fb-foreground-muted: 111 106 99;
-  --fb-border: 222 218 210;
+  --fb-surface-muted: 242 245 250;
+  --fb-foreground: 14 27 61;
+  --fb-foreground-muted: 85 97 125;
+  --fb-border: 225 230 239;
   /* Bordure des contrôles de formulaire : >= 3:1 sur surface (WCAG 1.4.11). */
-  --fb-border-strong: 144 140 132;
-  --fb-accent: 184 107 43;
-  /* Survol plus clair : le texte des boutons reste sombre (>= 4.5:1). */
-  --fb-accent-hover: 201 126 64;
-  --fb-accent-soft: 245 228 212;
-  --fb-accent-foreground: 18 18 18;
-  /* Cuivre foncé pour le TEXTE (liens, mentions) : >= 4.5:1 sur fond clair. */
-  --fb-accent-strong: 147 86 34;
-  /* Or réservé aux badges, icônes et petites touches premium (jamais du texte
-     courant). */
+  --fb-border-strong: 126 136 160;
+  --fb-accent: 20 99 243;
+  /* Survol plus foncé : le texte blanc des boutons reste >= 4.5:1. */
+  --fb-accent-hover: 15 79 196;
+  --fb-accent-soft: 232 240 254;
+  --fb-accent-foreground: 255 255 255;
+  /* Bleu foncé pour le TEXTE (liens, mentions) : >= 4.5:1 sur fond clair. */
+  --fb-accent-strong: 15 79 196;
+  /* Or réservé aux étoiles et aux badges (jamais du texte courant). */
   --fb-gold: 185 146 59;
   --fb-gold-soft: 246 237 216;
 
@@ -50,27 +51,27 @@
   --fb-radius-panel: 0.75rem; /* rounded-xl : panneaux secondaires */
   --fb-radius-card: 1rem; /* rounded-2xl : cartes, dialogues */
 
-  --fb-shadow-sm: 0 1px 2px rgba(17, 19, 21, 0.06);
+  --fb-shadow-sm: 0 1px 2px rgba(14, 27, 61, 0.06);
   --fb-shadow-md:
-    0 1px 2px rgba(17, 19, 21, 0.06), 0 10px 30px rgba(17, 19, 21, 0.08);
+    0 1px 2px rgba(14, 27, 61, 0.06), 0 10px 30px rgba(14, 27, 61, 0.08);
 }
 
 .dark {
   color-scheme: dark;
 
-  /* Thème sombre — cuivre / ambre chaud. */
-  --fb-background: 18 18 18;
-  --fb-surface: 27 27 27;
-  --fb-surface-muted: 38 38 38;
-  --fb-foreground: 245 243 238;
-  --fb-foreground-muted: 170 164 156;
-  --fb-border: 53 53 53;
-  --fb-border-strong: 110 110 110;
-  --fb-accent: 216 135 69;
-  --fb-accent-hover: 231 154 88;
-  --fb-accent-soft: 60 42 29;
-  --fb-accent-foreground: 18 18 18;
-  --fb-accent-strong: 216 135 69;
+  /* Thème sombre — bleu nuit profond, bleu clair. */
+  --fb-background: 11 18 32;
+  --fb-surface: 17 26 46;
+  --fb-surface-muted: 24 35 59;
+  --fb-foreground: 234 240 251;
+  --fb-foreground-muted: 163 174 198;
+  --fb-border: 36 48 74;
+  --fb-border-strong: 104 117 148;
+  --fb-accent: 91 147 255;
+  --fb-accent-hover: 122 168 255;
+  --fb-accent-soft: 23 42 82;
+  --fb-accent-foreground: 7 16 38;
+  --fb-accent-strong: 141 180 255;
   --fb-gold: 211 178 96;
   --fb-gold-soft: 46 39 22;
 
