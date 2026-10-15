@@ -18,7 +18,7 @@ test("aucun sélecteur de thème dans les en-têtes", async ({ page }) => {
   }
   await loginByApi(page, ACCOUNTS.client);
   await page.goto("/account");
-  await expect(page.getByRole("heading", { name: "Mon compte" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mon compte", exact: true })).toBeVisible();
   await expect(themeButtons).toHaveCount(0);
 });
 
@@ -27,7 +27,7 @@ test("Paramètres depuis Mon compte : sections, thème et accessibilité", async
 }) => {
   await loginByApi(page, ACCOUNTS.client);
   await page.goto("/account");
-  await page.getByRole("link", { name: "Paramètres" }).click();
+  await page.getByRole("link", { name: "Paramètres", exact: true }).click();
   await expect(page).toHaveTitle("Paramètres — FindBarber");
 
   await expect(page.getByRole("heading", { name: "Apparence" })).toBeVisible();

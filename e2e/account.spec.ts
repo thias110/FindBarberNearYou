@@ -1,5 +1,6 @@
-// Mon compte (issue #14) : export JSON puis suppression du compte au clavier,
-// avec confirmation, sur un compte démo dédié.
+// Mon compte (issue #14) : export JSON depuis Paramètres > Confidentialité
+// (issue #31) puis suppression du compte au clavier, avec confirmation, sur un
+// compte démo dédié.
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import {
@@ -16,6 +17,16 @@ test("exporter ses données puis supprimer son compte", async ({ page }) => {
   await page.getByRole("link", { name: "Mon compte" }).click();
   await expect(page).toHaveTitle("Mon compte — FindBarber");
 
+  // L'export n'est plus sur Mon compte : un lien mène à Paramètres.
+  await expect(
+    page.getByRole("button", { name: "Télécharger mes données" }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("link", { name: "Paramètres > Confidentialité" })
+    .click();
+  await expect(page).toHaveURL(/\/settings#confidentialite$/);
+  await expect(page.locator("#confidentialite")).toBeFocused();
+
   // Export : fichier JSON téléchargé, avec le compte et sans secret.
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Télécharger mes données" }).click();
@@ -26,6 +37,9 @@ test("exporter ses données puis supprimer son compte", async ({ page }) => {
   const exported = readFileSync((await download.path())!, "utf8");
   expect(JSON.parse(exported).account.email).toBe(DELETABLE_CLIENT);
   expect(exported).not.toContain("passwordHash");
+
+  await page.getByRole("link", { name: "Mon compte" }).first().click();
+  await expect(page).toHaveTitle("Mon compte — FindBarber");
 
   // Suppression : mot de passe, puis dialogue de confirmation, au clavier.
   await tabTo(page, page.getByLabel("Mot de passe actuel"));

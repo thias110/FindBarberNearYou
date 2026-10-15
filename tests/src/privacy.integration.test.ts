@@ -151,6 +151,27 @@ describe("export des données (GET /api/users/me/export)", () => {
     expect(raw).not.toContain("clientUserId");
   });
 
+  // Issue #31 : l'export ne concerne que le titulaire de la session, même si
+  // l'appelant tente de viser un autre compte.
+  it("un client B n'obtient jamais les données d'un client A", async () => {
+    const { clientId } = await world();
+    const otherEmail = "privacy-other@example.com";
+    await createUser(otherEmail, "CLIENT");
+    const other = await login(app, otherEmail);
+
+    const res = await other.agent.get(
+      `/api/users/me/export?userId=${clientId}`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.account.email).toBe(otherEmail);
+    expect(res.body.bookings).toEqual([]);
+    expect(res.body.reviews).toEqual([]);
+    const raw = JSON.stringify(res.body);
+    expect(raw).not.toContain(CLIENT_EMAIL);
+    expect(raw).not.toContain(clientId);
+    expect(raw).not.toContain("Chemin Privé");
+  });
+
   it("exige une session", async () => {
     expect((await request(app).get("/api/users/me/export")).status).toBe(401);
   });

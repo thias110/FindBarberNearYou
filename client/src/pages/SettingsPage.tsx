@@ -2,16 +2,18 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../app/auth-context";
 import { useTheme } from "../app/theme-context";
 import { DataExport } from "../components/account/DataExport";
+import { useScrollToHash } from "../lib/useScrollToHash";
 import { THEME_OPTIONS, themeIcon } from "../components/themeOptions";
 import { buttonClasses } from "../components/ui/buttonStyles";
 import { Card } from "../components/ui/Card";
 
-// Paramètres (issue #29) : préférences regroupées par section. Ouvert aux
-// CLIENT et BARBER, comme Mon compte. Les sections portent un `id` pour y
+// Paramètres (issue #29) : préférences regroupées par section, dont l'export
+// des données (issue #31). Ouvert aux CLIENT et BARBER, comme Mon compte. Les sections portent un `id` pour y
 // renvoyer directement (ex. /settings#confidentialite).
 export function SettingsPage() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+  useScrollToHash();
 
   if (!user) return null;
 
@@ -32,7 +34,11 @@ export function SettingsPage() {
           </Link>
         </div>
 
-        <section id="apparence" aria-labelledby="apparence-title">
+        <section
+          id="apparence"
+          aria-labelledby="apparence-title"
+          className="scroll-mt-4 focus:outline-none"
+        >
           <Card className="space-y-4 p-6">
             <div>
               <h2
@@ -98,7 +104,11 @@ export function SettingsPage() {
           </Card>
         </section>
 
-        <section id="confidentialite" aria-labelledby="confidentialite-title">
+        <section
+          id="confidentialite"
+          aria-labelledby="confidentialite-title"
+          className="scroll-mt-4 focus:outline-none"
+        >
           <Card className="space-y-5 p-6">
             <h2
               id="confidentialite-title"

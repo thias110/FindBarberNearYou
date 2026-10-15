@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { ROLE_LABELS } from "@findbarber/shared/constants";
 import { useAuth } from "../app/auth-context";
 import { userApi } from "../lib/apiClient";
-import { DataExport } from "../components/account/DataExport";
 import { buttonClasses } from "../components/ui/buttonStyles";
 import { authErrorMessage } from "../lib/authMessages";
 import { Alert } from "../components/ui/Alert";
@@ -13,8 +12,9 @@ import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { Field } from "../components/ui/Field";
 import { Input } from "../components/ui/Input";
 
-// Mon compte (issue #14 : nLPD / RGPD) : export des données et suppression du
-// compte. Ouvert aux CLIENT et BARBER (un ADMIN est géré hors application).
+// Mon compte (issue #14 : nLPD / RGPD) : suppression du compte. L'export des
+// données vit dans Paramètres > Confidentialité (issue #31). Ouvert aux CLIENT
+// et BARBER (un ADMIN est géré hors application).
 export function AccountPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -75,9 +75,18 @@ export function AccountPage() {
           </Link>
         </div>
 
-        <Card className="space-y-3 p-6">
+        <Card className="space-y-2 p-6">
           <h2 className="text-lg font-bold text-foreground">Mes données</h2>
-          <DataExport role={user.role} />
+          <p className="text-sm text-foreground-muted">
+            Pour télécharger une copie de vos données, rendez-vous dans{" "}
+            <Link
+              to="/settings#confidentialite"
+              className="font-medium text-accent-strong underline underline-offset-2"
+            >
+              Paramètres &gt; Confidentialité
+            </Link>
+            .
+          </p>
         </Card>
 
         <Card className="space-y-3 border-danger/40 p-6">

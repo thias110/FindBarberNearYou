@@ -6,8 +6,8 @@ import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
 
 // Export des données personnelles (issue #14, portabilité nLPD / RGPD).
-// Partagé par Mon compte et Paramètres > Confidentialité (issue #29) : la
-// page appelante fournit le titre et la carte.
+// Affiché dans Paramètres > Confidentialité (issues #29 et #31) : la page
+// appelante fournit le titre et la carte.
 export function DataExport({ role }: { role: Role }) {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
