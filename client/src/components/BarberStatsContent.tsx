@@ -181,7 +181,7 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
       </div>
 
       <Card className="p-4">
-        <h2 className="mb-3 font-semibold text-foreground">
+        <h2 className="mb-3 font-bold text-foreground">
           Rendez-vous par semaine
         </h2>
         <Bars
@@ -195,7 +195,7 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
       </Card>
 
       <Card className="p-4">
-        <h2 className="mb-3 font-semibold text-foreground">
+        <h2 className="mb-3 font-bold text-foreground">
           Rendez-vous par mois
         </h2>
         <Bars
@@ -209,7 +209,7 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
       </Card>
 
       <Card className="p-4">
-        <h2 className="mb-3 font-semibold text-foreground">
+        <h2 className="mb-3 font-bold text-foreground">
           Revenus par mois
         </h2>
         <Bars
@@ -223,7 +223,7 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
       </Card>
 
       <Card className="p-4">
-        <h2 className="mb-3 font-semibold text-foreground">
+        <h2 className="mb-3 font-bold text-foreground">
           Services les plus demandés
         </h2>
         <ul className="space-y-2">
@@ -245,7 +245,7 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
       </Card>
 
       <Card className="p-4">
-        <h2 className="mb-3 font-semibold text-foreground">
+        <h2 className="mb-3 font-bold text-foreground">
           Jours les plus chargés
         </h2>
         <Bars
@@ -259,7 +259,7 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
       </Card>
 
       <Card className="p-4">
-        <h2 className="mb-3 font-semibold text-foreground">
+        <h2 className="mb-3 font-bold text-foreground">
           Heures les plus chargées
         </h2>
         <Bars

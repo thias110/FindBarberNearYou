@@ -13,6 +13,7 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Field } from "../ui/Field";
 import { Input } from "../ui/Input";
+import { CONTROL_CLASS } from "../ui/control";
 
 export interface SearchFiltersValues {
   q: string;
@@ -39,11 +40,8 @@ const COUNTRIES_SORTED = [...COUNTRIES].sort((a, b) =>
   a.nameFr.localeCompare(b.nameFr, "fr"),
 );
 
-// Selects HTML natifs (aucun composant Select dédié) stylés avec les tokens.
-const SELECT_CLASSES =
-  "block w-full min-h-[44px] rounded-lg border border-border-strong bg-surface-muted px-3 py-2 text-sm text-foreground " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
-  "focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+// Selects natifs : mêmes classes que les champs du design system (issue #28).
+const SELECT_CLASSES = CONTROL_CLASS;
 
 export function SearchFilters({
   form,
@@ -75,7 +73,6 @@ export function SearchFilters({
                 onChange={(event) => update("city", event.target.value)}
                 placeholder="Ville"
                 autoComplete="address-level2"
-                className="min-h-[44px] bg-surface-muted"
               />
             )}
           </Field>
@@ -125,12 +122,11 @@ export function SearchFilters({
                 value={form.q}
                 onChange={(event) => update("q", event.target.value)}
                 placeholder="Nom du barbier"
-                className="min-h-[44px] bg-surface-muted"
               />
             )}
           </Field>
           <label className="block min-w-0">
-            <span className="mb-1 block text-sm font-medium text-foreground">
+            <span className="mb-1.5 block text-sm font-semibold text-foreground">
               Pays
             </span>
             <select
@@ -147,7 +143,7 @@ export function SearchFilters({
             </select>
           </label>
           <label className="block min-w-0">
-            <span className="mb-1 block text-sm font-medium text-foreground">
+            <span className="mb-1.5 block text-sm font-semibold text-foreground">
               Public
             </span>
             <select
@@ -164,7 +160,7 @@ export function SearchFilters({
             </select>
           </label>
           <label className="block min-w-0">
-            <span className="mb-1 block text-sm font-medium text-foreground">
+            <span className="mb-1.5 block text-sm font-semibold text-foreground">
               Prestation
             </span>
             <select
@@ -181,7 +177,7 @@ export function SearchFilters({
             </select>
           </label>
           <label className="block min-w-0">
-            <span className="mb-1 block text-sm font-medium text-foreground">
+            <span className="mb-1.5 block text-sm font-semibold text-foreground">
               Lieu
             </span>
             <select

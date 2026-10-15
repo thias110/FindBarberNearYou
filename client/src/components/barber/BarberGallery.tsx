@@ -21,7 +21,7 @@ export function BarberGallery({
 }: BarberGalleryProps) {
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-semibold text-foreground">Galerie</h2>
+      <h2 className="text-lg font-bold text-foreground">Galerie</h2>
 
       {loading ? (
         <div

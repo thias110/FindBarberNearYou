@@ -1,35 +1,17 @@
 import { forwardRef, type ButtonHTMLAttributes } from "react";
-import { cn } from "../../lib/cn";
+import {
+  buttonClasses,
+  type ButtonSize,
+  type ButtonVariant,
+} from "./buttonStyles";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-export type ButtonSize = "sm" | "md";
+export type { ButtonSize, ButtonVariant } from "./buttonStyles";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   isLoading?: boolean;
 }
-
-const BASE =
-  "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
-  "focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
-  "disabled:pointer-events-none disabled:opacity-50";
-
-const SIZES: Record<ButtonSize, string> = {
-  sm: "px-3 py-1.5 text-sm",
-  // >= 44 px de haut (cible tactile, issue #18). `sm` reste pour les zones denses.
-  md: "min-h-11 px-4 py-2 text-sm",
-};
-
-const VARIANTS: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-accent-foreground hover:bg-accent-hover",
-  secondary:
-    "border border-border bg-surface text-foreground hover:bg-surface-muted",
-  ghost: "text-foreground hover:bg-surface-muted",
-  // Token de statut (s'adapte clair/sombre tout seul, API inchangée).
-  danger: "border border-danger bg-transparent text-danger hover:bg-danger/10",
-};
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(
@@ -51,7 +33,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type={type}
         disabled={disabled || isLoading}
         aria-busy={isLoading || undefined}
-        className={cn(BASE, SIZES[size], VARIANTS[variant], className)}
+        className={buttonClasses(variant, size, className)}
         {...props}
       >
         {isLoading && (

@@ -85,14 +85,14 @@ export function AccountPage() {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Mon compte</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">Mon compte</h1>
           <p className="mt-1 break-all text-sm text-foreground-muted">
             {user.email} · {ROLE_LABELS[user.role]}
           </p>
         </div>
 
         <Card className="space-y-3 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Mes données</h2>
+          <h2 className="text-lg font-bold text-foreground">Mes données</h2>
           <p className="text-sm text-foreground-muted">
             Téléchargez une copie de toutes les données liées à votre compte
             (profil, rendez-vous, avis, notifications
@@ -110,7 +110,7 @@ export function AccountPage() {
         </Card>
 
         <Card className="space-y-3 border-danger/40 p-6">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-bold text-foreground">
             Supprimer mon compte
           </h2>
           <ul className="list-disc space-y-1 pl-5 text-sm text-foreground-muted">

@@ -15,6 +15,7 @@ import { Card } from "../../components/ui/Card";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { adminUserDisplayName } from "../../lib/admin";
 import { formatDateTime } from "../../lib/formatters";
+import { buttonClasses } from "../../components/ui/buttonStyles";
 
 type RoleFilter = "ALL" | Role;
 
@@ -27,8 +28,7 @@ const ROLE_FILTERS: { value: RoleFilter; label: string }[] = [
 
 const PAGE_SIZE = 20;
 
-const SECONDARY_LINK_CLASS =
-  "inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+const SECONDARY_LINK_CLASS = buttonClasses("secondary");
 
 type PendingAction = { kind: "suspend" | "reactivate"; user: AdminUser };
 
@@ -122,7 +122,7 @@ export function AdminUsersPage() {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-foreground">Utilisateurs</h2>
+        <h2 className="text-xl font-bold text-foreground">Utilisateurs</h2>
 
         <FilterChips
           label="Filtrer par rôle"

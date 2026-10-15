@@ -12,6 +12,12 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Cases à cocher, boutons radio et curseurs natifs à la couleur de la
+     marque (issue #28). */
+  :root {
+    accent-color: rgb(var(--fb-accent));
+  }
+
   /* Titres Figtree (issue #27) : approche resserrée, comme une enseigne. Les
      classes `tracking-*` restent prioritaires (couche utilities). */
   h1,

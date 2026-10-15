@@ -34,8 +34,8 @@ export function Field({
     undefined;
 
   return (
-    <div className={cn("space-y-1", className)}>
-      <label htmlFor={id} className="block text-sm font-medium text-foreground">
+    <div className={cn("space-y-1.5", className)}>
+      <label htmlFor={id} className="block text-sm font-semibold text-foreground">
         {label}
       </label>
       {children({
@@ -44,13 +44,26 @@ export function Field({
         "aria-describedby": describedBy,
       })}
       {hint && !error && (
-        <p id={hintId} className="text-xs text-foreground-muted">
+        <p id={hintId} className="text-sm text-foreground-muted">
           {hint}
         </p>
       )}
       {error && (
-        <p id={errorId} className="text-xs text-danger">
-          {error}
+        // Icône en plus de la couleur : l'erreur ne repose pas sur le rouge seul.
+        <p id={errorId} className="flex items-start gap-1.5 text-sm text-danger">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            className="mt-0.5 h-4 w-4 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+          >
+            <circle cx="8" cy="8" r="6.5" />
+            <path d="M8 4.75v3.75M8 11.1v.15" />
+          </svg>
+          <span>{error}</span>
         </p>
       )}
     </div>

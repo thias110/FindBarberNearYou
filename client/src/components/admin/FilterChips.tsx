@@ -1,4 +1,4 @@
-import { cn } from "../../lib/cn";
+import { chipClasses } from "../ui/chipStyles";
 
 // Groupe de filtres exclusifs (boutons bascule) : état annoncé via
 // `aria-pressed`, cibles >= 44 px et focus visible.
@@ -23,14 +23,7 @@ export function FilterChips<T extends string>({
             type="button"
             aria-pressed={active}
             onClick={() => onChange(option.value)}
-            className={cn(
-              "inline-flex min-h-11 items-center rounded-full px-4 text-sm font-medium transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-              "focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              active
-                ? "bg-accent text-accent-foreground hover:bg-accent-hover"
-                : "border border-border bg-surface text-foreground hover:bg-surface-muted",
-            )}
+            className={chipClasses(active)}
           >
             {option.label}
           </button>

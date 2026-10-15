@@ -20,7 +20,7 @@ interface BarberServicesProps {
 export function BarberServices({ profile, services }: BarberServicesProps) {
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-semibold text-foreground">Services</h2>
+      <h2 className="text-lg font-bold text-foreground">Services</h2>
       {services.length === 0 ? (
         <p className="mt-2 text-foreground-muted">
           Aucun service pour le moment.

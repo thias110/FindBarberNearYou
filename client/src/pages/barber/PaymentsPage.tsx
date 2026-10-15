@@ -146,7 +146,7 @@ export function BarberPaymentsPage() {
 
             <Card className="space-y-3 p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-foreground">
+                <h2 className="text-lg font-bold text-foreground">
                   Compte Stripe
                 </h2>
                 <Badge
@@ -188,7 +188,7 @@ export function BarberPaymentsPage() {
 
             <Card className="p-6">
               <form onSubmit={handleSave} noValidate className="space-y-4">
-                <h2 className="text-lg font-semibold text-foreground">
+                <h2 className="text-lg font-bold text-foreground">
                   Paiement à la réservation
                 </h2>
                 {!settings.chargesEnabled && (

@@ -22,6 +22,8 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProNavCard } from "../../components/barber/ProNavCard";
+import { buttonClasses } from "../../components/ui/buttonStyles";
+import { CONTROL_CLASS } from "../../components/ui/control";
 
 // Routes BARBER existantes : aucune URL n'est introduite ni modifiée.
 const PRO_NAV = [
@@ -251,7 +253,7 @@ export function BarberDashboardPage() {
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold text-foreground">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
               Espace professionnel
             </h1>
             <p className="mt-1 break-words text-sm text-foreground-muted">
@@ -268,7 +270,7 @@ export function BarberDashboardPage() {
         </header>
 
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-foreground">Mon avatar</h2>
+          <h2 className="text-lg font-bold text-foreground">Mon avatar</h2>
           <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
             {avatarPath ? (
               <img
@@ -390,7 +392,7 @@ export function BarberDashboardPage() {
         </nav>
 
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-bold text-foreground">
             Lien public partageable
           </h2>
 
@@ -438,7 +440,7 @@ export function BarberDashboardPage() {
                 value={publicLink}
                 onFocus={(event) => event.currentTarget.select()}
                 aria-label="Lien public de votre profil"
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className={CONTROL_CLASS}
               />
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -451,7 +453,7 @@ export function BarberDashboardPage() {
                   href={publicLink}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className={buttonClasses("secondary")}
                 >
                   Voir mon profil public
                 </a>

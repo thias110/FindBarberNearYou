@@ -8,6 +8,7 @@ import {
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { audienceChips } from "../lib/barberTags";
 import { Badge } from "./ui/Badge";
+import { buttonClasses } from "./ui/buttonStyles";
 
 interface BarbersMapCardProps {
   barber: PublicBarberSearchItem;
@@ -29,7 +30,7 @@ export function BarbersMapCard({ barber, onClose }: BarbersMapCardProps) {
         type="button"
         onClick={onClose}
         aria-label="Fermer la fiche du barbier"
-        className="absolute right-2 top-2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-lg leading-none text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="absolute right-2 top-2 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-lg leading-none text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <span aria-hidden="true">×</span>
       </button>
@@ -71,7 +72,7 @@ export function BarbersMapCard({ barber, onClose }: BarbersMapCardProps) {
       </p>
       <Link
         to={`/barbers/${barber.id}`}
-        className="mt-3 inline-flex min-h-[44px] items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className={buttonClasses("primary", "md", "mt-3")}
       >
         Voir le profil
       </Link>

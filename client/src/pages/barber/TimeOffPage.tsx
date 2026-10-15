@@ -12,10 +12,10 @@ import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
+import { buttonClasses } from "../../components/ui/buttonStyles";
 
 // Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
-const PRIMARY_LINK_CLASS =
-  "inline-flex min-h-[44px] items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+const PRIMARY_LINK_CLASS = buttonClasses("primary");
 
 function sortTimeOff(items: TimeOff[]): TimeOff[] {
   return [...items].sort((a, b) => {
@@ -252,7 +252,7 @@ export function BarberTimeOffPage() {
         {success && <Alert variant="success">{success}</Alert>}
 
         <Card className="space-y-4 p-6">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-bold text-foreground">
             Ajouter des jours indisponibles
           </h2>
           <div className="flex flex-wrap items-end gap-3">
@@ -319,7 +319,7 @@ export function BarberTimeOffPage() {
         </Card>
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-bold text-foreground">
             Jours indisponibles
           </h2>
           {timeOff.length === 0 ? (

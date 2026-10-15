@@ -88,7 +88,7 @@ export function AdminReviewsPage() {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-foreground">Avis</h2>
+        <h2 className="text-xl font-bold text-foreground">Avis</h2>
 
         {message && (
           <Alert variant={message.kind === "success" ? "success" : "danger"}>

@@ -142,7 +142,7 @@ export function PublicBarberProfilePage() {
   if (error || !data) {
     return (
       <div className="min-h-screen bg-background p-8 text-center">
-        <h1 className="text-2xl font-semibold text-foreground">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
           Profil introuvable
         </h1>
         <p className="mt-2 text-foreground-muted">
@@ -163,7 +163,7 @@ export function PublicBarberProfilePage() {
       />
     ) : (
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-foreground">Réservation</h2>
+        <h2 className="text-lg font-bold text-foreground">Réservation</h2>
         <p className="mt-2 text-sm text-foreground-muted">
           {services.length === 0
             ? "Ce professionnel ne propose pas encore de service à réserver."

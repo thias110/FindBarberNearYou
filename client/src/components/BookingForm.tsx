@@ -22,20 +22,17 @@ import {
   type BookingFormField,
 } from "../lib/booking";
 import { amountDueOnline } from "@findbarber/shared/booking";
-import { cn } from "../lib/cn";
 import { formatCurrency, formatDuration } from "../lib/formatters";
 import { formatMinutes } from "../lib/time";
 import { Alert } from "./ui/Alert";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { Skeleton } from "./ui/Skeleton";
+import { chipClasses } from "./ui/chipStyles";
+import { CONTROL_CLASS } from "./ui/control";
 
-// Champs tokenisés : surfaces sombres lisibles, cible tactile ≥ 44px.
-const FIELD_CLASSES =
-  "mt-1 block w-full min-h-[44px] rounded-lg border border-border-strong bg-surface-muted px-3 py-2 text-sm text-foreground " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
-  "focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
-  "disabled:cursor-not-allowed disabled:opacity-50";
+// Mêmes classes que les champs du design system (issue #28).
+const FIELD_CLASSES = `mt-1 ${CONTROL_CLASS}`;
 
 export function BookingForm({
   barberId,
@@ -213,7 +210,7 @@ export function BookingForm({
   return (
     <Card className="p-6">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">Réserver</h2>
+        <h2 className="text-lg font-bold text-foreground">Réserver</h2>
 
         {success && (
           <Alert variant="success">
@@ -227,9 +224,9 @@ export function BookingForm({
         )}
         {submitError && <Alert variant="danger">{submitError}</Alert>}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
           <label className="block">
-            <span className="text-sm font-medium text-foreground">Service</span>
+            <span className="text-sm font-semibold text-foreground">Service</span>
             <select
               value={serviceId}
               disabled={submitting}
@@ -253,7 +250,7 @@ export function BookingForm({
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-foreground">Lieu</span>
+            <span className="text-sm font-semibold text-foreground">Lieu</span>
             <select
               value={place}
               disabled={submitting}
@@ -276,7 +273,7 @@ export function BookingForm({
         </div>
 
         <label className="block">
-          <span className="text-sm font-medium text-foreground">Date</span>
+          <span className="text-sm font-semibold text-foreground">Date</span>
           <input
             type="date"
             value={date}
@@ -293,7 +290,7 @@ export function BookingForm({
 
         {place === "AT_CLIENT" && (
           <label className="block">
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-sm font-semibold text-foreground">
               Votre adresse
             </span>
             <input
@@ -321,7 +318,7 @@ export function BookingForm({
         )}
 
         <div>
-          <span className="text-sm font-medium text-foreground">Créneau</span>
+          <span className="text-sm font-semibold text-foreground">Créneau</span>
           {!serviceId || !place || !date ? (
             <p className="mt-1 text-sm text-foreground-muted">
               Sélectionnez un service, un lieu et une date pour afficher les
@@ -367,14 +364,10 @@ export function BookingForm({
                         clearFieldError("startMinute");
                       }}
                       aria-pressed={selected}
-                      className={cn(
-                        "inline-flex min-h-[44px] items-center rounded-lg border px-3 text-sm font-medium transition-colors",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                        "disabled:cursor-not-allowed disabled:opacity-50",
-                        selected
-                          ? "border-accent bg-accent text-accent-foreground"
-                          : "border-border bg-surface-muted text-foreground",
-                      )}
+                      className={chipClasses(selected, {
+                        tone: "accent",
+                        className: "tabular-nums",
+                      })}
                     >
                       {formatMinutes(slot.startMinute)}
                     </button>

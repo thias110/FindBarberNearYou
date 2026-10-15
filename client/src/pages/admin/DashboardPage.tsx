@@ -70,7 +70,7 @@ export function AdminDashboardPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold text-foreground">Tableau de bord</h2>
+        <h2 className="text-xl font-bold text-foreground">Tableau de bord</h2>
 
         {loading ? (
           <div

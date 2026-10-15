@@ -9,6 +9,7 @@ import { audienceChips } from "../../lib/barberTags";
 import { cn } from "../../lib/cn";
 import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
+import { buttonClasses } from "../ui/buttonStyles";
 
 interface BarberResultCardProps {
   barber: PublicBarberSearchItem;
@@ -42,7 +43,7 @@ export function BarberResultCard({
         className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       />
       <div className="pointer-events-none relative z-10">
-        <h2 className="text-lg font-semibold text-foreground">
+        <h2 className="text-lg font-bold text-foreground">
           {barber.displayName}
         </h2>
         <p className="mt-1 text-sm text-foreground-muted">
@@ -85,7 +86,7 @@ export function BarberResultCard({
 
         <Link
           to={`/barbers/${barber.id}`}
-          className="pointer-events-auto mt-3 inline-flex min-h-[44px] items-center rounded-lg border border-accent px-4 text-sm font-medium text-accent-strong transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className={buttonClasses("secondary", "md", "pointer-events-auto mt-3")}
         >
           Voir le profil
         </Link>

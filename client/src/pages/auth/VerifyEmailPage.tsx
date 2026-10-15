@@ -57,7 +57,7 @@ export function VerifyEmailPage() {
 
   return (
     <AuthLayout>
-      <h1 className="text-2xl font-semibold text-foreground">
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
         Vérification de votre email
       </h1>
 
