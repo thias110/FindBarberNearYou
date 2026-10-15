@@ -1,6 +1,6 @@
 {
   "name": "@findbarber/client",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@findbarber/shared": "0.0.1",
+    "@findbarber/shared": "1.0.0",
     "maplibre-gl": "^6.11.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
