@@ -51,6 +51,8 @@ export interface PublicBarberProfile {
   avatarPath: string | null;
   // Paiement en ligne exigé à la réservation (issue #10).
   onlinePayment: { mode: PaymentMode; depositPercent: number };
+  // Badge « Certifié » attribué par un ADMIN (issue #41).
+  certified: boolean;
   createdAt: string;
 }
 
@@ -111,6 +113,8 @@ export interface PublicBarberSearchItem {
   // Prix minimum des services ACTIFS, en unités mineures ; null sans service actif.
   startingPriceMinor: number | null;
   currency: Currency;
+  // Badge « Certifié » attribué par un ADMIN (issue #41).
+  certified: boolean;
 }
 
 // Prestations populaires (issue #47) : uniquement l'ordre des techniques,
@@ -382,6 +386,8 @@ export interface AdminUser {
   createdAt: string;
   // Identifiant du profil professionnel s'il existe (lien stats admin).
   barberProfileId: string | null;
+  // Date d'attribution du badge « Certifié » (issue #41), null sinon.
+  certifiedAt: string | null;
 }
 
 export interface AdminUsersResponse {

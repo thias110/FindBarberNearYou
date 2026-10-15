@@ -220,6 +220,8 @@ export const AUDIT_ACTIONS = [
   "USER_REACTIVATED",
   "REVIEW_HIDDEN",
   "USER_DELETED",
+  "BARBER_CERTIFIED",
+  "BARBER_UNCERTIFIED",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -234,9 +236,16 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   USER_REACTIVATED: "Compte réactivé",
   REVIEW_HIDDEN: "Avis masqué",
   USER_DELETED: "Compte supprimé (anonymisé)",
+  BARBER_CERTIFIED: "Badge « Certifié » attribué",
+  BARBER_UNCERTIFIED: "Badge « Certifié » retiré",
 };
 
-export const AUDIT_TARGET_TYPES = ["BOOKING", "USER", "REVIEW"] as const;
+export const AUDIT_TARGET_TYPES = [
+  "BOOKING",
+  "USER",
+  "REVIEW",
+  "BARBER_PROFILE",
+] as const;
 export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[number];
 
 // Mention obligatoire de l'arrondi des coordonnées publiques. Cet arrondi

@@ -6,6 +6,7 @@ import {
 import type { PublicBarberProfile } from "@findbarber/shared/types";
 import { resolveUploadUrl } from "../../lib/apiClient";
 import { Badge } from "../ui/Badge";
+import { CertifiedBadge } from "./CertifiedBadge";
 import { Card } from "../ui/Card";
 
 function StarIcon() {
@@ -58,6 +59,7 @@ export function BarberProfileHeader({
           <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
             {profile.displayName}
           </h1>
+          {profile.certified && <CertifiedBadge className="mt-1" />}
           <p className="mt-1 text-sm text-foreground-muted">
             {profile.postalCode ? `${profile.postalCode}, ` : ""}
             {profile.city}, {countryName}

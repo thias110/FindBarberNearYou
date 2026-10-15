@@ -9,6 +9,7 @@ import { audienceChips } from "../../lib/barberTags";
 import { cn } from "../../lib/cn";
 import { formatDistance } from "../../lib/geo";
 import { Badge } from "../ui/Badge";
+import { CertifiedBadge } from "../barber/CertifiedBadge";
 import { Card } from "../ui/Card";
 import { buttonClasses } from "../ui/buttonStyles";
 import { BarberPhoto, RatingSummary, StartingPrice } from "./BarberHighlights";
@@ -54,6 +55,7 @@ export function BarberResultCard({
             <h2 className="text-lg font-bold text-foreground">
               {barber.displayName}
             </h2>
+            {barber.certified && <CertifiedBadge className="mt-0.5" />}
             <p className="mt-0.5 text-sm text-foreground-muted">
               {barber.city}
               {barber.countryCode ? `, ${country}` : ""}

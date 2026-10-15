@@ -155,6 +155,7 @@ describe("GET /api/barbers", () => {
         "activeServiceCount",
         "audiences",
         "averageRating",
+        "certified",
         "avatarPath",
         "city",
         "countryCode",

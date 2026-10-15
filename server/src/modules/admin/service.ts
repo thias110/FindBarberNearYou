@@ -64,7 +64,12 @@ function pagination(
   };
 }
 
-function toAdminUser(user: User, barberProfileId: string | null): AdminUser {
+interface AdminBarberRef {
+  id: string;
+  certifiedAt: Date | null;
+}
+
+function toAdminUser(user: User, barber: AdminBarberRef | null): AdminUser {
   return {
     id: user.id,
     email: user.email,
@@ -72,7 +77,8 @@ function toAdminUser(user: User, barberProfileId: string | null): AdminUser {
     status: user.status,
     name: user.name,
     createdAt: user.createdAt.toISOString(),
-    barberProfileId,
+    barberProfileId: barber?.id ?? null,
+    certifiedAt: barber?.certifiedAt ? barber.certifiedAt.toISOString() : null,
   };
 }
 
@@ -197,7 +203,11 @@ export async function listAdminUsers(
   const total = Number(totalRow?.total ?? 0);
 
   const rows = await db
-    .select({ user: users, barberProfileId: barberProfiles.id })
+    .select({
+      user: users,
+      barberProfileId: barberProfiles.id,
+      certifiedAt: barberProfiles.certifiedAt,
+    })
     .from(users)
     .leftJoin(barberProfiles, eq(barberProfiles.userId, users.id))
     .where(where)
@@ -206,7 +216,14 @@ export async function listAdminUsers(
     .offset((query.page - 1) * query.pageSize);
 
   return {
-    users: rows.map((row) => toAdminUser(row.user, row.barberProfileId)),
+    users: rows.map((row) =>
+      toAdminUser(
+        row.user,
+        row.barberProfileId
+          ? { id: row.barberProfileId, certifiedAt: row.certifiedAt }
+          : null,
+      ),
+    ),
     pagination: pagination(query.page, query.pageSize, total),
   };
 }
@@ -270,16 +287,16 @@ export async function suspendUser(
       throw new AppError(404, "USER_NOT_FOUND", "Utilisateur introuvable.");
     }
 
-    let barberProfileId: string | null = null;
+    let barber: AdminBarberRef | null = null;
     let cancelledBookingIds: string[] = [];
     if (updated.role === "BARBER") {
       const [profile] = await tx
-        .select({ id: barberProfiles.id })
+        .select({ id: barberProfiles.id, certifiedAt: barberProfiles.certifiedAt })
         .from(barberProfiles)
         .where(eq(barberProfiles.userId, targetUserId))
         .limit(1);
       if (profile) {
-        barberProfileId = profile.id;
+        barber = profile;
 
         // Lire les réservations futures actives AVANT l'annulation, pour
         // notifier chaque CLIENT concerné dans la même transaction.
@@ -347,7 +364,7 @@ export async function suspendUser(
       })),
     ]);
 
-    return toAdminUser(updated, barberProfileId);
+    return toAdminUser(updated, barber);
   });
 }
 
@@ -380,14 +397,14 @@ export async function reactivateUser(
       .where(eq(users.id, targetUserId))
       .returning();
 
-    let barberProfileId: string | null = null;
+    let barber: AdminBarberRef | null = null;
     if (updated.role === "BARBER") {
       const [profile] = await tx
-        .select({ id: barberProfiles.id })
+        .select({ id: barberProfiles.id, certifiedAt: barberProfiles.certifiedAt })
         .from(barberProfiles)
         .where(eq(barberProfiles.userId, targetUserId))
         .limit(1);
-      barberProfileId = profile?.id ?? null;
+      barber = profile ?? null;
     }
 
     await recordAudit(tx as unknown as typeof db, {
@@ -398,7 +415,50 @@ export async function reactivateUser(
       metadata: { role: updated.role },
     });
 
-    return toAdminUser(updated, barberProfileId);
+    return toAdminUser(updated, barber);
+  });
+}
+
+// Badge « Certifié » (issue #41) : attribution et retrait réservés à l'ADMIN
+// (garde de route). Idempotent : réattribuer conserve la date d'origine,
+// retirer un badge absent ne change rien ; seul un vrai changement est audité.
+export async function setBarberCertification(
+  actorUserId: string,
+  barberProfileId: string,
+  certified: boolean,
+): Promise<AdminUser> {
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({ profile: barberProfiles, user: users })
+      .from(barberProfiles)
+      .innerJoin(users, eq(users.id, barberProfiles.userId))
+      .where(eq(barberProfiles.id, barberProfileId))
+      .limit(1)
+      .for("update", { of: barberProfiles });
+
+    if (!row) {
+      throw new AppError(404, "BARBER_PROFILE_NOT_FOUND", "Profil barber introuvable.");
+    }
+
+    const alreadyCertified = row.profile.certifiedAt !== null;
+    if (alreadyCertified === certified) {
+      return toAdminUser(row.user, row.profile);
+    }
+
+    const [updated] = await tx
+      .update(barberProfiles)
+      .set({ certifiedAt: certified ? new Date() : null })
+      .where(eq(barberProfiles.id, barberProfileId))
+      .returning({ id: barberProfiles.id, certifiedAt: barberProfiles.certifiedAt });
+
+    await recordAudit(tx as unknown as typeof db, {
+      actor: { id: actorUserId, role: "ADMIN" },
+      action: certified ? "BARBER_CERTIFIED" : "BARBER_UNCERTIFIED",
+      targetType: "BARBER_PROFILE",
+      targetId: barberProfileId,
+    });
+
+    return toAdminUser(row.user, updated);
   });
 }
 

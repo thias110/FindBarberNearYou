@@ -17,6 +17,7 @@ import {
   listAdminReviews,
   listAdminUsers,
   reactivateUser,
+  setBarberCertification,
   suspendUser,
 } from "./service.js";
 import { getBarberStatsForAdmin } from "../barber/statsService.js";
@@ -62,6 +63,31 @@ adminRouter.post(
   async (req, res) => {
     res.json({
       user: await reactivateUser(req.user!.id, req.params.id as string),
+    });
+  },
+);
+
+// Badge « Certifié » d'un barber (issue #41), identifié par son profil.
+adminRouter.post(
+  "/barbers/:id/certify",
+  requireAuth,
+  requireRole("ADMIN"),
+  csrfProtection,
+  async (req, res) => {
+    res.json({
+      user: await setBarberCertification(req.user!.id, req.params.id as string, true),
+    });
+  },
+);
+
+adminRouter.post(
+  "/barbers/:id/uncertify",
+  requireAuth,
+  requireRole("ADMIN"),
+  csrfProtection,
+  async (req, res) => {
+    res.json({
+      user: await setBarberCertification(req.user!.id, req.params.id as string, false),
     });
   },
 );

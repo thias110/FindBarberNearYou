@@ -24,6 +24,7 @@ const TARGET_LABELS: Record<AdminAuditLog["targetType"], string> = {
   BOOKING: "Réservation",
   USER: "Compte",
   REVIEW: "Avis",
+  BARBER_PROFILE: "Profil barber",
 };
 
 function actionVariant(action: AuditAction): BadgeVariant {
@@ -36,8 +37,10 @@ function actionVariant(action: AuditAction): BadgeVariant {
     case "BOOKING_EXPIRED":
       return "warning";
     case "USER_DELETED":
+    case "BARBER_UNCERTIFIED":
       return "neutral";
     case "USER_REACTIVATED":
+    case "BARBER_CERTIFIED":
     case "BOOKING_CONFIRMED":
     case "BOOKING_COMPLETED":
       return "success";

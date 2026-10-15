@@ -7,6 +7,7 @@ import { useAuth } from "../../app/auth-context";
 import { AdminLayout } from "../../components/AdminLayout";
 import { AdminPagination } from "../../components/AdminPagination";
 import { AdminListState } from "../../components/admin/AdminListState";
+import { CertifiedBadge } from "../../components/barber/CertifiedBadge";
 import { FilterChips } from "../../components/admin/FilterChips";
 import { Alert } from "../../components/ui/Alert";
 import { Badge } from "../../components/ui/Badge";
@@ -30,7 +31,64 @@ const PAGE_SIZE = 20;
 
 const SECONDARY_LINK_CLASS = buttonClasses("secondary");
 
-type PendingAction = { kind: "suspend" | "reactivate"; user: AdminUser };
+type ActionKind = "suspend" | "reactivate" | "certify" | "uncertify";
+
+type PendingAction = { kind: ActionKind; user: AdminUser };
+
+// Libellés et effets de chaque action confirmée. Le badge « Certifié »
+// (issue #41) cible le profil barber, les autres actions le compte.
+const ACTIONS: Record<
+  ActionKind,
+  {
+    title: string;
+    confirmLabel: string;
+    tone: "danger" | "primary";
+    failure: string;
+    success: (user: AdminUser) => string;
+    description: (user: AdminUser) => string;
+    run: (user: AdminUser) => Promise<unknown>;
+  }
+> = {
+  suspend: {
+    title: "Suspendre ce compte ?",
+    confirmLabel: "Suspendre",
+    tone: "danger",
+    failure: "Suspension impossible.",
+    success: (user) => `${user.email} a été suspendu.`,
+    description: (user) =>
+      `${user.email} ne pourra plus se connecter et ses réservations futures seront annulées.`,
+    run: (user) => adminApi.suspendUser(user.id),
+  },
+  reactivate: {
+    title: "Réactiver ce compte ?",
+    confirmLabel: "Réactiver",
+    tone: "primary",
+    failure: "Réactivation impossible.",
+    success: (user) => `${user.email} a été réactivé.`,
+    description: (user) => `${user.email} pourra de nouveau se connecter.`,
+    run: (user) => adminApi.reactivateUser(user.id),
+  },
+  certify: {
+    title: "Attribuer le badge « Certifié » ?",
+    confirmLabel: "Certifier",
+    tone: "primary",
+    failure: "Attribution du badge impossible.",
+    success: (user) => `${user.email} est désormais certifié.`,
+    description: (user) =>
+      `Le badge « Certifié » de ${user.email} apparaîtra sur son profil public et dans la recherche.`,
+    run: (user) => adminApi.certifyBarber(user.barberProfileId!),
+  },
+  uncertify: {
+    title: "Retirer le badge « Certifié » ?",
+    confirmLabel: "Retirer le badge",
+    tone: "danger",
+    failure: "Retrait du badge impossible.",
+    success: (user) => `Le badge de ${user.email} a été retiré.`,
+    description: (user) =>
+      `Le badge « Certifié » de ${user.email} disparaîtra de son profil public et de la recherche.`,
+    run: (user) => adminApi.uncertifyBarber(user.barberProfileId!),
+  },
+};
 
 export function AdminUsersPage() {
   const { user: currentUser } = useAuth();
@@ -88,30 +146,15 @@ export function AdminUsersPage() {
     const { kind, user: target } = pending;
     setBusy(true);
     setMessage(null);
+    const action = ACTIONS[kind];
     try {
-      if (kind === "suspend") {
-        await adminApi.suspendUser(target.id);
-        setMessage({
-          kind: "success",
-          text: `${target.email} a été suspendu.`,
-        });
-      } else {
-        await adminApi.reactivateUser(target.id);
-        setMessage({
-          kind: "success",
-          text: `${target.email} a été réactivé.`,
-        });
-      }
+      await action.run(target);
+      setMessage({ kind: "success", text: action.success(target) });
       setReloadKey((key) => key + 1);
     } catch (err) {
       setMessage({
         kind: "error",
-        text:
-          err instanceof Error
-            ? err.message
-            : kind === "suspend"
-              ? "Suspension impossible."
-              : "Réactivation impossible.",
+        text: err instanceof Error ? err.message : action.failure,
       });
     } finally {
       setBusy(false);
@@ -176,6 +219,9 @@ export function AdminUsersPage() {
                           >
                             {USER_STATUS_LABELS[item.status]}
                           </Badge>
+                          {item.certifiedAt && (
+                            <CertifiedBadge />
+                          )}
                         </div>
                         <p className="mt-2 text-xs text-foreground-muted">
                           Inscrit le {formatDateTime(item.createdAt)}
@@ -192,6 +238,22 @@ export function AdminUsersPage() {
                             >
                               Voir les statistiques
                             </Link>
+                          )}
+                        {item.role === "BARBER" &&
+                          item.barberProfileId &&
+                          !deleted && (
+                            <Button
+                              variant="secondary"
+                              className="min-h-11"
+                              onClick={() =>
+                                setPending({
+                                  kind: item.certifiedAt ? "uncertify" : "certify",
+                                  user: item,
+                                })
+                              }
+                            >
+                              {item.certifiedAt ? "Retirer le badge" : "Certifier"}
+                            </Button>
                           )}
                         {deleted ? null : suspended ? (
                           <Button
@@ -238,25 +300,14 @@ export function AdminUsersPage() {
 
       <ConfirmDialog
         open={pending !== null}
-        title={
-          pending?.kind === "suspend"
-            ? "Suspendre ce compte ?"
-            : "Réactiver ce compte ?"
-        }
-        confirmLabel={pending?.kind === "suspend" ? "Suspendre" : "Réactiver"}
-        tone={pending?.kind === "suspend" ? "danger" : "primary"}
+        title={pending ? ACTIONS[pending.kind].title : ""}
+        confirmLabel={pending ? ACTIONS[pending.kind].confirmLabel : ""}
+        tone={pending ? ACTIONS[pending.kind].tone : "primary"}
         isLoading={busy}
         onConfirm={() => void handleConfirm()}
         onCancel={() => setPending(null)}
       >
-        {pending?.kind === "suspend" ? (
-          <p>
-            {pending.user.email} ne pourra plus se connecter et ses réservations
-            futures seront annulées.
-          </p>
-        ) : pending ? (
-          <p>{pending.user.email} pourra de nouveau se connecter.</p>
-        ) : null}
+        {pending ? <p>{ACTIONS[pending.kind].description(pending.user)}</p> : null}
       </ConfirmDialog>
     </AdminLayout>
   );

@@ -419,6 +419,8 @@ export interface AdminApi {
   listUsers(params?: AdminUsersParams): Promise<AdminUsersResponse>;
   suspendUser(userId: string): Promise<{ user: AdminUser }>;
   reactivateUser(userId: string): Promise<{ user: AdminUser }>;
+  certifyBarber(barberProfileId: string): Promise<{ user: AdminUser }>;
+  uncertifyBarber(barberProfileId: string): Promise<{ user: AdminUser }>;
   listBookings(params?: AdminBookingsParams): Promise<AdminBookingsResponse>;
   cancelBooking(bookingId: string): Promise<{ booking: Booking }>;
   listReviews(params?: AdminReviewsParams): Promise<AdminReviewsResponse>;
@@ -442,6 +444,16 @@ export const adminApi: AdminApi = {
   reactivateUser: (userId) =>
     apiFetch<{ user: AdminUser }>(
       `/api/admin/users/${encodeURIComponent(userId)}/reactivate`,
+      { method: "POST" },
+    ),
+  certifyBarber: (barberProfileId) =>
+    apiFetch<{ user: AdminUser }>(
+      `/api/admin/barbers/${encodeURIComponent(barberProfileId)}/certify`,
+      { method: "POST" },
+    ),
+  uncertifyBarber: (barberProfileId) =>
+    apiFetch<{ user: AdminUser }>(
+      `/api/admin/barbers/${encodeURIComponent(barberProfileId)}/uncertify`,
       { method: "POST" },
     ),
   listBookings: (params) =>

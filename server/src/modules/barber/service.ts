@@ -78,6 +78,7 @@ function toOwnProfile(
     places,
     avatarPath: avatarPath ? publicUploadPath(avatarPath) : null,
     onlinePayment: effectiveOnlinePayment(profile),
+    certified: profile.certifiedAt !== null,
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
   };
@@ -118,6 +119,7 @@ function toPublicProfile(
     places,
     avatarPath: avatarPath ? publicUploadPath(avatarPath) : null,
     onlinePayment: effectiveOnlinePayment(profile),
+    certified: profile.certifiedAt !== null,
     createdAt: profile.createdAt.toISOString(),
   };
 }
@@ -904,6 +906,7 @@ export async function searchBarbers(
         WHERE bpp.barber_profile_id = ${barberProfiles.id}
       ), ARRAY[]::text[])`,
       currency: barberProfiles.currency,
+      certifiedAt: barberProfiles.certifiedAt,
       avatarPath: users.avatarPath,
       // Agrégats (issue #48) : sous-requêtes corrélées dans la MÊME requête SQL,
       // donc aucun N+1 quel que soit le nombre de résultats.
@@ -942,6 +945,7 @@ export async function searchBarbers(
       reviewCount: row.reviewCount,
       startingPriceMinor: row.startingPriceMinor,
       currency: row.currency as Currency,
+      certified: row.certifiedAt !== null,
     };
   });
 

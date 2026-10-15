@@ -181,6 +181,9 @@ export const barberProfiles = pgTable(
     depositPercent: integer("deposit_percent")
       .notNull()
       .default(LIMITS.depositPercentDefault),
+    // Badge « Certifié » (issue #41) : date d'attribution par un ADMIN, NULL
+    // si le barber n'est pas certifié. Jamais modifiable par le barber.
+    certifiedAt: timestamp("certified_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
