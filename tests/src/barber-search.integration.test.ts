@@ -591,3 +591,154 @@ describe("GET /api/barbers — photo, note, prix et devise (issue #48)", () => {
     expect(withSix).toBe(withOne);
   });
 });
+
+// --- Filtres prix, note et zone (issues #52 et #50) ---
+
+describe("GET /api/barbers — filtres prix, note et zone (issues #50 et #52)", () => {
+  function names(res: request.Response): string[] {
+    return res.body.barbers.map((b: { displayName: string }) => b.displayName);
+  }
+
+  it("filters by max price in a given currency, on ACTIVE services only", async () => {
+    const cheap = await setupBarber("cheap@example.com", { displayName: "Alpha Cheap" });
+    await addService(cheap.agent, cheap.csrf, { priceMinor: 2000 });
+    await addService(cheap.agent, cheap.csrf, { name: "Cher", priceMinor: 9000 });
+
+    const pricey = await setupBarber("pricey@example.com", { displayName: "Beta Pricey" });
+    await addService(pricey.agent, pricey.csrf, { priceMinor: 6000 });
+    // Service bon marché mais désactivé : ne compte pas.
+    const off = await addService(pricey.agent, pricey.csrf, { name: "Off", priceMinor: 500 });
+    await pricey.agent
+      .patch(`/api/barber/services/${off.id}`)
+      .set("X-CSRF-Token", pricey.csrf)
+      .send({ isActive: false });
+
+    // Devise déduite du pays (issue #39) : un profil français est en EUR.
+    const euro = await setupBarber("euro@example.com", {
+      displayName: "Gamma Euro",
+      countryCode: "FR",
+      city: "Annemasse",
+      postalCode: "74100",
+      currency: "EUR",
+    });
+    await addService(euro.agent, euro.csrf, { priceMinor: 1000 });
+
+    const chf30 = await request(app).get("/api/barbers").query({ maxPrice: 30, currency: "CHF" });
+    expect(chf30.status).toBe(200);
+    expect(names(chf30)).toEqual(["Alpha Cheap"]);
+
+    const chf60 = await request(app).get("/api/barbers").query({ maxPrice: 60, currency: "chf" });
+    expect(names(chf60)).toEqual(["Alpha Cheap", "Beta Pricey"]);
+
+    const eur = await request(app).get("/api/barbers").query({ maxPrice: 30, currency: "EUR" });
+    expect(names(eur)).toEqual(["Gamma Euro"]);
+  });
+
+  it("filters by minimum rating using visible reviews of completed bookings", async () => {
+    const good = await setupBarber("good@example.com", { displayName: "Alpha Good" });
+    const goodSvc = await addService(good.agent, good.csrf);
+    const avg = await setupBarber("avg@example.com", { displayName: "Beta Average" });
+    const avgSvc = await addService(avg.agent, avg.csrf);
+    await setupBarber("none@example.com", { displayName: "Gamma None" });
+    const clientId = await createClientUser("client-filter@example.com");
+
+    await insertBookingWithReview({
+      clientUserId: clientId,
+      barberProfileId: good.profileId,
+      serviceId: goodSvc.id,
+      status: "COMPLETED",
+      rating: 5,
+      dayOffset: 0,
+    });
+    // Note basse masquée : ne fait pas baisser la moyenne.
+    await insertBookingWithReview({
+      clientUserId: clientId,
+      barberProfileId: good.profileId,
+      serviceId: goodSvc.id,
+      status: "COMPLETED",
+      rating: 1,
+      hidden: true,
+      dayOffset: 1,
+    });
+    await insertBookingWithReview({
+      clientUserId: clientId,
+      barberProfileId: avg.profileId,
+      serviceId: avgSvc.id,
+      status: "COMPLETED",
+      rating: 3,
+      dayOffset: 2,
+    });
+
+    const min4 = await request(app).get("/api/barbers").query({ minRating: 4 });
+    expect(min4.status).toBe(200);
+    expect(names(min4)).toEqual(["Alpha Good"]);
+    const min3 = await request(app).get("/api/barbers").query({ minRating: 3 });
+    expect(names(min3)).toEqual(["Alpha Good", "Beta Average"]);
+  });
+
+  it("limits results to a zone, across countries, using approximate coordinates", async () => {
+    await setupBarber("geneve@example.com", {
+      displayName: "Alpha Genève",
+      latitude: 46.2044,
+      longitude: 6.1432,
+    });
+    // Annemasse (France), à côté de Genève : même zone, autre pays.
+    await setupBarber("annemasse@example.com", {
+      displayName: "Beta Annemasse",
+      countryCode: "FR",
+      city: "Annemasse",
+      postalCode: "74100",
+      currency: "EUR",
+      latitude: 46.1934,
+      longitude: 6.2342,
+    });
+    await setupBarber("zurich@example.com", {
+      displayName: "Gamma Zurich",
+      city: "Zurich",
+      latitude: 47.3769,
+      longitude: 8.5417,
+    });
+
+    const zone = await request(app)
+      .get("/api/barbers")
+      .query({ minLat: 46.1, maxLat: 46.3, minLng: 6.0, maxLng: 6.3 });
+    expect(zone.status).toBe(200);
+    expect(names(zone)).toEqual(["Alpha Genève", "Beta Annemasse"]);
+    expect(zone.body.pagination.total).toBe(2);
+
+    // La borne exacte de la position approximative (46.20, 6.14) correspond,
+    // une zone au millième autour du point exact (46.2044) ne le révèle pas.
+    const approx = await request(app)
+      .get("/api/barbers")
+      .query({ minLat: 46.2, maxLat: 46.2, minLng: 6.14, maxLng: 6.14 });
+    expect(names(approx)).toEqual(["Alpha Genève"]);
+    const exact = await request(app)
+      .get("/api/barbers")
+      .query({ minLat: 46.204, maxLat: 46.205, minLng: 6.143, maxLng: 6.144 });
+    expect(names(exact)).toEqual([]);
+  });
+
+  it("rejects invalid filter values with a 400", async () => {
+    const bad: Record<string, string | number>[] = [
+      { maxPrice: 30 },
+      { maxPrice: 0, currency: "CHF" },
+      { maxPrice: "abc", currency: "CHF" },
+      { maxPrice: 10.5, currency: "CHF" },
+      { currency: "GBP" },
+      { minRating: 0 },
+      { minRating: 6 },
+      { minRating: 3.5 },
+      { minLat: 46 },
+      { minLat: 47, maxLat: 46, minLng: 6, maxLng: 7 },
+      { minLat: 46, maxLat: 47, minLng: 7, maxLng: 6 },
+      { minLat: -91, maxLat: 47, minLng: 6, maxLng: 7 },
+      { minLat: 46, maxLat: 47, minLng: 6, maxLng: 181 },
+      { minLat: "nord", maxLat: 47, minLng: 6, maxLng: 7 },
+    ];
+    for (const query of bad) {
+      const res = await request(app).get("/api/barbers").query(query);
+      expect(res.status, JSON.stringify(query)).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION_ERROR");
+    }
+  });
+});

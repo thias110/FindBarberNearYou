@@ -274,6 +274,18 @@ export type ServiceUpdateInput = z.infer<typeof serviceUpdateSchema>;
 // --- Recherche publique ---
 // Chaque paramètre de pagination doit être une chaîne unique AVANT coercition :
 // les tableaux (paramètres répétés), objets et chaînes vides sont rejetés.
+// Entier facultatif : chaîne vide ignorée (filtre non appliqué).
+function optionalIntegerParam(min: number, max: number) {
+  return z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return value;
+      const trimmed = value.trim();
+      return trimmed === "" ? undefined : Number(trimmed);
+    },
+    z.number().int().min(min).max(max).optional(),
+  );
+}
+
 export function integerParam(min: number, max: number, defaultValue?: number) {
   const base = z.number().int().min(min).max(max);
   const schema = defaultValue === undefined ? base : base.default(defaultValue);
@@ -281,6 +293,19 @@ export function integerParam(min: number, max: number, defaultValue?: number) {
     if (typeof value !== "string" || value.trim() === "") return value;
     return Number(value.trim());
   }, schema);
+}
+
+// Nombre décimal facultatif passé en query string : chaîne vide ignorée,
+// valeur non numérique rejetée (NaN refusé par `z.number()`).
+function optionalNumberParam(min: number, max: number) {
+  return z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return value;
+      const trimmed = value.trim();
+      return trimmed === "" ? undefined : Number(trimmed);
+    },
+    z.number().finite().min(min).max(max).optional(),
+  );
 }
 
 // Normalise trim + majuscules ; une chaîne vide devient undefined (ignorée).
@@ -315,8 +340,55 @@ export const barberSearchQuerySchema = z
       SEARCH_LIMITS.pageDefault,
     ),
     pageSize: integerParam(1, SEARCH_LIMITS.pageSizeMax, SEARCH_LIMITS.pageSizeDefault),
+    // Filtres « intelligents » (issue #52). Le prix maximum est en unités
+    // MAJEURES entières et s'applique à une devise donnée (pas de conversion) :
+    // `maxPrice` exige `currency`.
+    maxPrice: optionalIntegerParam(1, LIMITS.servicePriceMinorMax / 100),
+    currency: z.preprocess(normalizeFilter, currencySchema.optional()),
+    minRating: optionalIntegerParam(LIMITS.reviewRatingMin, LIMITS.reviewRatingMax),
+    // Zone géographique (issues #50 et #52) : les quatre bornes ensemble ou
+    // aucune. Comparées à la position publique APPROXIMATIVE du profil.
+    minLat: optionalNumberParam(-90, 90),
+    maxLat: optionalNumberParam(-90, 90),
+    minLng: optionalNumberParam(-180, 180),
+    maxLng: optionalNumberParam(-180, 180),
   })
-  .strict();
+  .strict()
+  .superRefine((query, ctx) => {
+    if (query.maxPrice !== undefined && query.currency === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Le prix maximum doit préciser une devise.",
+        path: ["currency"],
+      });
+    }
+    const bounds = [query.minLat, query.maxLat, query.minLng, query.maxLng];
+    const given = bounds.filter((value) => value !== undefined).length;
+    if (given !== 0 && given !== bounds.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La zone doit préciser minLat, maxLat, minLng et maxLng.",
+        path: ["minLat"],
+      });
+      return;
+    }
+    if (given === bounds.length) {
+      if ((query.minLat as number) > (query.maxLat as number)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "minLat doit être inférieure ou égale à maxLat.",
+          path: ["minLat"],
+        });
+      }
+      if ((query.minLng as number) > (query.maxLng as number)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "minLng doit être inférieure ou égale à maxLng.",
+          path: ["minLng"],
+        });
+      }
+    }
+  });
 
 export type BarberSearchQuery = z.infer<typeof barberSearchQuerySchema>;
 

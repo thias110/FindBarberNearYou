@@ -7,6 +7,7 @@ import {
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { audienceChips } from "../../lib/barberTags";
 import { cn } from "../../lib/cn";
+import { formatDistance } from "../../lib/geo";
 import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
 import { buttonClasses } from "../ui/buttonStyles";
@@ -14,6 +15,8 @@ import { BarberPhoto, RatingSummary, StartingPrice } from "./BarberHighlights";
 
 interface BarberResultCardProps {
   barber: PublicBarberSearchItem;
+  /** Distance depuis la position du visiteur, si elle est connue (#52). */
+  distanceKm?: number | null;
   selected: boolean;
   onSelect: (id: string) => void;
 }
@@ -22,6 +25,7 @@ interface BarberResultCardProps {
 // photo, note, prix « à partir de » (#48) ; aucune disponibilité ni donnée privée.
 export function BarberResultCard({
   barber,
+  distanceKm = null,
   selected,
   onSelect,
 }: BarberResultCardProps) {
@@ -53,6 +57,7 @@ export function BarberResultCard({
             <p className="mt-0.5 text-sm text-foreground-muted">
               {barber.city}
               {barber.countryCode ? `, ${country}` : ""}
+              {distanceKm !== null && ` · ${formatDistance(distanceKm)}`}
             </p>
             <RatingSummary barber={barber} className="mt-1" />
             <StartingPrice barber={barber} className="mt-0.5" />

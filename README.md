@@ -252,6 +252,13 @@ Lecture seule, accessible sans connexion. Paramètres (tous facultatifs) :
 | `place` | un lieu de prestation : `SALON`, `AT_PROVIDER`, `AT_CLIENT` | sélection unique |
 | `page` | numéro de page | entier ≥ 1, max 10 000 (défaut 1) |
 | `pageSize` | taille de page | entier 1..50 (défaut 12) |
+| `maxPrice` | prix « à partir de » maximum, en unités **majeures**, dans `currency` (pas de conversion) | entier 1..10 000, exige `currency` |
+| `currency` | devise du profil : `CHF`, `EUR`, `USD` | sélection unique |
+| `minRating` | note moyenne minimale (avis publics de réservations terminées ; sans avis = exclu) | entier 1..5 |
+| `minLat`, `maxLat`, `minLng`, `maxLng` | zone géographique (carte, rayon autour du visiteur), comparée à la position publique **approximative** | les quatre ou aucun ; lat −90..90, lng −180..180, min ≤ max |
+
+La position du visiteur n'est jamais envoyée : pour le filtre distance, le navigateur
+envoie le rectangle englobant le rayon, puis calcule lui-même la distance exacte.
 
 Règles : paramètres inconnus ou répétés rejetés (400 `VALIDATION_ERROR`) ; chaînes vides
 trimmées ignorées (sauf pagination vide, rejetée) ; `%` et `_` traités comme littéraux ;

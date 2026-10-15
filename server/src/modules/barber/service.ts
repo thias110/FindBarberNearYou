@@ -821,6 +821,42 @@ function buildSearchWhere(input: BarberSearchQuery): SQL {
     )`);
   }
 
+  // Filtres « intelligents » (issue #52). Prix : au moins un service ACTIF au
+  // plus au prix maximum, dans la devise demandée (pas de conversion).
+  if (input.currency) {
+    conditions.push(eq(barberProfiles.currency, input.currency));
+  }
+  if (input.maxPrice !== undefined) {
+    conditions.push(sql`EXISTS (
+      SELECT 1 FROM ${barberServices} bs_max
+      WHERE bs_max.barber_profile_id = ${barberProfiles.id}
+        AND bs_max.is_active = true
+        AND bs_max.price_minor <= ${input.maxPrice * 100}
+    )`);
+  }
+  // Note minimale : moyenne des avis publics (sans avis = exclu).
+  if (input.minRating !== undefined) {
+    conditions.push(
+      sql`${reviewAggregates().averageRating} >= ${input.minRating}`,
+    );
+  }
+
+  // Zone géographique (issues #50 et #52) : comparée à la position publique
+  // APPROXIMATIVE (arrondie à deux décimales, comme `approximateCoordinates`),
+  // jamais au point exact, pour qu'une zone minuscule ne révèle rien de plus
+  // que la position affichée.
+  if (
+    input.minLat !== undefined &&
+    input.maxLat !== undefined &&
+    input.minLng !== undefined &&
+    input.maxLng !== undefined
+  ) {
+    conditions.push(
+      sql`round(${barberProfiles.latitude}::numeric, 2) BETWEEN ${input.minLat} AND ${input.maxLat}`,
+      sql`round(${barberProfiles.longitude}::numeric, 2) BETWEEN ${input.minLng} AND ${input.maxLng}`,
+    );
+  }
+
   // `conditions` est toujours non vide (2 conditions de base) : assertion sûre.
   return and(...conditions)!;
 }

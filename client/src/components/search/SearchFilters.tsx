@@ -1,76 +1,102 @@
-import type { FormEvent } from "react";
-import { COUNTRIES } from "@findbarber/shared/countries";
+import type { FormEvent, ReactNode } from "react";
 import {
-  AUDIENCES,
-  AUDIENCE_LABELS,
-  SERVICE_PLACES,
-  SERVICE_PLACE_LABELS,
-  TECHNIQUES,
-  TECHNIQUE_LABELS,
+  SUPPORTED_CURRENCIES,
+  type Currency,
 } from "@findbarber/shared/constants";
 import { cn } from "../../lib/cn";
+import type { VisitorPositionStatus } from "../../lib/visitorPosition";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Field } from "../ui/Field";
 import { Input } from "../ui/Input";
+import { chipClasses } from "../ui/chipStyles";
 import { CONTROL_CLASS } from "../ui/control";
 
-export interface SearchFiltersValues {
-  q: string;
-  city: string;
-  countryCode: string;
-  audience: string;
-  technique: string;
-  place: string;
+// Filtres « intelligents » (issue #52) : uniquement prix, distance et note
+// minimale, chacun appliqué en un geste (sans bouton « Rechercher »). Une
+// chaîne vide = filtre inactif.
+export interface SmartFilters {
+  maxPrice: string;
+  currency: Currency;
+  minRating: string;
+  radiusKm: string;
 }
 
+/** Filtre hérité d'un lien (ex. prestation populaire de l'accueil), retirable. */
+export interface ActiveTag {
+  key: string;
+  label: string;
+}
+
+export const PRICE_OPTIONS = [20, 30, 50, 80] as const;
+export const RADIUS_OPTIONS = [2, 5, 10, 25] as const;
+export const RATING_OPTIONS = [3, 4, 5] as const;
+
 interface SearchFiltersProps {
-  form: SearchFiltersValues;
-  onChange: (next: SearchFiltersValues) => void;
+  city: string;
+  onCityChange: (city: string) => void;
   onSubmit: (event: FormEvent) => void;
   onReset: () => void;
+  filters: SmartFilters;
+  onFiltersChange: (next: SmartFilters) => void;
+  activeTags: ActiveTag[];
+  onRemoveTag: (key: string) => void;
+  positionStatus: VisitorPositionStatus;
   filtersOpen: boolean;
   onToggleFilters: () => void;
-  extraFilterCount: number;
-  /** `true` à partir de lg : le panneau avancé est toujours visible. */
+  /** `true` à partir de lg : le panneau de filtres est toujours visible. */
   advancedVisible: boolean;
 }
 
-const COUNTRIES_SORTED = [...COUNTRIES].sort((a, b) =>
-  a.nameFr.localeCompare(b.nameFr, "fr"),
-);
-
-// Selects natifs : mêmes classes que les champs du design system (issue #28).
-const SELECT_CLASSES = CONTROL_CLASS;
+function ChipGroup({ legend, children }: { legend: string; children: ReactNode }) {
+  return (
+    <fieldset className="min-w-0">
+      <legend className="mb-1.5 text-sm font-semibold text-foreground">{legend}</legend>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </fieldset>
+  );
+}
 
 export function SearchFilters({
-  form,
-  onChange,
+  city,
+  onCityChange,
   onSubmit,
   onReset,
+  filters,
+  onFiltersChange,
+  activeTags,
+  onRemoveTag,
+  positionStatus,
   filtersOpen,
   onToggleFilters,
-  extraFilterCount,
   advancedVisible,
 }: SearchFiltersProps) {
-  function update<K extends keyof SearchFiltersValues>(
-    key: K,
-    value: SearchFiltersValues[K],
-  ) {
-    onChange({ ...form, [key]: value });
+  function update<K extends keyof SmartFilters>(key: K, value: SmartFilters[K]) {
+    onFiltersChange({ ...filters, [key]: value });
   }
+
+  // Un second clic sur la pastille active retire le filtre.
+  function toggle(key: "maxPrice" | "minRating" | "radiusKm", value: number) {
+    update(key, filters[key] === String(value) ? "" : String(value));
+  }
+
+  const activeCount = [filters.maxPrice, filters.minRating, filters.radiusKm].filter(
+    (value) => value !== "",
+  ).length;
+  const distanceBlocked =
+    positionStatus === "denied" || positionStatus === "unavailable";
 
   return (
     <Card className="p-4 sm:p-5">
-      <form onSubmit={onSubmit} className="space-y-3">
+      <form onSubmit={onSubmit} className="space-y-3" role="search">
         {/* Ligne toujours visible : ville + recherche + accès aux filtres. */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <Field label="Ville" className="min-w-0 flex-1">
             {(control) => (
               <Input
                 {...control}
-                value={form.city}
-                onChange={(event) => update("city", event.target.value)}
+                value={city}
+                onChange={(event) => onCityChange(event.target.value)}
                 placeholder="Ville"
                 autoComplete="address-level2"
               />
@@ -85,14 +111,14 @@ export function SearchFilters({
               variant="secondary"
               className="min-h-[44px] lg:hidden"
               aria-expanded={filtersOpen}
-              aria-controls="advanced-filters"
-              data-active-filters={extraFilterCount}
+              aria-controls="search-filters"
+              data-active-filters={activeCount}
               onClick={onToggleFilters}
             >
               Filtres
-              {extraFilterCount > 0 && (
+              {activeCount > 0 && (
                 <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1.5 text-xs font-medium text-accent-foreground">
-                  {extraFilterCount}
+                  {activeCount}
                 </span>
               )}
             </Button>
@@ -107,92 +133,105 @@ export function SearchFilters({
           </div>
         </div>
 
-        {/* Panneau avancé : dépliable sur mobile, toujours visible en desktop. */}
+        {activeTags.length > 0 && (
+          <ul className="flex flex-wrap gap-2" aria-label="Autres filtres actifs">
+            {activeTags.map((tag) => (
+              <li key={tag.key}>
+                <button
+                  type="button"
+                  onClick={() => onRemoveTag(tag.key)}
+                  className={chipClasses(true, { className: "gap-2" })}
+                  aria-label={`Retirer le filtre ${tag.label}`}
+                >
+                  {tag.label}
+                  <span aria-hidden="true">×</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Panneau : dépliable sur mobile, toujours visible en desktop. */}
         <div
-          id="advanced-filters"
+          id="search-filters"
           className={cn(
-            "grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5",
+            "grid-cols-1 gap-4 md:grid-cols-3",
             advancedVisible || filtersOpen ? "grid" : "hidden",
           )}
         >
-          <Field label="Nom" className="min-w-0">
-            {(control) => (
-              <Input
-                {...control}
-                value={form.q}
-                onChange={(event) => update("q", event.target.value)}
-                placeholder="Nom du barbier"
-              />
-            )}
-          </Field>
-          <label className="block min-w-0">
-            <span className="mb-1.5 block text-sm font-semibold text-foreground">
-              Pays
-            </span>
-            <select
-              value={form.countryCode}
-              onChange={(event) => update("countryCode", event.target.value)}
-              className={SELECT_CLASSES}
-            >
-              <option value="">Tous les pays</option>
-              {COUNTRIES_SORTED.map((country) => (
-                <option key={country.code} value={country.code}>
-                  {country.nameFr}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block min-w-0">
-            <span className="mb-1.5 block text-sm font-semibold text-foreground">
-              Public
-            </span>
-            <select
-              value={form.audience}
-              onChange={(event) => update("audience", event.target.value)}
-              className={SELECT_CLASSES}
-            >
-              <option value="">Tous les publics</option>
-              {AUDIENCES.map((code) => (
-                <option key={code} value={code}>
-                  {AUDIENCE_LABELS[code]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block min-w-0">
-            <span className="mb-1.5 block text-sm font-semibold text-foreground">
-              Prestation
-            </span>
-            <select
-              value={form.technique}
-              onChange={(event) => update("technique", event.target.value)}
-              className={SELECT_CLASSES}
-            >
-              <option value="">Toutes les prestations</option>
-              {TECHNIQUES.map((code) => (
-                <option key={code} value={code}>
-                  {TECHNIQUE_LABELS[code]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block min-w-0">
-            <span className="mb-1.5 block text-sm font-semibold text-foreground">
-              Lieu
-            </span>
-            <select
-              value={form.place}
-              onChange={(event) => update("place", event.target.value)}
-              className={SELECT_CLASSES}
-            >
-              <option value="">Tous les lieux</option>
-              {SERVICE_PLACES.map((code) => (
-                <option key={code} value={code}>
-                  {SERVICE_PLACE_LABELS[code]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <ChipGroup legend="Prix maximum">
+            <label className="w-24">
+              <span className="sr-only">Devise du prix maximum</span>
+              <select
+                value={filters.currency}
+                onChange={(event) =>
+                  update("currency", event.target.value as Currency)
+                }
+                className={CONTROL_CLASS}
+              >
+                {SUPPORTED_CURRENCIES.map((code) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {PRICE_OPTIONS.map((price) => (
+              <button
+                key={price}
+                type="button"
+                aria-pressed={filters.maxPrice === String(price)}
+                onClick={() => toggle("maxPrice", price)}
+                className={chipClasses(filters.maxPrice === String(price))}
+              >
+                ≤ {price} {filters.currency}
+              </button>
+            ))}
+          </ChipGroup>
+
+          <ChipGroup legend="Distance">
+            {RADIUS_OPTIONS.map((radius) => (
+              <button
+                key={radius}
+                type="button"
+                disabled={distanceBlocked}
+                aria-pressed={filters.radiusKm === String(radius)}
+                aria-describedby="distance-help"
+                onClick={() => toggle("radiusKm", radius)}
+                className={chipClasses(filters.radiusKm === String(radius))}
+              >
+                {radius} km
+              </button>
+            ))}
+            <p id="distance-help" className="w-full text-xs text-foreground-muted">
+              {positionStatus === "denied"
+                ? "Filtre désactivé : vous n'avez pas partagé votre position. Autorisez-la dans les réglages du navigateur pour l'utiliser."
+                : positionStatus === "unavailable"
+                  ? "Filtre désactivé : votre position est introuvable sur cet appareil."
+                  : positionStatus === "pending"
+                    ? "Recherche de votre position…"
+                    : positionStatus === "granted"
+                      ? "Autour de votre position (jamais envoyée au serveur)."
+                      : "Votre position sera demandée ; elle reste sur votre appareil."}
+            </p>
+          </ChipGroup>
+
+          <ChipGroup legend="Note minimale">
+            {RATING_OPTIONS.map((rating) => (
+              <button
+                key={rating}
+                type="button"
+                aria-pressed={filters.minRating === String(rating)}
+                aria-label={
+                  rating === 5 ? "Note de 5 sur 5" : `Note de ${rating} sur 5 et plus`
+                }
+                onClick={() => toggle("minRating", rating)}
+                className={chipClasses(filters.minRating === String(rating))}
+              >
+                {rating === 5 ? "5 ★" : `${rating} ★ et +`}
+              </button>
+            ))}
+          </ChipGroup>
         </div>
       </form>
     </Card>

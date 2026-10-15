@@ -96,3 +96,44 @@ test("lien de réinitialisation invalide : message clair", async ({ page }) => {
     page.getByText("Ce lien de réinitialisation est invalide ou a expiré."),
   ).toBeVisible();
 });
+
+test("filtres prix, note et distance appliqués en un geste (issue #52)", async ({
+  page,
+}) => {
+  await page.goto("/barbers");
+  await expect(page.getByText("Karim — Barber Plainpalais")).toBeVisible();
+
+  await page.getByRole("button", { name: "≤ 50 CHF" }).click();
+  await expect(page).toHaveURL(/maxPrice=50/);
+  await expect(page).toHaveURL(/currency=CHF/);
+  await expect(page.getByRole("button", { name: "≤ 50 CHF" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+
+  await page.getByRole("button", { name: "Note de 4 sur 5 et plus" }).click();
+  await expect(page).toHaveURL(/minRating=4/);
+
+  // Position refusée (aucune permission accordée) : le filtre distance est
+  // désactivé, avec une explication.
+  await page.getByRole("button", { name: "5 km", exact: true }).click();
+  await expect(page.getByText(/Filtre désactivé/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "10 km" })).toBeDisabled();
+
+  await page.getByRole("button", { name: "Réinitialiser" }).click();
+  await expect(page).toHaveURL(/\/barbers$/);
+});
+
+test("filtre distance avec une position partagée (issue #52)", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 46.2, longitude: 6.14 });
+  await page.goto("/barbers");
+  await page.getByRole("button", { name: "25 km" }).click();
+  await expect(page).toHaveURL(/radiusKm=25/);
+  // La position n'apparaît jamais dans l'URL.
+  expect(page.url()).not.toMatch(/46\.2|6\.14|lat|lng/i);
+  await expect(page.getByText(/résultat\(s\) à moins de 25 km/)).toBeVisible();
+});

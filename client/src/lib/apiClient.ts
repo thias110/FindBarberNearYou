@@ -481,6 +481,16 @@ export interface BarbersSearchParams {
   place?: string;
   page?: number;
   pageSize?: number;
+  // Filtres « intelligents » (issue #52) : prix maximum en unités majeures
+  // dans `currency`, note minimale de 1 à 5.
+  maxPrice?: number;
+  currency?: string;
+  minRating?: number;
+  // Zone géographique (issues #50 et #52), jamais la position du visiteur.
+  minLat?: number;
+  maxLat?: number;
+  minLng?: number;
+  maxLng?: number;
 }
 
 export interface PublicBarbersApi {

@@ -2,15 +2,25 @@ import {
   lazy,
   Suspense,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type FormEvent,
 } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { BarbersSearchResponse } from "@findbarber/shared/types";
+import type {
+  BarbersSearchResponse,
+  PublicBarberSearchItem,
+} from "@findbarber/shared/types";
 import { APPROXIMATE_LOCATION_LABEL } from "@findbarber/shared/constants";
-import { barbersApi } from "../../lib/apiClient";
+import { barbersApi, type BarbersSearchParams } from "../../lib/apiClient";
+import { boundsAround, distanceKm } from "../../lib/geo";
 import { useMediaQuery, usePrefersReducedMotion } from "../../lib/media";
+import { legacyFilterTags, parseSearchUrl } from "../../lib/searchUrl";
+import {
+  requestVisitorPosition,
+  useVisitorPosition,
+} from "../../lib/visitorPosition";
 import { useTheme } from "../../app/theme-context";
 import { MapErrorBoundary } from "../../components/MapErrorBoundary";
 import { BarbersMapCard } from "../../components/BarbersMapCard";
@@ -19,7 +29,7 @@ import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
 import {
   SearchFilters,
-  type SearchFiltersValues,
+  type SmartFilters,
 } from "../../components/search/SearchFilters";
 import { BarberResultCard } from "../../components/search/BarberResultCard";
 import { segmentClasses } from "../../components/ui/chipStyles";
@@ -27,33 +37,15 @@ import { segmentClasses } from "../../components/ui/chipStyles";
 // Chargement différé : MapLibre (volumineux) sort du bundle initial de la recherche.
 const BarbersMap = lazy(() => import("../../components/BarbersMap"));
 
-type Filters = SearchFiltersValues;
-
-// Les codes (pays, public, technique) sont normalisés trim + majuscules pour que
-// les sélecteurs affichent la valeur réellement appliquée par le serveur.
-function normalizeCode(value: string | null): string {
-  return (value ?? "").trim().toUpperCase();
-}
-
-function filtersFromParams(sp: URLSearchParams): Filters {
-  return {
-    q: sp.get("q") ?? "",
-    city: sp.get("city") ?? "",
-    countryCode: normalizeCode(sp.get("countryCode")),
-    audience: normalizeCode(sp.get("audience")),
-    technique: normalizeCode(sp.get("technique")),
-    place: normalizeCode(sp.get("place")),
-  };
-}
-
-function pageFromParams(sp: URLSearchParams): number {
-  const value = Number(sp.get("page") ?? "1");
-  return Number.isInteger(value) && value > 0 ? value : 1;
-}
+const PAGE_SIZE = 12;
+// Avec un rayon, le serveur reçoit le rectangle englobant (jamais la position) :
+// on charge une page maximale puis on garde, ici, les barbers dans le cercle.
+const RADIUS_PAGE_SIZE = 50;
 
 export function BarbersSearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [form, setForm] = useState<Filters>(() => filtersFromParams(searchParams));
+  const urlState = useMemo(() => parseSearchUrl(searchParams), [searchParams]);
+  const [city, setCity] = useState(urlState.city);
   const [data, setData] = useState<BarbersSearchResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,8 +53,8 @@ export function BarbersSearchPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "map">("list");
   const [mapRetryToken, setMapRetryToken] = useState(0);
-  // Panneau de filtres avancés (nom, pays, public, prestation) replié par défaut
-  // sur mobile ; toujours affiché à partir de 1024 px.
+  // Panneau de filtres replié par défaut sur mobile ; toujours affiché à
+  // partir de 1024 px.
   const [filtersOpen, setFiltersOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const requestSeq = useRef(0);
@@ -71,46 +63,64 @@ export function BarbersSearchPage() {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const reducedMotion = usePrefersReducedMotion();
   const { resolvedTheme } = useTheme();
+  const visitor = useVisitorPosition();
 
-  // Nombre de filtres supplémentaires actifs (hors ville, toujours visible).
-  const extraFilterCount = [
-    form.q,
-    form.countryCode,
-    form.audience,
-    form.technique,
-    form.place,
-  ].filter((value) => value.trim() !== "").length;
+  // Le rayon ne s'applique qu'avec une position connue ; refusée ou
+  // introuvable, le filtre distance est ignoré (et désactivé dans le panneau).
+  const radiusKm = urlState.radiusKm;
+  const radiusActive = radiusKm !== null && visitor.status === "granted";
+  const waitingForPosition =
+    radiusKm !== null &&
+    (visitor.status === "idle" || visitor.status === "pending");
+  const position = visitor.position;
 
-  // L'URL est la source de vérité : synchronise le formulaire à chaque
+  // Un rayon présent dans l'URL (lien partagé, rechargement) redemande la position.
+  useEffect(() => {
+    if (radiusKm !== null && visitor.status === "idle") requestVisitorPosition();
+  }, [radiusKm, visitor.status]);
+
+  // L'URL est la source de vérité : synchronise le champ ville à chaque
   // changement (recherche, réinitialisation, précédent/suivant).
   useEffect(() => {
-    setForm(filtersFromParams(searchParams));
-  }, [searchParams]);
+    setCity(urlState.city);
+  }, [urlState.city]);
+
+  const query: BarbersSearchParams | null = useMemo(() => {
+    if (waitingForPosition) return null;
+    const base: BarbersSearchParams = {
+      q: urlState.q || undefined,
+      city: urlState.city || undefined,
+      audience: urlState.audience || undefined,
+      technique: urlState.technique || undefined,
+      place: urlState.place || undefined,
+      page: urlState.page,
+      pageSize: PAGE_SIZE,
+    };
+    if (urlState.maxPrice !== null) {
+      base.maxPrice = urlState.maxPrice;
+      base.currency = urlState.currency;
+    }
+    if (urlState.minRating !== null) base.minRating = urlState.minRating;
+    if (radiusActive && position) {
+      Object.assign(base, boundsAround(position, radiusKm as number));
+      base.page = 1;
+      base.pageSize = RADIUS_PAGE_SIZE;
+    }
+    return base;
+  }, [urlState, radiusActive, radiusKm, position, waitingForPosition]);
 
   useEffect(() => {
+    if (!query) return;
     const seq = ++requestSeq.current;
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const page = pageFromParams(searchParams);
     setLoading(true);
     setError(null);
 
     barbersApi
-      .search(
-        {
-          q: searchParams.get("q") ?? undefined,
-          city: searchParams.get("city") ?? undefined,
-          countryCode: normalizeCode(searchParams.get("countryCode")) || undefined,
-          audience: normalizeCode(searchParams.get("audience")) || undefined,
-          technique: normalizeCode(searchParams.get("technique")) || undefined,
-          place: normalizeCode(searchParams.get("place")) || undefined,
-          page,
-          pageSize: 12,
-        },
-        controller.signal,
-      )
+      .search(query, controller.signal)
       .then((res) => {
         if (seq === requestSeq.current) setData(res);
       })
@@ -126,14 +136,30 @@ export function BarbersSearchPage() {
       });
 
     return () => controller.abort();
-  }, [searchParams, reloadToken]);
+  }, [query, reloadToken]);
+
+  // Distance calculée dans le navigateur, sur la position publique approximative.
+  const results = useMemo(() => {
+    const items = (data?.barbers ?? []).map((barber) => ({
+      barber,
+      distance: position ? distanceKm(position, barber) : null,
+    }));
+    if (!radiusActive) return items;
+    return items
+      .filter((item) => item.distance !== null && item.distance <= (radiusKm as number))
+      .sort((a, b) => (a.distance as number) - (b.distance as number));
+  }, [data, position, radiusActive, radiusKm]);
+  const barbers: PublicBarberSearchItem[] = useMemo(
+    () => results.map((item) => item.barber),
+    [results],
+  );
 
   // Après changement de page ou de filtres, une sélection devenue absente est retirée.
   useEffect(() => {
-    if (selectedId && data && !data.barbers.some((b) => b.id === selectedId)) {
+    if (selectedId && !barbers.some((b) => b.id === selectedId)) {
       setSelectedId(null);
     }
-  }, [data, selectedId]);
+  }, [barbers, selectedId]);
 
   // Clic sur un marqueur → le résultat correspondant défile dans la liste.
   useEffect(() => {
@@ -149,19 +175,49 @@ export function BarbersSearchPage() {
     }
   }, [selectedId, reducedMotion]);
 
+  // Toute modification de filtre repart de la page 1.
+  function updateParams(mutate: (next: URLSearchParams) => void) {
+    const next = new URLSearchParams(searchParams);
+    mutate(next);
+    next.delete("page");
+    setSearchParams(next);
+  }
+
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    const next = new URLSearchParams();
-    for (const [key, value] of Object.entries(form)) {
-      const trimmed = value.trim();
-      if (trimmed) next.set(key, trimmed);
-    }
-    // Nouvelle recherche → page 1 (paramètre "page" absent).
-    setSearchParams(next);
+    updateParams((next) => {
+      const trimmed = city.trim();
+      if (trimmed) next.set("city", trimmed);
+      else next.delete("city");
+    });
   }
 
   function handleReset() {
     setSearchParams({});
+  }
+
+  const smartFilters: SmartFilters = {
+    maxPrice: urlState.maxPrice === null ? "" : String(urlState.maxPrice),
+    currency: urlState.currency,
+    minRating: urlState.minRating === null ? "" : String(urlState.minRating),
+    radiusKm: radiusKm === null ? "" : String(radiusKm),
+  };
+
+  function handleFiltersChange(next: SmartFilters) {
+    if (next.radiusKm && visitor.status !== "granted") requestVisitorPosition();
+    updateParams((params) => {
+      for (const key of ["maxPrice", "minRating", "radiusKm"] as const) {
+        if (next[key]) params.set(key, next[key]);
+        else params.delete(key);
+      }
+      // La devise n'a de sens qu'avec un prix maximum.
+      if (next.maxPrice) params.set("currency", next.currency);
+      else params.delete("currency");
+    });
+  }
+
+  function handleRemoveTag(key: string) {
+    updateParams((next) => next.delete(key));
   }
 
   function goToPage(target: number) {
@@ -171,12 +227,23 @@ export function BarbersSearchPage() {
     setSearchParams(next);
   }
 
-  const page = pageFromParams(searchParams);
-  const pagination = data?.pagination;
+  const page = urlState.page;
+  const pagination = radiusActive ? null : data?.pagination;
   const canPrev = Boolean(pagination && page > 1);
   const canNext = Boolean(pagination && page < (pagination.totalPages || 0));
-  const barbers = data?.barbers ?? [];
   const selectedBarber = barbers.find((b) => b.id === selectedId) ?? null;
+  const distanceById = new Map(
+    results.map((item) => [item.barber.id, item.distance] as const),
+  );
+  // Rayon : plus de barbers dans le rectangle que la page maximale chargée.
+  const radiusTruncated = Boolean(
+    radiusActive && data && data.pagination.total > data.barbers.length,
+  );
+  const resultCountLabel = radiusActive
+    ? `${barbers.length} résultat(s) à moins de ${radiusKm} km`
+    : pagination
+      ? `${pagination.total} résultat(s)`
+      : "";
 
   // Desktop : liste et carte toujours visibles. Mobile : une seule vue à la fois,
   // liste par défaut ; la carte n'est montée qu'à l'ouverture de la vue Carte.
@@ -191,22 +258,26 @@ export function BarbersSearchPage() {
             Rechercher un barber
           </h1>
           <p className="mt-1 text-sm text-foreground-muted">
-            Par nom, ville, pays, public ou prestation.
+            Par ville, prix, distance ou note.
           </p>
         </div>
 
         <SearchFilters
-          form={form}
-          onChange={setForm}
+          city={city}
+          onCityChange={setCity}
           onSubmit={handleSubmit}
           onReset={handleReset}
+          filters={smartFilters}
+          onFiltersChange={handleFiltersChange}
+          activeTags={legacyFilterTags(urlState)}
+          onRemoveTag={handleRemoveTag}
+          positionStatus={visitor.status}
           filtersOpen={filtersOpen}
           onToggleFilters={() => setFiltersOpen((open) => !open)}
-          extraFilterCount={extraFilterCount}
           advancedVisible={isDesktop}
         />
 
-        {loading ? (
+        {loading || waitingForPosition ? (
           <div
             aria-busy="true"
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1"
@@ -229,7 +300,7 @@ export function BarbersSearchPage() {
               Réessayer
             </Button>
           </Card>
-        ) : data && data.barbers.length === 0 ? (
+        ) : data && barbers.length === 0 ? (
           pagination && pagination.total > 0 ? (
             <Card className="p-6 text-center">
               <p className="text-foreground-muted">
@@ -254,8 +325,10 @@ export function BarbersSearchPage() {
         ) : (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-foreground-muted">
-                {pagination ? `${pagination.total} résultat(s)` : ""}
+              <p className="text-sm text-foreground-muted" role="status">
+                {resultCountLabel}
+                {radiusTruncated &&
+                  " · d'autres barbers existent dans ce rayon, affinez les filtres."}
               </p>
               <div
                 role="group"
@@ -288,6 +361,7 @@ export function BarbersSearchPage() {
                     <div key={barber.id} data-barber-id={barber.id}>
                       <BarberResultCard
                         barber={barber}
+                        distanceKm={distanceById.get(barber.id) ?? null}
                         selected={barber.id === selectedId}
                         onSelect={setSelectedId}
                       />
