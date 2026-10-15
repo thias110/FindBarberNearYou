@@ -8,6 +8,20 @@ test("un visiteur est redirigé vers la connexion", async ({ page }) => {
   await expect(page).toHaveURL(/\/login$/);
 });
 
+// Issue #30 : le thème se choisit uniquement dans Paramètres.
+test("aucun sélecteur de thème dans les en-têtes", async ({ page }) => {
+  const themeButtons = page.getByRole("button", { name: /thème/i });
+  for (const path of ["/", "/login", "/register", "/barbers"]) {
+    await page.goto(path);
+    await expect(page.getByRole("main")).toBeVisible();
+    await expect(themeButtons).toHaveCount(0);
+  }
+  await loginByApi(page, ACCOUNTS.client);
+  await page.goto("/account");
+  await expect(page.getByRole("heading", { name: "Mon compte" })).toBeVisible();
+  await expect(themeButtons).toHaveCount(0);
+});
+
 test("Paramètres depuis Mon compte : sections, thème et accessibilité", async ({
   page,
 }) => {
@@ -30,6 +44,10 @@ test("Paramètres depuis Mon compte : sections, thème et accessibilité", async
   await page.reload();
   await expect(page.locator("html")).toHaveClass(/\bdark\b/);
   await expect(page.getByRole("radio", { name: /Sombre/ })).toBeChecked();
+  // Le choix vaut pour toute l'application, pas seulement cette page.
+  await page.goto("/account");
+  await expect(page.locator("html")).toHaveClass(/\bdark\b/);
+  await page.goto("/settings");
 
   await expectNoA11yViolations(page);
 
