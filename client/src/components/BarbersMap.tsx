@@ -8,6 +8,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 // compatible avec la CSP `worker-src 'self'`.
 import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
+import type { GeoBounds } from "../lib/geo";
 import { getMapSettings, MAP_ATTRIBUTION } from "../lib/mapConfig";
 
 type MapStatus = "loading" | "ready" | "error" | "unconfigured";
@@ -26,7 +27,19 @@ interface BarbersMapProps {
    * les panneaux superposés, où les marqueurs ne doivent pas être placés.
    */
   padding?: MapPadding;
+  /**
+   * Zone visible après un déplacement ou un zoom DU VISITEUR (issue #50), pas
+   * après un recadrage automatique. Absente : la carte ne remonte rien.
+   */
+  onViewportChange?: (bounds: GeoBounds) => void;
+  /**
+   * `false` quand les résultats viennent de la zone visible : la carte ne se
+   * recadre pas sur eux (sinon elle bougerait sous les doigts du visiteur).
+   */
+  autoFit?: boolean;
 }
+
+const VIEWPORT_DEBOUNCE_MS = 400;
 
 export interface MapPadding {
   top: number;
@@ -150,6 +163,8 @@ export default function BarbersMap({
   onShowList,
   theme,
   padding = DEFAULT_PADDING,
+  onViewportChange,
+  autoFit = true,
 }: BarbersMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -174,6 +189,8 @@ export default function BarbersMap({
   themeRef.current = theme;
   const paddingRef = useRef(padding);
   paddingRef.current = padding;
+  const onViewportChangeRef = useRef(onViewportChange);
+  onViewportChangeRef.current = onViewportChange;
   const appliedStyleRef = useRef<string | null>(null);
 
   // --- Initialisation unique de la carte ---
@@ -254,12 +271,31 @@ export default function BarbersMap({
       }
     });
 
+    // Zone visible (issue #50) : uniquement après un geste du visiteur
+    // (glisser, zoomer, boutons +/−), reconnu à `originalEvent`. Les
+    // recadrages automatiques n'en ont pas et ne relancent pas la recherche.
+    let viewportTimer: number | undefined;
+    map.on("moveend", (event) => {
+      if (!("originalEvent" in event) || !event.originalEvent) return;
+      if (viewportTimer !== undefined) window.clearTimeout(viewportTimer);
+      viewportTimer = window.setTimeout(() => {
+        const bounds = map.getBounds();
+        onViewportChangeRef.current?.({
+          minLat: bounds.getSouth(),
+          maxLat: bounds.getNorth(),
+          minLng: bounds.getWest(),
+          maxLng: bounds.getEast(),
+        });
+      }, VIEWPORT_DEBOUNCE_MS);
+    });
+
     // Redimensionnement correct (notamment à l'ouverture de la vue Carte mobile).
     const observer = new ResizeObserver(() => map.resize());
     observer.observe(container);
 
     return () => {
       clearTimers();
+      if (viewportTimer !== undefined) window.clearTimeout(viewportTimer);
       observer.disconnect();
       markers.clear();
       map.remove();
@@ -333,10 +369,12 @@ export default function BarbersMap({
       const signature = resultsSignature(barbers);
       if (signature !== signatureRef.current) {
         signatureRef.current = signature;
-        fitToResults(map, barbers, reducedMotionRef.current, paddingRef.current);
+        if (autoFit) {
+          fitToResults(map, barbers, reducedMotionRef.current, paddingRef.current);
+        }
       }
     }
-  }, [barbers, status, selectedId]);
+  }, [barbers, status, selectedId, autoFit]);
 
   // --- La sélection (clic liste) amène le marqueur dans la vue, sans recentrage global ---
   useEffect(() => {

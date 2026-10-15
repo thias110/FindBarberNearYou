@@ -284,6 +284,9 @@ filtre `place`, seuls ceux ayant ce lieu correspondent.
   `[]` = suppression, tableau = remplacement (dans la même transaction que le service).
 - Page publique `/barbers` : filtres + pagination conservés dans l'URL (précédent/suivant
   cohérents), recherche, réinitialisation, états chargement/erreur+retry/vide.
+- Carte plein écran (issue #49) ; après un déplacement ou un zoom du visiteur, les
+  résultats se limitent à la zone visible (issue #50, paramètres `minLat`…`maxLng`, hors
+  URL) ; « Zone visible de la carte » se retire comme un filtre.
 
 ### Horaires hebdomadaires (barber)
 

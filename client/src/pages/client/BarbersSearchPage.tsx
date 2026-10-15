@@ -14,7 +14,12 @@ import type {
 } from "@findbarber/shared/types";
 import { APPROXIMATE_LOCATION_LABEL } from "@findbarber/shared/constants";
 import { barbersApi, type BarbersSearchParams } from "../../lib/apiClient";
-import { boundsAround, distanceKm } from "../../lib/geo";
+import {
+  boundsAround,
+  distanceKm,
+  normalizeBounds,
+  type GeoBounds,
+} from "../../lib/geo";
 import { cn } from "../../lib/cn";
 import { useMediaQuery, usePrefersReducedMotion } from "../../lib/media";
 import { useFillViewport } from "../../lib/useFillViewport";
@@ -58,6 +63,10 @@ export function BarbersSearchPage() {
     typeof window === "undefined" ? true : window.matchMedia("(min-width: 1024px)").matches,
   );
   const [mapRetryToken, setMapRetryToken] = useState(0);
+  // Zone visible de la carte après un geste du visiteur (issue #50). Hors URL :
+  // c'est un état de navigation, et elle se déduirait sinon de la position du
+  // visiteur quand la carte est centrée sur lui.
+  const [area, setArea] = useState<GeoBounds | null>(null);
   // Panneau de filtres replié par défaut sur mobile ; toujours affiché à
   // partir de 1024 px.
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -112,9 +121,14 @@ export function BarbersSearchPage() {
       Object.assign(base, boundsAround(position, radiusKm as number));
       base.page = 1;
       base.pageSize = RADIUS_PAGE_SIZE;
+    } else if (area) {
+      // La zone visible remplace la ville : on cherche là où l'on regarde,
+      // y compris de l'autre côté d'une frontière.
+      Object.assign(base, area);
+      base.city = undefined;
     }
     return base;
-  }, [urlState, radiusActive, radiusKm, position, waitingForPosition]);
+  }, [urlState, radiusActive, radiusKm, position, waitingForPosition, area]);
 
   useEffect(() => {
     if (!query) return;
@@ -197,8 +211,20 @@ export function BarbersSearchPage() {
     if (!isDesktop) setListOpen(false);
   }
 
+  // Geste du visiteur sur la carte : les résultats suivent la zone visible
+  // (sauf avec un rayon, qui fixe déjà la zone autour de lui).
+  function handleViewportChange(bounds: GeoBounds) {
+    if (radiusActive) return;
+    setArea(normalizeBounds(bounds));
+    if (urlState.page !== 1 || urlState.city) {
+      updateParams((next) => next.delete("city"));
+    }
+  }
+
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    // Nouvelle ville : la carte se recadre sur ses résultats.
+    setArea(null);
     updateParams((next) => {
       const trimmed = city.trim();
       if (trimmed) next.set("city", trimmed);
@@ -207,6 +233,7 @@ export function BarbersSearchPage() {
   }
 
   function handleReset() {
+    setArea(null);
     setSearchParams({});
   }
 
@@ -219,6 +246,7 @@ export function BarbersSearchPage() {
 
   function handleFiltersChange(next: SmartFilters) {
     if (next.radiusKm && visitor.status !== "granted") requestVisitorPosition();
+    if (next.radiusKm) setArea(null);
     updateParams((params) => {
       for (const key of ["maxPrice", "minRating", "radiusKm"] as const) {
         if (next[key]) params.set(key, next[key]);
@@ -231,6 +259,10 @@ export function BarbersSearchPage() {
   }
 
   function handleRemoveTag(key: string) {
+    if (key === "area") {
+      setArea(null);
+      return;
+    }
     updateParams((next) => next.delete(key));
   }
 
@@ -259,11 +291,20 @@ export function BarbersSearchPage() {
   const mapPadding = isDesktop
     ? { top: 56, bottom: 56, left: listOpen ? 470 : 56, right: 56 }
     : { top: 150, bottom: 110, left: 32, right: 32 };
+  const areaActive = area !== null && !radiusActive;
   const resultCountLabel = radiusActive
     ? `${barbers.length} résultat(s) à moins de ${radiusKm} km`
     : pagination
-      ? `${pagination.total} résultat(s)`
+      ? `${pagination.total} résultat(s)${areaActive ? " dans cette zone" : ""}`
       : "";
+  // Zone : plus de barbers que la page affichée → on l'indique (issue #50).
+  const moreInArea = Boolean(
+    areaActive && pagination && pagination.total > pagination.page * pagination.pageSize,
+  );
+  const activeTags = [
+    ...(areaActive ? [{ key: "area", label: "Zone visible de la carte" }] : []),
+    ...legacyFilterTags(urlState),
+  ];
 
   const filtersPanel = (
     <SearchFilters
@@ -273,7 +314,7 @@ export function BarbersSearchPage() {
       onReset={handleReset}
       filters={smartFilters}
       onFiltersChange={handleFiltersChange}
-      activeTags={legacyFilterTags(urlState)}
+      activeTags={activeTags}
       onRemoveTag={handleRemoveTag}
       positionStatus={visitor.status}
       filtersOpen={filtersOpen}
@@ -371,6 +412,8 @@ export function BarbersSearchPage() {
       {loading || waitingForPosition ? "Recherche…" : resultCountLabel}
       {radiusTruncated &&
         " · d'autres barbers existent dans ce rayon, affinez les filtres."}
+      {moreInArea &&
+        " · d'autres barbers dans cette zone : page suivante, ou zoomez sur la carte."}
     </p>
   );
 
@@ -451,7 +494,9 @@ export function BarbersSearchPage() {
               id="search-results-list"
               className={cn("overflow-y-auto px-3 pb-4", listOpen ? "" : "hidden")}
             >
-              {radiusTruncated && <div className="mb-2">{resultsSummary}</div>}
+              {(radiusTruncated || moreInArea) && (
+                <div className="mb-2">{resultsSummary}</div>
+              )}
               {resultsContent}
             </div>
           </section>
@@ -494,6 +539,8 @@ export function BarbersSearchPage() {
               onShowList={() => setListOpen(true)}
               theme={resolvedTheme}
               padding={mapPadding}
+              onViewportChange={handleViewportChange}
+              autoFit={!areaActive}
             />
           </Suspense>
         </MapErrorBoundary>
