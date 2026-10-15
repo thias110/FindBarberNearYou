@@ -239,6 +239,10 @@ export const authApi: AuthApi = {
 export interface UserApi {
   updateAvatar(file: File): Promise<{ user: PublicUser }>;
   deleteAvatar(): Promise<{ user: PublicUser }>;
+  /** Export RGPD (issue #14) : objet JSON de toutes les données du compte. */
+  exportData(): Promise<unknown>;
+  /** Suppression définitive (anonymisation), confirmée par le mot de passe. */
+  deleteAccount(password: string): Promise<void>;
 }
 
 export const userApi: UserApi = {
@@ -253,6 +257,9 @@ export const userApi: UserApi = {
   },
   deleteAvatar: () =>
     apiFetch<{ user: PublicUser }>("/api/users/me/avatar", { method: "DELETE" }),
+  exportData: () => apiFetch<unknown>("/api/users/me/export"),
+  deleteAccount: (password) =>
+    apiFetch<void>("/api/users/me", { method: "DELETE", body: { password } }),
 };
 
 // Notifications in-app (MVP) : lectures/mutations scopées côté serveur.

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { useAuth } from "../../app/auth-context";
 import { barbersApi } from "../../lib/apiClient";
+import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
@@ -40,6 +41,11 @@ const STEPS = [
 export function ClientHomePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Arrivée après suppression du compte (issue #14).
+  const accountDeleted = Boolean(
+    (location.state as { accountDeleted?: boolean } | null)?.accountDeleted,
+  );
 
   const [barbers, setBarbers] = useState<PublicBarberSearchItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +99,12 @@ export function ClientHomePage() {
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-5xl space-y-8">
+        {accountDeleted && (
+          <Alert variant="success">
+            Votre compte a été supprimé et vos données personnelles effacées.
+          </Alert>
+        )}
+
         <HomeHero user={user} onSubmitCity={handleSearch} />
 
         <CategoryChips />

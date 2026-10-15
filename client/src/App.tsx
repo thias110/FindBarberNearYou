@@ -61,6 +61,14 @@ function AppShell() {
             <ThemeToggle />
             {/* L'API des notifications est réservée aux CLIENT et BARBER. */}
             {user && user.role !== "ADMIN" && <NotificationBell />}
+            {user && user.role !== "ADMIN" && (
+              <Link
+                to="/account"
+                className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-foreground hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                Mon compte
+              </Link>
+            )}
             {!user && (
               <Link
                 to="/login"

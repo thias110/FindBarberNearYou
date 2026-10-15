@@ -35,6 +35,8 @@ function actionVariant(action: AuditAction): BadgeVariant {
       return "danger";
     case "BOOKING_EXPIRED":
       return "warning";
+    case "USER_DELETED":
+      return "neutral";
     case "USER_REACTIVATED":
     case "BOOKING_CONFIRMED":
     case "BOOKING_COMPLETED":

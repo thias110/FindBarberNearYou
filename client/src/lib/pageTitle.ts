@@ -6,6 +6,7 @@ const EXACT: Record<string, string> = {
   "/": "Accueil",
   "/barbers": "Rechercher un barber",
   "/appointments": "Mes rendez-vous",
+  "/account": "Mon compte",
   "/pro/dashboard": "Espace professionnel",
   "/pro/profile": "Mon profil professionnel",
   "/pro/services": "Mes prestations",

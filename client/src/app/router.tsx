@@ -26,6 +26,7 @@ import { AdminBookingsPage } from "../pages/admin/BookingsPage";
 import { AdminReviewsPage } from "../pages/admin/ReviewsPage";
 import { AdminBarberStatsPage } from "../pages/admin/BarberStatsPage";
 import { AdminAuditLogPage } from "../pages/admin/AuditLogPage";
+import { AccountPage } from "../pages/AccountPage";
 
 function HomeRoute() {
   const { user, loading } = useAuth();
@@ -61,6 +62,14 @@ export function AppRoutes() {
 
       {/* Accueil : public (visiteurs) et CLIENT ; BARBER/ADMIN redirigés. */}
       <Route path="/" element={<HomeRoute />} />
+      <Route
+        path="/account"
+        element={
+          <RequireRole roles={["CLIENT", "BARBER"]}>
+            <AccountPage />
+          </RequireRole>
+        }
+      />
       <Route
         path="/appointments"
         element={

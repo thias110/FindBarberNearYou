@@ -12,6 +12,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   INVALID_RESET_TOKEN:
     "Ce lien de réinitialisation est invalide ou a expiré. Demandez-en un nouveau.",
   ACCOUNT_SUSPENDED: "Ce compte est suspendu. Contactez l'administration.",
+  INVALID_PASSWORD: "Mot de passe incorrect.",
   EMAIL_TAKEN: "Un compte existe déjà avec cet email.",
   ADMIN_REGISTRATION_FORBIDDEN:
     "La création de comptes administrateur n'est pas autorisée.",

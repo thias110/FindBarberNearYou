@@ -91,10 +91,16 @@ export function AdminUsersPage() {
     try {
       if (kind === "suspend") {
         await adminApi.suspendUser(target.id);
-        setMessage({ kind: "success", text: `${target.email} a été suspendu.` });
+        setMessage({
+          kind: "success",
+          text: `${target.email} a été suspendu.`,
+        });
       } else {
         await adminApi.reactivateUser(target.id);
-        setMessage({ kind: "success", text: `${target.email} a été réactivé.` });
+        setMessage({
+          kind: "success",
+          text: `${target.email} a été réactivé.`,
+        });
       }
       setReloadKey((key) => key + 1);
     } catch (err) {
@@ -142,7 +148,8 @@ export function AdminUsersPage() {
           <ul className="space-y-3">
             {users.map((item) => {
               const isSelf = item.id === currentUser?.id;
-              const suspended = item.status !== "ACTIVE";
+              const suspended = item.status === "SUSPENDED";
+              const deleted = item.status === "DELETED";
               return (
                 <li key={item.id}>
                   <Card className="p-4">
@@ -155,8 +162,18 @@ export function AdminUsersPage() {
                           {item.email}
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <Badge variant="neutral">{ROLE_LABELS[item.role]}</Badge>
-                          <Badge variant={suspended ? "danger" : "success"}>
+                          <Badge variant="neutral">
+                            {ROLE_LABELS[item.role]}
+                          </Badge>
+                          <Badge
+                            variant={
+                              deleted
+                                ? "neutral"
+                                : suspended
+                                  ? "danger"
+                                  : "success"
+                            }
+                          >
                             {USER_STATUS_LABELS[item.status]}
                           </Badge>
                         </div>
@@ -166,15 +183,17 @@ export function AdminUsersPage() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
-                        {item.role === "BARBER" && item.barberProfileId && (
-                          <Link
-                            to={`/admin/barbers/${item.barberProfileId}/stats`}
-                            className={SECONDARY_LINK_CLASS}
-                          >
-                            Voir les statistiques
-                          </Link>
-                        )}
-                        {suspended ? (
+                        {item.role === "BARBER" &&
+                          item.barberProfileId &&
+                          !deleted && (
+                            <Link
+                              to={`/admin/barbers/${item.barberProfileId}/stats`}
+                              className={SECONDARY_LINK_CLASS}
+                            >
+                              Voir les statistiques
+                            </Link>
+                          )}
+                        {deleted ? null : suspended ? (
                           <Button
                             variant="secondary"
                             className="min-h-11"

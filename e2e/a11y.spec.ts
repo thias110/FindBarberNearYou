@@ -15,7 +15,7 @@ const PAGES: { role: keyof typeof ACCOUNTS | "visiteur"; paths: string[] }[] = [
       "/reset-password?token=e2e",
     ],
   },
-  { role: "client", paths: ["/", "/barbers", "/appointments"] },
+  { role: "client", paths: ["/", "/barbers", "/appointments", "/account"] },
   {
     role: "barber",
     paths: [
@@ -27,6 +27,7 @@ const PAGES: { role: keyof typeof ACCOUNTS | "visiteur"; paths: string[] }[] = [
       "/pro/bookings",
       "/pro/stats",
       "/pro/gallery",
+      "/account",
     ],
   },
   {

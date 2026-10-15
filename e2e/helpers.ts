@@ -9,6 +9,9 @@ export const ACCOUNTS = {
   client: "client@demo.ch",
 } as const;
 
+/** Compte démo réservé au parcours de suppression (non utilisé ailleurs). */
+export const DELETABLE_CLIENT = "client2@demo.ch";
+
 /** Connexion par l'API (cookies partagés avec la page : même hôte). */
 export async function loginByApi(page: Page, email: string): Promise<void> {
   const res = await page.request.post(`${API}/api/auth/login`, {

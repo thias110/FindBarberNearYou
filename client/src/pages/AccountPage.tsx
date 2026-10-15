@@ -1,0 +1,169 @@
+import { useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { ROLE_LABELS } from "@findbarber/shared/constants";
+import { useAuth } from "../app/auth-context";
+import { userApi } from "../lib/apiClient";
+import { authErrorMessage } from "../lib/authMessages";
+import { Alert } from "../components/ui/Alert";
+import { Button } from "../components/ui/Button";
+import { Card } from "../components/ui/Card";
+import { ConfirmDialog } from "../components/ui/ConfirmDialog";
+import { Field } from "../components/ui/Field";
+import { Input } from "../components/ui/Input";
+
+// Mon compte (issue #14 : nLPD / RGPD) : export des données et suppression du
+// compte. Ouvert aux CLIENT et BARBER (un ADMIN est géré hors application).
+export function AccountPage() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleExport() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      const data = await userApi.exportData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `findbarber-mes-donnees-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setExportError(authErrorMessage(err));
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  function handleRequestDelete(event: FormEvent) {
+    event.preventDefault();
+    setDeleteError(null);
+    if (!password) {
+      setPasswordError("Saisissez votre mot de passe pour confirmer.");
+      return;
+    }
+    setPasswordError(null);
+    setConfirmOpen(true);
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await userApi.deleteAccount(password);
+      setConfirmOpen(false);
+      // Quitter la page protégée AVANT de vider la session locale (sinon la
+      // garde de route redirige vers /login). La session est déjà révoquée
+      // côté serveur.
+      navigate("/", { replace: true, state: { accountDeleted: true } });
+      await logout().catch(() => {});
+    } catch (err) {
+      setConfirmOpen(false);
+      setDeleteError(authErrorMessage(err));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  if (!user) return null;
+
+  return (
+    <div className="min-h-screen bg-background p-4 sm:p-8">
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Mon compte</h1>
+          <p className="mt-1 break-all text-sm text-foreground-muted">
+            {user.email} · {ROLE_LABELS[user.role]}
+          </p>
+        </div>
+
+        <Card className="space-y-3 p-6">
+          <h2 className="text-lg font-semibold text-foreground">Mes données</h2>
+          <p className="text-sm text-foreground-muted">
+            Téléchargez une copie de toutes les données liées à votre compte
+            (profil, rendez-vous, avis, notifications
+            {user.role === "BARBER" ? ", vitrine et activité" : ""}) au format
+            JSON.
+          </p>
+          {exportError && <Alert variant="danger">{exportError}</Alert>}
+          <Button
+            variant="secondary"
+            isLoading={exporting}
+            onClick={() => void handleExport()}
+          >
+            Télécharger mes données
+          </Button>
+        </Card>
+
+        <Card className="space-y-3 border-danger/40 p-6">
+          <h2 className="text-lg font-semibold text-foreground">
+            Supprimer mon compte
+          </h2>
+          <ul className="list-disc space-y-1 pl-5 text-sm text-foreground-muted">
+            <li>La suppression est définitive.</li>
+            <li>
+              Vos rendez-vous à venir sont annulés et l'autre partie est
+              prévenue.
+            </li>
+            <li>
+              Votre nom, votre email, votre adresse et vos commentaires sont
+              effacés. L'historique des rendez-vous et les notes restent, sous
+              forme anonyme.
+            </li>
+            {user.role === "BARBER" && (
+              <li>
+                Votre vitrine (profil, photos, horaires) est retirée de la
+                recherche.
+              </li>
+            )}
+          </ul>
+          {deleteError && <Alert variant="danger">{deleteError}</Alert>}
+          <form onSubmit={handleRequestDelete} noValidate className="space-y-3">
+            <Field label="Mot de passe actuel" error={passwordError}>
+              {(control) => (
+                <Input
+                  {...control}
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="min-h-[44px]"
+                />
+              )}
+            </Field>
+            <Button type="submit" variant="danger">
+              Supprimer mon compte
+            </Button>
+          </form>
+        </Card>
+      </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Supprimer définitivement votre compte ?"
+        confirmLabel="Supprimer définitivement"
+        cancelLabel="Garder mon compte"
+        tone="danger"
+        isLoading={deleting}
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setConfirmOpen(false)}
+      >
+        <p>Cette action est irréversible.</p>
+      </ConfirmDialog>
+    </div>
+  );
+}
