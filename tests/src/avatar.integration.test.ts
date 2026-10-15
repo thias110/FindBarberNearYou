@@ -121,6 +121,23 @@ describe("PUT /api/users/me/avatar", () => {
     expect(metadata.format).toBe("webp");
   });
 
+  // Issue #55 : la session (GET /api/auth/me) expose la photo, pour qu'elle
+  // reste affichée après un rechargement de page.
+  it("expose l'avatar dans GET /api/auth/me", async () => {
+    await createUser("me@example.com");
+    const { agent, csrf } = await login("me@example.com");
+    expect((await agent.get("/api/auth/me")).body.user.avatarPath).toBeNull();
+
+    const put = await agent
+      .put("/api/users/me/avatar")
+      .set("X-CSRF-Token", csrf)
+      .attach("image", await pngBuffer(), "photo.png");
+    const me = await agent.get("/api/auth/me");
+    expect(me.status).toBe(200);
+    expect(me.body.user.avatarPath).toBe(put.body.user.avatarPath);
+    expect(me.body.user).not.toHaveProperty("passwordHash");
+  });
+
   it("remplace l'ancien avatar et supprime le fichier précédent", async () => {
     const user = await createUser("replace@example.com");
     const { agent, csrf } = await login("replace@example.com");
@@ -246,5 +263,55 @@ describe("DELETE /api/users/me/avatar", () => {
       .set("X-CSRF-Token", csrf);
     expect(res.status).toBe(200);
     expect(res.body.user.avatarPath).toBeNull();
+  });
+});
+
+// Issue #55 : la photo n'est modifiable que par son titulaire. L'API ne prend
+// aucun identifiant : elle agit toujours sur l'utilisateur de la session.
+describe("isolation entre utilisateurs", () => {
+  it("un client B ne peut ni remplacer ni supprimer la photo d'un client A", async () => {
+    const a = await createUser("owner-a@example.com");
+    const b = await createUser("other-b@example.com");
+    const sessionA = await login("owner-a@example.com");
+    await sessionA.agent
+      .put("/api/users/me/avatar")
+      .set("X-CSRF-Token", sessionA.csrf)
+      .attach("image", await pngBuffer(), "photo.png");
+    const [beforeA] = await db.select().from(users).where(eq(users.id, a.id));
+    const pathA = beforeA.avatarPath as string;
+
+    const sessionB = await login("other-b@example.com");
+    // Un identifiant glissé dans l'URL ou le corps est ignoré.
+    const put = await sessionB.agent
+      .put(`/api/users/me/avatar?userId=${a.id}`)
+      .set("X-CSRF-Token", sessionB.csrf)
+      .field("userId", a.id)
+      .attach("image", await pngBuffer(20, 20), "autre.png");
+    expect(put.status).toBe(200);
+    expect(put.body.user.id).toBe(b.id);
+
+    const del = await sessionB.agent
+      .delete(`/api/users/me/avatar?userId=${a.id}`)
+      .set("X-CSRF-Token", sessionB.csrf)
+      .send({ userId: a.id });
+    expect(del.status).toBe(200);
+    expect(del.body.user.id).toBe(b.id);
+
+    const [afterA] = await db.select().from(users).where(eq(users.id, a.id));
+    expect(afterA.avatarPath).toBe(pathA);
+    expect(existsSync(join(uploadDir, pathA))).toBe(true);
+  });
+
+  // Le jeton CSRF de B ne vaut pas pour la session de A.
+  it("refuse une session A accompagnée du jeton CSRF de B (403)", async () => {
+    await createUser("csrf-a@example.com");
+    await createUser("csrf-b@example.com");
+    const sessionA = await login("csrf-a@example.com");
+    const sessionB = await login("csrf-b@example.com");
+
+    const res = await sessionA.agent
+      .delete("/api/users/me/avatar")
+      .set("X-CSRF-Token", sessionB.csrf);
+    expect(res.status).toBe(403);
   });
 });

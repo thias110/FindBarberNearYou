@@ -7,6 +7,7 @@ import type { Role } from "@findbarber/shared/types";
 import { env } from "../config/env.js";
 import { AUTH_COOKIE } from "../lib/cookies.js";
 import { AppError } from "../lib/errors.js";
+import { toPublicUser } from "../modules/auth/service.js";
 
 export interface AuthPayload extends jwt.JwtPayload {
   sub: string;
@@ -53,13 +54,7 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
       throw new AppError(401, "UNAUTHORIZED", "Session expired. Please log in again.");
     }
 
-    req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      status: user.status,
-      name: user.name,
-    };
+    req.user = toPublicUser(user);
     req.auth = payload;
     next();
   } catch (err) {

@@ -1,26 +1,13 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ChangeEvent,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LIMITS, UPLOAD_IMAGE_MIME_TYPES } from "@findbarber/shared/constants";
 import type { OwnBarberProfile } from "@findbarber/shared/types";
 import { useAuth } from "../../app/auth-context";
-import {
-  ApiError,
-  apiErrorMessage,
-  barberApi,
-  resolveUploadUrl,
-  userApi,
-  validateImageFile,
-} from "../../lib/apiClient";
+import { ApiError, barberApi } from "../../lib/apiClient";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
+import { AvatarEditor } from "../../components/account/AvatarEditor";
 import { ProNavCard } from "../../components/barber/ProNavCard";
 import { buttonClasses } from "../../components/ui/buttonStyles";
 import { CONTROL_CLASS } from "../../components/ui/control";
@@ -72,14 +59,7 @@ const PRO_NAV = [
 export function BarberDashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const copyTimeoutRef = useRef<number | null>(null);
-  // Focus de la confirmation destructive (remplace window.confirm).
-  const deleteTriggerRef = useRef<HTMLSpanElement>(null);
-  const cancelDeleteRef = useRef<HTMLSpanElement>(null);
-  const confirmBoxRef = useRef<HTMLDivElement>(null);
-  const chooseImageRef = useRef<HTMLSpanElement>(null);
-  const wasConfirmingRef = useRef(false);
 
   const [profile, setProfile] = useState<OwnBarberProfile | null>(null);
   const [profileMissing, setProfileMissing] = useState(false);
@@ -87,16 +67,6 @@ export function BarberDashboardPage() {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [avatarPath, setAvatarPath] = useState<string | null>(
-    user?.avatarPath ?? null,
-  );
-  const [avatarBusy, setAvatarBusy] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [avatarMessage, setAvatarMessage] = useState<{
-    kind: "success" | "error";
-    text: string;
-  } | null>(null);
-
   const loadProfile = useCallback(() => {
     setLoading(true);
     setLoadError(null);
@@ -137,89 +107,6 @@ export function BarberDashboardPage() {
     };
   }, []);
 
-  // Gestion clavier de la confirmation inline de suppression :
-  // - ouverture : focus sur « Annuler » (action la moins destructrice) ;
-  // - pendant la requête : focus maintenu dans le bloc (les deux boutons sont
-  //   désactivés, donc le focus serait sinon perdu) ;
-  // - fermeture : focus rendu au bouton déclencheur, s'il existe encore.
-  useEffect(() => {
-    if (!confirmingDelete) {
-      if (wasConfirmingRef.current) {
-        wasConfirmingRef.current = false;
-        // Priorité : bouton déclencheur (Annuler / échec de suppression).
-        // S'il a disparu (suppression réussie), repli sur « Choisir une image ».
-        const target =
-          deleteTriggerRef.current?.querySelector<HTMLButtonElement>("button") ??
-          chooseImageRef.current?.querySelector<HTMLButtonElement>("button");
-        target?.focus();
-      }
-      return;
-    }
-    wasConfirmingRef.current = true;
-    if (avatarBusy) {
-      confirmBoxRef.current?.focus();
-    } else {
-      cancelDeleteRef.current
-        ?.querySelector<HTMLButtonElement>("button")
-        ?.focus();
-    }
-  }, [confirmingDelete, avatarBusy]);
-
-  async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
-    const selected = event.target.files?.[0];
-    event.target.value = "";
-    if (!selected) return;
-    const validation = validateImageFile(selected);
-    if (validation) {
-      setAvatarMessage({ kind: "error", text: validation });
-      return;
-    }
-    setConfirmingDelete(false);
-    setAvatarBusy(true);
-    setAvatarMessage(null);
-    try {
-      const res = await userApi.updateAvatar(selected);
-      setAvatarPath(res.user.avatarPath);
-      setAvatarMessage({ kind: "success", text: "Avatar mis à jour." });
-    } catch (err: unknown) {
-      // 400 (format), 401 (session), 403 (CSRF), 413 (taille) via le serveur.
-      setAvatarMessage({ kind: "error", text: apiErrorMessage(err) });
-    } finally {
-      setAvatarBusy(false);
-    }
-  }
-
-  // Demande de suppression : aucun appel réseau, on affiche seulement la
-  // confirmation inline.
-  function requestAvatarDelete() {
-    if (avatarBusy) return;
-    setAvatarMessage(null);
-    setConfirmingDelete(true);
-  }
-
-  // Annulation : aucun appel réseau.
-  function cancelAvatarDelete() {
-    setConfirmingDelete(false);
-  }
-
-  // Suppression confirmée : seul chemin qui déclenche la requête. La
-  // confirmation reste ouverte pendant la requête puis se ferme, afin que le
-  // focus puisse être rendu au bouton déclencheur.
-  async function handleAvatarDelete() {
-    setAvatarBusy(true);
-    setAvatarMessage(null);
-    try {
-      const res = await userApi.deleteAvatar();
-      setAvatarPath(res.user.avatarPath);
-      setAvatarMessage({ kind: "success", text: "Avatar supprimé." });
-    } catch (err: unknown) {
-      setAvatarMessage({ kind: "error", text: apiErrorMessage(err) });
-    } finally {
-      setAvatarBusy(false);
-      setConfirmingDelete(false);
-    }
-  }
-
   const publicLink = profile
     ? `${window.location.origin}/barbers/${profile.id}`
     : null;
@@ -246,8 +133,6 @@ export function BarberDashboardPage() {
     navigate("/login", { replace: true });
   }
 
-  const initial = (user?.name ?? user?.email ?? "?").charAt(0).toUpperCase();
-
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
@@ -270,111 +155,10 @@ export function BarberDashboardPage() {
         </header>
 
         <Card className="p-6">
-          <h2 className="text-lg font-bold text-foreground">Mon avatar</h2>
-          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
-            {avatarPath ? (
-              <img
-                src={resolveUploadUrl(avatarPath) ?? ""}
-                alt="Votre avatar"
-                className="h-16 w-16 shrink-0 rounded-full object-cover"
-              />
-            ) : (
-              <div
-                aria-hidden="true"
-                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-accent-soft text-lg font-semibold text-foreground"
-              >
-                {initial}
-              </div>
-            )}
-            <div className="space-y-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={UPLOAD_IMAGE_MIME_TYPES.join(",")}
-                disabled={avatarBusy}
-                onChange={(event) => void handleAvatarChange(event)}
-                className="hidden"
-              />
-              <div className="flex flex-wrap gap-2">
-                <span ref={chooseImageRef} className="inline-flex">
-                  <Button
-                    variant="secondary"
-                    className="min-h-[44px]"
-                    disabled={avatarBusy}
-                    isLoading={avatarBusy}
-                    aria-describedby="avatar-hint"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {avatarPath ? "Changer l'image" : "Choisir une image"}
-                  </Button>
-                </span>
-                {avatarPath && !confirmingDelete && (
-                  <span ref={deleteTriggerRef} className="inline-flex">
-                    <Button
-                      variant="danger"
-                      className="min-h-[44px]"
-                      disabled={avatarBusy}
-                      onClick={requestAvatarDelete}
-                    >
-                      Supprimer l'avatar
-                    </Button>
-                  </span>
-                )}
-              </div>
-              <p id="avatar-hint" className="text-xs text-foreground-muted">
-                JPEG, PNG ou WebP,{" "}
-                {Math.round(LIMITS.uploadMaxBytes / 1_048_576)} Mo max.
-              </p>
-            </div>
-          </div>
-
-          {confirmingDelete && avatarPath && (
-            <div
-              ref={confirmBoxRef}
-              tabIndex={-1}
-              onKeyDown={(event) => {
-                if (event.key === "Escape" && !avatarBusy) {
-                  event.preventDefault();
-                  cancelAvatarDelete();
-                }
-              }}
-              className="mt-4 rounded-lg border border-danger/30 bg-danger/10 p-3 focus:outline-none"
-            >
-              <p className="text-sm text-foreground">
-                Supprimer votre avatar ? Cette action est définitive.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span ref={cancelDeleteRef} className="inline-flex">
-                  <Button
-                    variant="secondary"
-                    className="min-h-[44px]"
-                    disabled={avatarBusy}
-                    onClick={cancelAvatarDelete}
-                  >
-                    Annuler
-                  </Button>
-                </span>
-                <Button
-                  variant="danger"
-                  className="min-h-[44px]"
-                  disabled={avatarBusy}
-                  isLoading={avatarBusy}
-                  onClick={() => void handleAvatarDelete()}
-                >
-                  Confirmer la suppression
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {avatarMessage && (
-            <Alert
-              variant={avatarMessage.kind === "success" ? "success" : "danger"}
-              className="mt-4"
-            >
-              {avatarMessage.text}
-            </Alert>
-          )}
+          <h2 className="mb-4 text-lg font-bold text-foreground">
+            Photo de profil
+          </h2>
+          <AvatarEditor />
         </Card>
 
         <nav

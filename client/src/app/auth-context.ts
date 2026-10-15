@@ -6,6 +6,9 @@ export interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<PublicUser>;
   logout: () => Promise<void>;
+  /** Remplace l'utilisateur en session après une modification réussie côté
+   * serveur (ex. photo de profil, issue #55) : l'interface suit sans recharger. */
+  updateUser: (user: PublicUser) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(

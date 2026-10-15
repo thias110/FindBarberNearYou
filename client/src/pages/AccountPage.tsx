@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ROLE_LABELS } from "@findbarber/shared/constants";
 import { useAuth } from "../app/auth-context";
 import { userApi } from "../lib/apiClient";
+import { AvatarEditor } from "../components/account/AvatarEditor";
 import { buttonClasses } from "../components/ui/buttonStyles";
 import { authErrorMessage } from "../lib/authMessages";
 import { Alert } from "../components/ui/Alert";
@@ -12,7 +13,8 @@ import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { Field } from "../components/ui/Field";
 import { Input } from "../components/ui/Input";
 
-// Mon compte (issue #14 : nLPD / RGPD) : suppression du compte. L'export des
+// Mon compte : photo de profil (issue #55) et suppression du compte
+// (issue #14 : nLPD / RGPD). L'export des
 // données vit dans Paramètres > Confidentialité (issue #31). Ouvert aux CLIENT
 // et BARBER (un ADMIN est géré hors application).
 export function AccountPage() {
@@ -74,6 +76,11 @@ export function AccountPage() {
             Paramètres
           </Link>
         </div>
+
+        <Card className="space-y-4 p-6">
+          <h2 className="text-lg font-bold text-foreground">Photo de profil</h2>
+          <AvatarEditor />
+        </Card>
 
         <Card className="space-y-2 p-6">
           <h2 className="text-lg font-bold text-foreground">Mes données</h2>
