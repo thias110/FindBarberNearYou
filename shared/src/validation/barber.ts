@@ -303,6 +303,10 @@ export const barberSearchQuerySchema = z
 
 export type BarberSearchQuery = z.infer<typeof barberSearchQuerySchema>;
 
+// Route publique sans paramètre (prestations populaires, issue #47) :
+// tout paramètre est rejeté, comme pour la recherche.
+export const emptyQuerySchema = z.object({}).strict();
+
 // --- Horaires hebdomadaires (remplacement complet par PUT) ---
 // Les heures sont des minutes murales locales (0..1439 pour un départ,
 // 1..1440 pour une fin ; 1440 = 24:00). Refuse les doublons, les

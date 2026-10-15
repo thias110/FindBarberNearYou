@@ -8,6 +8,7 @@ import type {
   AdminUsersResponse,
   BarberReviewsResponse,
   BarbersSearchResponse,
+  PopularTechniquesResponse,
   BarberStatsResponse,
   Booking,
   BookingCreateResponse,
@@ -492,6 +493,7 @@ export interface PublicBarbersApi {
     params: BarbersSearchParams,
     signal?: AbortSignal,
   ): Promise<BarbersSearchResponse>;
+  popularTechniques(signal?: AbortSignal): Promise<PopularTechniquesResponse>;
 }
 
 export const barbersApi: PublicBarbersApi = {
@@ -538,6 +540,10 @@ export const barbersApi: PublicBarbersApi = {
       { signal },
     );
   },
+  popularTechniques: (signal) =>
+    apiFetch<PopularTechniquesResponse>("/api/barbers/popular-techniques", {
+      signal,
+    }),
 };
 
 export interface BookingApi {

@@ -18,7 +18,12 @@ import {
   type BarberWorkingHours,
 } from "@findbarber/shared/schema";
 import type { CountryCode } from "@findbarber/shared/countries";
-import { LIMITS } from "@findbarber/shared/constants";
+import {
+  DEFAULT_POPULAR_TECHNIQUES,
+  LIMITS,
+  POPULAR_TECHNIQUES_BOOKING_STATUSES,
+  POPULAR_TECHNIQUES_LIMIT,
+} from "@findbarber/shared/constants";
 import type {
   Audience,
   Currency,
@@ -30,6 +35,7 @@ import type {
   BarbersSearchResponse,
   OwnBarberProfile,
   OwnBarberService,
+  PopularTechniquesResponse,
   PublicBarberProfile,
   PublicBarberProfileWithServices,
   PublicBarberSearchItem,
@@ -911,4 +917,36 @@ export async function searchBarbers(
       totalPages,
     },
   };
+}
+
+// Prestations populaires (issue #47) : techniques les plus réservées, de la
+// plus à la moins réservée. Une réservation compte pour chaque technique de son
+// service (lien bookings.service_id → barber_service_techniques). Seules les
+// réservations confirmées ou terminées comptent (annulées, refusées, expirées,
+// absences et demandes en attente exclues). Les ex æquo suivent l'ordre du
+// catalogue (ordre de l'enum `technique`). Le classement est complété par la
+// liste par défaut pour ne jamais renvoyer une liste vide. La réponse ne
+// contient que des codes de technique (aucun compteur ni réservation).
+export async function getPopularTechniques(): Promise<PopularTechniquesResponse> {
+  const rows = await db
+    .select({
+      technique: barberServiceTechniques.technique,
+      total: sql<number>`count(*)::int`,
+    })
+    .from(bookings)
+    .innerJoin(
+      barberServiceTechniques,
+      eq(barberServiceTechniques.serviceId, bookings.serviceId),
+    )
+    .where(inArray(bookings.status, [...POPULAR_TECHNIQUES_BOOKING_STATUSES]))
+    .groupBy(barberServiceTechniques.technique)
+    .orderBy(sql`count(*) desc`, asc(barberServiceTechniques.technique))
+    .limit(POPULAR_TECHNIQUES_LIMIT);
+
+  const techniques: Technique[] = rows.map((row) => row.technique as Technique);
+  for (const fallback of DEFAULT_POPULAR_TECHNIQUES) {
+    if (techniques.length >= POPULAR_TECHNIQUES_LIMIT) break;
+    if (!techniques.includes(fallback)) techniques.push(fallback);
+  }
+  return { techniques };
 }

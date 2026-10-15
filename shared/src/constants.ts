@@ -73,6 +73,20 @@ export const TECHNIQUE_LABELS: Record<Technique, string> = {
   BARBE: "Barbe",
 };
 
+// --- Prestations populaires (issue #47) ---
+// Classement calculé côté serveur à partir des réservations confirmées ou
+// terminées. La liste par défaut complète le classement : la section de
+// l'accueil n'est jamais vide, même sans réservation.
+export const POPULAR_TECHNIQUES_LIMIT = 5;
+export const POPULAR_TECHNIQUES_BOOKING_STATUSES = ["CONFIRMED", "COMPLETED"] as const;
+export const DEFAULT_POPULAR_TECHNIQUES: readonly Technique[] = [
+  "COUPE",
+  "DEGRADE",
+  "BARBE",
+  "TRESSES",
+  "COLORATION",
+];
+
 // --- Lieux de prestation (lot 8, issue #19) ---
 // Modes cumulables au niveau du profil (pas de mode par prestation dans ce lot).
 // Codes stables en majuscules, libellés français partagés. `SALON` et

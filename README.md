@@ -224,6 +224,7 @@ npm start           # démarre le serveur compilé
 - `POST /api/barber/time-off` — création d'une indisponibilité (BARBER + CSRF)
 - `DELETE /api/barber/time-off/:timeOffId` — suppression d'une indisponibilité possédée (BARBER + CSRF, 404 sinon)
 - `GET  /api/barbers` — recherche publique (voir ci-dessous)
+- `GET  /api/barbers/popular-techniques` — prestations populaires (public) : techniques les plus réservées (réservations confirmées ou terminées), complétées par une liste par défaut ; codes seulement, sans compteur
 - `GET  /api/barbers/:barberId` — profil public + services actifs (public, `barberId` = `barber_profiles.id`)
 - `GET  /api/barbers/:barberId/slots` — créneaux disponibles (public, `barberId` = `barber_profiles.id`)
 - `GET  /api/barbers/:barberId/reviews` — avis publics paginés d'un professionnel (public)

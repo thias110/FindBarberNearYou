@@ -4,6 +4,7 @@ import { barberPhotos, type BarberPhotoRow } from "@findbarber/shared/schema";
 import type { PublicBarberPhoto } from "@findbarber/shared/types";
 import {
   barberSearchQuerySchema,
+  emptyQuerySchema,
   bookingSlotsQuerySchema,
   publicBarberPhotosParamsSchema,
   reviewListQuerySchema,
@@ -11,7 +12,11 @@ import {
 import { db } from "../../db/client.js";
 import { publicUploadPath } from "../../lib/storage.js";
 import { validationError } from "../../lib/validation.js";
-import { getPublicProfile, searchBarbers } from "./service.js";
+import {
+  getPopularTechniques,
+  getPublicProfile,
+  searchBarbers,
+} from "./service.js";
 import { getBookingSlots } from "../booking/service.js";
 import { listBarberReviews } from "../review/service.js";
 
@@ -34,6 +39,16 @@ barbersRouter.get("/", async (req, res) => {
     throw validationError(parsed.error);
   }
   res.json(await searchBarbers(parsed.data));
+});
+
+// Prestations populaires (issue #47) : agrégat public, sans paramètre.
+// Déclarée avant `/:barberId` pour ne pas être capturée par cette route.
+barbersRouter.get("/popular-techniques", async (req, res) => {
+  const parsed = emptyQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    throw validationError(parsed.error);
+  }
+  res.json(await getPopularTechniques());
 });
 
 // Créneaux publics d'un professionnel (date civile dans SON fuseau).

@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
+import {
+  DEFAULT_POPULAR_TECHNIQUES,
+  type Technique,
+} from "@findbarber/shared/constants";
 import { useAuth } from "../../app/auth-context";
 import { barbersApi } from "../../lib/apiClient";
 import { Alert } from "../../components/ui/Alert";
@@ -48,6 +52,24 @@ export function ClientHomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  // Liste par défaut affichée immédiatement, puis remplacée par le classement
+  // du serveur (issue #47). En cas d'erreur, la liste par défaut reste.
+  const [popularTechniques, setPopularTechniques] = useState<
+    readonly Technique[]
+  >(DEFAULT_POPULAR_TECHNIQUES);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    barbersApi
+      .popularTechniques(controller.signal)
+      .then((res) => {
+        if (res.techniques.length > 0) setPopularTechniques(res.techniques);
+      })
+      .catch(() => {
+        // Section secondaire : la liste par défaut suffit.
+      });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,7 +126,7 @@ export function ClientHomePage() {
 
         <HomeHero user={user} onSubmitCity={handleSearch} />
 
-        <CategoryChips />
+        <CategoryChips techniques={popularTechniques} />
 
         <section aria-labelledby="home-barbers-title">
           <div className="flex flex-wrap items-end justify-between gap-3">

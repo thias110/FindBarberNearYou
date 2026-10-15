@@ -113,6 +113,12 @@ export interface PublicBarberSearchItem {
   currency: Currency;
 }
 
+// Prestations populaires (issue #47) : uniquement l'ordre des techniques,
+// sans compteur ni donnée de réservation individuelle.
+export interface PopularTechniquesResponse {
+  techniques: Technique[];
+}
+
 export interface BarbersSearchResponse {
   barbers: PublicBarberSearchItem[];
   pagination: {
