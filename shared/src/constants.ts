@@ -395,3 +395,15 @@ export const ADMIN_LIMITS = {
   pageSizeDefault: 20,
   pageSizeMax: 100,
 } as const;
+
+// --- Checklist de finalisation du profil barber (issue #42) ---
+// Étapes dans l'ordre d'affichage. Chacune est calculée côté serveur pour le
+// seul propriétaire du profil ; sans profil, aucune étape n'est faite.
+export const PROFILE_COMPLETION_STEPS = [
+  "PROFILE",
+  "SERVICES",
+  "WORKING_HOURS",
+  "GALLERY",
+] as const;
+
+export type ProfileCompletionStep = (typeof PROFILE_COMPLETION_STEPS)[number];

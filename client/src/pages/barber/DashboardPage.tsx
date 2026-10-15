@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { OwnBarberProfile } from "@findbarber/shared/types";
+import type { OwnBarberProfile, ProfileCompletion } from "@findbarber/shared/types";
 import { useAuth } from "../../app/auth-context";
 import { ApiError, barberApi } from "../../lib/apiClient";
 import { Alert } from "../../components/ui/Alert";
@@ -9,6 +9,7 @@ import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { AvatarEditor } from "../../components/account/AvatarEditor";
 import { ProNavCard } from "../../components/barber/ProNavCard";
+import { ProfileChecklist } from "../../components/barber/ProfileChecklist";
 import { buttonClasses } from "../../components/ui/buttonStyles";
 import { CONTROL_CLASS } from "../../components/ui/control";
 
@@ -17,7 +18,7 @@ const PRO_NAV = [
   {
     to: "/pro/profile",
     title: "Mon profil",
-    description: "Nom, adresse, coordonnées, pays et devise",
+    description: "Nom, adresse, coordonnées et pays",
   },
   {
     to: "/pro/services",
@@ -67,6 +68,9 @@ export function BarberDashboardPage() {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Checklist de finalisation (issue #42) : facultative, un échec de
+  // chargement la masque simplement sans bloquer le tableau de bord.
+  const [completion, setCompletion] = useState<ProfileCompletion | null>(null);
   const loadProfile = useCallback(() => {
     setLoading(true);
     setLoadError(null);
@@ -96,6 +100,21 @@ export function BarberDashboardPage() {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  useEffect(() => {
+    let cancelled = false;
+    barberApi
+      .getProfileCompletion()
+      .then((res) => {
+        if (!cancelled) setCompletion(res.completion);
+      })
+      .catch(() => {
+        if (!cancelled) setCompletion(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Nettoyage du minuteur de confirmation de copie (évite un setState après
   // démontage).
@@ -153,6 +172,8 @@ export function BarberDashboardPage() {
             Se déconnecter
           </Button>
         </header>
+
+        {completion && <ProfileChecklist completion={completion} />}
 
         <Card className="p-6">
           <h2 className="mb-4 text-lg font-bold text-foreground">

@@ -27,6 +27,7 @@ import {
   createTimeOff,
   deleteTimeOff,
   getOwnProfile,
+  getProfileCompletion,
   getWorkingHours,
   listOwnServices,
   listTimeOff,
@@ -68,6 +69,16 @@ barberRouter.get("/profile", requireAuth, requireRole("BARBER"), async (req, res
   const profile = await getOwnProfile(req.user!.id);
   res.json({ profile });
 });
+
+// Checklist de finalisation du profil (issue #42) : propriétaire uniquement.
+barberRouter.get(
+  "/profile/completion",
+  requireAuth,
+  requireRole("BARBER"),
+  async (req, res) => {
+    res.json({ completion: await getProfileCompletion(req.user!.id) });
+  },
+);
 
 barberRouter.put(
   "/profile",

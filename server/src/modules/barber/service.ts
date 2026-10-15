@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
+  barberPhotos,
   barberProfiles,
   barberProfilePlaces,
   barberServiceAudiences,
@@ -23,10 +24,12 @@ import {
   LIMITS,
   POPULAR_TECHNIQUES_BOOKING_STATUSES,
   POPULAR_TECHNIQUES_LIMIT,
+  PROFILE_COMPLETION_STEPS,
 } from "@findbarber/shared/constants";
 import type {
   Audience,
   Currency,
+  ProfileCompletionStep,
   ServicePlace,
   Technique,
   Weekday,
@@ -39,6 +42,7 @@ import type {
   PublicBarberProfile,
   PublicBarberProfileWithServices,
   PublicBarberSearchItem,
+  ProfileCompletion,
   PublicBarberService,
   TimeOff,
   WorkingHoursInterval,
@@ -240,6 +244,54 @@ export async function getOwnProfile(userId: string): Promise<OwnBarberProfile> {
   const places = (await loadPlaces([profile.id])).get(profile.id) ?? [];
   const avatarPath = await loadOwnerAvatarPath(profile.userId);
   return toOwnProfile(profile, places, avatarPath);
+}
+
+// Checklist de finalisation (issue #42). Le profil est toujours celui de
+// l'utilisateur authentifié : aucun identifiant n'est accepté en entrée, on ne
+// peut donc jamais lire la progression d'un autre barber. Une seule requête,
+// sous-requêtes EXISTS ; sans profil, toutes les étapes restent à faire.
+export async function getProfileCompletion(
+  userId: string,
+): Promise<ProfileCompletion> {
+  // Référence qualifiée explicite : dans une requête à une seule table,
+  // Drizzle n'écrit pas le nom de table devant `${profileId}`, ce qui
+  // ferait pointer la sous-requête vers sa propre colonne `id`.
+  const profileId = sql.raw(`"barber_profiles"."id"`);
+  const [row] = await db
+    .select({
+      services: sql<boolean>`EXISTS (
+        SELECT 1 FROM ${barberServices} bs
+        WHERE bs.barber_profile_id = ${profileId} AND bs.is_active = true
+      )`,
+      workingHours: sql<boolean>`EXISTS (
+        SELECT 1 FROM ${barberWorkingHours} bwh
+        WHERE bwh.barber_profile_id = ${profileId}
+      )`,
+      gallery: sql<boolean>`EXISTS (
+        SELECT 1 FROM ${barberPhotos} bp
+        WHERE bp.barber_profile_id = ${profileId}
+      )`,
+    })
+    .from(barberProfiles)
+    .where(eq(barberProfiles.userId, userId))
+    .limit(1);
+
+  const done: Record<ProfileCompletionStep, boolean> = {
+    PROFILE: row !== undefined,
+    SERVICES: Boolean(row?.services),
+    WORKING_HOURS: Boolean(row?.workingHours),
+    GALLERY: Boolean(row?.gallery),
+  };
+  const steps = PROFILE_COMPLETION_STEPS.map((step) => ({ step, done: done[step] }));
+  const completedCount = steps.filter((item) => item.done).length;
+  const totalCount = steps.length;
+  return {
+    steps,
+    completedCount,
+    totalCount,
+    percent: Math.floor((completedCount * 100) / totalCount),
+    complete: completedCount === totalCount,
+  };
 }
 
 // Upsert atomique fondé sur la contrainte unique `userId`. Deux créations

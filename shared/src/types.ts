@@ -5,6 +5,7 @@ import type {
   AuditTargetType,
   BookingStatus,
   Currency,
+  ProfileCompletionStep,
   NotificationType,
   PaymentMode,
   ROLES,
@@ -64,6 +65,16 @@ export interface OwnBarberProfile extends PublicBarberProfile {
   timezone: string | null;
   travelRadiusKm: number | null;
   updatedAt: string;
+}
+
+// Progression de finalisation du profil (issue #42), vue du propriétaire.
+export interface ProfileCompletion {
+  steps: { step: ProfileCompletionStep; done: boolean }[];
+  completedCount: number;
+  totalCount: number;
+  // Pourcentage entier (0..100), arrondi à l'inférieur : 100 = profil complet.
+  percent: number;
+  complete: boolean;
 }
 
 export interface PublicBarberService {
