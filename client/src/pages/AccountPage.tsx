@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ROLE_LABELS } from "@findbarber/shared/constants";
 import { useAuth } from "../app/auth-context";
 import { userApi } from "../lib/apiClient";
+import { DataExport } from "../components/account/DataExport";
+import { buttonClasses } from "../components/ui/buttonStyles";
 import { authErrorMessage } from "../lib/authMessages";
 import { Alert } from "../components/ui/Alert";
 import { Button } from "../components/ui/Button";
@@ -17,37 +19,11 @@ export function AccountPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [exporting, setExporting] = useState(false);
-  const [exportError, setExportError] = useState<string | null>(null);
-
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  async function handleExport() {
-    setExporting(true);
-    setExportError(null);
-    try {
-      const data = await userApi.exportData();
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `findbarber-mes-donnees-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      setExportError(authErrorMessage(err));
-    } finally {
-      setExporting(false);
-    }
-  }
 
   function handleRequestDelete(event: FormEvent) {
     event.preventDefault();
@@ -84,29 +60,24 @@ export function AccountPage() {
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">Mon compte</h1>
-          <p className="mt-1 break-all text-sm text-foreground-muted">
-            {user.email} · {ROLE_LABELS[user.role]}
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">Mon compte</h1>
+            <p className="mt-1 break-all text-sm text-foreground-muted">
+              {user.email} · {ROLE_LABELS[user.role]}
+            </p>
+          </div>
+          <Link
+            to="/settings"
+            className={buttonClasses("secondary", "md", "shrink-0")}
+          >
+            Paramètres
+          </Link>
         </div>
 
         <Card className="space-y-3 p-6">
           <h2 className="text-lg font-bold text-foreground">Mes données</h2>
-          <p className="text-sm text-foreground-muted">
-            Téléchargez une copie de toutes les données liées à votre compte
-            (profil, rendez-vous, avis, notifications
-            {user.role === "BARBER" ? ", vitrine et activité" : ""}) au format
-            JSON.
-          </p>
-          {exportError && <Alert variant="danger">{exportError}</Alert>}
-          <Button
-            variant="secondary"
-            isLoading={exporting}
-            onClick={() => void handleExport()}
-          >
-            Télécharger mes données
-          </Button>
+          <DataExport role={user.role} />
         </Card>
 
         <Card className="space-y-3 border-danger/40 p-6">
