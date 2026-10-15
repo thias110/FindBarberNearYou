@@ -94,22 +94,28 @@ interface BarDatum {
 
 // Graphique en barres CSS/Tailwind, sans dépendance. La valeur numérique reste
 // toujours affichée en clair : c'est l'alternative textuelle accessible.
+// La barre vit dans sa propre piste (`flex-1 min-w-0`) : à 100 % elle remplit
+// la piste sans pousser la valeur hors de la carte (issue #46).
 function Bars({ data }: { data: BarDatum[] }) {
   const max = Math.max(1, ...data.map((item) => item.value));
   return (
     <dl className="space-y-2">
       {data.map((item) => (
-        <div key={item.key} className="flex items-center gap-3">
-          <dt className="w-32 shrink-0 text-sm text-foreground-muted">
+        <div
+          key={item.key}
+          className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-center gap-x-3 sm:grid-cols-[minmax(0,8rem)_minmax(0,1fr)]"
+        >
+          <dt className="break-words text-sm text-foreground-muted">
             {item.label}
           </dt>
-          <dd className="flex min-w-0 flex-1 items-center gap-2">
-            <div
-              aria-hidden="true"
-              className="h-4 shrink-0 rounded bg-accent"
-              style={{ width: `${(item.value / max) * 100}%` }}
-            />
-            <span className="shrink-0 text-sm text-foreground">
+          <dd className="flex min-w-0 items-center gap-2">
+            <div aria-hidden="true" className="min-w-0 flex-1">
+              <div
+                className="h-4 rounded bg-accent"
+                style={{ width: `${(item.value / max) * 100}%` }}
+              />
+            </div>
+            <span className="shrink-0 whitespace-nowrap text-sm tabular-nums text-foreground">
               {item.display}
             </span>
           </dd>
@@ -121,11 +127,13 @@ function Bars({ data }: { data: BarDatum[] }) {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
+    <Card className="min-w-0 p-4">
+      <p className="break-words text-xs font-medium uppercase tracking-wide text-foreground-muted">
         {label}
       </p>
-      <p className="mt-1 text-xl font-semibold text-foreground">{value}</p>
+      <p className="mt-1 break-words text-xl font-semibold tabular-nums text-foreground">
+        {value}
+      </p>
     </Card>
   );
 }
@@ -232,7 +240,7 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
               key={service.serviceName}
               className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-2 text-sm last:border-0"
             >
-              <span className="font-medium text-foreground">
+              <span className="min-w-0 break-words font-medium text-foreground">
                 {service.serviceName}
               </span>
               <span className="text-foreground-muted">
