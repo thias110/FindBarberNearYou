@@ -137,3 +137,33 @@ test("filtre distance avec une position partagée (issue #52)", async ({
   expect(page.url()).not.toMatch(/46\.2|6\.14|lat|lng/i);
   await expect(page.getByText(/résultat\(s\) à moins de 25 km/)).toBeVisible();
 });
+
+test("carte plein écran : liste repliable sur ordinateur (issue #49)", async ({
+  page,
+}) => {
+  await page.goto("/barbers");
+  const results = page.getByRole("region", { name: "Résultats de la recherche" });
+  await expect(results.getByText("Karim — Barber Plainpalais")).toBeVisible();
+  await page.getByRole("button", { name: "Masquer la liste" }).click();
+  await expect(results).toHaveCount(0);
+  await page.getByRole("button", { name: "Afficher la liste" }).click();
+  await expect(results.getByText("Karim — Barber Plainpalais")).toBeVisible();
+});
+
+test("carte plein écran : liste en panneau depuis le bas sur mobile, au clavier (issue #49)", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/barbers");
+  const toggle = page.getByRole("button", { name: /Afficher la liste/ });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByText("Karim — Barber Plainpalais")).toBeHidden();
+
+  // La liste est atteinte au clavier sans passer par la carte.
+  await tabTo(page, toggle);
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("button", { name: /Masquer la liste/ }),
+  ).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByText("Karim — Barber Plainpalais")).toBeVisible();
+});

@@ -24,7 +24,7 @@ export function BarbersMapCard({ barber, onClose }: BarbersMapCardProps) {
   return (
     <div
       data-testid="barbers-map-card"
-      className="pointer-events-auto absolute inset-x-3 bottom-3 z-10 rounded-2xl border border-border bg-surface/95 p-4 pr-12 shadow-card backdrop-blur"
+      className="pointer-events-auto absolute inset-x-3 bottom-24 z-10 rounded-2xl lg:bottom-4 lg:left-auto lg:right-4 lg:w-96 border border-border bg-surface/95 p-4 pr-12 shadow-card backdrop-blur"
     >
       <button
         type="button"

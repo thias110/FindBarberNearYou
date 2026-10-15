@@ -21,7 +21,21 @@ interface BarbersMapProps {
   onShowList: () => void;
   /** Thème résolu du ThemeProvider (style sombre optionnel). */
   theme: "light" | "dark";
+  /**
+   * Marges de cadrage en pixels (issue #49) : zones de la carte couvertes par
+   * les panneaux superposés, où les marqueurs ne doivent pas être placés.
+   */
+  padding?: MapPadding;
 }
+
+export interface MapPadding {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
+const DEFAULT_PADDING: MapPadding = { top: 56, bottom: 56, left: 56, right: 56 };
 
 maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
@@ -92,6 +106,7 @@ function fitToResults(
   map: maplibregl.Map,
   barbers: PublicBarberSearchItem[],
   reducedMotion: boolean,
+  padding: MapPadding,
 ) {
   if (barbers.length === 0) return;
   const duration = reducedMotion ? 0 : 600;
@@ -99,6 +114,7 @@ function fitToResults(
     map.easeTo({
       center: [barbers[0].longitude, barbers[0].latitude],
       zoom: 13,
+      padding: safePadding(map, padding),
       duration,
       essential: true,
     });
@@ -108,7 +124,21 @@ function fitToResults(
   for (const barber of barbers) {
     bounds.extend([barber.longitude, barber.latitude]);
   }
-  map.fitBounds(bounds, { padding: 56, maxZoom: 15, duration });
+  map.fitBounds(bounds, { padding: safePadding(map, padding), maxZoom: 15, duration });
+}
+
+// MapLibre refuse un cadrage si les marges dépassent la taille de la carte
+// (petit écran) : on les réduit proportionnellement.
+function safePadding(map: maplibregl.Map, padding: MapPadding): MapPadding {
+  const { clientWidth: width, clientHeight: height } = map.getContainer();
+  const scaleX = Math.min(1, (width * 0.8) / Math.max(1, padding.left + padding.right));
+  const scaleY = Math.min(1, (height * 0.8) / Math.max(1, padding.top + padding.bottom));
+  return {
+    top: padding.top * scaleY,
+    bottom: padding.bottom * scaleY,
+    left: padding.left * scaleX,
+    right: padding.right * scaleX,
+  };
 }
 
 export default function BarbersMap({
@@ -119,6 +149,7 @@ export default function BarbersMap({
   onRetry,
   onShowList,
   theme,
+  padding = DEFAULT_PADDING,
 }: BarbersMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -141,6 +172,8 @@ export default function BarbersMap({
   statusRef.current = status;
   const themeRef = useRef(theme);
   themeRef.current = theme;
+  const paddingRef = useRef(padding);
+  paddingRef.current = padding;
   const appliedStyleRef = useRef<string | null>(null);
 
   // --- Initialisation unique de la carte ---
@@ -300,7 +333,7 @@ export default function BarbersMap({
       const signature = resultsSignature(barbers);
       if (signature !== signatureRef.current) {
         signatureRef.current = signature;
-        fitToResults(map, barbers, reducedMotionRef.current);
+        fitToResults(map, barbers, reducedMotionRef.current, paddingRef.current);
       }
     }
   }, [barbers, status, selectedId]);
@@ -313,6 +346,7 @@ export default function BarbersMap({
     if (!barber) return;
     map.easeTo({
       center: [barber.longitude, barber.latitude],
+      padding: safePadding(map, paddingRef.current),
       duration: reducedMotionRef.current ? 0 : 500,
       essential: true,
     });

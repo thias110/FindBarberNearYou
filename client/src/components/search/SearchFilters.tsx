@@ -155,7 +155,7 @@ export function SearchFilters({
         <div
           id="search-filters"
           className={cn(
-            "grid-cols-1 gap-4 md:grid-cols-3",
+            "grid-cols-1 gap-4",
             advancedVisible || filtersOpen ? "grid" : "hidden",
           )}
         >
