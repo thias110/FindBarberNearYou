@@ -11,6 +11,13 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Titres Figtree (issue #27) : approche resserrée, comme une enseigne. Les
+     classes `tracking-*` restent prioritaires (couche utilities). */
+  h1,
+  h2 {
+    letter-spacing: -0.02em;
+  }
 }
 
 /* Transition douce lors du changement de thème, uniquement si l'utilisateur

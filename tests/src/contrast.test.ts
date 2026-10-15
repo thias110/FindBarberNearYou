@@ -63,9 +63,9 @@ describe.each(Object.entries(THEMES))("contrastes AA, thème %s", (_, t) => {
     ],
     ["bouton primaire", t["accent-foreground"], t.accent, 4.5],
     ["bouton primaire survolé", t["accent-foreground"], t["accent-hover"], 4.5],
-    ["texte cuivré / surface", t["accent-strong"], t.surface, 4.5],
-    ["texte cuivré / fond", t["accent-strong"], t.background, 4.5],
-    ["texte cuivré / accent-soft", t["accent-strong"], t["accent-soft"], 4.5],
+    ["texte d'accent / surface", t["accent-strong"], t.surface, 4.5],
+    ["texte d'accent / fond", t["accent-strong"], t.background, 4.5],
+    ["texte d'accent / accent-soft", t["accent-strong"], t["accent-soft"], 4.5],
     ["bordure de champ / surface", t["border-strong"], t.surface, 3],
     ["anneau de focus / fond", t.accent, t.background, 3],
     ...STATUSES.flatMap((s): [string, Rgb, Rgb, number][] => [

@@ -5,15 +5,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Palette de compatibilité alignée sur l'accent cuivre (issue #16).
+        // Palette de compatibilité alignée sur l'accent bleu (issue #27).
         brand: {
-          50: "#FBF4EC",
-          100: "#F5E4D4",
-          300: "#E2B48C",
-          500: "#C77C3E",
-          700: "#955421",
-          800: "#8A4E1F",
-          900: "#5C3417",
+          50: "#F2F6FE",
+          100: "#E8F0FE",
+          300: "#8DB4FF",
+          500: "#1463F3",
+          700: "#0F4FC4",
+          800: "#0C3F9C",
+          900: "#0E1B3D",
         },
         // Tokens sémantiques (pilotés par client/src/styles/tokens.css).
         // Format `rgb(var(--fb-x) / <alpha-value>)` : canaux RGB séparés par
@@ -31,7 +31,7 @@ export default {
           hover: "rgb(var(--fb-accent-hover) / <alpha-value>)",
           soft: "rgb(var(--fb-accent-soft) / <alpha-value>)",
           foreground: "rgb(var(--fb-accent-foreground) / <alpha-value>)",
-          // Texte cuivré lisible (liens, mentions) ; `accent` reste pour les fonds.
+          // Texte d'accent lisible (liens, mentions) ; `accent` reste pour les fonds.
           strong: "rgb(var(--fb-accent-strong) / <alpha-value>)",
         },
         gold: {

@@ -8,13 +8,13 @@ import type { MailMessage } from "./mailer.js";
 // échappée. Couleurs alignées sur le design system (contrastes AA).
 
 const COLORS = {
-  background: "#F7F6F2",
+  background: "#F2F5FA",
   surface: "#FFFFFF",
-  text: "#1C1B1A",
-  muted: "#6F6A63",
-  accent: "#B86B2B",
-  accentText: "#121212",
-  border: "#DEDAD2",
+  text: "#0E1B3D",
+  muted: "#55617D",
+  accent: "#1463F3",
+  accentText: "#FFFFFF",
+  border: "#E1E6EF",
 };
 
 export function escapeHtml(value: string): string {
