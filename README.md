@@ -69,6 +69,23 @@ script de 8 minutes et `docs/npm-audit-triage.md` pour le tri des alertes npm.
   tentatives espacées (6 au maximum). Une panne SMTP ne bloque jamais une
   réservation. Les emails envoyés sont purgés après 7 jours.
 
+## Paiement en ligne (issue #10 : Stripe Connect)
+
+- **Désactivé par défaut** : sans `STRIPE_SECRET_KEY` et `STRIPE_WEBHOOK_SECRET`,
+  tout se paie sur place. Configuration détaillée dans `.env.example`.
+- **Barber** : page « Paiements en ligne » (`/pro/payments`).
+  Il active son compte Stripe Express (identité, IBAN — formulaire Stripe),
+  puis choisit : paiement sur place, acompte (10 à 90 %) ou prix complet.
+  L'argent va directement sur son compte, moins `STRIPE_PLATFORM_FEE_PERCENT`.
+- **Client** : si un paiement est exigé, la réservation ouvre Stripe Checkout
+  (carte ou Twint). La demande est tenue 35 min, invisible du barber tant
+  qu'elle n'est pas payée ; sans paiement, elle expire et libère le créneau.
+- **Webhook** (`POST /api/payments/stripe/webhook`, signature vérifiée) :
+  paiement reçu → le barber est prévenu ; activation du compte barber.
+- **Remboursement automatique** (commission et virement annulés) : refus,
+  expiration, annulation par le barber ou l'admin, ou par le client dans les
+  délais. Traité par un répartiteur avec nouvelles tentatives.
+
 ## Données personnelles (issue #14 : nLPD / RGPD)
 
 - **Export** : page « Mon compte » ou `GET /api/users/me/export` (JSON :

@@ -46,6 +46,7 @@ import type {
   AdminUserListQuery,
 } from "@findbarber/shared/validation";
 import { recordAudit, type AuditActor } from "../../lib/audit.js";
+import { paymentStatusOnCancel } from "../payments/rules.js";
 import { AppError } from "../../lib/errors.js";
 import { effectiveBookingStatus } from "@findbarber/shared/booking";
 import { notifyBookingEvent } from "../notification/service.js";
@@ -299,6 +300,9 @@ export async function suspendUser(
             status: "CANCELLED",
             cancelledBy: CANCELLED_BY_ADMIN,
             cancelledAt: now,
+            // Remboursement automatique des paiements reçus (issue #10).
+            paymentStatus: paymentStatusOnCancel,
+            paymentExpiresAt: null,
             updatedAt: now,
           })
           .where(

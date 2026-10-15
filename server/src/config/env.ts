@@ -120,6 +120,18 @@ const envSchema = z.object({
     .positive()
     .default(600_000),
   PASSWORD_RESET_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  // Paiement en ligne (issue #10, Stripe Connect). Les deux clés absentes =
+  // paiement en ligne désactivé (toutes les réservations se paient sur place).
+  STRIPE_SECRET_KEY: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().optional(),
+  ),
+  STRIPE_WEBHOOK_SECRET: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().optional(),
+  ),
+  // Commission de la plateforme, en % du montant payé en ligne (0 à 50).
+  STRIPE_PLATFORM_FEE_PERCENT: z.coerce.number().min(0).max(50).default(0),
   // Chiffrement au repos des champs sensibles (issue #14), AES-256-GCM.
   // 32 octets encodés en base64. Obligatoire en production ; en dev/test, une
   // clé de développement fixe est utilisée (jamais pour de vraies données).

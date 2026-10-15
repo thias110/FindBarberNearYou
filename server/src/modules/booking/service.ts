@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, gt, gte, inArray, lt, lte, or } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNull, lt, lte, or } from "drizzle-orm";
+import type { PgUpdateSetSource } from "drizzle-orm/pg-core";
 import { db } from "../../db/client.js";
 import {
   barberProfiles,
@@ -61,6 +62,8 @@ import {
 import { recordAudit } from "../../lib/audit.js";
 import { decryptField, encryptField } from "../../lib/fieldCrypto.js";
 import { notifyBookingEvent } from "../notification/service.js";
+import { openCheckout, PAYMENT_HOLD_MS, paymentRequirementFor } from "../payments/service.js";
+import { paymentStatusOnCancel, visibleToBarber } from "../payments/rules.js";
 import { expireStalePendingBookings } from "./expiry.js";
 
 const MS_PER_HOUR = 3_600_000;
@@ -92,7 +95,18 @@ function toBooking(
     declineReason: row.declineReason,
     expiresAt:
       row.status === "PENDING"
-        ? pendingBookingExpiresAt(row.createdAt, row.startAt).toISOString()
+        ? pendingBookingExpiresAt(
+            row.createdAt,
+            row.startAt,
+            LIMITS.bookingPendingTtlHours,
+            row.paymentExpiresAt,
+          ).toISOString()
+        : null,
+    paymentStatus: row.paymentStatus,
+    amountDueMinor: row.amountDueMinor,
+    checkoutUrl:
+      row.paymentStatus === "REQUIRES_PAYMENT" && row.status === "PENDING"
+        ? row.stripeCheckoutUrl
         : null,
     createdAt: row.createdAt.toISOString(),
   };
@@ -200,7 +214,13 @@ async function loadBusy(
         inArray(bookings.status, [...ACTIVE_BOOKING_STATUSES]),
         or(
           eq(bookings.status, "CONFIRMED"),
-          and(gt(bookings.createdAt, ttlStart), gt(bookings.startAt, now)),
+          and(
+            gt(bookings.createdAt, ttlStart),
+            gt(bookings.startAt, now),
+            // Demande non payée (issue #10) : bloque seulement jusqu'à
+            // l'échéance du paiement.
+            or(isNull(bookings.paymentExpiresAt), gt(bookings.paymentExpiresAt, now)),
+          ),
         ),
         lt(bookings.startAt, window.end),
         gt(bookings.endAt, window.start),
@@ -348,9 +368,10 @@ async function assertPlaceOffered(
 export async function createBooking(
   clientUserId: string,
   input: BookingCreateInput,
-): Promise<Booking> {
+): Promise<{ booking: Booking; checkoutUrl: string | null }> {
+  let booking: Booking;
   try {
-    return await createBookingInTransaction(clientUserId, input);
+    booking = await createBookingInTransaction(clientUserId, input);
   } catch (err) {
     // Filet en base : la contrainte d'exclusion `bookings_no_overlap` a refusé
     // un chevauchement que le verrou applicatif aurait dû empêcher.
@@ -363,6 +384,14 @@ export async function createBooking(
     }
     throw err;
   }
+
+  // Paiement en ligne exigé (issue #10) : session Checkout ouverte APRÈS
+  // commit (jamais d'appel réseau sous le verrou du profil).
+  if (booking.paymentStatus !== "REQUIRES_PAYMENT") {
+    return { booking, checkoutUrl: null };
+  }
+  const checkoutUrl = await openCheckout(booking.id);
+  return { booking: { ...booking, checkoutUrl }, checkoutUrl };
 }
 
 async function createBookingInTransaction(
@@ -465,7 +494,10 @@ async function createBookingInTransaction(
       );
     }
 
-    // 7. Insertion avec snapshots figés.
+    // 7. Paiement en ligne exigé par le barber (issue #10).
+    const payment = paymentRequirementFor(profile, service.priceMinor);
+
+    // 8. Insertion avec snapshots figés.
     const [row] = await runner
       .insert(bookings)
       .values({
@@ -489,6 +521,14 @@ async function createBookingInTransaction(
             : null,
         clientLatitude: clientLocation?.latitude ?? null,
         clientLongitude: clientLocation?.longitude ?? null,
+        ...(payment
+          ? {
+              paymentStatus: "REQUIRES_PAYMENT" as const,
+              amountDueMinor: payment.amountDueMinor,
+              platformFeeMinor: payment.platformFeeMinor,
+              paymentExpiresAt: new Date(now.getTime() + PAYMENT_HOLD_MS),
+            }
+          : {}),
         // Horloge applicative (pas `now()` SQL) : l'échéance des 24 h se
         // calcule avec la même horloge que les contrôles d'expiration.
         createdAt: now,
@@ -496,13 +536,17 @@ async function createBookingInTransaction(
       })
       .returning();
 
-    // Notification BARBER : nouvelle demande de réservation (même transaction).
-    await notifyBookingEvent(runner, {
-      recipientUserId: profile.userId,
-      actorUserId: clientUserId,
-      bookingId: row.id,
-      type: "BOOKING_REQUESTED",
-    });
+    // Notification BARBER : nouvelle demande de réservation (même
+    // transaction). Si un paiement est exigé, le barber n'est prévenu qu'une
+    // fois le paiement reçu (webhook Stripe).
+    if (!payment) {
+      await notifyBookingEvent(runner, {
+        recipientUserId: profile.userId,
+        actorUserId: clientUserId,
+        bookingId: row.id,
+        type: "BOOKING_REQUESTED",
+      });
+    }
 
     const [client] = await runner
       .select({ name: users.name })
@@ -546,7 +590,7 @@ export async function listBookings(user: AuthUser): Promise<Booking[]> {
       .from(bookings)
       .leftJoin(users, eq(users.id, bookings.clientUserId))
       .leftJoin(reviews, eq(reviews.bookingId, bookings.id))
-      .where(eq(bookings.barberProfileId, profileId))
+      .where(and(eq(bookings.barberProfileId, profileId), visibleToBarber))
       .orderBy(asc(bookings.startAt));
     return rows.map((row) =>
       toBooking(row.booking, row.clientName, row.reviewId !== null),
@@ -591,6 +635,13 @@ export async function getBookingDetails(
   const barberProfileId =
     user.role === "BARBER" ? await findOwnBarberProfileId(user.id) : null;
   assertBookingReadAccess(user, row, barberProfileId);
+  // Demande non payée ou abandonnée (issue #10) : invisible du barber.
+  if (
+    user.role === "BARBER" &&
+    (row.paymentStatus === "REQUIRES_PAYMENT" || row.paymentStatus === "CANCELLED")
+  ) {
+    throw bookingNotFound();
+  }
 
   const [client] = await db
     .select({ name: users.name })
@@ -680,13 +731,15 @@ function notificationsFor(
 function transitionValues(
   request: TransitionRequest,
   now: Date,
-): Partial<BookingRow> & { status: BookingStatus } {
+): PgUpdateSetSource<typeof bookings> & { status: BookingStatus } {
   switch (request.to) {
     case "CANCELLED":
       return {
         status: "CANCELLED",
         cancelledBy: request.user.role,
         cancelledAt: now,
+        paymentStatus: paymentStatusOnCancel,
+        paymentExpiresAt: null,
         updatedAt: now,
       };
     case "DECLINED":
@@ -694,6 +747,8 @@ function transitionValues(
         status: "DECLINED",
         declinedAt: now,
         declineReason: request.declineReason ?? null,
+        paymentStatus: paymentStatusOnCancel,
+        paymentExpiresAt: null,
         updatedAt: now,
       };
     default:
@@ -723,6 +778,11 @@ async function transitionBooking(request: TransitionRequest): Promise<Booking> {
     // 2. Appartenance : 404 unique pour inexistante ou non possédée
     // (politique centralisée dans lib/authorization).
     assertBookingTransitionAccess(user, existing, ownProfileId);
+    // Demande pas encore payée (issue #10) : invisible du barber.
+    const awaitingPayment = existing.paymentStatus === "REQUIRES_PAYMENT";
+    if (awaitingPayment && user.role === "BARBER") {
+      throw bookingNotFound();
+    }
 
     // 3. Demande échue : plus aucune action utilisateur possible.
     const now = new Date();
@@ -787,7 +847,9 @@ async function transitionBooking(request: TransitionRequest): Promise<Booking> {
       .from(barberProfiles)
       .where(eq(barberProfiles.id, row.barberProfileId))
       .limit(1);
-    for (const notification of notificationsFor(
+    // Une demande jamais payée n'a jamais été montrée au barber : aucune
+    // notification de son annulation.
+    for (const notification of awaitingPayment ? [] : notificationsFor(
       to,
       user.role,
       row.clientUserId,

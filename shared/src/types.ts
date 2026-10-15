@@ -1,10 +1,12 @@
 import type {
   Audience,
   AuditAction,
+  BookingPaymentStatus,
   AuditTargetType,
   BookingStatus,
   Currency,
   NotificationType,
+  PaymentMode,
   ROLES,
   ServicePlace,
   Technique,
@@ -47,6 +49,8 @@ export interface PublicBarberProfile {
   places: ServicePlace[];
   // URL publique relative de l'avatar du professionnel (`/uploads/avatars/...`).
   avatarPath: string | null;
+  // Paiement en ligne exigé à la réservation (issue #10).
+  onlinePayment: { mode: PaymentMode; depositPercent: number };
   createdAt: string;
 }
 
@@ -168,7 +172,31 @@ export interface Booking {
   declineReason: string | null;
   // Échéance d'une demande PENDING (24 h ou début du rendez-vous) ; null sinon.
   expiresAt: string | null;
+  // Paiement en ligne (issue #10) : montant payé ou à payer en ligne (null si
+  // paiement sur place) et lien Checkout tant que le paiement est attendu.
+  paymentStatus: BookingPaymentStatus;
+  amountDueMinor: number | null;
+  checkoutUrl: string | null;
   createdAt: string;
+}
+
+// Réponse de création : `checkoutUrl` présent si le client doit payer en ligne.
+export interface BookingCreateResponse {
+  booking: Booking;
+  checkoutUrl: string | null;
+}
+
+// Paiement en ligne côté barber (issue #10).
+export interface BarberPaymentSettings {
+  /** Stripe configuré sur la plateforme. */
+  available: boolean;
+  /** Compte Stripe Connect créé. */
+  connected: boolean;
+  /** Stripe autorise les encaissements (inscription terminée). */
+  chargesEnabled: boolean;
+  paymentMode: PaymentMode;
+  depositPercent: number;
+  platformFeePercent: number;
 }
 
 export interface BookingsResponse {

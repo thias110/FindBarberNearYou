@@ -3,6 +3,7 @@ import { db } from "../../db/client.js";
 import { barberProfiles, bookings } from "@findbarber/shared/schema";
 import { LIMITS } from "@findbarber/shared/constants";
 import { recordAudit } from "../../lib/audit.js";
+import { paymentStatusOnCancel } from "../payments/rules.js";
 import { notifyBookingEvent } from "../notification/service.js";
 
 // --- Expiration des demandes PENDING (lot 4 rouvert) ---
@@ -22,7 +23,12 @@ function stalePendingCondition(now: Date) {
   );
   return and(
     eq(bookings.status, "PENDING"),
-    or(lte(bookings.createdAt, ttlStart), lte(bookings.startAt, now)),
+    or(
+      lte(bookings.createdAt, ttlStart),
+      lte(bookings.startAt, now),
+      // Demande non payée dans le délai (issue #10).
+      lte(bookings.paymentExpiresAt, now),
+    ),
   );
 }
 
@@ -42,10 +48,17 @@ export async function expireStalePendingBookings(
 
   const expired = await runner
     .update(bookings)
-    .set({ status: "EXPIRED", updatedAt: now })
+    .set({
+      status: "EXPIRED",
+      // Payée → remboursement ; jamais payée → abandonnée (issue #10).
+      paymentStatus: paymentStatusOnCancel,
+      paymentExpiresAt: null,
+      updatedAt: now,
+    })
     .where(condition)
     .returning({
       id: bookings.id,
+      paymentStatus: bookings.paymentStatus,
       clientUserId: bookings.clientUserId,
       barberUserId: sql<string>`(select ${barberProfiles.userId} from ${barberProfiles} where ${barberProfiles.id} = ${bookings.barberProfileId})`,
     });
@@ -63,6 +76,8 @@ export async function expireStalePendingBookings(
   );
 
   for (const row of expired) {
+    // Demande jamais payée : jamais montrée au barber, pas de notification.
+    if (row.paymentStatus === "CANCELLED") continue;
     for (const recipientUserId of [row.clientUserId, row.barberUserId]) {
       if (!recipientUserId) continue;
       await notifyBookingEvent(runner, {

@@ -37,6 +37,10 @@ services:
       PORT: 4000
       TRUST_PROXY_HOPS: 1
       MAPTILER_GEOCODING_API_KEY: ${MAPTILER_GEOCODING_API_KEY:-}
+      # Paiement en ligne (vide = désactivé, paiement sur place).
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PLATFORM_FEE_PERCENT: ${STRIPE_PLATFORM_FEE_PERCENT:-0}
       # Chiffrement des champs sensibles (vide = clé de dev, démo uniquement).
       FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-}
       # Emails : `log` par défaut (affichés dans `docker compose logs app`) ;

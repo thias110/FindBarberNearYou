@@ -18,11 +18,13 @@ import {
   AUDIENCES,
   AUDIT_ACTIONS,
   AUDIT_TARGET_TYPES,
+  BOOKING_PAYMENT_STATUSES,
   BOOKING_STATUSES,
   EMAIL_KINDS,
   EMAIL_OUTBOX_STATUSES,
   LIMITS,
   NOTIFICATION_TYPES,
+  PAYMENT_MODES,
   ROLES,
   SERVICE_PLACES,
   SUPPORTED_CURRENCIES,
@@ -41,6 +43,10 @@ export const bookingStatusEnum = pgEnum("booking_status", [
 ]);
 export const notificationTypeEnum = pgEnum("notification_type", [
   ...NOTIFICATION_TYPES,
+]);
+export const paymentModeEnum = pgEnum("payment_mode", [...PAYMENT_MODES]);
+export const bookingPaymentStatusEnum = pgEnum("booking_payment_status", [
+  ...BOOKING_PAYMENT_STATUSES,
 ]);
 export const emailKindEnum = pgEnum("email_kind", [...EMAIL_KINDS]);
 export const emailOutboxStatusEnum = pgEnum("email_outbox_status", [
@@ -167,6 +173,14 @@ export const barberProfiles = pgTable(
     // applicative refuse offsets, abréviations et Etc/… ; le CHECK ci-dessous
     // borne la longueur en dernier ressort.
     timezone: text("timezone"),
+    // Paiement en ligne (issue #10) : compte Stripe Connect (Express) du
+    // barber, activation des paiements (webhook account.updated) et politique.
+    stripeAccountId: text("stripe_account_id"),
+    stripeChargesEnabled: boolean("stripe_charges_enabled").notNull().default(false),
+    paymentMode: paymentModeEnum("payment_mode").notNull().default("NONE"),
+    depositPercent: integer("deposit_percent")
+      .notNull()
+      .default(LIMITS.depositPercentDefault),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -176,6 +190,13 @@ export const barberProfiles = pgTable(
   },
   (table) => [
     uniqueIndex("barber_profiles_user_id_unique").on(table.userId),
+    uniqueIndex("barber_profiles_stripe_account_unique").on(table.stripeAccountId),
+    check(
+      "barber_profiles_deposit_percent_range",
+      sql`${table.depositPercent} BETWEEN ${sql.raw(
+        String(LIMITS.depositPercentMin),
+      )} AND ${sql.raw(String(LIMITS.depositPercentMax))}`,
+    ),
     check(
       "barber_profiles_latitude_range",
       sql`${table.latitude} >= -90 AND ${table.latitude} <= 90`,
@@ -454,6 +475,20 @@ export const bookings = pgTable(
     // Rappel email (issue #9) : posé dans la transaction qui met le rappel en
     // file, ce qui garantit un seul rappel par réservation.
     reminderSentAt: timestamp("reminder_sent_at", { withTimezone: true }),
+    // Paiement en ligne (issue #10). `payment_expires_at` n'est renseigné que
+    // tant que le paiement est attendu : passé ce délai, la demande expire.
+    paymentStatus: bookingPaymentStatusEnum("payment_status")
+      .notNull()
+      .default("NOT_REQUIRED"),
+    amountDueMinor: integer("amount_due_minor"),
+    platformFeeMinor: integer("platform_fee_minor"),
+    paymentExpiresAt: timestamp("payment_expires_at", { withTimezone: true }),
+    stripeCheckoutSessionId: text("stripe_checkout_session_id"),
+    stripeCheckoutUrl: text("stripe_checkout_url"),
+    stripePaymentIntentId: text("stripe_payment_intent_id"),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    refundedAt: timestamp("refunded_at", { withTimezone: true }),
+    paymentError: text("payment_error"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -462,6 +497,10 @@ export const bookings = pgTable(
       .defaultNow(),
   },
   (table) => [
+    uniqueIndex("bookings_stripe_checkout_session_unique").on(
+      table.stripeCheckoutSessionId,
+    ),
+    index("bookings_payment_status_idx").on(table.paymentStatus),
     index("bookings_barber_start_idx").on(
       table.barberProfileId,
       table.startAt,

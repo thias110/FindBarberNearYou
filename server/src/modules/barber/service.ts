@@ -42,6 +42,7 @@ import type {
   TimeOffCreateInput,
   WorkingHoursInput,
 } from "@findbarber/shared/validation";
+import { paymentsEnabled } from "../../lib/payments.js";
 import { AppError, isUniqueViolation } from "../../lib/errors.js";
 import { escapeLikePattern } from "../../lib/like.js";
 import { approximateCoordinates } from "../../lib/location.js";
@@ -67,8 +68,21 @@ function toOwnProfile(
     travelRadiusKm: profile.travelRadiusKm,
     places,
     avatarPath: avatarPath ? publicUploadPath(avatarPath) : null,
+    onlinePayment: effectiveOnlinePayment(profile),
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
+  };
+}
+
+// Paiement en ligne effectif (issue #10) : annoncé au client avant qu'il
+// réserve ; « NONE » tant que Stripe n'est pas prêt pour ce barber.
+function effectiveOnlinePayment(profile: BarberProfile) {
+  return {
+    mode:
+      paymentsEnabled() && profile.stripeAccountId && profile.stripeChargesEnabled
+        ? profile.paymentMode
+        : ("NONE" as const),
+    depositPercent: profile.depositPercent,
   };
 }
 
@@ -94,6 +108,7 @@ function toPublicProfile(
     currency: profile.currency,
     places,
     avatarPath: avatarPath ? publicUploadPath(avatarPath) : null,
+    onlinePayment: effectiveOnlinePayment(profile),
     createdAt: profile.createdAt.toISOString(),
   };
 }

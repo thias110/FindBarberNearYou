@@ -12,7 +12,12 @@
 // - les réservations actives sont comparées en intervalles semi-ouverts ;
 // - la conversion murale→UTC gère le DST ; une heure murale inexistante est ignorée.
 
-import { LIMITS, type BookingStatus, type Weekday } from "./constants";
+import {
+  LIMITS,
+  type BookingStatus,
+  type PaymentMode,
+  type Weekday,
+} from "./constants";
 import { isValidCalendarDate, weekdayFromCalendarDate } from "./dates";
 import { utcToZonedParts, zonedTimeToUtc } from "./timezones";
 
@@ -201,33 +206,62 @@ const MS_PER_HOUR_BOOKING = 3_600_000;
 /**
  * Échéance d'une demande PENDING : 24 h après sa création, ou le début du
  * rendez-vous s'il arrive avant (une demande ne peut plus être acceptée une
- * fois le créneau commencé).
+ * fois le créneau commencé). Une demande en attente de paiement (issue #10)
+ * expire au plus tard à `paymentExpiresAt`.
  */
 export function pendingBookingExpiresAt(
   createdAt: Date | string,
   startAt: Date | string,
   ttlHours: number = LIMITS.bookingPendingTtlHours,
+  paymentExpiresAt: Date | string | null = null,
 ): Date {
   const ttlEnd = new Date(createdAt).getTime() + ttlHours * MS_PER_HOUR_BOOKING;
-  return new Date(Math.min(ttlEnd, new Date(startAt).getTime()));
+  const candidates = [ttlEnd, new Date(startAt).getTime()];
+  if (paymentExpiresAt) candidates.push(new Date(paymentExpiresAt).getTime());
+  return new Date(Math.min(...candidates));
+}
+
+interface PendingLike {
+  status: BookingStatus;
+  createdAt: Date | string;
+  startAt: Date | string;
+  paymentExpiresAt?: Date | string | null;
 }
 
 /** Une demande PENDING a-t-elle atteint son échéance à l'instant `now` ? */
-export function isPendingBookingExpired(
-  booking: { status: BookingStatus; createdAt: Date | string; startAt: Date | string },
-  now: Date,
-): boolean {
+export function isPendingBookingExpired(booking: PendingLike, now: Date): boolean {
   return (
     booking.status === "PENDING" &&
-    pendingBookingExpiresAt(booking.createdAt, booking.startAt).getTime() <=
-      now.getTime()
+    pendingBookingExpiresAt(
+      booking.createdAt,
+      booking.startAt,
+      LIMITS.bookingPendingTtlHours,
+      booking.paymentExpiresAt ?? null,
+    ).getTime() <= now.getTime()
   );
 }
 
 /** Statut à présenter : une demande échue est montrée EXPIRED avant le balayage. */
 export function effectiveBookingStatus(
-  booking: { status: BookingStatus; createdAt: Date | string; startAt: Date | string },
+  booking: PendingLike,
   now: Date,
 ): BookingStatus {
   return isPendingBookingExpired(booking, now) ? "EXPIRED" : booking.status;
+}
+
+// --- Paiement en ligne (issue #10) ---
+
+/** Montant à payer en ligne selon la politique du barber (0 = sur place). */
+export function amountDueOnline(
+  mode: PaymentMode,
+  depositPercent: number,
+  priceMinor: number,
+): number {
+  // Prestation sous le minimum Stripe : payée sur place.
+  if (mode === "NONE" || priceMinor < LIMITS.paymentMinAmountMinor) return 0;
+  const due =
+    mode === "FULL" ? priceMinor : Math.round((priceMinor * depositPercent) / 100);
+  // Montant minimal accepté par Stripe : un acompte trop faible est arrondi
+  // au minimum, sans jamais dépasser le prix.
+  return Math.min(priceMinor, Math.max(due, LIMITS.paymentMinAmountMinor));
 }

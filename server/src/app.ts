@@ -14,6 +14,11 @@ import { resolveUploadDir } from "./lib/storage.js";
 import { configureTrustProxy, securityHeaders } from "./middleware/security.js";
 import { createRateLimiter, MUTATING_METHODS } from "./middleware/rateLimit.js";
 import { kickEmailDispatch } from "./modules/email/outbox.js";
+import {
+  barberPaymentsRouter,
+  stripeWebhookRouter,
+} from "./modules/payments/routes.js";
+import { kickRefunds } from "./modules/payments/service.js";
 
 export interface RateLimitOverride {
   windowMs: number;
@@ -39,6 +44,9 @@ export function createApp(options: AppOptions = {}): express.Express {
   configureTrustProxy(app, env.TRUST_PROXY_HOPS);
 
   app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+  // Webhook Stripe (issue #10) : corps brut requis pour vérifier la signature,
+  // donc monté avant le parseur JSON.
+  app.use("/api/payments/stripe/webhook", stripeWebhookRouter);
   app.use(express.json());
   app.use(cookieParser());
 
@@ -124,7 +132,10 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api", (req, res, next) => {
     if (MUTATING_METHODS.has(req.method)) {
       res.on("finish", () => {
-        if (res.statusCode < 400) kickEmailDispatch();
+        if (res.statusCode < 400) {
+          kickEmailDispatch();
+          kickRefunds();
+        }
       });
     }
     next();
@@ -153,6 +164,7 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api/auth", authRouter);
   app.use("/api/admin", adminRouter);
   app.use("/api/users", userRouter);
+  app.use("/api/barber/payments", barberPaymentsRouter);
   app.use("/api/barber", barberRouter);
   app.use("/api/barbers", barbersRouter);
   app.use("/api/bookings", bookingRouter);

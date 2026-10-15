@@ -156,6 +156,42 @@ export const EMAIL_OUTBOX_STATUSES = [
 ] as const;
 export type EmailOutboxStatus = (typeof EMAIL_OUTBOX_STATUSES)[number];
 
+// --- Paiement en ligne (issue #10, Stripe Connect) ---
+// Politique choisie par chaque barber : rien en ligne, acompte (pourcentage)
+// ou prix complet. Exige un compte Stripe connecté et activé.
+export const PAYMENT_MODES = ["NONE", "DEPOSIT", "FULL"] as const;
+export type PaymentMode = (typeof PAYMENT_MODES)[number];
+
+export const PAYMENT_MODE_LABELS: Record<PaymentMode, string> = {
+  NONE: "Paiement sur place uniquement",
+  DEPOSIT: "Acompte en ligne",
+  FULL: "Prix complet en ligne",
+};
+
+// État du paiement d'une réservation.
+// NOT_REQUIRED : aucun paiement en ligne ; REQUIRES_PAYMENT : demande en
+// attente de paiement (créneau bloqué brièvement, invisible du barber) ;
+// PAID ; REFUND_PENDING / REFUNDED : remboursement ; CANCELLED : paiement
+// jamais reçu (demande abandonnée).
+export const BOOKING_PAYMENT_STATUSES = [
+  "NOT_REQUIRED",
+  "REQUIRES_PAYMENT",
+  "PAID",
+  "REFUND_PENDING",
+  "REFUNDED",
+  "CANCELLED",
+] as const;
+export type BookingPaymentStatus = (typeof BOOKING_PAYMENT_STATUSES)[number];
+
+export const BOOKING_PAYMENT_STATUS_LABELS: Record<BookingPaymentStatus, string> = {
+  NOT_REQUIRED: "Paiement sur place",
+  REQUIRES_PAYMENT: "Paiement en attente",
+  PAID: "Payé en ligne",
+  REFUND_PENDING: "Remboursement en cours",
+  REFUNDED: "Remboursé",
+  CANCELLED: "Paiement non reçu",
+};
+
 // --- Journal d'audit (issue #13) ---
 // Actions sensibles tracées dans `audit_logs`, dans la même transaction que la
 // mutation. Un acteur nul signifie une action système (ex. expiration).
@@ -277,6 +313,14 @@ export const LIMITS = {
   // Minimisation (issue #14) : l'adresse et la position d'un client (AT_CLIENT)
   // sont effacées ce nombre de jours après la fin du rendez-vous.
   clientAddressRetentionDays: 30,
+  // Paiement (issue #10) : acompte en pourcentage du prix, délai pour payer
+  // une demande (le créneau reste bloqué pendant ce délai), montant minimal
+  // accepté par Stripe (en unités mineures).
+  depositPercentMin: 10,
+  depositPercentMax: 90,
+  depositPercentDefault: 20,
+  paymentHoldMinutes: 35,
+  paymentMinAmountMinor: 100,
   // Adresse client privée (lot 9 passe A, issue #19) : chaîne libre géocodée
   // côté serveur pour `AT_CLIENT`, jamais exposée publiquement.
   clientAddress: 200,

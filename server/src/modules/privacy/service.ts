@@ -27,6 +27,7 @@ import { recordAudit, type AuditActor } from "../../lib/audit.js";
 import { decryptField } from "../../lib/fieldCrypto.js";
 import { publicUploadPath, remove } from "../../lib/storage.js";
 import { notifyBookingEvent } from "../notification/service.js";
+import { paymentStatusOnCancel } from "../payments/rules.js";
 
 // --- Données personnelles (issue #14 : nLPD / RGPD) ---
 // - Export JSON (droit d'accès et à la portabilité) : jamais de hash, de jeton
@@ -216,6 +217,8 @@ async function cancelUpcoming(
       status: "CANCELLED",
       cancelledBy: scope,
       cancelledAt: now,
+      paymentStatus: paymentStatusOnCancel,
+      paymentExpiresAt: null,
       updatedAt: now,
     })
     .where(

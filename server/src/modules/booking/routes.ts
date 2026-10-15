@@ -31,8 +31,8 @@ bookingRouter.post(
     if (!parsed.success) {
       throw validationError(parsed.error);
     }
-    const booking = await createBooking(req.user!.id, parsed.data);
-    res.status(201).json({ booking });
+    // `checkoutUrl` non nul : le client doit payer en ligne (issue #10).
+    res.status(201).json(await createBooking(req.user!.id, parsed.data));
   },
 );
 

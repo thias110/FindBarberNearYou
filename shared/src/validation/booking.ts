@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { LIMITS, SERVICE_PLACES } from "../constants";
+import { LIMITS, PAYMENT_MODES, SERVICE_PLACES } from "../constants";
 import { isValidCalendarDate } from "../dates";
 import { safeText } from "./safeText";
 
@@ -89,3 +89,18 @@ export const bookingDeclineSchema = z
   .strict();
 
 export type BookingDeclineInput = z.infer<typeof bookingDeclineSchema>;
+
+// Politique de paiement en ligne du barber (issue #10).
+export const paymentSettingsSchema = z
+  .object({
+    paymentMode: z.enum(PAYMENT_MODES),
+    depositPercent: z
+      .number()
+      .int()
+      .min(LIMITS.depositPercentMin)
+      .max(LIMITS.depositPercentMax)
+      .optional(),
+  })
+  .strict();
+
+export type PaymentSettingsInput = z.infer<typeof paymentSettingsSchema>;

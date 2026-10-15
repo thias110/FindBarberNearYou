@@ -12,6 +12,7 @@ import { computeBarberStats } from "@findbarber/shared/stats";
 import type { BarberStatsResponse } from "@findbarber/shared/types";
 import type { BarberStatsQuery } from "@findbarber/shared/validation";
 import { AppError } from "../../lib/errors.js";
+import { visibleToBarber } from "../payments/rules.js";
 
 const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
@@ -83,6 +84,8 @@ async function computeStatsForProfile(
         eq(bookings.barberProfileId, profile.id),
         gte(bookings.startAt, windowStart),
         lt(bookings.startAt, windowEndExclusive),
+        // Demandes jamais payées (issue #10) : hors statistiques.
+        visibleToBarber,
       ),
     );
 
@@ -92,7 +95,7 @@ async function computeStatsForProfile(
       first: sql<Date | string>`min(${bookings.createdAt})`,
     })
     .from(bookings)
-    .where(eq(bookings.barberProfileId, profile.id))
+    .where(and(eq(bookings.barberProfileId, profile.id), visibleToBarber))
     .groupBy(bookings.clientUserId);
 
   const firstBookingByClient = new Map<string, Date>();
