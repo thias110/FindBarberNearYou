@@ -22,6 +22,7 @@ import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
+import { CONTROL_CLASS } from "../../components/ui/control";
 
 const COUNTRIES_SORTED = [...COUNTRIES].sort((a, b) =>
   a.nameFr.localeCompare(b.nameFr, "fr"),
@@ -49,12 +50,7 @@ const TIMEZONE_GROUPS = (() => {
 
 const KNOWN_TIMEZONES = new Set(listIanaTimeZones());
 
-// Classes alignées sur `components/ui/Input` pour les `<select>`/`<textarea>`
-// (aucun composant ui équivalent dans le design system).
-const CONTROL_CLASS =
-  "block w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50";
-
-const CHECKBOX_CLASS = "h-4 w-4 accent-accent";
+const CHECKBOX_CLASS = "h-5 w-5 shrink-0 accent-accent";
 
 interface FormState {
   displayName: string;
@@ -257,7 +253,7 @@ export function BarberProfilePage() {
           {success && <Alert variant="success">Profil enregistré.</Alert>}
 
           <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-foreground">Identité</h2>
+            <h2 className="text-lg font-bold text-foreground">Identité</h2>
             <Field label="Nom affiché">
               {(control) => (
                 <Input
@@ -285,7 +281,7 @@ export function BarberProfilePage() {
           </Card>
 
           <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="text-lg font-bold text-foreground">
               Lieux de prestation
             </h2>
             <fieldset className="space-y-2 rounded-lg border border-border p-3">
@@ -295,7 +291,7 @@ export function BarberProfilePage() {
               {SERVICE_PLACES.map((place) => (
                 <label
                   key={place}
-                  className="flex items-center gap-2 text-sm text-foreground"
+                  className="flex min-h-11 items-center gap-2.5 text-sm text-foreground"
                 >
                   <input
                     type="checkbox"
@@ -342,7 +338,7 @@ export function BarberProfilePage() {
           </Card>
 
           <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="text-lg font-bold text-foreground">
               Localisation
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -414,7 +410,7 @@ export function BarberProfilePage() {
           </Card>
 
           <Card className="space-y-4 p-6">
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="text-lg font-bold text-foreground">
               Devise et fuseau horaire
             </h2>
             <Field

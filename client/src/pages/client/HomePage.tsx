@@ -111,7 +111,7 @@ export function ClientHomePage() {
             <div>
               <h2
                 id="home-barbers-title"
-                className="text-xl font-semibold text-foreground"
+                className="text-xl font-bold text-foreground"
               >
                 Barbers à découvrir
               </h2>
@@ -183,7 +183,7 @@ export function ClientHomePage() {
               <div>
                 <h2
                   id="home-appointments-title"
-                  className="text-lg font-semibold text-foreground"
+                  className="text-lg font-bold text-foreground"
                 >
                   Vos rendez-vous
                 </h2>
@@ -246,7 +246,7 @@ export function ClientHomePage() {
         <section aria-labelledby="home-steps-title">
           <h2
             id="home-steps-title"
-            className="text-xl font-semibold text-foreground"
+            className="text-xl font-bold text-foreground"
           >
             Comment ça marche
           </h2>

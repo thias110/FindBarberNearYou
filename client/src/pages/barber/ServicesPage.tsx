@@ -28,7 +28,7 @@ import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { buttonClasses } from "../../components/ui/buttonStyles";
 
-const CHECKBOX_CLASS = "h-4 w-4 accent-accent";
+const CHECKBOX_CLASS = "h-5 w-5 shrink-0 accent-accent";
 
 // Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
@@ -185,7 +185,7 @@ function ServiceForm({
           {AUDIENCES.map((code) => (
             <label
               key={code}
-              className="flex items-center gap-2 text-sm text-foreground"
+              className="flex min-h-11 items-center gap-2.5 text-sm text-foreground"
             >
               <input
                 type="checkbox"
@@ -206,7 +206,7 @@ function ServiceForm({
           {TECHNIQUES.map((code) => (
             <label
               key={code}
-              className="flex items-center gap-2 text-sm text-foreground"
+              className="flex min-h-11 items-center gap-2.5 text-sm text-foreground"
             >
               <input
                 type="checkbox"
@@ -368,7 +368,7 @@ export function BarberServicesPage() {
         {success && <Alert variant="success">{success}</Alert>}
 
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-bold text-foreground">
             Ajouter un service
           </h2>
           <div className="mt-4">
@@ -389,7 +389,7 @@ export function BarberServicesPage() {
         </Card>
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-bold text-foreground">
             Services ({services.length})
           </h2>
           {services.length === 0 ? (

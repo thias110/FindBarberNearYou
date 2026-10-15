@@ -93,7 +93,7 @@ export function LoginPage() {
 
   return (
     <AuthLayout>
-      <h1 className="text-2xl font-semibold text-foreground">
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
         Content de vous revoir.
       </h1>
       <p className="mt-2 text-sm text-foreground-muted">
@@ -166,7 +166,7 @@ export function LoginPage() {
                     : "Afficher le mot de passe"
                 }
                 aria-pressed={showPassword}
-                className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-r-lg text-foreground-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-r-xl text-foreground-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
               >
                 <PasswordVisibilityIcon visible={showPassword} />
               </button>

@@ -10,7 +10,6 @@ import { useSearchParams } from "react-router-dom";
 import type { BarbersSearchResponse } from "@findbarber/shared/types";
 import { APPROXIMATE_LOCATION_LABEL } from "@findbarber/shared/constants";
 import { barbersApi } from "../../lib/apiClient";
-import { cn } from "../../lib/cn";
 import { useMediaQuery, usePrefersReducedMotion } from "../../lib/media";
 import { useTheme } from "../../app/theme-context";
 import { MapErrorBoundary } from "../../components/MapErrorBoundary";
@@ -23,6 +22,7 @@ import {
   type SearchFiltersValues,
 } from "../../components/search/SearchFilters";
 import { BarberResultCard } from "../../components/search/BarberResultCard";
+import { segmentClasses } from "../../components/ui/chipStyles";
 
 // Chargement différé : MapLibre (volumineux) sort du bundle initial de la recherche.
 const BarbersMap = lazy(() => import("../../components/BarbersMap"));
@@ -187,8 +187,8 @@ export function BarbersSearchPage() {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-7xl space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Rechercher un barbier
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+            Rechercher un barber
           </h1>
           <p className="mt-1 text-sm text-foreground-muted">
             Par nom, ville, pays, public ou prestation.
@@ -260,18 +260,13 @@ export function BarbersSearchPage() {
               <div
                 role="group"
                 aria-label="Mode d'affichage des résultats"
-                className="inline-flex rounded-lg border border-border bg-surface p-0.5 lg:hidden"
+                className="inline-flex gap-1 rounded-full border border-border bg-surface p-1 lg:hidden"
               >
                 <button
                   type="button"
                   aria-pressed={view === "list"}
                   onClick={() => setView("list")}
-                  className={cn(
-                    "inline-flex min-h-[44px] items-center rounded-md px-3 text-sm",
-                    view === "list"
-                      ? "bg-accent text-accent-foreground"
-                      : "text-foreground-muted",
-                  )}
+                  className={segmentClasses(view === "list")}
                 >
                   Liste
                 </button>
@@ -279,12 +274,7 @@ export function BarbersSearchPage() {
                   type="button"
                   aria-pressed={view === "map"}
                   onClick={() => setView("map")}
-                  className={cn(
-                    "inline-flex min-h-[44px] items-center rounded-md px-3 text-sm",
-                    view === "map"
-                      ? "bg-accent text-accent-foreground"
-                      : "text-foreground-muted",
-                  )}
+                  className={segmentClasses(view === "map")}
                 >
                   Carte
                 </button>

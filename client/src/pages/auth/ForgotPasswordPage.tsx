@@ -56,7 +56,7 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthLayout>
-      <h1 className="text-2xl font-semibold text-foreground">
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
         Mot de passe oublié
       </h1>
       <p className="mt-2 text-sm text-foreground-muted">

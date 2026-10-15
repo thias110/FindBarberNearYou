@@ -252,7 +252,7 @@ export function BarberTimeOffPage() {
         {success && <Alert variant="success">{success}</Alert>}
 
         <Card className="space-y-4 p-6">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-bold text-foreground">
             Ajouter des jours indisponibles
           </h2>
           <div className="flex flex-wrap items-end gap-3">
@@ -319,7 +319,7 @@ export function BarberTimeOffPage() {
         </Card>
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-bold text-foreground">
             Jours indisponibles
           </h2>
           {timeOff.length === 0 ? (

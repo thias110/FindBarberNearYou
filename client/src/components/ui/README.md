@@ -63,7 +63,11 @@ d'un libellé (jamais la couleur seule).
   boutons), `text-base` (16 px, texte courant), `text-lg` (18 px, titres de
   dialogue), `text-xl` (20 px, titres de section `h2`), `text-2xl`
   (24 px, titres de page `h1`). Graisses : `font-medium` (libellés, boutons),
-  `font-semibold` (titres).
+  `font-semibold` (titres de carte `h3`). Issue #28 : titres de page `h1` en
+  `font-extrabold` (`text-2xl sm:text-3xl`), titres de section `h2` en
+  `font-bold`, comme la maquette validée en #27.
+- Cases à cocher et boutons radio : couleur de marque via `accent-color`
+  (`index.css`), `h-5 w-5`, ligne de libellé de 44 px (`min-h-11`).
 
 ## Espacements et rayons
 
@@ -102,6 +106,13 @@ d'un libellé (jamais la couleur seule).
   (`<Link className={buttonClasses("secondary")}>`). Ne jamais recopier ces
   classes à la main : `cn()` ne résout pas les conflits Tailwind, donc ne pas
   surcharger `px-*`, `min-h-*` ou `rounded-*` via `className`.
+- `chipClasses(selected, { tone, square })` (`chipStyles.ts`) — pastilles de
+  choix en pilule de 44 px : `tone: "neutral"` pour un filtre ou une
+  catégorie (sélection en noir/blanc), `tone: "accent"` pour un choix de
+  formulaire (créneau, note). `segmentClasses(selected)` pour un sélecteur
+  exclusif (ex. Liste / Carte) dans un conteneur `rounded-full border p-1`.
+- `CONTROL_CLASS` (`control.ts`) — à réutiliser pour tout `<select>`,
+  `<textarea>` ou `<input>` natif qui n'utilise pas `Input`.
 - `Input` — `forwardRef`, bordure d'erreur (2 px) via `aria-invalid`. Texte
   16 px sur mobile (évite le zoom iOS au focus), 14 px à partir de `sm:`.
 - `Field` — label lié, aide et erreur accessibles (render prop qui fournit

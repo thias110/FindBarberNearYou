@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { cn } from "../../lib/cn";
+import { buttonClasses } from "../ui/buttonStyles";
 
 export interface ProPageHeaderProps {
   /** Titre de la page. */
@@ -27,7 +28,7 @@ export function ProPageHeader({
       )}
     >
       <div className="min-w-0">
-        <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">{title}</h1>
         {description && (
           <p className="mt-1 break-words text-sm text-foreground-muted">
             {description}
@@ -36,7 +37,7 @@ export function ProPageHeader({
       </div>
       <Link
         to="/pro/dashboard"
-        className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-lg px-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className={buttonClasses("ghost", "md", "shrink-0")}
       >
         Retour au tableau de bord
       </Link>

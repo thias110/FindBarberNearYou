@@ -60,7 +60,7 @@ export function ConfirmDialog({
       }}
       className="w-[calc(100%-2rem)] max-w-md rounded-2xl border border-border bg-surface p-6 text-foreground shadow-card backdrop:bg-black/50"
     >
-      <h2 id={titleId} className="text-lg font-semibold text-foreground">
+      <h2 id={titleId} className="text-lg font-bold text-foreground">
         {title}
       </h2>
       {children && (

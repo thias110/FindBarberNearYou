@@ -55,7 +55,7 @@ export function BarberProfileHeader({
           </div>
         )}
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
             {profile.displayName}
           </h1>
           <p className="mt-1 text-sm text-foreground-muted">

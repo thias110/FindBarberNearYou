@@ -177,12 +177,12 @@ export function ClientBookingsPage() {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
             Mes rendez-vous
           </h1>
           <p className="mt-1 text-sm text-foreground-muted">
             <Link to="/barbers" className="text-accent-strong underline">
-              Rechercher un barbier
+              Rechercher un barber
             </Link>
           </p>
         </div>
@@ -245,7 +245,7 @@ export function ClientBookingsPage() {
               <section aria-labelledby="bookings-upcoming-title">
                 <h2
                   id="bookings-upcoming-title"
-                  className="text-lg font-semibold text-foreground"
+                  className="text-lg font-bold text-foreground"
                 >
                   À venir ({upcoming.length})
                 </h2>
@@ -257,7 +257,7 @@ export function ClientBookingsPage() {
               <section aria-labelledby="bookings-past-title">
                 <h2
                   id="bookings-past-title"
-                  className="text-lg font-semibold text-foreground"
+                  className="text-lg font-bold text-foreground"
                 >
                   Passés ({past.length})
                 </h2>

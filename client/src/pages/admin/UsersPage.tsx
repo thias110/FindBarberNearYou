@@ -122,7 +122,7 @@ export function AdminUsersPage() {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-foreground">Utilisateurs</h2>
+        <h2 className="text-xl font-bold text-foreground">Utilisateurs</h2>
 
         <FilterChips
           label="Filtrer par rôle"

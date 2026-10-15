@@ -27,7 +27,7 @@ import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { buttonClasses } from "../../components/ui/buttonStyles";
 
-const CHECKBOX_CLASS = "h-4 w-4 accent-accent";
+const CHECKBOX_CLASS = "h-5 w-5 shrink-0 accent-accent";
 
 // Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
@@ -441,7 +441,7 @@ export function BarberWorkingHoursPage() {
         <div className="space-y-3">
           {days.map((day) => (
             <Card key={day.weekday} className="p-4">
-              <label className="flex items-center gap-2">
+              <label className="flex min-h-11 items-center gap-2.5">
                 <input
                   type="checkbox"
                   className={CHECKBOX_CLASS}
@@ -506,7 +506,7 @@ export function BarberWorkingHoursPage() {
                               />
                             )}
                           </Field>
-                          <label className="flex items-center gap-2 pb-2 text-sm text-foreground">
+                          <label className="flex min-h-11 items-center gap-2.5 text-sm text-foreground">
                             <input
                               type="checkbox"
                               className={CHECKBOX_CLASS}

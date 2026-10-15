@@ -57,7 +57,7 @@ export function HomeHero({ user, onSubmitCity }: HomeHeroProps) {
           </p>
         </div>
 
-        <h1 className="mt-5 text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
+        <h1 className="mt-5 text-3xl font-extrabold leading-tight text-foreground sm:text-4xl">
           Trouvez votre barber, au bon moment.
         </h1>
         <p className="mt-3 text-base text-foreground-muted">

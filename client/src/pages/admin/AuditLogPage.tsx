@@ -97,7 +97,7 @@ export function AdminAuditLogPage() {
     <AdminLayout>
       <div className="space-y-4">
         <div>
-          <h2 className="text-xl font-semibold text-foreground">
+          <h2 className="text-xl font-bold text-foreground">
             Journal d'audit
           </h2>
           <p className="mt-1 text-sm text-foreground-muted">

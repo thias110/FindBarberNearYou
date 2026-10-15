@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from "react";
 import { LIMITS } from "@findbarber/shared/constants";
-import { cn } from "../lib/cn";
 import {
   hasReviewDraftErrors,
   validateReviewDraft,
@@ -8,6 +7,8 @@ import {
 } from "../lib/review";
 import { Alert } from "./ui/Alert";
 import { Button } from "./ui/Button";
+import { chipClasses } from "./ui/chipStyles";
+import { CONTROL_CLASS } from "./ui/control";
 
 const RATING_OPTIONS = [1, 2, 3, 4, 5] as const;
 
@@ -56,14 +57,10 @@ export function ReviewForm({
               onClick={() => setRating(value)}
               disabled={submitting}
               aria-pressed={rating === value}
-              className={cn(
-                "flex h-11 w-11 items-center justify-center rounded-lg border text-sm font-medium transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                "disabled:cursor-not-allowed disabled:opacity-50",
-                rating === value
-                  ? "border-accent bg-accent text-accent-foreground"
-                  : "border-border bg-surface text-foreground",
-              )}
+              className={chipClasses(rating === value, {
+                tone: "accent",
+                square: true,
+              })}
             >
               {value}
             </button>
@@ -90,7 +87,7 @@ export function ReviewForm({
           disabled={submitting}
           rows={3}
           maxLength={LIMITS.reviewComment}
-          className="mt-1 min-h-[44px] w-full rounded-lg border border-border-strong bg-surface-muted p-2 text-sm text-foreground placeholder:text-foreground-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+          className={`mt-1 resize-y ${CONTROL_CLASS}`}
         />
         {errors.comment && (
           <p role="alert" className="mt-1 text-xs text-danger">
