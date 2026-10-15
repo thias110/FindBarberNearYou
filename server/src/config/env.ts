@@ -120,6 +120,13 @@ const envSchema = z.object({
     .positive()
     .default(600_000),
   PASSWORD_RESET_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  // Chiffrement au repos des champs sensibles (issue #14), AES-256-GCM.
+  // 32 octets encodés en base64. Obligatoire en production ; en dev/test, une
+  // clé de développement fixe est utilisée (jamais pour de vraies données).
+  FIELD_ENCRYPTION_KEY: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().optional(),
+  ),
   // Nombre de hops de proxy de confiance (optionnel, entier positif uniquement).
   // Absent ou vide → aucun trust proxy (défaut Express `false`, jamais `true`).
   TRUST_PROXY_HOPS: z.preprocess(
@@ -154,6 +161,14 @@ if (env.NODE_ENV === "production") {
   if (!env.DATABASE_URL) {
     throw new Error(
       "DATABASE_URL is required when NODE_ENV=production (PostgreSQL driver).",
+    );
+  }
+  if (
+    !env.FIELD_ENCRYPTION_KEY ||
+    Buffer.from(env.FIELD_ENCRYPTION_KEY, "base64").length !== 32
+  ) {
+    throw new Error(
+      "FIELD_ENCRYPTION_KEY (32 bytes, base64) is required when NODE_ENV=production.",
     );
   }
   if (env.MAIL_TRANSPORT !== "smtp" || !env.SMTP_HOST) {

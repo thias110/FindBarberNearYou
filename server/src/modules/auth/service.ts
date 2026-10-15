@@ -108,7 +108,7 @@ export async function loginUser(input: {
     .where(eq(users.email, email))
     .limit(1);
 
-  if (!user) {
+  if (!user || user.status === "DELETED") {
     throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password.");
   }
 

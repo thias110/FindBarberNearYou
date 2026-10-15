@@ -16,6 +16,7 @@ import {
 import { weekdayFromCalendarDate } from "@findbarber/shared/dates";
 import { setGeocoder, type Geocoder } from "../../server/src/lib/geocoding";
 import { AppError } from "../../server/src/lib/errors";
+import { decryptField } from "../../server/src/lib/fieldCrypto";
 import { markEmailVerified } from "./auth-helpers";
 
 const app = createApp();
@@ -199,7 +200,10 @@ describe("AT_CLIENT booking — adresse et zone", () => {
     expect(res.body.booking).not.toHaveProperty("clientAddress");
 
     const [row] = await db.select().from(bookings);
-    expect(row.clientAddress).toBe("Rue du Client 1, Genève");
+    // Chiffrée au repos (issue #14) : jamais en clair en base.
+    expect(row.clientAddress).toMatch(/^enc:v1:/);
+    expect(row.clientAddress).not.toContain("Rue du Client");
+    expect(decryptField(row.clientAddress)).toBe("Rue du Client 1, Genève");
     expect(row.clientLatitude).toBe(NEAR_CLIENT_COORDS.latitude);
     expect(row.clientLongitude).toBe(NEAR_CLIENT_COORDS.longitude);
 

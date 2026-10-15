@@ -69,6 +69,23 @@ script de 8 minutes et `docs/npm-audit-triage.md` pour le tri des alertes npm.
   tentatives espacées (6 au maximum). Une panne SMTP ne bloque jamais une
   réservation. Les emails envoyés sont purgés après 7 jours.
 
+## Données personnelles (issue #14 : nLPD / RGPD)
+
+- **Export** : page « Mon compte » ou `GET /api/users/me/export` (JSON :
+  compte, rendez-vous, avis, notifications et, pour un barber, vitrine et
+  activité sans les coordonnées des clients). Jamais de hash ni de jeton.
+- **Suppression** : « Mon compte » ou `DELETE /api/users/me` avec le mot de
+  passe. Le compte est **anonymisé** (statut `DELETED`, email remplacé, nom,
+  adresses, commentaires et fichiers effacés, sessions révoquées) ; les
+  rendez-vous à venir sont annulés et l'autre partie prévenue ; l'historique et
+  les notes restent, anonymes, pour les statistiques. Les comptes ADMIN ne se
+  suppriment pas depuis l'application.
+- **Chiffrement au repos** : l'adresse client (prestations à domicile) est
+  chiffrée en AES-256-GCM avec `FIELD_ENCRYPTION_KEY` (obligatoire en
+  production, à sauvegarder : sans elle, les adresses sont illisibles).
+- **Rétention** : adresse et position du client effacées 30 jours après la fin
+  du rendez-vous (tâche horaire) ; emails envoyés purgés après 7 jours.
+
 ## Variables d'environnement
 
 Voir `.env.example`. Aucun secret réel ne doit être commité ; `.env` est ignoré par git.

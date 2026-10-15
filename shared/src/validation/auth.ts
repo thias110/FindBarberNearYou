@@ -66,6 +66,14 @@ export const resetPasswordSchema = z.object({
   password: passwordSchema,
 });
 
+// Suppression du compte (issue #14) : confirmation par le mot de passe actuel.
+export const deleteAccountSchema = z.object({
+  password: z
+    .string()
+    .min(1, "Password is required.")
+    .max(1024, "Password is too long."),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;

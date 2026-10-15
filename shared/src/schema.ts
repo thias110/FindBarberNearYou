@@ -71,6 +71,9 @@ export const users = pgTable(
     // Dernier changement de mot de passe (issue #9) : toute session émise
     // avant cette date est refusée (révocation après réinitialisation).
     passwordChangedAt: timestamp("password_changed_at", { withTimezone: true }),
+    // Suppression du compte par son titulaire (issue #14) : la ligne devient
+    // une « pierre tombale » anonymisée (status DELETED).
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

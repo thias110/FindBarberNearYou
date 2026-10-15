@@ -1,6 +1,8 @@
 export const ROLES = ["CLIENT", "BARBER", "ADMIN"] as const;
 
-export const USER_STATUSES = ["ACTIVE", "SUSPENDED"] as const;
+// DELETED (issue #14) : compte supprimé par son titulaire. La ligne est
+// conservée, anonymisée, pour garder l'historique et les statistiques.
+export const USER_STATUSES = ["ACTIVE", "SUSPENDED", "DELETED"] as const;
 
 export const ROLE_HOME = {
   CLIENT: "/",
@@ -21,6 +23,7 @@ export const USER_STATUS_LABELS: Record<
 > = {
   ACTIVE: "Actif",
   SUSPENDED: "Suspendu",
+  DELETED: "Supprimé",
 };
 
 // Devises prises en charge dans ce lot. Une seule devise par profil, immuable
@@ -165,6 +168,7 @@ export const AUDIT_ACTIONS = [
   "USER_SUSPENDED",
   "USER_REACTIVATED",
   "REVIEW_HIDDEN",
+  "USER_DELETED",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -178,6 +182,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   USER_SUSPENDED: "Compte suspendu",
   USER_REACTIVATED: "Compte réactivé",
   REVIEW_HIDDEN: "Avis masqué",
+  USER_DELETED: "Compte supprimé (anonymisé)",
 };
 
 export const AUDIT_TARGET_TYPES = ["BOOKING", "USER", "REVIEW"] as const;
@@ -269,6 +274,9 @@ export const LIMITS = {
   // CONFIRMED commence dans moins de 24 h (et pas dans moins d'une heure).
   bookingReminderHoursBefore: 24,
   bookingReminderMinMinutesBefore: 60,
+  // Minimisation (issue #14) : l'adresse et la position d'un client (AT_CLIENT)
+  // sont effacées ce nombre de jours après la fin du rendez-vous.
+  clientAddressRetentionDays: 30,
   // Adresse client privée (lot 9 passe A, issue #19) : chaîne libre géocodée
   // côté serveur pour `AT_CLIENT`, jamais exposée publiquement.
   clientAddress: 200,

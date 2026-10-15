@@ -37,6 +37,8 @@ services:
       PORT: 4000
       TRUST_PROXY_HOPS: 1
       MAPTILER_GEOCODING_API_KEY: ${MAPTILER_GEOCODING_API_KEY:-}
+      # Chiffrement des champs sensibles (vide = clé de dev, démo uniquement).
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-}
       # Emails : `log` par défaut (affichés dans `docker compose logs app`) ;
       # renseigner MAIL_TRANSPORT=smtp + SMTP_* dans .env pour un envoi réel.
       MAIL_TRANSPORT: ${MAIL_TRANSPORT:-log}

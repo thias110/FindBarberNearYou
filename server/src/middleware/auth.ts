@@ -37,7 +37,7 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
       .where(eq(users.id, payload.sub))
       .limit(1);
 
-    if (!user) {
+    if (!user || user.status === "DELETED") {
       throw new AppError(401, "UNAUTHORIZED", "Account not found.");
     }
     if (user.status === "SUSPENDED") {

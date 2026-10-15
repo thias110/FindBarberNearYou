@@ -7,6 +7,7 @@ import {
   gte,
   inArray,
   isNotNull,
+  ne,
   sql,
   type SQL,
 } from "drizzle-orm";
@@ -155,7 +156,8 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
     reviewsTotal,
     reviewsHidden,
   ] = await Promise.all([
-    countUsers(),
+    // Les comptes supprimés (pierres tombales anonymisées) ne comptent pas.
+    countUsers(ne(users.status, "DELETED")),
     countUsers(eq(users.status, "ACTIVE")),
     countUsers(eq(users.status, "SUSPENDED")),
     countUsers(and(eq(users.role, "BARBER"), eq(users.status, "ACTIVE"))),
@@ -245,6 +247,9 @@ export async function suspendUser(
           "Impossible de suspendre le dernier administrateur actif.",
         );
       }
+    }
+    if (target.status === "DELETED") {
+      throw new AppError(409, "USER_DELETED", "Ce compte a été supprimé.");
     }
     if (target.status !== "ACTIVE") {
       throw new AppError(

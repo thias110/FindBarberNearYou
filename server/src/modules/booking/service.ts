@@ -59,6 +59,7 @@ import {
   type AuthUser,
 } from "../../lib/authorization.js";
 import { recordAudit } from "../../lib/audit.js";
+import { decryptField, encryptField } from "../../lib/fieldCrypto.js";
 import { notifyBookingEvent } from "../notification/service.js";
 import { expireStalePendingBookings } from "./expiry.js";
 
@@ -104,7 +105,8 @@ function toBookingDetails(
 ): BookingDetails {
   return {
     ...toBooking(row, clientName, hasReview),
-    clientAddress: row.clientAddress,
+    // Chiffrée au repos (issue #14) : déchiffrée pour les seuls ayants droit.
+    clientAddress: decryptField(row.clientAddress),
     clientLatitude: row.clientLatitude,
     clientLongitude: row.clientLongitude,
   };
@@ -482,7 +484,9 @@ async function createBookingInTransaction(
         priceMinor: service.priceMinor,
         currency: profile.currency,
         clientAddress:
-          input.place === "AT_CLIENT" ? (input.clientAddress ?? null) : null,
+          input.place === "AT_CLIENT"
+            ? encryptField(input.clientAddress ?? null)
+            : null,
         clientLatitude: clientLocation?.latitude ?? null,
         clientLongitude: clientLocation?.longitude ?? null,
         // Horloge applicative (pas `now()` SQL) : l'échéance des 24 h se
