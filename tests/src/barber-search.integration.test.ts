@@ -505,7 +505,9 @@ describe("GET /api/barbers — photo, note, prix et devise (issue #48)", () => {
   it("exposes avatar, currency and the starting price of ACTIVE services only", async () => {
     const x = await setupBarber("price@example.com", {
       displayName: "Price Barber",
-      currency: "EUR",
+      // Devise déduite du pays (issue #39) : un profil en France est en EUR.
+      countryCode: "FR",
+      currency: undefined,
     });
     await addService(x.agent, x.csrf, { name: "Coupe", priceMinor: 3000 });
     const cheap = await addService(x.agent, x.csrf, { name: "Barbe", priceMinor: 1000 });

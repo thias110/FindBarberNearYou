@@ -41,7 +41,7 @@ import {
 import type {
   BookingCreateInput,
   PaymentSettingsInput,
-  ProfileInput,
+  ProfileRequest,
   ReviewCreateInput,
   ServiceCreateInput,
   ServiceUpdateInput,
@@ -305,7 +305,7 @@ export interface BarberApi {
   getPhotos(): Promise<OwnBarberPhotosResponse>;
   addPhoto(file: File, caption?: string): Promise<{ photo: OwnBarberPhoto }>;
   deletePhoto(photoId: string): Promise<void>;
-  updateProfile(input: ProfileInput): Promise<{ profile: OwnBarberProfile }>;
+  updateProfile(input: ProfileRequest): Promise<{ profile: OwnBarberProfile }>;
   getServices(): Promise<{ services: OwnBarberService[] }>;
   createService(input: ServiceCreateInput): Promise<{ service: OwnBarberService }>;
   updateService(

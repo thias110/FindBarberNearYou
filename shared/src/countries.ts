@@ -1,3 +1,5 @@
+import type { Currency } from "./constants";
+
 // Provenance : ISO 3166-1 alpha-2 (https://www.iso.org/iso-3166-country-codes.html).
 // Noms affichés en français. Liste maintenable : ajouter/retirer une entrée ici
 // suffit à étendre la validation Zod et le sélecteur pays côté client.
@@ -261,4 +263,27 @@ export const COUNTRY_NAME_BY_CODE: Record<CountryCode, string> = Object.fromEntr
 
 export function isCountryCode(value: string): value is CountryCode {
   return Object.prototype.hasOwnProperty.call(COUNTRY_NAME_BY_CODE, value);
+}
+
+// --- Devise déduite du pays (issue #39) ---
+// Le barber ne choisit plus sa devise : elle découle du pays de son profil et
+// est recalculée côté serveur. Seules CHF, EUR et USD sont gérées : un pays
+// dont la devise officielle n'est pas gérée prend USD (choix produit).
+// Pays CHF : Suisse et Liechtenstein.
+const CHF_COUNTRIES: ReadonlySet<string> = new Set(["CH", "LI"]);
+
+// Pays et territoires ISO utilisant l'euro : zone euro (dont la Bulgarie
+// depuis 2026), micro-États ayant un accord monétaire, utilisateurs de fait
+// (Monténégro) et territoires français, finlandais ou européens ultramarins.
+const EUR_COUNTRIES: ReadonlySet<string> = new Set([
+  "AT", "BE", "BG", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE",
+  "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK",
+  "AD", "MC", "SM", "VA", "ME",
+  "AX", "BL", "GF", "GP", "MF", "MQ", "PM", "RE", "TF", "YT",
+]);
+
+export function currencyForCountry(code: CountryCode): Currency {
+  if (CHF_COUNTRIES.has(code)) return "CHF";
+  if (EUR_COUNTRIES.has(code)) return "EUR";
+  return "USD";
 }

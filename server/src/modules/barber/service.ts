@@ -244,7 +244,10 @@ export async function getOwnProfile(userId: string): Promise<OwnBarberProfile> {
 // simultanées ne produisent ni deux profils ni une erreur 500 : le perdant
 // passe par la branche `DO UPDATE`. La devise, l'identifiant et `createdAt`
 // sont exclus de l'update ; `setWhere` rejette toute tentative de changement
-// de devise (le RETURNING est alors vide) avec un 409 dédié.
+// de devise (le RETURNING est alors vide) avec un 409 dédié. La devise étant
+// déduite du pays (issue #39), cela revient à refuser un changement de pays
+// qui changerait la devise : les prix des services, stockés sans devise, ne
+// basculent jamais silencieusement. Les réservations gardent la leur.
 export async function upsertProfile(
   userId: string,
   input: ProfileInput,
@@ -299,7 +302,7 @@ export async function upsertProfile(
       throw new AppError(
         409,
         "CURRENCY_CHANGE_FORBIDDEN",
-        "La devise d'un profil existant ne peut pas être modifiée.",
+        "Ce pays utilise une autre devise que celle de votre profil : le changement de pays est impossible.",
       );
     }
 

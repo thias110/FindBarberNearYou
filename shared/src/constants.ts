@@ -26,7 +26,8 @@ export const USER_STATUS_LABELS: Record<
   DELETED: "Supprimé",
 };
 
-// Devises prises en charge dans ce lot. Une seule devise par profil, immuable
+// Devises prises en charge. Une seule devise par profil, déduite du pays
+// (issue #39, `currencyForCountry`) et immuable
 // après création. Les montants sont stockés en unités mineures entières.
 export const SUPPORTED_CURRENCIES = ["CHF", "EUR", "USD"] as const;
 

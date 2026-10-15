@@ -7,7 +7,7 @@ import {
   SUPPORTED_CURRENCIES,
   TECHNIQUES,
 } from "../constants";
-import { isCountryCode } from "../countries";
+import { currencyForCountry, isCountryCode } from "../countries";
 import { compareCalendarDates, inclusiveDayCount, isValidCalendarDate } from "../dates";
 import { classifyIanaTimeZone } from "../timezones";
 import { safeText } from "./safeText";
@@ -128,7 +128,10 @@ export const profileSchema = z
     countryCode: countryCodeSchema,
     latitude: latitudeSchema,
     longitude: longitudeSchema,
-    currency: currencySchema,
+    // Devise déduite du pays (issue #39) : facultative en entrée et jamais
+    // reprise telle quelle. Une devise envoyée qui contredit le pays est
+    // refusée (superRefine) ; la valeur persistée est recalculée (transform).
+    currency: currencySchema.optional(),
     timezone: timezoneSchema,
     // Rayon d'intervention mobile (km) : requis si AT_CLIENT, interdit sinon.
     // Le client envoie explicitement `null` hors AT_CLIENT ; le serveur rejette
@@ -154,6 +157,14 @@ export const profileSchema = z
       data.places.includes("SALON") || data.places.includes("AT_PROVIDER");
     const isMobile = data.places.includes("AT_CLIENT");
 
+    if (data.currency !== undefined && data.currency !== currencyForCountry(data.countryCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "La devise est déduite du pays du profil et ne peut pas être choisie.",
+        path: ["currency"],
+      });
+    }
     if (requiresAddress && data.address === null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -178,7 +189,11 @@ export const profileSchema = z
         path: ["travelRadiusKm"],
       });
     }
-  });
+  })
+  .transform((data) => ({
+    ...data,
+    currency: currencyForCountry(data.countryCode),
+  }));
 
 export const serviceCreateSchema = z
   .object({
@@ -251,6 +266,8 @@ export const serviceUpdateSchema = z
   });
 
 export type ProfileInput = z.infer<typeof profileSchema>;
+// Corps envoyé par le client : la devise n'y figure pas (déduite du pays).
+export type ProfileRequest = Omit<z.input<typeof profileSchema>, "currency">;
 export type ServiceCreateInput = z.infer<typeof serviceCreateSchema>;
 export type ServiceUpdateInput = z.infer<typeof serviceUpdateSchema>;
 

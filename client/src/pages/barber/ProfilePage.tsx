@@ -1,12 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { COUNTRIES, type CountryCode } from "@findbarber/shared/countries";
+import {
+  COUNTRIES,
+  currencyForCountry,
+  type CountryCode,
+} from "@findbarber/shared/countries";
 import {
   CURRENCY_LABELS,
-  DEFAULT_CURRENCY,
   LIMITS,
   SERVICE_PLACE_LABELS,
   SERVICE_PLACES,
-  SUPPORTED_CURRENCIES,
   type Currency,
   type ServicePlace,
 } from "@findbarber/shared/constants";
@@ -61,7 +63,6 @@ interface FormState {
   countryCode: string;
   latitude: string;
   longitude: string;
-  currency: Currency;
   timezone: string;
   places: ServicePlace[];
   travelRadiusKm: string;
@@ -76,7 +77,6 @@ const EMPTY_FORM: FormState = {
   countryCode: "CH",
   latitude: "",
   longitude: "",
-  currency: DEFAULT_CURRENCY,
   timezone: "",
   places: [],
   travelRadiusKm: "",
@@ -89,6 +89,9 @@ export function BarberProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  // Devise enregistrée (issue #39) : immuable, sert à prévenir le barber si le
+  // pays choisi en utilise une autre (le serveur refuserait le changement).
+  const [savedCurrency, setSavedCurrency] = useState<Currency | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -106,7 +109,6 @@ export function BarberProfilePage() {
           countryCode: profile.countryCode,
           latitude: String(profile.latitude),
           longitude: String(profile.longitude),
-          currency: profile.currency,
           timezone: profile.timezone ?? "",
           places: profile.places,
           travelRadiusKm:
@@ -114,6 +116,7 @@ export function BarberProfilePage() {
               ? ""
               : String(profile.travelRadiusKm),
         });
+        setSavedCurrency(profile.currency);
         setMode("edit");
       })
       .catch((err: unknown) => {
@@ -193,7 +196,7 @@ export function BarberProfilePage() {
 
     setSaving(true);
     try {
-      await barberApi.updateProfile({
+      const saved = await barberApi.updateProfile({
         displayName: form.displayName,
         description: form.description,
         address: form.address.trim() === "" ? null : form.address.trim(),
@@ -202,13 +205,13 @@ export function BarberProfilePage() {
         countryCode: form.countryCode as CountryCode,
         latitude,
         longitude,
-        currency: form.currency,
         // "" = « Non renseigné » : effacement explicite (null). Sinon le
         // fuseau choisi est envoyé tel quel, validé côté serveur.
         timezone: form.timezone.trim() === "" ? null : form.timezone,
         travelRadiusKm: isMobile ? travelRadiusKm : null,
         places: form.places,
       });
+      setSavedCurrency(saved.profile.currency);
       setMode("edit");
       setSuccess(true);
     } catch (err) {
@@ -217,6 +220,8 @@ export function BarberProfilePage() {
       setSaving(false);
     }
   }
+
+  const countryCurrency = currencyForCountry(form.countryCode as CountryCode);
 
   if (loading) {
     return (
@@ -245,7 +250,7 @@ export function BarberProfilePage() {
       <div className="mx-auto max-w-2xl space-y-6">
         <ProPageHeader
           title={mode === "create" ? "Créer mon profil" : "Modifier mon profil"}
-          description="Nom, adresse, coordonnées, pays et devise."
+          description="Nom, adresse, coordonnées et pays."
         />
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -413,30 +418,22 @@ export function BarberProfilePage() {
             <h2 className="text-lg font-bold text-foreground">
               Devise et fuseau horaire
             </h2>
-            <Field
-              label="Devise"
-              hint={
-                mode === "edit"
-                  ? "La devise est fixée à la création du profil et ne peut plus être modifiée."
-                  : undefined
-              }
-            >
-              {(control) => (
-                <select
-                  {...control}
-                  value={form.currency}
-                  disabled={mode === "edit"}
-                  onChange={(e) => update("currency", e.target.value)}
-                  className={CONTROL_CLASS}
-                >
-                  {SUPPORTED_CURRENCIES.map((currency) => (
-                    <option key={currency} value={currency}>
-                      {CURRENCY_LABELS[currency]}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">Devise</p>
+              <p className="text-sm text-foreground">
+                {CURRENCY_LABELS[countryCurrency]}
+              </p>
+              <p className="text-xs text-foreground-muted">
+                Déduite automatiquement du pays : vos prix sont affichés dans
+                cette devise, sans conversion.
+              </p>
+            </div>
+            {savedCurrency !== null && countryCurrency !== savedCurrency && (
+              <Alert variant="warning">
+                Ce pays utilise une autre devise que votre profil (
+                {savedCurrency}) : le changement de pays sera refusé.
+              </Alert>
+            )}
 
             <Field
               label="Fuseau horaire du salon"

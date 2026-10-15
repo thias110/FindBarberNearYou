@@ -139,14 +139,15 @@ describe("PUT /api/barber/profile", () => {
     ).rejects.toThrow();
   });
 
-  it("rejects a currency change with 409 and does not apply partial updates", async () => {
+  it("rejects a country change that would change the currency (409, no partial update)", async () => {
     await registerBarber("currency@example.com");
     const { agent, csrf } = await login("currency@example.com");
 
-    await createProfile(agent, csrf, { currency: "CHF" });
+    await createProfile(agent, csrf, { countryCode: "CH" });
 
     const res = await createProfile(agent, csrf, {
-      currency: "EUR",
+      countryCode: "FR",
+      currency: undefined,
       displayName: "Nouveau Nom",
     });
     expect(res.status).toBe(409);
@@ -155,7 +156,19 @@ describe("PUT /api/barber/profile", () => {
     const rows = await db.select().from(barberProfiles);
     expect(rows).toHaveLength(1);
     expect(rows[0].currency).toBe("CHF");
+    expect(rows[0].countryCode).toBe("CH");
     expect(rows[0].displayName).toBe("Barbier Test");
+  });
+
+  it("allows a country change within the same currency zone (FR -> BE)", async () => {
+    await registerBarber("same-zone@example.com");
+    const { agent, csrf } = await login("same-zone@example.com");
+
+    expect((await createProfile(agent, csrf, { countryCode: "FR", currency: undefined })).status).toBe(200);
+    const res = await createProfile(agent, csrf, { countryCode: "BE", currency: undefined });
+    expect(res.status).toBe(200);
+    expect(res.body.profile.countryCode).toBe("BE");
+    expect(res.body.profile.currency).toBe("EUR");
   });
 
   it("handles simultaneous creates with different currencies without 500 or two profiles", async () => {
@@ -167,11 +180,11 @@ describe("PUT /api/barber/profile", () => {
       first.agent
         .put("/api/barber/profile")
         .set("X-CSRF-Token", first.csrf)
-        .send(profilePayload({ currency: "CHF" })),
+        .send(profilePayload({ countryCode: "CH", currency: undefined })),
       second.agent
         .put("/api/barber/profile")
         .set("X-CSRF-Token", second.csrf)
-        .send(profilePayload({ currency: "EUR" })),
+        .send(profilePayload({ countryCode: "FR", currency: undefined })),
     ]);
 
     expect([a.status, b.status].sort()).toEqual([200, 409]);
@@ -181,14 +194,39 @@ describe("PUT /api/barber/profile", () => {
     expect(["CHF", "EUR"]).toContain(rows[0].currency);
   });
 
-  it("accepts CHF, EUR and USD profiles", async () => {
-    for (const currency of ["CHF", "EUR", "USD"]) {
-      await registerBarber(`${currency.toLowerCase()}@example.com`);
-      const { agent, csrf } = await login(`${currency.toLowerCase()}@example.com`);
-      const res = await createProfile(agent, csrf, { currency });
+  it("derives the currency from the country (CH -> CHF, FR -> EUR, US -> USD)", async () => {
+    const cases = [
+      ["CH", "CHF"],
+      ["LI", "CHF"],
+      ["FR", "EUR"],
+      ["DE", "EUR"],
+      ["US", "USD"],
+    ] as const;
+    for (const [countryCode, currency] of cases) {
+      const email = `derive-${countryCode.toLowerCase()}@example.com`;
+      await registerBarber(email);
+      const { agent, csrf } = await login(email);
+      const res = await createProfile(agent, csrf, { countryCode, currency: undefined });
       expect(res.status).toBe(200);
       expect(res.body.profile.currency).toBe(currency);
     }
+  });
+
+  it("falls back to USD for a country whose currency is not supported", async () => {
+    await registerBarber("fallback@example.com");
+    const { agent, csrf } = await login("fallback@example.com");
+    const res = await createProfile(agent, csrf, { countryCode: "JP", currency: undefined });
+    expect(res.status).toBe(200);
+    expect(res.body.profile.currency).toBe("USD");
+  });
+
+  it("refuses a currency that contradicts the country (direct API call)", async () => {
+    await registerBarber("mismatch@example.com");
+    const { agent, csrf } = await login("mismatch@example.com");
+    const res = await createProfile(agent, csrf, { countryCode: "CH", currency: "EUR" });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
+    expect(await db.select().from(barberProfiles)).toHaveLength(0);
   });
 
   it("rejects an unknown currency", async () => {
@@ -207,9 +245,13 @@ describe("PUT /api/barber/profile", () => {
     expect(invalid.status).toBe(400);
     expect(invalid.body.error.code).toBe("VALIDATION_ERROR");
 
-    const valid = await createProfile(agent, csrf, { countryCode: "fr" });
+    const valid = await createProfile(agent, csrf, {
+      countryCode: "fr",
+      currency: undefined,
+    });
     expect(valid.status).toBe(200);
     expect(valid.body.profile.countryCode).toBe("FR");
+    expect(valid.body.profile.currency).toBe("EUR");
   });
 
   it("keeps the postal code optional and preserves leading zeros", async () => {
