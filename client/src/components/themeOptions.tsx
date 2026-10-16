@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
 import type { ThemePreference } from "../app/theme-context";
+import i18n from "../i18n";
 
 // Options de thème de la page Paramètres (issue #29). Depuis l'issue #30, le
-// thème ne se choisit plus dans le header.
+// thème ne se choisit plus dans le header. Libellés traduits
+// (`common:theme.*`) : à appeler au rendu, dans un composant qui utilise
+// `useTranslation`, pour suivre le changement de langue.
 
 export interface ThemeOption {
   value: ThemePreference;
@@ -13,26 +16,16 @@ export interface ThemeOption {
   description: string;
 }
 
-export const THEME_OPTIONS: ThemeOption[] = [
-  {
-    value: "system",
-    label: "Thème système",
-    shortLabel: "Système",
-    description: "Suit le réglage clair ou sombre de votre appareil.",
-  },
-  {
-    value: "light",
-    label: "Thème clair",
-    shortLabel: "Clair",
-    description: "Fond blanc, en toutes circonstances.",
-  },
-  {
-    value: "dark",
-    label: "Thème sombre",
-    shortLabel: "Sombre",
-    description: "Fond bleu nuit, plus doux le soir.",
-  },
-];
+const THEME_VALUES: ThemePreference[] = ["system", "light", "dark"];
+
+export function themeOptions(): ThemeOption[] {
+  return THEME_VALUES.map((value) => ({
+    value,
+    label: i18n.t(`common:theme.${value}.label`),
+    shortLabel: i18n.t(`common:theme.${value}.short`),
+    description: i18n.t(`common:theme.${value}.description`),
+  }));
+}
 
 const ICON_PATHS: Record<ThemePreference, ReactNode> = {
   system: (

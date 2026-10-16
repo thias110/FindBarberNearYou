@@ -6,6 +6,157 @@
     "language": {
       "title": "Language",
       "description": "Language of the interface and of the emails you receive."
+    },
+    "title": "Settings",
+    "subtitle": "Your FindBarber preferences.",
+    "accountLink": "My account",
+    "appearance": {
+      "title": "Appearance",
+      "description": "Choose how FindBarber looks on this device.",
+      "legend": "Theme"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "dataTitle": "My data",
+      "deleteTextBefore": "To delete your account, go to",
+      "deleteLink": "My account",
+      "deleteTextAfter": "."
     }
+  },
+  "app": {
+    "skipToContent": "Skip to content",
+    "homeLink": "FindBarber, back to home",
+    "account": "My account",
+    "login": "Log in"
+  },
+  "pageTitle": {
+    "home": "Home",
+    "barbers": "Find a barber",
+    "appointments": "My appointments",
+    "account": "My account",
+    "settings": "Settings",
+    "legal": "Legal notice",
+    "proDashboard": "Professional area",
+    "proProfile": "My professional profile",
+    "proServices": "My services",
+    "proWorkingHours": "My opening hours",
+    "proTimeOff": "My time off",
+    "proBookings": "My bookings",
+    "proStats": "My statistics",
+    "proGallery": "My gallery",
+    "proPayments": "Online payments",
+    "admin": "Administration",
+    "adminUsers": "Users — Administration",
+    "adminBookings": "Bookings — Administration",
+    "adminReviews": "Reviews — Administration",
+    "adminAudit": "Audit log — Administration",
+    "barberProfile": "Barber profile",
+    "adminBarberStats": "Barber statistics — Administration"
+  },
+  "footer": {
+    "nav": "Footer",
+    "contact": "Contact",
+    "legal": "Legal notice",
+    "social": "Social media",
+    "newTab": "{{network}} (new tab)"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread_one": "Notifications, {{count}} unread",
+    "unread_other": "Notifications, {{count}} unread",
+    "markAllRead": "Mark all as read",
+    "marking": "Marking…",
+    "loadError": "Notifications could not be loaded.",
+    "retry": "Try again",
+    "loading": "Loading notifications…",
+    "empty": "No notifications yet.",
+    "readLabel": "Notification read",
+    "read": "Read",
+    "markRead": "Mark as read",
+    "actionError": "This action isn't possible right now.",
+    "type": {
+      "BOOKING_REQUESTED": "New booking request",
+      "BOOKING_CONFIRMED": "Booking confirmed",
+      "BOOKING_COMPLETED": "Booking completed",
+      "BOOKING_CANCELLED_BY_CLIENT": "Booking cancelled by the client",
+      "BOOKING_CANCELLED_BY_BARBER": "Booking cancelled by the professional",
+      "BOOKING_CANCELLED_BY_ADMIN": "Booking cancelled by the administrators",
+      "BOOKING_DECLINED": "Booking request declined",
+      "BOOKING_EXPIRED": "Booking request expired (no reply)"
+    }
+  },
+  "theme": {
+    "system": {
+      "label": "System theme",
+      "short": "System",
+      "description": "Follows your device's light or dark setting."
+    },
+    "light": {
+      "label": "Light theme",
+      "short": "Light",
+      "description": "White background, at all times."
+    },
+    "dark": {
+      "label": "Dark theme",
+      "short": "Dark",
+      "description": "Midnight-blue background, easier on the eyes in the evening."
+    }
+  },
+  "dialog": {
+    "cancel": "Cancel"
+  },
+  "avatar": {
+    "alt": "Your profile photo",
+    "choose": "Choose a photo",
+    "change": "Change photo",
+    "delete": "Remove photo",
+    "hint": "Optional. JPEG, PNG or WebP, {{size}} MB max.",
+    "updated": "Profile photo updated.",
+    "deleted": "Profile photo removed.",
+    "confirmText": "Remove your profile photo? This cannot be undone.",
+    "cancel": "Cancel",
+    "confirmDelete": "Confirm removal"
+  },
+  "dataExport": {
+    "description": "Download a copy of all the data linked to your account (profile, appointments, reviews, notifications) in JSON format.",
+    "descriptionBarber": "Download a copy of all the data linked to your account (profile, appointments, reviews, notifications, showcase and activity) in JSON format.",
+    "download": "Download my data"
+  },
+  "account": {
+    "title": "My account",
+    "settingsLink": "Settings",
+    "photoTitle": "Profile photo",
+    "dataTitle": "My data",
+    "dataTextBefore": "To download a copy of your data, go to",
+    "dataLink": "Settings > Privacy",
+    "dataTextAfter": ".",
+    "deleteTitle": "Delete my account",
+    "deleteInfo": {
+      "definitive": "Deletion is permanent.",
+      "bookings": "Your upcoming appointments are cancelled and the other party is notified.",
+      "personal": "Your name, email, address and comments are erased. Appointment history and ratings are kept in anonymised form.",
+      "showcase": "Your showcase (profile, photos, opening hours) is removed from search."
+    },
+    "passwordLabel": "Current password",
+    "passwordRequired": "Enter your password to confirm.",
+    "deleteButton": "Delete my account",
+    "confirmTitle": "Permanently delete your account?",
+    "confirmLabel": "Delete permanently",
+    "confirmCancel": "Keep my account",
+    "confirmText": "This cannot be undone."
+  },
+  "legal": {
+    "title": "Legal notice",
+    "publisherTitle": "Site publisher",
+    "contactTitle": "Contact",
+    "contactText": "For any questions:",
+    "roleTitle": "Role of the platform",
+    "roleText": "FindBarber connects clients with independent barbers. Each barber sets their own services, prices and availability, and remains solely responsible for the services they provide.",
+    "dataTitle": "Personal data",
+    "dataTextBefore": "Your data is processed in accordance with the Swiss Federal Act on Data Protection (FADP). From your account, you can export your data (",
+    "dataLink": "Settings > Privacy",
+    "dataTextAfter": ") or delete your account.",
+    "ipTitle": "Intellectual property",
+    "ipText": "The site's content (text, logo, interface) is protected. Photos published by barbers remain their property. Map tiles are provided by © MapTiler and © OpenStreetMap contributors."
   }
 }

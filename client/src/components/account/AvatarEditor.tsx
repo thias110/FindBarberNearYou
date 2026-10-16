@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { LIMITS, UPLOAD_IMAGE_MIME_TYPES } from "@findbarber/shared/constants";
 import { useAuth } from "../../app/auth-context";
 import {
@@ -17,6 +18,7 @@ import { Button } from "../ui/Button";
 // jour pour que la photo s'affiche partout (accueil, en-têtes).
 export function AvatarEditor() {
   const { user, updateUser } = useAuth();
+  const { t } = useTranslation("common");
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Focus de la confirmation destructive (remplace window.confirm).
   const deleteTriggerRef = useRef<HTMLSpanElement>(null);
@@ -82,7 +84,7 @@ export function AvatarEditor() {
     try {
       const res = await userApi.updateAvatar(selected);
       updateUser(res.user);
-      setMessage({ kind: "success", text: "Photo de profil mise à jour." });
+      setMessage({ kind: "success", text: t("avatar.updated") });
     } catch (err: unknown) {
       // 400 (format), 401 (session), 403 (CSRF), 413 (taille) via le serveur.
       setMessage({ kind: "error", text: apiErrorMessage(err) });
@@ -113,7 +115,7 @@ export function AvatarEditor() {
     try {
       const res = await userApi.deleteAvatar();
       updateUser(res.user);
-      setMessage({ kind: "success", text: "Photo de profil supprimée." });
+      setMessage({ kind: "success", text: t("avatar.deleted") });
     } catch (err: unknown) {
       setMessage({ kind: "error", text: apiErrorMessage(err) });
     } finally {
@@ -128,7 +130,7 @@ export function AvatarEditor() {
         {avatarPath ? (
           <img
             src={resolveUploadUrl(avatarPath) ?? ""}
-            alt="Votre photo de profil"
+            alt={t("avatar.alt")}
             className="h-16 w-16 shrink-0 rounded-full object-cover"
           />
         ) : (
@@ -162,7 +164,7 @@ export function AvatarEditor() {
                 }
                 onClick={() => fileInputRef.current?.click()}
               >
-                {avatarPath ? "Changer la photo" : "Choisir une photo"}
+                {avatarPath ? t("avatar.change") : t("avatar.choose")}
               </Button>
             </span>
             {avatarPath && !confirmingDelete && (
@@ -173,14 +175,15 @@ export function AvatarEditor() {
                   disabled={busy}
                   onClick={requestDelete}
                 >
-                  Supprimer la photo
+                  {t("avatar.delete")}
                 </Button>
               </span>
             )}
           </div>
           <p id="avatar-hint" className="text-xs text-foreground-muted">
-            Facultative. JPEG, PNG ou WebP,{" "}
-            {Math.round(LIMITS.uploadMaxBytes / 1_048_576)} Mo max.
+            {t("avatar.hint", {
+              size: Math.round(LIMITS.uploadMaxBytes / 1_048_576),
+            })}
           </p>
 
           {/* Résultat affiché à côté du champ (issue #55). */}
@@ -208,7 +211,7 @@ export function AvatarEditor() {
           className="mt-4 rounded-lg border border-danger/30 bg-danger/10 p-3 focus:outline-none"
         >
           <p className="text-sm text-foreground">
-            Supprimer votre photo de profil ? Cette action est définitive.
+            {t("avatar.confirmText")}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <span ref={cancelDeleteRef} className="inline-flex">
@@ -218,7 +221,7 @@ export function AvatarEditor() {
                 disabled={busy}
                 onClick={cancelDelete}
               >
-                Annuler
+                {t("avatar.cancel")}
               </Button>
             </span>
             <Button
@@ -228,7 +231,7 @@ export function AvatarEditor() {
               isLoading={busy}
               onClick={() => void handleDelete()}
             >
-              Confirmer la suppression
+              {t("avatar.confirmDelete")}
             </Button>
           </div>
         </div>

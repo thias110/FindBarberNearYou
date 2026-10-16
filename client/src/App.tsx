@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import { ROLE_HOME } from "@findbarber/shared/constants";
 import { useAuth } from "./app/auth-context";
@@ -19,12 +20,15 @@ function AppShell() {
   const isAuthRoute = AUTH_ROUTES.has(pathname);
   const mainRef = useRef<HTMLElement>(null);
   const previousPathRef = useRef(pathname);
+  const { t, i18n } = useTranslation("common");
+  const language = i18n.language;
 
-  // Titre du document par route (les pages d'auth posent le leur).
+  // Titre du document par route (les pages d'auth posent le leur), mis à jour
+  // aussi au changement de langue.
   useEffect(() => {
     const title = pageTitle(pathname);
     if (title) document.title = title;
-  }, [pathname]);
+  }, [pathname, language]);
 
   // Navigation SPA : le focus revient au contenu principal, comme lors d'un
   // chargement de page (lecteurs d'écran et clavier).
@@ -49,13 +53,13 @@ function AppShell() {
         href="#contenu"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-4 focus:py-3 focus:text-sm focus:font-medium focus:text-accent-foreground focus:shadow-card"
       >
-        Aller au contenu
+        {t("app.skipToContent")}
       </a>
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
           <Link
             to={user ? ROLE_HOME[user.role] : "/"}
-            aria-label="FindBarber, retour à l'accueil"
+            aria-label={t("app.homeLink")}
             className="inline-flex min-h-11 min-w-11 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <Logo />
@@ -71,7 +75,7 @@ function AppShell() {
                 to="/account"
                 className={buttonClasses("ghost", "sm", "whitespace-nowrap")}
               >
-                Mon compte
+                {t("app.account")}
               </Link>
             )}
             {!user && (
@@ -79,7 +83,7 @@ function AppShell() {
                 to="/login"
                 className={buttonClasses("ghost", "sm", "whitespace-nowrap")}
               >
-                Se connecter
+                {t("app.login")}
               </Link>
             )}
           </div>

@@ -6,6 +6,157 @@
     "language": {
       "title": "Idioma",
       "description": "Idioma de la interfaz y de los correos que recibes."
+    },
+    "title": "Ajustes",
+    "subtitle": "Tus preferencias en FindBarber.",
+    "accountLink": "Mi cuenta",
+    "appearance": {
+      "title": "Apariencia",
+      "description": "Elige cómo se ve FindBarber en este dispositivo.",
+      "legend": "Tema"
+    },
+    "privacy": {
+      "title": "Privacidad",
+      "dataTitle": "Mis datos",
+      "deleteTextBefore": "Para eliminar tu cuenta, ve a",
+      "deleteLink": "Mi cuenta",
+      "deleteTextAfter": "."
     }
+  },
+  "app": {
+    "skipToContent": "Ir al contenido",
+    "homeLink": "FindBarber, volver al inicio",
+    "account": "Mi cuenta",
+    "login": "Iniciar sesión"
+  },
+  "pageTitle": {
+    "home": "Inicio",
+    "barbers": "Buscar un barbero",
+    "appointments": "Mis citas",
+    "account": "Mi cuenta",
+    "settings": "Ajustes",
+    "legal": "Aviso legal",
+    "proDashboard": "Área profesional",
+    "proProfile": "Mi perfil profesional",
+    "proServices": "Mis servicios",
+    "proWorkingHours": "Mis horarios",
+    "proTimeOff": "Mis ausencias",
+    "proBookings": "Mis reservas",
+    "proStats": "Mis estadísticas",
+    "proGallery": "Mi galería",
+    "proPayments": "Pagos en línea",
+    "admin": "Administración",
+    "adminUsers": "Usuarios — Administración",
+    "adminBookings": "Reservas — Administración",
+    "adminReviews": "Reseñas — Administración",
+    "adminAudit": "Registro de auditoría — Administración",
+    "barberProfile": "Perfil del barbero",
+    "adminBarberStats": "Estadísticas del barbero — Administración"
+  },
+  "footer": {
+    "nav": "Pie de página",
+    "contact": "Contacto",
+    "legal": "Aviso legal",
+    "social": "Redes sociales",
+    "newTab": "{{network}} (nueva pestaña)"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "unread_one": "Notificaciones, {{count}} sin leer",
+    "unread_other": "Notificaciones, {{count}} sin leer",
+    "markAllRead": "Marcar todas como leídas",
+    "marking": "Marcando…",
+    "loadError": "No se han podido cargar las notificaciones.",
+    "retry": "Reintentar",
+    "loading": "Cargando notificaciones…",
+    "empty": "Todavía no tienes notificaciones.",
+    "readLabel": "Notificación leída",
+    "read": "Leída",
+    "markRead": "Marcar como leída",
+    "actionError": "No es posible realizar esta acción ahora mismo.",
+    "type": {
+      "BOOKING_REQUESTED": "Nueva solicitud de reserva",
+      "BOOKING_CONFIRMED": "Reserva confirmada",
+      "BOOKING_COMPLETED": "Reserva completada",
+      "BOOKING_CANCELLED_BY_CLIENT": "Reserva cancelada por el cliente",
+      "BOOKING_CANCELLED_BY_BARBER": "Reserva cancelada por el profesional",
+      "BOOKING_CANCELLED_BY_ADMIN": "Reserva cancelada por la administración",
+      "BOOKING_DECLINED": "Solicitud de reserva rechazada",
+      "BOOKING_EXPIRED": "Solicitud de reserva caducada (sin respuesta)"
+    }
+  },
+  "theme": {
+    "system": {
+      "label": "Tema del sistema",
+      "short": "Sistema",
+      "description": "Sigue el ajuste claro u oscuro de tu dispositivo."
+    },
+    "light": {
+      "label": "Tema claro",
+      "short": "Claro",
+      "description": "Fondo blanco, siempre."
+    },
+    "dark": {
+      "label": "Tema oscuro",
+      "short": "Oscuro",
+      "description": "Fondo azul noche, más suave por la noche."
+    }
+  },
+  "dialog": {
+    "cancel": "Cancelar"
+  },
+  "avatar": {
+    "alt": "Tu foto de perfil",
+    "choose": "Elegir una foto",
+    "change": "Cambiar foto",
+    "delete": "Eliminar foto",
+    "hint": "Opcional. JPEG, PNG o WebP, máx. {{size}} MB.",
+    "updated": "Foto de perfil actualizada.",
+    "deleted": "Foto de perfil eliminada.",
+    "confirmText": "¿Eliminar tu foto de perfil? Esta acción es definitiva.",
+    "cancel": "Cancelar",
+    "confirmDelete": "Confirmar eliminación"
+  },
+  "dataExport": {
+    "description": "Descarga una copia de todos los datos vinculados a tu cuenta (perfil, citas, reseñas, notificaciones) en formato JSON.",
+    "descriptionBarber": "Descarga una copia de todos los datos vinculados a tu cuenta (perfil, citas, reseñas, notificaciones, escaparate y actividad) en formato JSON.",
+    "download": "Descargar mis datos"
+  },
+  "account": {
+    "title": "Mi cuenta",
+    "settingsLink": "Ajustes",
+    "photoTitle": "Foto de perfil",
+    "dataTitle": "Mis datos",
+    "dataTextBefore": "Para descargar una copia de tus datos, ve a",
+    "dataLink": "Ajustes > Privacidad",
+    "dataTextAfter": ".",
+    "deleteTitle": "Eliminar mi cuenta",
+    "deleteInfo": {
+      "definitive": "La eliminación es definitiva.",
+      "bookings": "Tus próximas citas se cancelan y se avisa a la otra parte.",
+      "personal": "Se borran tu nombre, tu email, tu dirección y tus comentarios. El historial de citas y las valoraciones se conservan de forma anónima.",
+      "showcase": "Tu escaparate (perfil, fotos, horarios) se retira de la búsqueda."
+    },
+    "passwordLabel": "Contraseña actual",
+    "passwordRequired": "Introduce tu contraseña para confirmar.",
+    "deleteButton": "Eliminar mi cuenta",
+    "confirmTitle": "¿Eliminar definitivamente tu cuenta?",
+    "confirmLabel": "Eliminar definitivamente",
+    "confirmCancel": "Conservar mi cuenta",
+    "confirmText": "Esta acción es irreversible."
+  },
+  "legal": {
+    "title": "Aviso legal",
+    "publisherTitle": "Responsable del sitio",
+    "contactTitle": "Contacto",
+    "contactText": "Para cualquier pregunta:",
+    "roleTitle": "Función de la plataforma",
+    "roleText": "FindBarber pone en contacto a clientes con barberos independientes. Cada barbero fija sus servicios, sus precios y su disponibilidad, y es el único responsable de los servicios que presta.",
+    "dataTitle": "Datos personales",
+    "dataTextBefore": "Tus datos se tratan conforme a la ley federal suiza de protección de datos (LPD). Desde tu cuenta puedes exportar tus datos (",
+    "dataLink": "Ajustes > Privacidad",
+    "dataTextAfter": ") o eliminar tu cuenta.",
+    "ipTitle": "Propiedad intelectual",
+    "ipText": "Los contenidos del sitio (textos, logotipo, interfaz) están protegidos. Las fotos publicadas por los barberos siguen siendo de su propiedad. Los mapas base los proporcionan © MapTiler y © los colaboradores de OpenStreetMap."
   }
 }

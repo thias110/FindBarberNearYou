@@ -1,28 +1,32 @@
-// Titre de document par route (WCAG 2.4.2). Les pages d'authentification
-// posent leur propre titre ; null = ne rien changer.
+import i18n from "../i18n";
+
+// Titre de document par route (WCAG 2.4.2), dans la langue courante (issue
+// #32). Les pages d'authentification posent leur propre titre ; null = ne rien
+// changer.
 const SUFFIX = " — FindBarber";
 
+// Route → clé `common:pageTitle.*`.
 const EXACT: Record<string, string> = {
-  "/": "Accueil",
-  "/barbers": "Rechercher un barber",
-  "/appointments": "Mes rendez-vous",
-  "/account": "Mon compte",
-  "/settings": "Paramètres",
-  "/mentions-legales": "Mentions légales",
-  "/pro/dashboard": "Espace professionnel",
-  "/pro/profile": "Mon profil professionnel",
-  "/pro/services": "Mes prestations",
-  "/pro/working-hours": "Mes horaires",
-  "/pro/time-off": "Mes absences",
-  "/pro/bookings": "Mes réservations",
-  "/pro/stats": "Mes statistiques",
-  "/pro/gallery": "Ma galerie",
-  "/pro/payments": "Paiements en ligne",
-  "/admin": "Administration",
-  "/admin/users": "Utilisateurs — Administration",
-  "/admin/bookings": "Réservations — Administration",
-  "/admin/reviews": "Avis — Administration",
-  "/admin/audit": "Journal d'audit — Administration",
+  "/": "home",
+  "/barbers": "barbers",
+  "/appointments": "appointments",
+  "/account": "account",
+  "/settings": "settings",
+  "/mentions-legales": "legal",
+  "/pro/dashboard": "proDashboard",
+  "/pro/profile": "proProfile",
+  "/pro/services": "proServices",
+  "/pro/working-hours": "proWorkingHours",
+  "/pro/time-off": "proTimeOff",
+  "/pro/bookings": "proBookings",
+  "/pro/stats": "proStats",
+  "/pro/gallery": "proGallery",
+  "/pro/payments": "proPayments",
+  "/admin": "admin",
+  "/admin/users": "adminUsers",
+  "/admin/bookings": "adminBookings",
+  "/admin/reviews": "adminReviews",
+  "/admin/audit": "adminAudit",
 };
 
 // Routes servies par AuthLayout (qui porte son propre header et son <main>) :
@@ -36,14 +40,18 @@ export const AUTH_ROUTES = new Set([
   "/reset-password",
 ]);
 
+function titled(key: string): string {
+  return i18n.t(`common:pageTitle.${key}`) + SUFFIX;
+}
+
 export function pageTitle(pathname: string): string | null {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   if (AUTH_ROUTES.has(path)) return null;
   const exact = EXACT[path];
-  if (exact) return exact + SUFFIX;
-  if (/^\/barbers\/[^/]+$/.test(path)) return "Profil du barber" + SUFFIX;
+  if (exact) return titled(exact);
+  if (/^\/barbers\/[^/]+$/.test(path)) return titled("barberProfile");
   if (/^\/admin\/barbers\/[^/]+\/stats$/.test(path)) {
-    return "Statistiques du barber — Administration" + SUFFIX;
+    return titled("adminBarberStats");
   }
   return "FindBarber";
 }
