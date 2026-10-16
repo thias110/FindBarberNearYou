@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/Button";
 
 // Pagination simple et réutilisable des listes d'administration. La cohérence
@@ -12,11 +13,12 @@ export function AdminPagination({
   totalPages: number;
   onPageChange: (page: number) => void;
 }) {
+  const { t } = useTranslation("admin");
   if (totalPages <= 1) return null;
 
   return (
     <nav
-      aria-label="Pagination"
+      aria-label={t("pagination.label")}
       className="flex items-center justify-center gap-3"
     >
       <Button
@@ -25,10 +27,10 @@ export function AdminPagination({
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
       >
-        Précédent
+        {t("pagination.previous")}
       </Button>
       <span className="text-sm text-foreground-muted">
-        Page {page} / {totalPages}
+        {t("pagination.pageOf", { page, total: totalPages })}
       </span>
       <Button
         variant="secondary"
@@ -36,7 +38,7 @@ export function AdminPagination({
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
       >
-        Suivant
+        {t("pagination.next")}
       </Button>
     </nav>
   );

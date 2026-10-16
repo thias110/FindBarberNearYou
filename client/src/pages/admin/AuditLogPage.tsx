@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import {
-  AUDIT_ACTIONS,
-  AUDIT_ACTION_LABELS,
-  ROLE_LABELS,
-  type AuditAction,
-} from "@findbarber/shared/constants";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import { AUDIT_ACTIONS, type AuditAction } from "@findbarber/shared/constants";
 import type { AdminAuditLog } from "@findbarber/shared/types";
+import i18n from "../../i18n";
 import { adminApi } from "../../lib/apiClient";
 import { AdminLayout } from "../../components/AdminLayout";
 import { AdminPagination } from "../../components/AdminPagination";
@@ -15,17 +13,11 @@ import { Card } from "../../components/ui/Card";
 import { Field } from "../../components/ui/Field";
 import { Select } from "../../components/ui/Select";
 import { formatDateTime } from "../../lib/formatters";
+import { label } from "../../lib/labels";
 
 type ActionFilter = "ALL" | AuditAction;
 
 const PAGE_SIZE = 50;
-
-const TARGET_LABELS: Record<AdminAuditLog["targetType"], string> = {
-  BOOKING: "Réservation",
-  USER: "Compte",
-  REVIEW: "Avis",
-  BARBER_PROFILE: "Profil barber",
-};
 
 function actionVariant(action: AuditAction): BadgeVariant {
   switch (action) {
@@ -48,17 +40,18 @@ function actionVariant(action: AuditAction): BadgeVariant {
   }
 }
 
-function actorLabel(entry: AdminAuditLog): string {
-  if (!entry.actorRole) return "Système";
-  const role = ROLE_LABELS[entry.actorRole];
+function actorLabel(entry: AdminAuditLog, t: TFunction<"admin">): string {
+  if (!entry.actorRole) return t("audit.system");
+  const role = label("role", entry.actorRole);
   return entry.actorEmail
-    ? `${entry.actorEmail} (${role})`
-    : `Compte supprimé (${role})`;
+    ? t("audit.actorWithRole", { email: entry.actorEmail, role })
+    : t("audit.deletedActor", { role });
 }
 
 // Journal d'audit (issue #13) : lecture seule. Un compte ciblé est affiché par
 // son email ; les autres cibles par un identifiant tronqué.
 export function AdminAuditLogPage() {
+  const { t } = useTranslation("admin");
   const [action, setAction] = useState<ActionFilter>("ALL");
   const [page, setPage] = useState(1);
   const [entries, setEntries] = useState<AdminAuditLog[]>([]);
@@ -85,7 +78,7 @@ export function AdminAuditLogPage() {
       .catch((err: unknown) => {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : "Chargement impossible.",
+            err instanceof Error ? err.message : i18n.t("admin:common.loadError"),
           );
         }
       })
@@ -102,15 +95,14 @@ export function AdminAuditLogPage() {
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-bold text-foreground">
-            Journal d'audit
+            {t("audit.title")}
           </h2>
           <p className="mt-1 text-sm text-foreground-muted">
-            Actions sensibles : changements de statut des réservations,
-            suspensions de comptes et modération des avis.
+            {t("audit.description")}
           </p>
         </div>
 
-        <Field label="Action" className="max-w-xs">
+        <Field label={t("audit.actionLabel")} className="max-w-xs">
           {(control) => (
             <Select
               {...control}
@@ -120,10 +112,10 @@ export function AdminAuditLogPage() {
                 setPage(1);
               }}
             >
-              <option value="ALL">Toutes les actions</option>
+              <option value="ALL">{t("audit.allActions")}</option>
               {AUDIT_ACTIONS.map((value) => (
                 <option key={value} value={value}>
-                  {AUDIT_ACTION_LABELS[value]}
+                  {label("auditAction", value)}
                 </option>
               ))}
             </Select>
@@ -135,8 +127,8 @@ export function AdminAuditLogPage() {
           error={error}
           onRetry={() => setReloadKey((key) => key + 1)}
           isEmpty={entries.length === 0}
-          emptyTitle="Aucune entrée pour ce filtre."
-          loadingLabel="Chargement du journal…"
+          emptyTitle={t("audit.empty")}
+          loadingLabel={t("audit.loading")}
         >
           <ul className="space-y-2">
             {entries.map((entry) => (
@@ -145,13 +137,13 @@ export function AdminAuditLogPage() {
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0 space-y-1">
                       <Badge variant={actionVariant(entry.action)}>
-                        {AUDIT_ACTION_LABELS[entry.action]}
+                        {label("auditAction", entry.action)}
                       </Badge>
                       <p className="break-all text-sm text-foreground">
-                        Par : {actorLabel(entry)}
+                        {t("audit.by", { actor: actorLabel(entry, t) })}
                       </p>
                       <p className="break-all text-xs text-foreground-muted">
-                        {TARGET_LABELS[entry.targetType]} ·{" "}
+                        {t(`audit.targets.${entry.targetType}`)} ·{" "}
                         {entry.targetEmail ?? (
                           <span className="font-mono" title={entry.targetId}>
                             {entry.targetId.slice(0, 8)}

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert } from "../ui/Alert";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -13,7 +14,7 @@ export function AdminListState({
   onRetry,
   isEmpty,
   emptyTitle,
-  loadingLabel = "Chargement…",
+  loadingLabel,
   children,
 }: {
   loading: boolean;
@@ -24,11 +25,13 @@ export function AdminListState({
   loadingLabel?: string;
   children: ReactNode;
 }) {
+  const { t } = useTranslation("admin");
+
   if (loading) {
     return (
       <div className="space-y-3" aria-busy="true">
         <span className="sr-only" role="status">
-          {loadingLabel}
+          {loadingLabel ?? t("listState.loading")}
         </span>
         {[0, 1, 2].map((key) => (
           <Card key={key} className="space-y-2 p-4">
@@ -46,7 +49,7 @@ export function AdminListState({
       <Alert variant="danger">
         <p>{error}</p>
         <Button variant="secondary" className="mt-3 min-h-11" onClick={onRetry}>
-          Réessayer
+          {t("common.retry")}
         </Button>
       </Alert>
     );

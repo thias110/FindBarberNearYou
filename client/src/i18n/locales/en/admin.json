@@ -1,0 +1,186 @@
+{
+  "common": {
+    "loadError": "Couldn't load the data.",
+    "retry": "Try again"
+  },
+  "layout": {
+    "title": "Admin area",
+    "logout": "Log out",
+    "navLabel": "Admin navigation",
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "bookings": "Bookings",
+      "reviews": "Reviews",
+      "audit": "Audit log"
+    }
+  },
+  "pagination": {
+    "label": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{page}} of {{total}}"
+  },
+  "listState": {
+    "loading": "Loading…"
+  },
+  "lib": {
+    "unknownClient": "Unknown client",
+    "cancelledBy": {
+      "client": "The client",
+      "barber": "The barber",
+      "admin": "The admin team"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "loading": "Loading metrics…",
+    "metrics": {
+      "users": "Users",
+      "activeBarbers": "Active barbers",
+      "pendingProfiles": "Profiles to approve",
+      "bookings": "Bookings",
+      "suspendedUsers": "Suspended users",
+      "pendingBookings": "Pending bookings",
+      "hiddenReviews": "Hidden reviews"
+    },
+    "pendingAlert_one": "{{count}} new barber profile is awaiting your approval.",
+    "pendingAlert_other": "{{count}} new barber profiles are awaiting your approval.",
+    "pendingLink": "View profiles to approve",
+    "shortcutsLabel": "Admin shortcuts",
+    "shortcuts": {
+      "users": {
+        "title": "Users",
+        "description": "List, roles and account suspension"
+      },
+      "bookings": {
+        "title": "Bookings",
+        "description": "Overview and filtering by status"
+      },
+      "reviews": {
+        "title": "Reviews",
+        "description": "Moderating and hiding reviews"
+      }
+    }
+  },
+  "users": {
+    "title": "Users",
+    "filterLabel": "Filter by role",
+    "filters": {
+      "ALL": "All",
+      "CLIENT": "Clients",
+      "BARBER": "Barbers",
+      "ADMIN": "Administrators",
+      "PENDING": "To approve"
+    },
+    "empty": "No users for this filter.",
+    "loading": "Loading users…",
+    "pendingApproval": "Awaiting approval",
+    "registeredAt": "Signed up on {{date}}",
+    "approve": "Approve",
+    "viewStats": "View statistics",
+    "certify": "Certify",
+    "removeBadge": "Remove badge",
+    "reactivate": "Reactivate",
+    "suspend": "Suspend",
+    "cannotSuspendSelf": "You can't suspend your own account.",
+    "actions": {
+      "suspend": {
+        "title": "Suspend this account?",
+        "confirmLabel": "Suspend",
+        "failure": "Couldn't suspend the account.",
+        "success": "{{email}} has been suspended.",
+        "description": "{{email}} will no longer be able to log in and their upcoming bookings will be cancelled."
+      },
+      "reactivate": {
+        "title": "Reactivate this account?",
+        "confirmLabel": "Reactivate",
+        "failure": "Couldn't reactivate the account.",
+        "success": "{{email}} has been reactivated.",
+        "description": "{{email}} will be able to log in again."
+      },
+      "certify": {
+        "title": "Grant the “Certified” badge?",
+        "confirmLabel": "Certify",
+        "failure": "Couldn't grant the badge.",
+        "success": "{{email}} is now certified.",
+        "description": "The “Certified” badge for {{email}} will appear on their public profile and in search results."
+      },
+      "approve": {
+        "title": "Approve this profile?",
+        "confirmLabel": "Approve",
+        "failure": "Couldn't approve the profile.",
+        "success": "{{email}} has been approved: their profile is now live.",
+        "description": "The profile of {{email}} will appear in search results straight away and will be able to receive bookings."
+      },
+      "uncertify": {
+        "title": "Remove the “Certified” badge?",
+        "confirmLabel": "Remove badge",
+        "failure": "Couldn't remove the badge.",
+        "success": "The badge for {{email}} has been removed.",
+        "description": "The “Certified” badge for {{email}} will disappear from their public profile and from search results."
+      }
+    }
+  },
+  "bookings": {
+    "title": "Bookings",
+    "statusLabel": "Status",
+    "allStatuses": "All statuses",
+    "empty": "No bookings for this filter.",
+    "loading": "Loading bookings…",
+    "client": "Client: {{name}}",
+    "barber": "Barber: {{name}}",
+    "cancelledBy": "Cancelled by: {{actor}}.",
+    "cancel": "Cancel booking",
+    "cancelSuccess": "Booking cancelled.",
+    "cancelFailure": "Couldn't cancel the booking.",
+    "confirm": {
+      "title": "Cancel this booking?",
+      "keep": "Keep it",
+      "body": "The client and the barber will be notified."
+    }
+  },
+  "reviews": {
+    "title": "Reviews",
+    "empty": "No reviews yet.",
+    "loading": "Loading reviews…",
+    "rating": "{{rating}} / 5",
+    "hidden": "Hidden",
+    "visible": "Visible",
+    "noComment": "No comment.",
+    "meta": "Barber: {{barber}} · Client: {{client}}",
+    "hide": "Hide",
+    "hideSuccess": "Review hidden.",
+    "hideFailure": "Couldn't hide the review.",
+    "confirm": {
+      "title": "Hide this review?",
+      "body": "It will no longer be publicly visible. This can't be undone from the interface."
+    }
+  },
+  "audit": {
+    "title": "Audit log",
+    "description": "Sensitive actions: booking status changes, account suspensions and review moderation.",
+    "actionLabel": "Action",
+    "allActions": "All actions",
+    "empty": "No entries for this filter.",
+    "loading": "Loading the log…",
+    "by": "By: {{actor}}",
+    "system": "System",
+    "actorWithRole": "{{email}} ({{role}})",
+    "deletedActor": "Deleted account ({{role}})",
+    "targets": {
+      "BOOKING": "Booking",
+      "USER": "Account",
+      "REVIEW": "Review",
+      "BARBER_PROFILE": "Barber profile"
+    }
+  },
+  "barberStats": {
+    "title": "Barber statistics",
+    "back": "Back to users",
+    "loading": "Loading statistics…",
+    "notFound": "Barber profile not found.",
+    "timezoneMissing": "This barber hasn't set their time zone: statistics unavailable.",
+    "chooseRange": "Choose a date range."
+  }
+}

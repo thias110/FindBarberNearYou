@@ -1,0 +1,186 @@
+{
+  "common": {
+    "loadError": "Chargement impossible.",
+    "retry": "Réessayer"
+  },
+  "layout": {
+    "title": "Espace admin",
+    "logout": "Se déconnecter",
+    "navLabel": "Navigation administration",
+    "nav": {
+      "dashboard": "Tableau de bord",
+      "users": "Utilisateurs",
+      "bookings": "Réservations",
+      "reviews": "Avis",
+      "audit": "Journal"
+    }
+  },
+  "pagination": {
+    "label": "Pagination",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "pageOf": "Page {{page}} / {{total}}"
+  },
+  "listState": {
+    "loading": "Chargement…"
+  },
+  "lib": {
+    "unknownClient": "Client inconnu",
+    "cancelledBy": {
+      "client": "Le client",
+      "barber": "Le professionnel",
+      "admin": "L'administration"
+    }
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "loading": "Chargement des indicateurs…",
+    "metrics": {
+      "users": "Utilisateurs",
+      "activeBarbers": "Barbiers actifs",
+      "pendingProfiles": "Profils à approuver",
+      "bookings": "Réservations",
+      "suspendedUsers": "Utilisateurs suspendus",
+      "pendingBookings": "Réservations en attente",
+      "hiddenReviews": "Avis masqués"
+    },
+    "pendingAlert_one": "{{count}} nouveau profil barber attend votre approbation.",
+    "pendingAlert_other": "{{count}} nouveaux profils barber attendent votre approbation.",
+    "pendingLink": "Voir les profils à approuver",
+    "shortcutsLabel": "Raccourcis administration",
+    "shortcuts": {
+      "users": {
+        "title": "Utilisateurs",
+        "description": "Liste, rôles et suspension des comptes"
+      },
+      "bookings": {
+        "title": "Réservations",
+        "description": "Vue globale et filtrage par statut"
+      },
+      "reviews": {
+        "title": "Avis",
+        "description": "Modération et masquage des avis"
+      }
+    }
+  },
+  "users": {
+    "title": "Utilisateurs",
+    "filterLabel": "Filtrer par rôle",
+    "filters": {
+      "ALL": "Tous",
+      "CLIENT": "Clients",
+      "BARBER": "Barbiers",
+      "ADMIN": "Administrateurs",
+      "PENDING": "À approuver"
+    },
+    "empty": "Aucun utilisateur pour ce filtre.",
+    "loading": "Chargement des utilisateurs…",
+    "pendingApproval": "En attente d'approbation",
+    "registeredAt": "Inscrit le {{date}}",
+    "approve": "Approuver",
+    "viewStats": "Voir les statistiques",
+    "certify": "Certifier",
+    "removeBadge": "Retirer le badge",
+    "reactivate": "Réactiver",
+    "suspend": "Suspendre",
+    "cannotSuspendSelf": "Vous ne pouvez pas suspendre votre propre compte.",
+    "actions": {
+      "suspend": {
+        "title": "Suspendre ce compte ?",
+        "confirmLabel": "Suspendre",
+        "failure": "Suspension impossible.",
+        "success": "{{email}} a été suspendu.",
+        "description": "{{email}} ne pourra plus se connecter et ses réservations futures seront annulées."
+      },
+      "reactivate": {
+        "title": "Réactiver ce compte ?",
+        "confirmLabel": "Réactiver",
+        "failure": "Réactivation impossible.",
+        "success": "{{email}} a été réactivé.",
+        "description": "{{email}} pourra de nouveau se connecter."
+      },
+      "certify": {
+        "title": "Attribuer le badge « Certifié » ?",
+        "confirmLabel": "Certifier",
+        "failure": "Attribution du badge impossible.",
+        "success": "{{email}} est désormais certifié.",
+        "description": "Le badge « Certifié » de {{email}} apparaîtra sur son profil public et dans la recherche."
+      },
+      "approve": {
+        "title": "Approuver ce profil ?",
+        "confirmLabel": "Approuver",
+        "failure": "Approbation impossible.",
+        "success": "{{email}} est approuvé : son profil est en ligne.",
+        "description": "Le profil de {{email}} apparaîtra immédiatement dans la recherche et pourra recevoir des réservations."
+      },
+      "uncertify": {
+        "title": "Retirer le badge « Certifié » ?",
+        "confirmLabel": "Retirer le badge",
+        "failure": "Retrait du badge impossible.",
+        "success": "Le badge de {{email}} a été retiré.",
+        "description": "Le badge « Certifié » de {{email}} disparaîtra de son profil public et de la recherche."
+      }
+    }
+  },
+  "bookings": {
+    "title": "Réservations",
+    "statusLabel": "Statut",
+    "allStatuses": "Tous les statuts",
+    "empty": "Aucune réservation pour ce filtre.",
+    "loading": "Chargement des réservations…",
+    "client": "Client : {{name}}",
+    "barber": "Professionnel : {{name}}",
+    "cancelledBy": "Annulée par : {{actor}}.",
+    "cancel": "Annuler la réservation",
+    "cancelSuccess": "Réservation annulée.",
+    "cancelFailure": "Annulation impossible.",
+    "confirm": {
+      "title": "Annuler cette réservation ?",
+      "keep": "Garder",
+      "body": "Le client et le professionnel seront notifiés."
+    }
+  },
+  "reviews": {
+    "title": "Avis",
+    "empty": "Aucun avis pour le moment.",
+    "loading": "Chargement des avis…",
+    "rating": "{{rating}} / 5",
+    "hidden": "Masqué",
+    "visible": "Visible",
+    "noComment": "Sans commentaire.",
+    "meta": "Professionnel : {{barber}} · Client : {{client}}",
+    "hide": "Masquer",
+    "hideSuccess": "Avis masqué.",
+    "hideFailure": "Masquage impossible.",
+    "confirm": {
+      "title": "Masquer cet avis ?",
+      "body": "Il ne sera plus visible publiquement. Cette action ne peut pas être annulée depuis l'interface."
+    }
+  },
+  "audit": {
+    "title": "Journal d'audit",
+    "description": "Actions sensibles : changements de statut des réservations, suspensions de comptes et modération des avis.",
+    "actionLabel": "Action",
+    "allActions": "Toutes les actions",
+    "empty": "Aucune entrée pour ce filtre.",
+    "loading": "Chargement du journal…",
+    "by": "Par : {{actor}}",
+    "system": "Système",
+    "actorWithRole": "{{email}} ({{role}})",
+    "deletedActor": "Compte supprimé ({{role}})",
+    "targets": {
+      "BOOKING": "Réservation",
+      "USER": "Compte",
+      "REVIEW": "Avis",
+      "BARBER_PROFILE": "Profil barber"
+    }
+  },
+  "barberStats": {
+    "title": "Statistiques d'un professionnel",
+    "back": "Retour aux utilisateurs",
+    "loading": "Chargement des statistiques…",
+    "notFound": "Profil professionnel introuvable.",
+    "timezoneMissing": "Ce professionnel n'a pas renseigné son fuseau horaire : statistiques indisponibles.",
+    "chooseRange": "Choisissez une plage de dates."
+  }
+}
