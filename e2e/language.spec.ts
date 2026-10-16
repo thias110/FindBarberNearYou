@@ -63,3 +63,31 @@ test("inscription : langue courante présélectionnée et envoyée avec le compt
   ]);
   expect(request.postDataJSON()).toMatchObject({ locale: "it" });
 });
+
+test("anglais : les écrans visiteur, barber et admin sont traduits", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("combobox", { name: "Langue" }).first().selectOption("en");
+  await expect(page.getByRole("heading", { name: "Good to see you again." })).toBeVisible();
+  await expect(page).toHaveTitle("Log in — FindBarber");
+
+  // Connecté, c'est la langue du compte qui s'applique : on la change.
+  for (const [account, path] of [
+    [ACCOUNTS.barber, "/pro/dashboard"],
+    [ACCOUNTS.admin, "/admin"],
+  ] as const) {
+    await loginByApi(page, account);
+    await page.goto(path);
+    await page.getByRole("combobox", { name: "Langue" }).first().selectOption("en");
+    if (account === ACCOUNTS.barber) {
+      await expect(
+        page.getByRole("heading", { level: 1, name: "Professional area" }),
+      ).toBeVisible();
+    } else {
+      await expect(page.getByRole("navigation", { name: "Admin navigation" })).toBeVisible();
+      await expect(page.getByRole("link", { name: "Audit log" })).toBeVisible();
+    }
+    // Remise en français du compte démo pour les autres tests.
+    await page.getByRole("combobox", { name: "Language" }).first().selectOption("fr");
+    await expect(page.locator("html")).toHaveAttribute("lang", "fr");
+  }
+});

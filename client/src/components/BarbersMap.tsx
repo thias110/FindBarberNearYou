@@ -423,6 +423,7 @@ export default function BarbersMap({
               <p className="max-w-xs text-xs text-foreground-muted">
                 <Trans
                   t={t}
+                  ns="client"
                   i18nKey="map.unconfigured.devHelp"
                   components={{ code: <code /> }}
                 />

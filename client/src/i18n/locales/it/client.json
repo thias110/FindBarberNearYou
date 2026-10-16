@@ -192,7 +192,7 @@
       "onlineFull": "Pagamento online dell'importo totale",
       "onlineDeposit": "Acconto di {{amount}} pagato online, il resto sul posto",
       "onlineDetails": "(carta o Twint). Rimborsato automaticamente se il professionista rifiuta o se annulli in tempo.",
-      "loginPrompt": "<link>Accedi</link> per inviare una prenotazione.",
+      "loginPrompt": "<loginLink>Accedi</loginLink> per inviare una prenotazione.",
       "clientsOnly": "Solo gli account cliente possono prenotare.",
       "bookingFailed": "Prenotazione non riuscita.",
       "submitting": "Invio…",

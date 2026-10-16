@@ -80,12 +80,12 @@ const ACCEPTED_UPLOAD_TYPES = UPLOAD_IMAGE_MIME_TYPES as readonly string[];
 /** Pré-validation client d'un fichier image (le serveur reste la référence). */
 export function validateImageFile(file: File): string | null {
   if (!ACCEPTED_UPLOAD_TYPES.includes(file.type)) {
-    return "Format accepté : JPEG, PNG ou WebP.";
+    return i18n.t("common:upload.badFormat");
   }
   if (file.size > LIMITS.uploadMaxBytes) {
-    return `Image trop volumineuse (${Math.round(
-      LIMITS.uploadMaxBytes / 1_048_576,
-    )} Mo maximum).`;
+    return i18n.t("common:upload.tooLarge", {
+      max: Math.round(LIMITS.uploadMaxBytes / 1_048_576),
+    });
   }
   return null;
 }

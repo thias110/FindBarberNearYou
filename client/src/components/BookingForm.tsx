@@ -471,9 +471,10 @@ export function BookingForm({
           <Alert variant="info">
             <Trans
               t={t}
+              ns="client"
               i18nKey="booking.form.loginPrompt"
               components={{
-                link: (
+                loginLink: (
                   <Link
                     to="/login"
                     className="font-medium text-accent-strong underline"

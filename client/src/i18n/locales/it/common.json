@@ -158,5 +158,9 @@
     "dataTextAfter": ") o eliminare il tuo account.",
     "ipTitle": "Proprietà intellettuale",
     "ipText": "I contenuti del sito (testi, logo, interfaccia) sono protetti. Le foto pubblicate dai barbieri restano di loro proprietà. Le mappe di base sono fornite da © MapTiler e © i contributori di OpenStreetMap."
+  },
+  "upload": {
+    "badFormat": "Formati accettati: JPEG, PNG o WebP.",
+    "tooLarge": "Immagine troppo grande (massimo {{max}} MB)."
   }
 }

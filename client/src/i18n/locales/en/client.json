@@ -192,7 +192,7 @@
       "onlineFull": "Full amount paid online",
       "onlineDeposit": "{{amount}} deposit paid online, the rest on the day",
       "onlineDetails": "(card or Twint). Refunded automatically if the professional declines or if you cancel in time.",
-      "loginPrompt": "<link>Log in</link> to send a booking.",
+      "loginPrompt": "<loginLink>Log in</loginLink> to send a booking.",
       "clientsOnly": "Only client accounts can make bookings.",
       "bookingFailed": "Booking failed.",
       "submitting": "Sending…",

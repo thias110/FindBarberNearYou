@@ -192,7 +192,7 @@
       "onlineFull": "Pago en línea del importe total",
       "onlineDeposit": "Anticipo de {{amount}} pagado en línea, el resto en el lugar",
       "onlineDetails": "(tarjeta o Twint). Se reembolsa automáticamente si el profesional rechaza la reserva o si cancelas a tiempo.",
-      "loginPrompt": "<link>Inicia sesión</link> para enviar una reserva.",
+      "loginPrompt": "<loginLink>Inicia sesión</loginLink> para enviar una reserva.",
       "clientsOnly": "Solo las cuentas de cliente pueden reservar.",
       "bookingFailed": "No se pudo realizar la reserva.",
       "submitting": "Enviando…",

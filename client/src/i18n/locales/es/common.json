@@ -158,5 +158,9 @@
     "dataTextAfter": ") o eliminar tu cuenta.",
     "ipTitle": "Propiedad intelectual",
     "ipText": "Los contenidos del sitio (textos, logotipo, interfaz) están protegidos. Las fotos publicadas por los barberos siguen siendo de su propiedad. Los mapas base los proporcionan © MapTiler y © los colaboradores de OpenStreetMap."
+  },
+  "upload": {
+    "badFormat": "Formatos aceptados: JPEG, PNG o WebP.",
+    "tooLarge": "Imagen demasiado grande ({{max}} MB como máximo)."
   }
 }

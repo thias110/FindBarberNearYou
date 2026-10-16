@@ -158,5 +158,9 @@
     "dataTextAfter": ") or delete your account.",
     "ipTitle": "Intellectual property",
     "ipText": "The site's content (text, logo, interface) is protected. Photos published by barbers remain their property. Map tiles are provided by © MapTiler and © OpenStreetMap contributors."
+  },
+  "upload": {
+    "badFormat": "Accepted formats: JPEG, PNG or WebP.",
+    "tooLarge": "Image too large ({{max}} MB maximum)."
   }
 }
