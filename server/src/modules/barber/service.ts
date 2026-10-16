@@ -250,8 +250,9 @@ export async function getOwnProfile(userId: string): Promise<OwnBarberProfile> {
 
 // Checklist de finalisation (issue #42). Le profil est toujours celui de
 // l'utilisateur authentifié : aucun identifiant n'est accepté en entrée, on ne
-// peut donc jamais lire la progression d'un autre barber. Une seule requête,
-// sous-requêtes EXISTS ; sans profil, toutes les étapes restent à faire.
+// peut donc jamais lire la progression d'un autre barber. Étapes du profil en
+// une requête (sous-requêtes EXISTS) ; sans profil, elles restent à faire. La
+// photo (issue #44) est lue sur le compte, indépendamment du profil.
 export async function getProfileCompletion(
   userId: string,
 ): Promise<ProfileCompletion> {
@@ -278,7 +279,14 @@ export async function getProfileCompletion(
     .where(eq(barberProfiles.userId, userId))
     .limit(1);
 
+  const [owner] = await db
+    .select({ avatarPath: users.avatarPath })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
   const done: Record<ProfileCompletionStep, boolean> = {
+    AVATAR: Boolean(owner?.avatarPath),
     PROFILE: row !== undefined,
     SERVICES: Boolean(row?.services),
     WORKING_HOURS: Boolean(row?.workingHours),
@@ -311,6 +319,29 @@ export async function upsertProfile(
   const now = new Date();
 
   return db.transaction(async (tx) => {
+    // Photo obligatoire pour un NOUVEAU profil (issue #44) : la création est
+    // refusée sans avatar. Un profil existant (créé avant cette règle) reste
+    // modifiable et visible ; sa checklist signale la photo manquante.
+    const [existing] = await tx
+      .select({ id: barberProfiles.id })
+      .from(barberProfiles)
+      .where(eq(barberProfiles.userId, userId))
+      .limit(1);
+    if (!existing) {
+      const [owner] = await tx
+        .select({ avatarPath: users.avatarPath })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      if (!owner?.avatarPath) {
+        throw new AppError(
+          422,
+          "AVATAR_REQUIRED",
+          "Une photo de profil est requise pour créer votre profil professionnel.",
+        );
+      }
+    }
+
     const [profile] = await tx
       .insert(barberProfiles)
       .values({

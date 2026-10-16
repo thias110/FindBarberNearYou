@@ -18,7 +18,7 @@ import {
   type BookingStatus,
   type Technique,
 } from "@findbarber/shared/constants";
-import { markEmailVerified } from "./auth-helpers";
+import { giveAvatar, markEmailVerified } from "./auth-helpers";
 
 // Prestations populaires (issue #47) : classement des techniques les plus
 // réservées, calculé côté serveur, complété par la liste par défaut.
@@ -46,6 +46,7 @@ async function register(email: string, role: "BARBER" | "CLIENT") {
     .send({ email, password: PASSWORD, role });
   expect(res.status).toBe(201);
   await markEmailVerified(email);
+  if (role === "BARBER") await giveAvatar(email);
   return res.body.user.id as string;
 }
 

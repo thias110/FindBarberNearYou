@@ -17,7 +17,7 @@ import { weekdayFromCalendarDate } from "@findbarber/shared/dates";
 import { setGeocoder, type Geocoder } from "../../server/src/lib/geocoding";
 import { AppError } from "../../server/src/lib/errors";
 import { decryptField } from "../../server/src/lib/fieldCrypto";
-import { markEmailVerified } from "./auth-helpers";
+import { giveAvatar, markEmailVerified } from "./auth-helpers";
 import { approveProfile } from "./approval-helpers";
 
 const app = createApp();
@@ -81,6 +81,7 @@ async function register(email: string, role: "CLIENT" | "BARBER") {
     .send({ email, password: PASSWORD, role });
   expect(res.status).toBe(201);
   await markEmailVerified(email);
+  if (role === "BARBER") await giveAvatar(email);
   return res.body.user as { id: string; email: string };
 }
 

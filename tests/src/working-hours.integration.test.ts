@@ -11,7 +11,7 @@ import {
   barberWorkingHours,
   users,
 } from "@findbarber/shared/schema";
-import { markEmailVerified } from "./auth-helpers";
+import { giveAvatar, markEmailVerified } from "./auth-helpers";
 import { approveProfile } from "./approval-helpers";
 
 const app = createApp();
@@ -61,6 +61,7 @@ async function registerBarber(email: string) {
     .send({ email, password: PASSWORD, role: "BARBER" });
   expect(res.status).toBe(201);
   await markEmailVerified(email);
+  await giveAvatar(email);
   return res.body.user as { id: string; email: string };
 }
 

@@ -8,6 +8,7 @@ import { createApp } from "../../server/src/app";
 import { db } from "../../server/src/db/client";
 import { migrateDb } from "../../server/src/db/migrate";
 import { auditLogs } from "@findbarber/shared/schema";
+import { giveAvatar } from "./auth-helpers";
 import {
   createUser,
   futureDate,
@@ -31,6 +32,7 @@ beforeEach(async () => {
 // Profil créé par le barber lui-même, comme en production : jamais approuvé.
 async function newBarber(): Promise<{ pro: Session; profileId: string; serviceId: string }> {
   await createUser(BARBER, "BARBER");
+  await giveAvatar(BARBER);
   const pro = await login(app, BARBER);
   const profile = await pro.agent
     .put("/api/barber/profile")

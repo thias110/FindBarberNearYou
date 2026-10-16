@@ -402,6 +402,8 @@ export const ADMIN_LIMITS = {
 // Étapes dans l'ordre d'affichage. Chacune est calculée côté serveur pour le
 // seul propriétaire du profil ; sans profil, aucune étape n'est faite.
 export const PROFILE_COMPLETION_STEPS = [
+  // Photo de profil (issue #44) : requise pour créer un nouveau profil.
+  "AVATAR",
   "PROFILE",
   "SERVICES",
   "WORKING_HOURS",

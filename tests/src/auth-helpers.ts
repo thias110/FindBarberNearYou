@@ -12,3 +12,15 @@ export async function markEmailVerified(email: string): Promise<void> {
     .set({ emailVerifiedAt: new Date() })
     .where(eq(users.email, email.trim().toLowerCase()));
 }
+
+// Photo de profil obligatoire pour créer un profil barber (issue #44) : les
+// suites qui créent un profil par l'API donnent d'abord un avatar au compte.
+// Le parcours d'envoi réel est testé dans avatar.integration.test.ts.
+export const TEST_AVATAR_PATH = "avatars/test-avatar.webp";
+
+export async function giveAvatar(email: string): Promise<void> {
+  await db
+    .update(users)
+    .set({ avatarPath: TEST_AVATAR_PATH })
+    .where(eq(users.email, email.trim().toLowerCase()));
+}

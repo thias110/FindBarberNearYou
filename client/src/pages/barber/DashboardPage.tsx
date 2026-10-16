@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { OwnBarberProfile, ProfileCompletion } from "@findbarber/shared/types";
 import { useAuth } from "../../app/auth-context";
 import { ApiError, barberApi } from "../../lib/apiClient";
+import { useScrollToHash } from "../../lib/useScrollToHash";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -101,6 +102,10 @@ export function BarberDashboardPage() {
     loadProfile();
   }, [loadProfile]);
 
+  const avatarPath = user?.avatarPath ?? null;
+  // Lien direct depuis la checklist vers la photo (#photo-profil).
+  useScrollToHash(!loading);
+
   useEffect(() => {
     let cancelled = false;
     barberApi
@@ -114,7 +119,8 @@ export function BarberDashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+    // Rechargée quand la photo change (issue #44) : l'étape se coche aussitôt.
+  }, [avatarPath]);
 
   // Nettoyage du minuteur de confirmation de copie (évite un setState après
   // démontage).
@@ -188,7 +194,7 @@ export function BarberDashboardPage() {
 
         {completion && <ProfileChecklist completion={completion} />}
 
-        <Card className="p-6">
+        <Card id="photo-profil" className="scroll-mt-4 p-6">
           <h2 className="mb-4 text-lg font-bold text-foreground">
             Photo de profil
           </h2>

@@ -10,6 +10,11 @@ const STEP_DETAILS: Record<
   ProfileCompletionStep,
   { to: string; title: string; todo: string }
 > = {
+  AVATAR: {
+    to: "/pro/dashboard#photo-profil",
+    title: "Ajouter votre photo de profil",
+    todo: "Obligatoire pour créer votre profil : les clients voient à qui ils confient leur coupe.",
+  },
   PROFILE: {
     to: "/pro/profile",
     title: "Renseigner votre profil",

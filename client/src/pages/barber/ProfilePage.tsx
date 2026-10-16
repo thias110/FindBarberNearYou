@@ -38,6 +38,7 @@ import {
   type ProfileField,
   type ProfileFormState,
 } from "../../lib/profileSteps";
+import { AvatarEditor } from "../../components/account/AvatarEditor";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -148,6 +149,10 @@ function StepIndicator({
 // profil complet). Modification : chaque étape est enregistrée directement.
 export function BarberProfilePage() {
   const { user } = useAuth();
+  // Photo obligatoire pour créer un profil (issue #44), vérifiée aussi côté
+  // serveur. Gérée par AvatarEditor, hors du brouillon du formulaire.
+  const hasAvatar = Boolean(user?.avatarPath);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const userId = user?.id ?? null;
   const [form, setForm] = useState<ProfileFormState>(EMPTY_PROFILE_FORM);
   const [mode, setMode] = useState<"create" | "edit">("create");
@@ -265,6 +270,11 @@ export function BarberProfilePage() {
       setReachable(LAST_STEP);
       return true;
     } catch (err) {
+      if (err instanceof ApiError && err.code === "AVATAR_REQUIRED") {
+        setAvatarError(err.message);
+        if (step !== 0) goTo(0);
+        return false;
+      }
       if (err instanceof ApiError && err.code === "VALIDATION_ERROR") {
         const errors = parseServerFieldErrors(err.message);
         if (Object.keys(errors).length > 0) {
@@ -292,11 +302,17 @@ export function BarberProfilePage() {
       form,
       mode === "edit" || isLast ? LAST_STEP : step,
     );
-    if (Object.keys(errors).length > 0) {
+    const missingAvatar = mode === "create" && !hasAvatar;
+    if (Object.keys(errors).length > 0 || missingAvatar) {
+      setAvatarError(
+        missingAvatar ? "Ajoutez une photo de profil pour continuer." : null,
+      );
       showErrors(errors);
+      if (missingAvatar && step !== 0) goTo(0);
       return;
     }
     setFieldErrors({});
+    setAvatarError(null);
 
     if (mode === "create" && !isLast) {
       goTo(step + 1);
@@ -380,6 +396,28 @@ export function BarberProfilePage() {
 
             {step === 0 && (
               <>
+                {(mode === "create" || !hasAvatar) && (
+                  <section
+                    aria-labelledby="profile-photo-title"
+                    className="space-y-3 rounded-lg border border-border p-3"
+                  >
+                    <h3
+                      id="profile-photo-title"
+                      className="text-sm font-semibold text-foreground"
+                    >
+                      Photo de profil (obligatoire)
+                    </h3>
+                    <p className="text-sm text-foreground-muted">
+                      Les clients voient à qui ils confient leur coupe.
+                    </p>
+                    <AvatarEditor />
+                    {avatarError && !hasAvatar && (
+                      <p role="alert" className="text-sm text-danger">
+                        {avatarError}
+                      </p>
+                    )}
+                  </section>
+                )}
                 <Field label="Nom affiché" error={fieldErrors.displayName}>
                   {(control) => (
                     <Input

@@ -14,7 +14,7 @@ import {
   barberWorkingHours,
   users,
 } from "@findbarber/shared/schema";
-import { markEmailVerified } from "./auth-helpers";
+import { giveAvatar, markEmailVerified } from "./auth-helpers";
 
 const app = createApp();
 const PASSWORD = "password123";
@@ -37,6 +37,7 @@ async function register(email: string, role: "BARBER" | "CLIENT" = "BARBER") {
     .send({ email, password: PASSWORD, role });
   expect(res.status).toBe(201);
   await markEmailVerified(email);
+  if (role === "BARBER") await giveAvatar(email);
   const agent = request.agent(app);
   const login = await agent.post("/api/auth/login").send({ email, password: PASSWORD });
   expect(login.status).toBe(200);
@@ -82,19 +83,21 @@ describe("GET /api/barber/profile/completion (issue #42)", () => {
     const { agent } = await register("new@example.com");
     const value = await completion(agent);
     expect(value.steps.map((item) => item.step)).toEqual([
+      "AVATAR",
       "PROFILE",
       "SERVICES",
       "WORKING_HOURS",
       "GALLERY",
     ]);
-    expect(doneSteps(value)).toEqual([]);
-    expect(value).toMatchObject({ completedCount: 0, totalCount: 4, percent: 0, complete: false });
+    // Le compte de test a déjà sa photo (giveAvatar) : seule l'étape AVATAR est faite.
+    expect(doneSteps(value)).toEqual(["AVATAR"]);
+    expect(value).toMatchObject({ completedCount: 1, totalCount: 5, percent: 20, complete: false });
   });
 
   it("tracks progress step by step until the profile is complete", async () => {
     const { agent, csrf } = await register("progress@example.com");
     const profileId = await createProfile(agent, csrf);
-    expect(await completion(agent)).toMatchObject({ completedCount: 1, percent: 25 });
+    expect(await completion(agent)).toMatchObject({ completedCount: 2, percent: 40 });
 
     // Un service inactif ne compte pas.
     const service = await agent
@@ -102,12 +105,12 @@ describe("GET /api/barber/profile/completion (issue #42)", () => {
       .set("X-CSRF-Token", csrf)
       .send({ name: "Coupe", durationMinutes: 30, priceMinor: 2500 });
     expect(service.status).toBe(201);
-    expect(doneSteps(await completion(agent))).toEqual(["PROFILE", "SERVICES"]);
+    expect(doneSteps(await completion(agent))).toEqual(["AVATAR", "PROFILE", "SERVICES"]);
     await agent
       .patch(`/api/barber/services/${service.body.service.id}`)
       .set("X-CSRF-Token", csrf)
       .send({ isActive: false });
-    expect(doneSteps(await completion(agent))).toEqual(["PROFILE"]);
+    expect(doneSteps(await completion(agent))).toEqual(["AVATAR", "PROFILE"]);
     await agent
       .patch(`/api/barber/services/${service.body.service.id}`)
       .set("X-CSRF-Token", csrf)
@@ -120,7 +123,7 @@ describe("GET /api/barber/profile/completion (issue #42)", () => {
       startMinute: 540,
       endMinute: 1080,
     });
-    expect(await completion(agent)).toMatchObject({ completedCount: 3, percent: 75, complete: false });
+    expect(await completion(agent)).toMatchObject({ completedCount: 4, percent: 80, complete: false });
 
     await db.insert(barberPhotos).values({
       id: randomUUID(),
@@ -128,7 +131,7 @@ describe("GET /api/barber/profile/completion (issue #42)", () => {
       imagePath: "gallery/photo.webp",
     });
     expect(await completion(agent)).toMatchObject({
-      completedCount: 4,
+      completedCount: 5,
       percent: 100,
       complete: true,
     });
@@ -149,7 +152,7 @@ describe("GET /api/barber/profile/completion (issue #42)", () => {
       `/api/barber/profile/completion?barberProfileId=${ownerProfileId}`,
     );
     expect(res.status).toBe(200);
-    expect(res.body.completion.completedCount).toBe(0);
+    expect(doneSteps(res.body.completion)).toEqual(["AVATAR"]);
     const [ownerRow] = await db
       .select({ id: barberProfiles.id })
       .from(barberProfiles)
@@ -161,5 +164,66 @@ describe("GET /api/barber/profile/completion (issue #42)", () => {
     expect((await request(app).get("/api/barber/profile/completion")).status).toBe(401);
     const client = await register("client@example.com", "CLIENT");
     expect((await client.agent.get("/api/barber/profile/completion")).status).toBe(403);
+  });
+});
+
+describe("photo de profil obligatoire (issue #44)", () => {
+  it("refuses to create a new profile without a photo", async () => {
+    const { agent, csrf } = await register("no-photo@example.com");
+    await db
+      .update(users)
+      .set({ avatarPath: null })
+      .where(eq(users.email, "no-photo@example.com"));
+
+    const res = await agent
+      .put("/api/barber/profile")
+      .set("X-CSRF-Token", csrf)
+      .send({
+        displayName: "Barbier",
+        description: "Coupes",
+        address: "Rue 1",
+        city: "Genève",
+        countryCode: "CH",
+        latitude: 46.2,
+        longitude: 6.14,
+        places: ["SALON"],
+      });
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe("AVATAR_REQUIRED");
+    expect(res.body.error.message).toMatch(/photo de profil est requise/);
+    expect(await db.select().from(barberProfiles)).toHaveLength(0);
+  });
+
+  it("keeps an existing profile without photo editable, and flags the step until a photo is added", async () => {
+    const { agent, csrf } = await register("legacy@example.com");
+    await createProfile(agent, csrf);
+    // Barber existant au déploiement : profil déjà créé, pas de photo.
+    await db
+      .update(users)
+      .set({ avatarPath: null })
+      .where(eq(users.email, "legacy@example.com"));
+
+    const before = await completion(agent);
+    expect(doneSteps(before)).toEqual(["PROFILE"]);
+    expect(before.complete).toBe(false);
+
+    // La mise à jour du profil existant reste possible sans photo.
+    const update = await agent
+      .put("/api/barber/profile")
+      .set("X-CSRF-Token", csrf)
+      .send({
+        displayName: "Barbier modifié",
+        description: "Coupes",
+        address: "Rue 1",
+        city: "Genève",
+        countryCode: "CH",
+        latitude: 46.2,
+        longitude: 6.14,
+        places: ["SALON"],
+      });
+    expect(update.status).toBe(200);
+
+    await giveAvatar("legacy@example.com");
+    expect(doneSteps(await completion(agent))).toEqual(["AVATAR", "PROFILE"]);
   });
 });

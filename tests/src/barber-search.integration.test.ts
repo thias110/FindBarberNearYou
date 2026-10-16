@@ -15,7 +15,7 @@ import {
   users,
 } from "@findbarber/shared/schema";
 import type { BookingStatus } from "@findbarber/shared/constants";
-import { markEmailVerified } from "./auth-helpers";
+import { TEST_AVATAR_PATH, giveAvatar, markEmailVerified } from "./auth-helpers";
 import { approveProfile } from "./approval-helpers";
 
 const app = createApp();
@@ -70,6 +70,7 @@ async function registerBarber(email: string) {
     .send({ email, password: PASSWORD, role: "BARBER" });
   expect(res.status).toBe(201);
   await markEmailVerified(email);
+  await giveAvatar(email);
   return res.body.user as { id: string; email: string };
 }
 
@@ -173,7 +174,8 @@ describe("GET /api/barbers", () => {
         "techniques",
       ].sort(),
     );
-    expect(item.avatarPath).toBeNull();
+    // Photo de profil obligatoire à la création (issue #44) : avatar de test.
+    expect(item.avatarPath).toBe(`/uploads/${TEST_AVATAR_PATH}`);
     expect(item.averageRating).toBeNull();
     expect(item.reviewCount).toBe(0);
     expect(item.startingPriceMinor).toBeNull();

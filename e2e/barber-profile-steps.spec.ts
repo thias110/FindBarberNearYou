@@ -4,10 +4,17 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, API, expectNoA11yViolations, loginByApi } from "./helpers";
 
+// PNG 1 × 1 valide.
+const PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);
+
 test("barber : création du profil en étapes, brouillon conservé au rechargement", async ({
   page,
 }) => {
   await loginByApi(page, ACCOUNTS.barber);
+  const me = (await (await page.request.get(`${API}/api/auth/me`)).json()).user;
   let sent: Record<string, unknown> | null = null;
   await page.route(`${API}/api/barber/profile`, async (route) => {
     if (route.request().method() === "PUT") {
@@ -48,10 +55,30 @@ test("barber : création du profil en étapes, brouillon conservé au rechargeme
 
   await page.getByLabel("Nom affiché").fill("Barbier Étapes");
   await page.getByLabel("Description").fill("Coupes et barbes");
+
+  // Photo obligatoire (issue #44) : sans elle, on ne quitte pas l'étape 1.
+  await page.getByRole("button", { name: "Continuer" }).click();
+  await expect(page.getByText("Ajoutez une photo de profil pour continuer.")).toBeVisible();
+  await expect(page.getByText("Étape 1 sur 4")).toBeVisible();
+
+  // Envoi simulé : les données démo ne sont pas modifiées.
+  await page.route(`${API}/api/users/me/avatar`, (route) =>
+    route.fulfill({ json: { user: { ...me, avatarPath: "/uploads/avatars/e2e.webp" } } }),
+  );
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "photo.png",
+    mimeType: "image/png",
+    buffer: PNG,
+  });
+  await expect(page.getByText("Ajoutez une photo de profil pour continuer.")).toBeHidden();
   await page.getByRole("button", { name: "Continuer" }).click();
   await expect(page.getByText("Étape 2 sur 4")).toBeVisible();
 
   // Rechargement : les données saisies et l'étape atteinte sont conservées.
+  // (La photo simulée n'existe pas côté serveur : on garde la session simulée.)
+  await page.route(`${API}/api/auth/me`, (route) =>
+    route.fulfill({ json: { user: { ...me, avatarPath: "/uploads/avatars/e2e.webp" } } }),
+  );
   await page.reload();
   await expect(page.getByText("Étape 2 sur 4")).toBeVisible();
   await page.getByRole("button", { name: /Identité/ }).click();

@@ -15,7 +15,7 @@ import {
   users,
 } from "@findbarber/shared/schema";
 import { weekdayFromCalendarDate } from "@findbarber/shared/dates";
-import { markEmailVerified } from "./auth-helpers";
+import { giveAvatar, markEmailVerified } from "./auth-helpers";
 import { moveBookingToPast } from "./booking-helpers";
 import { notifyBookingEvent } from "../../server/src/modules/notification/service";
 import { approveProfile } from "./approval-helpers";
@@ -52,6 +52,7 @@ async function register(
     .send({ email, password: PASSWORD, role });
   expect(res.status).toBe(201);
   await markEmailVerified(email);
+  if (role === "BARBER") await giveAvatar(email);
   return res.body.user as { id: string; email: string };
 }
 

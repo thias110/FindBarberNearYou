@@ -15,7 +15,7 @@ import {
   users,
 } from "@findbarber/shared/schema";
 import type { BookingStatus } from "@findbarber/shared/constants";
-import { markEmailVerified } from "./auth-helpers";
+import { giveAvatar, markEmailVerified } from "./auth-helpers";
 import { approveProfile } from "./approval-helpers";
 
 const app = createApp();
@@ -59,6 +59,7 @@ async function register(email: string, role: "CLIENT" | "BARBER") {
     .send({ email, password: PASSWORD, role });
   expect(res.status).toBe(201);
   await markEmailVerified(email);
+  if (role === "BARBER") await giveAvatar(email);
   return res.body.user as { id: string; email: string };
 }
 
