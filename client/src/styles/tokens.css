@@ -49,12 +49,17 @@
   --fb-night: 10 16 36; /* #0A1024 */
   --fb-night-2: 18 26 51; /* #121A33 */
   --fb-night-muted: 167 177 204; /* #A7B1CC */
+  /* Cobalt fixe pour les sections nuit (le cobalt `accent` s'éclaircit en
+     sombre, ce qui ferait perdre le contraste du texte blanc). */
+  --fb-cobalt: 35 80 245; /* #2350F5 */
 
   /* Statuts : le vert est réservé au succès (ex. réservation confirmée).
      Info = accent-strong (un seul bleu dans l'interface). */
   --fb-success: 30 113 72; /* #1E7148 */
   --fb-warning: 138 90 0; /* #8A5A00 */
   --fb-danger: 184 50 42; /* #B8322A */
+  /* Texte sur fond `danger` plein (bouton danger-solid). */
+  --fb-danger-foreground: 255 255 255;
   --fb-info: 26 60 196; /* = accent-strong */
 
   /* Anneaux de focus. */
@@ -125,6 +130,7 @@
   --fb-success: 85 199 147; /* #55C793 */
   --fb-warning: 237 182 83; /* #EDB653 */
   --fb-danger: 255 128 119; /* #FF8077 */
+  --fb-danger-foreground: 5 10 26; /* #050A1A */
   --fb-info: 143 168 255; /* = accent-strong */
 
   --fb-ring: 143 168 255; /* #8FA8FF */

@@ -18,6 +18,7 @@ import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { buttonClasses } from "../../components/ui/buttonStyles";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 // Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
@@ -153,7 +154,7 @@ export function BarberBookingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-3xl space-y-6">
+        <PageContainer width="reading">
           <div className="flex items-center justify-between gap-3">
             <Skeleton className="h-8 w-52" />
             <Skeleton className="h-11 w-44" />
@@ -166,7 +167,7 @@ export function BarberBookingsPage() {
             <Skeleton className="h-16 w-full" />
             <Skeleton className="h-16 w-full" />
           </Card>
-        </div>
+        </PageContainer>
       </div>
     );
   }
@@ -174,7 +175,7 @@ export function BarberBookingsPage() {
   if (profileMissing) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-2xl space-y-6">
+        <PageContainer width="reading">
           <ProPageHeader title={t("bookings.title")} />
           <Card className="p-6 text-center">
             <p className="text-foreground">
@@ -184,7 +185,7 @@ export function BarberBookingsPage() {
               {t("common.createProfile")}
             </Link>
           </Card>
-        </div>
+        </PageContainer>
       </div>
     );
   }
@@ -194,7 +195,7 @@ export function BarberBookingsPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-3xl space-y-6">
+      <PageContainer width="reading">
         <ProPageHeader
           title={t("bookings.title")}
           description={t("bookings.description")}
@@ -443,7 +444,7 @@ export function BarberBookingsPage() {
             })}
           </ul>
         )}
-      </div>
+      </PageContainer>
     </div>
   );
 }

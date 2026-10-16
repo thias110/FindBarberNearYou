@@ -13,7 +13,7 @@ import { focusFirstInvalid } from "../../lib/formErrors";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const LINK_CLASS =
-  "rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  "rounded text-accent-strong underline focus-ring";
 
 // Mot de passe oublié (issue #9) : réponse toujours neutre, comme le serveur.
 export function ForgotPasswordPage() {

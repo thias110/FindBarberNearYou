@@ -1,17 +1,18 @@
 import { cn } from "../../lib/cn";
 
-// Pastilles de choix (issue #28) : filtres, catégories, créneaux, notes.
-// Même forme partout (pilule, 44 px, contour `border-strong` >= 3:1).
-// - tone "neutral" : filtre ou catégorie, sélection en noir/blanc (maquette).
-// - tone "accent" : choix d'un formulaire (créneau, note), sélection en bleu.
+// Pastilles de choix (issue #28, lot DS-2 : plan §2.6.3) : filtres,
+// catégories, créneaux, notes. Même forme partout : pilule de 44 px sur
+// mobile, 40 px à partir de `sm:` (souris), contour `border-strong` (>= 3:1).
+// - tone "neutral" : filtre ou catégorie, sélection en encre.
+// - tone "accent" : choix d'un formulaire (créneau, note), sélection en cobalt.
+// Un compteur éventuel (« Note 4+ (12) ») fait partie du libellé.
 
 export type ChipTone = "neutral" | "accent";
 
 const BASE =
-  "inline-flex min-h-11 items-center justify-center rounded-full border text-sm font-semibold transition-colors " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
-  "focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
-  "disabled:cursor-not-allowed disabled:opacity-50";
+  "focus-ring inline-flex min-h-11 items-center justify-center rounded-full border text-sm font-semibold " +
+  "transition-[color,background-color,border-color,transform] duration-fast ease-out active:duration-instant " +
+  "motion-safe:active:scale-[.97] disabled:cursor-not-allowed disabled:opacity-50 motion-safe:disabled:scale-100";
 
 const IDLE = "border-border-strong bg-surface text-foreground hover:bg-surface-muted";
 
@@ -33,21 +34,28 @@ export function chipClasses(
 ): string {
   return cn(
     BASE,
-    square ? "h-11 w-11" : "px-4",
+    square ? "h-11 w-11" : "px-3.5 sm:min-h-10",
     selected ? SELECTED[tone] : IDLE,
     className,
   );
 }
 
-// Segment d'un sélecteur à options exclusives (ex. Liste / Carte), posé dans
-// un conteneur `rounded-full border p-1`.
-export function segmentClasses(selected: boolean): string {
+// Sélecteur segmenté (« Salon / Chez le pro / Domicile », « Liste / Carte ») :
+// un rail `segmentRailClasses()` contenant des segments `segmentClasses()`.
+// Le composant `SegmentedControl` assemble les deux avec le bon rôle ARIA
+// (radiogroup) et la navigation au clavier.
+export function segmentRailClasses(className?: string): string {
+  return cn("inline-flex items-center gap-1 rounded-full bg-surface-muted p-1", className);
+}
+
+export function segmentClasses(selected: boolean, className?: string): string {
   return cn(
-    "inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition-colors",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-    "focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+    "focus-ring inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-semibold sm:min-h-10",
+    "transition-[color,background-color,box-shadow] duration-base ease-out",
+    "disabled:cursor-not-allowed disabled:opacity-50",
     selected
-      ? "bg-foreground text-background"
+      ? "bg-surface text-foreground shadow-1"
       : "text-foreground-muted hover:text-foreground",
+    className,
   );
 }

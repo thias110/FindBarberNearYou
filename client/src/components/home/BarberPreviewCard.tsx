@@ -45,7 +45,7 @@ export function BarberPreviewCard({
   return (
     <Link
       to={`/barbers/${barber.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-surface text-foreground shadow-card-sm transition-shadow hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-surface text-foreground shadow-card-sm transition-shadow hover:shadow-card focus-ring"
     >
       <div className="relative">
         <BarberPhoto

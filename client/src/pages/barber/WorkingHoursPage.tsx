@@ -29,6 +29,7 @@ import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { buttonClasses } from "../../components/ui/buttonStyles";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 const CHECKBOX_CLASS = "h-5 w-5 shrink-0 accent-accent";
 
@@ -356,7 +357,7 @@ export function BarberWorkingHoursPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-2xl space-y-6">
+        <PageContainer width="reading">
           <div className="flex items-center justify-between gap-3">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-11 w-44" />
@@ -369,7 +370,7 @@ export function BarberWorkingHoursPage() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </Card>
-        </div>
+        </PageContainer>
       </div>
     );
   }
@@ -377,7 +378,7 @@ export function BarberWorkingHoursPage() {
   if (profileMissing) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-2xl space-y-6">
+        <PageContainer width="reading">
           <ProPageHeader title={t("workingHours.title")} />
           <Card className="p-6 text-center">
             <p className="text-foreground">
@@ -387,7 +388,7 @@ export function BarberWorkingHoursPage() {
               {t("common.createProfile")}
             </Link>
           </Card>
-        </div>
+        </PageContainer>
       </div>
     );
   }
@@ -396,7 +397,7 @@ export function BarberWorkingHoursPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <PageContainer width="reading">
         <ProPageHeader
           title={t("workingHours.title")}
           description={t("workingHours.description")}
@@ -411,7 +412,7 @@ export function BarberWorkingHoursPage() {
             {t("workingHours.timezone.missing")}{" "}
             <Link
               to="/pro/profile"
-              className="font-medium text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="font-medium text-foreground underline underline-offset-4 focus-ring"
             >
               {t("workingHours.timezone.setLink")}
             </Link>
@@ -604,7 +605,7 @@ export function BarberWorkingHoursPage() {
             {t("workingHours.clearAll")}
           </Button>
         </StickyActionBar>
-      </div>
+      </PageContainer>
     </div>
   );
 }

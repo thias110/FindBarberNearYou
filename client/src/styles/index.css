@@ -38,6 +38,31 @@
   }
 }
 
+/* Anneau de focus partagé (lot DS-2, plan §2.6 « Focus ») : une seule
+   définition au lieu des copies `focus-visible:ring-*` dans chaque composant.
+   Couche `components` : une utilitaire posée sur l'élément reste prioritaire.
+   - focus-ring            : cas général, décalé sur `background` ;
+   - focus-ring-on-surface : posé sur une carte ou un champ (`surface`) ;
+   - focus-ring-inset      : élément collé à un bord (onglet, ligne de liste) ;
+   - focus-ring-on-night   : sections « nuit ». */
+@layer components {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .focus-ring-on-surface {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface;
+  }
+
+  .focus-ring-inset {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring;
+  }
+
+  .focus-ring-on-night {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-night focus-visible:ring-offset-2 focus-visible:ring-offset-night;
+  }
+}
+
 /* Transition douce lors du changement de thème, uniquement si l'utilisateur
    n'a pas demandé de réduire les animations. */
 @media (prefers-reduced-motion: no-preference) {

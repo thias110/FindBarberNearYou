@@ -19,6 +19,7 @@ import { HomeHero } from "../../components/home/HomeHero";
 import { CategoryChips } from "../../components/home/CategoryChips";
 import { BarberPreviewCard } from "../../components/home/BarberPreviewCard";
 import { buttonClasses } from "../../components/ui/buttonStyles";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 // Carrousel « Barbers à découvrir » (issue #54).
 const PREVIEW_LIMIT = 8;
@@ -114,7 +115,7 @@ export function ClientHomePage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-5xl space-y-8">
+      <PageContainer width="wide" stack="lg">
         {accountDeleted && (
           <Alert variant="success">
             {t("home.accountDeleted")}
@@ -311,7 +312,7 @@ export function ClientHomePage() {
             </Button>
           </div>
         )}
-      </div>
+      </PageContainer>
     </div>
   );
 }

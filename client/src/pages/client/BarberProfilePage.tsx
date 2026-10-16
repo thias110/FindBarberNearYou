@@ -16,6 +16,7 @@ import { BarberGallery } from "../../components/barber/BarberGallery";
 import { BarberReviews } from "../../components/barber/BarberReviews";
 import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 export function PublicBarberProfilePage() {
   const { t } = useTranslation("client");
@@ -124,7 +125,7 @@ export function PublicBarberProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-5xl space-y-6" aria-busy="true">
+        <PageContainer width="wide" aria-busy="true">
           <span className="sr-only" role="status">
             {t("profile.loading")}
           </span>
@@ -146,7 +147,7 @@ export function PublicBarberProfilePage() {
               <Skeleton className="h-10 w-full" />
             </Card>
           </div>
-        </div>
+        </PageContainer>
       </div>
     );
   }
@@ -186,7 +187,7 @@ export function PublicBarberProfilePage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-5xl">
+      <PageContainer width="wide" stack="none">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
           <div className="min-w-0 lg:col-start-1 lg:row-start-1">
             <BarberProfileHeader
@@ -223,7 +224,7 @@ export function PublicBarberProfilePage() {
             />
           </div>
         </div>
-      </div>
+      </PageContainer>
     </div>
   );
 }

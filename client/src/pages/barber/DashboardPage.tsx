@@ -14,6 +14,7 @@ import { ProNavCard } from "../../components/barber/ProNavCard";
 import { ProfileChecklist } from "../../components/barber/ProfileChecklist";
 import { buttonClasses } from "../../components/ui/buttonStyles";
 import { CONTROL_CLASS } from "../../components/ui/control";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 // Routes BARBER existantes : aucune URL n'est introduite ni modifiée.
 // Titre et description : `dashboard.nav.<clé>.title` / `.description`.
@@ -132,7 +133,7 @@ export function BarberDashboardPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-5xl space-y-6">
+      <PageContainer width="wide">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
@@ -258,7 +259,7 @@ export function BarberDashboardPage() {
             </div>
           ) : null}
         </Card>
-      </div>
+      </PageContainer>
     </div>
   );
 }

@@ -152,7 +152,7 @@ export function LocationPicker({
             <button
               type="button"
               onClick={() => choose(suggestion)}
-              className="min-h-11 w-full rounded-xl border border-border px-3 py-2 text-left text-sm text-foreground hover:border-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="min-h-11 w-full rounded-xl border border-border px-3 py-2 text-left text-sm text-foreground hover:border-accent/60 focus-ring"
             >
               {suggestion.label}
             </button>

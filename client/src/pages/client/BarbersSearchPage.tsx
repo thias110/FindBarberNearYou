@@ -492,7 +492,7 @@ export function BarbersSearchPage() {
               aria-expanded={listOpen}
               aria-controls="search-results-list"
               onClick={() => setListOpen((open) => !open)}
-              className="flex min-h-[64px] w-full shrink-0 flex-col items-center justify-center gap-1 px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+              className="flex min-h-[64px] w-full shrink-0 flex-col items-center justify-center gap-1 px-4 focus-ring-inset"
             >
               <span aria-hidden="true" className="h-1.5 w-10 rounded-full bg-border-strong" />
               <span className="text-sm font-semibold text-foreground">

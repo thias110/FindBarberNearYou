@@ -2,12 +2,13 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "../ui/Badge";
 
 // Badge « Certifié » (issue #41) : attribué uniquement par un ADMIN. Affiché sur
-// le profil public, dans la recherche et dans l'administration.
+// le profil public, dans la recherche et dans l'administration. En laiton, la
+// couleur réservée à la confiance (design system « Dégradé », §2.6.5).
 export function CertifiedBadge({ className }: { className?: string }) {
   const { t } = useTranslation("barber");
   return (
     <Badge
-      variant="accent"
+      variant="brass"
       className={className}
       title={t("certified.title")}
     >

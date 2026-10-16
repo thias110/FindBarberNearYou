@@ -48,7 +48,7 @@ export function HomeHero({ user, onSubmitCity }: HomeHeroProps) {
               to="/account"
               aria-label={t("home.hero.account")}
               title={t("home.hero.account")}
-              className="shrink-0 rounded-full transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              className="shrink-0 rounded-full transition-opacity hover:opacity-85 focus-ring-on-surface"
             >
               {avatarUrl ? (
                 <img

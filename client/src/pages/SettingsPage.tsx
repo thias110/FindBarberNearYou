@@ -8,6 +8,7 @@ import { buttonClasses } from "../components/ui/buttonStyles";
 import { Card } from "../components/ui/Card";
 import { LanguageSelect } from "../components/LanguageSelect";
 import { useTranslation } from "react-i18next";
+import { PageContainer } from "../components/ui/PageContainer";
 
 // Paramètres (issue #29) : préférences regroupées par section, dont l'export
 // des données (issue #31). Ouvert aux CLIENT et BARBER, comme Mon compte. Les sections portent un `id` pour y
@@ -22,7 +23,7 @@ export function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <PageContainer width="reading">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">
@@ -155,7 +156,7 @@ export function SettingsPage() {
             </p>
           </Card>
         </section>
-      </div>
+      </PageContainer>
     </div>
   );
 }

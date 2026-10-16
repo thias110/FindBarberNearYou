@@ -17,6 +17,7 @@ import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { buttonClasses } from "../../components/ui/buttonStyles";
 import { focusFirstInvalid } from "../../lib/formErrors";
 import { translateValidationMessage } from "../../lib/validationMessages";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 // Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
@@ -176,7 +177,7 @@ export function BarberTimeOffPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-2xl space-y-6">
+        <PageContainer width="reading">
           <div className="flex items-center justify-between gap-3">
             <Skeleton className="h-8 w-56" />
             <Skeleton className="h-11 w-44" />
@@ -189,7 +190,7 @@ export function BarberTimeOffPage() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-2/3" />
           </Card>
-        </div>
+        </PageContainer>
       </div>
     );
   }
@@ -197,7 +198,7 @@ export function BarberTimeOffPage() {
   if (profileMissing) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-2xl space-y-6">
+        <PageContainer width="reading">
           <ProPageHeader title={t("timeOff.title")} />
           <Card className="p-6 text-center">
             <p className="text-foreground">
@@ -207,7 +208,7 @@ export function BarberTimeOffPage() {
               {t("common.createProfile")}
             </Link>
           </Card>
-        </div>
+        </PageContainer>
       </div>
     );
   }
@@ -216,7 +217,7 @@ export function BarberTimeOffPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <PageContainer width="reading">
         <ProPageHeader
           title={t("timeOff.title")}
           description={t("timeOff.description")}
@@ -231,7 +232,7 @@ export function BarberTimeOffPage() {
             {t("timeOff.timezone.missing")}{" "}
             <Link
               to="/pro/profile"
-              className="font-medium text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="font-medium text-foreground underline underline-offset-4 focus-ring"
             >
               {t("timeOff.timezone.setLink")}
             </Link>
@@ -389,7 +390,7 @@ export function BarberTimeOffPage() {
         {/* Résultat affiché en bas de l'écran, là où l'utilisateur a agi
             (issue #56). */}
         <StickyActionBar error={error} success={success} />
-      </div>
+      </PageContainer>
     </div>
   );
 }

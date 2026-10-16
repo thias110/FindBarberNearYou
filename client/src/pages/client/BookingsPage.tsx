@@ -11,6 +11,7 @@ import { Button } from "../../components/ui/Button";
 import { buttonClasses } from "../../components/ui/buttonStyles";
 import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 export function ClientBookingsPage() {
   const { t } = useTranslation("client");
@@ -180,7 +181,7 @@ export function ClientBookingsPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <PageContainer width="reading">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
             {t("bookings.title")}
@@ -268,7 +269,7 @@ export function ClientBookingsPage() {
             )}
           </div>
         )}
-      </div>
+      </PageContainer>
     </div>
   );
 }

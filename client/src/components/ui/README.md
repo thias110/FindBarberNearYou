@@ -98,15 +98,15 @@ toujours accompagné d'un libellé (jamais la couleur seule).
 - Espacements : échelle Tailwind (multiples de 4 px). Conventions : `p-4`
   dans les cartes de liste, `p-6` dans les cartes de contenu, `space-y-4` /
   `space-y-6` entre blocs, gouttière de page `p-4 sm:p-8`.
+- Largeur des pages : `PageContainer` (`width` : `form` 560 px, `reading`
+  720 px, `wide` 1040 px, `page` 1280 px ; `stack` : `none | md | lg`). Ne
+  plus écrire `mx-auto max-w-* space-y-*` à la main.
 - Cibles tactiles : au moins 44 x 44 px (`min-h-11 min-w-11`) pour tout
-  élément interactif sur mobile. `Button` l'applique dans les deux tailles ;
-  `sm` ne se resserre (36 px) qu'à partir de `sm:`.
-- Rayons (tokens `--fb-radius-*`, appliqués via les classes Tailwind
-  redéfinies) : `rounded-md` → `--fb-radius-sm`, `rounded-lg` →
-  `--fb-radius-control` (boutons, champs), `rounded-xl` → `--fb-radius-panel`,
-  `rounded-2xl` → `--fb-radius-card` (cartes, dialogues), `rounded-full`
-  (boutons, badges, pastilles, avatars). Depuis l'issue #28 : boutons en
-  pilule, champs et alertes en `rounded-xl`.
+  élément interactif sur mobile. `Button` l'applique dans toutes les tailles ;
+  `sm` ne se resserre (36 px) qu'à partir de `sm:`, les pastilles et segments
+  (40 px) aussi.
+- Rayons : voir la section Tokens (hiérarchie 6 → 40 px). Boutons, pastilles
+  et badges en pilule, champs en `rounded-lg` (10 px).
 
 ## Thème
 
@@ -122,21 +122,41 @@ toujours accompagné d'un libellé (jamais la couleur seule).
 
 ## Composants
 
-- `Button` — variantes `primary | secondary | ghost | danger`, tailles `sm | md`,
-  `isLoading`, `type="button"` par défaut, focus-visible et disabled gérés.
-  En pilule, graisse `font-semibold`.
+- Anneau de focus : classes partagées `focus-ring` (cas général),
+  `focus-ring-on-surface`, `focus-ring-inset` et `focus-ring-on-night`
+  (`index.css`, couche `components`). Ne jamais recopier
+  `focus-visible:ring-*` dans un composant : un test
+  (`tests/src/ui-primitives.test.ts`) l'interdit.
+- Survols : `hoverOnlyWhenSupported` (`tailwind.config.js`) — un `hover:` ne
+  s'applique que sur les appareils qui survolent (pas de survol « collé »
+  après un tap). Transformations (levée, pression) toujours sous
+  `motion-safe:`.
+- `Button` — variantes `primary | secondary | ghost | link | danger |
+  danger-solid | inverse | outline-inverse | fab-mobile`, tailles
+  `sm | md | lg | xl | icon` (cercle de 44 px, avec `aria-label`).
+  `inverse` et `outline-inverse` sont réservées aux sections nuit ;
+  `fab-mobile` (CTA collant en bas d'écran) est toujours en `xl`.
+  `icon` : icône de tête décorative. `isLoading` : le bouton garde sa couleur,
+  refuse les clics (`aria-disabled`, `aria-busy`) et affiche un spinner après
+  300 ms. `isSuccess` : coche à la place de l'icône (libellé et durée à la
+  charge de l'appelant). `type="button"` par défaut.
 - `buttonClasses(variant, size, className)` (`buttonStyles.ts`) — mêmes
   classes que `Button`, pour un lien présenté comme un bouton
   (`<Link className={buttonClasses("secondary")}>`). Ne jamais recopier ces
   classes à la main : `cn()` ne résout pas les conflits Tailwind, donc ne pas
   surcharger `px-*`, `min-h-*` ou `rounded-*` via `className`.
 - `chipClasses(selected, { tone, square })` (`chipStyles.ts`) — pastilles de
-  choix en pilule de 44 px : `tone: "neutral"` pour un filtre ou une
-  catégorie (sélection en noir/blanc), `tone: "accent"` pour un choix de
-  formulaire (créneau, note). `segmentClasses(selected)` pour un sélecteur
-  exclusif (ex. Liste / Carte) dans un conteneur `rounded-full border p-1`.
+  choix en pilule (44 px sur mobile, 40 px dès `sm:`) : `tone: "neutral"`
+  pour un filtre ou une catégorie (sélection en encre), `tone: "accent"` pour
+  un choix de formulaire (créneau, note).
+- `SegmentedControl` — sélecteur exclusif (Salon / Chez le pro / Domicile,
+  Liste / Carte) : `role="radiogroup"`, flèches du clavier, un seul arrêt de
+  tabulation. Construit sur `segmentRailClasses()` et
+  `segmentClasses(selected)`, réutilisables seuls si besoin.
 - `CONTROL_CLASS` (`control.ts`) — à réutiliser pour tout `<select>`,
-  `<textarea>` ou `<input>` natif qui n'utilise pas `Input`.
+  `<textarea>` ou `<input>` natif qui n'utilise pas `Input`. 48 px de haut,
+  bordure `accent` au focus, fond `surface-muted` si désactivé ou
+  `readonly`.
 - `Input` — `forwardRef`, bordure d'erreur (2 px) via `aria-invalid`. Texte
   16 px sur mobile (évite le zoom iOS au focus), 14 px à partir de `sm:`.
 - `Field` — label lié, aide et erreur accessibles (render prop qui fournit
@@ -145,7 +165,9 @@ toujours accompagné d'un libellé (jamais la couleur seule).
 - `Card` — surface arrondie, bordure et ombre légère `shadow-card-sm`
   (padding à la charge de l'appelant).
 - `Badge` — variantes `neutral | accent | brass | success | warning | danger |
-  info` (statuts en fond translucide tokenisé, `bg-{statut}/15`).
+  info | live` (statuts en fond translucide tokenisé, `bg-{statut}/15` ;
+  `live` ajoute un point qui pulse, sauf reduced-motion), tailles
+  `sm | md | lg` (22, 26, 30 px). `CertifiedBadge` utilise `brass`.
 - `Skeleton` — placeholder décoratif (`aria-hidden`).
 - `Select` / `Textarea` — contrôles natifs stylés comme `Input` (classes
   partagées dans `control.ts`, bordure `danger` via `aria-invalid`).
@@ -173,7 +195,7 @@ cd server && node -e "require('sharp')('../client/public/favicon.svg',{density:6
 
 ## Conventions
 
-- A11y : focus-visible lisible (anneau accent), navigation clavier, état
+- A11y : focus-visible lisible (anneau `focus-ring`), navigation clavier, état
   `disabled`, erreurs reliées par `aria-describedby`.
 - Utiliser `cn()` (`client/src/lib/cn.ts`) pour composer les classes.
 - Éviter les couleurs en dur : passer par les tokens sémantiques.
