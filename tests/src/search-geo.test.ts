@@ -109,3 +109,15 @@ describe("parseSearchUrl", () => {
     ]);
   });
 });
+
+describe("popularTechniquesOf (issue #54)", () => {
+  it("keeps one or two techniques, most popular first", async () => {
+    const { popularTechniquesOf } = await import("../../client/src/lib/barberTags");
+    expect(popularTechniquesOf(["COUPE", "LOCKS", "BARBE"], ["BARBE", "LOCKS"])).toEqual([
+      "BARBE",
+      "LOCKS",
+    ]);
+    expect(popularTechniquesOf(["TAPER"], ["COUPE"])).toEqual(["TAPER"]);
+    expect(popularTechniquesOf([], ["COUPE"])).toEqual([]);
+  });
+});

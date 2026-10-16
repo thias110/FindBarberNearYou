@@ -7,6 +7,8 @@ import {
 } from "@findbarber/shared/constants";
 import { useAuth } from "../../app/auth-context";
 import { barbersApi } from "../../lib/apiClient";
+import { distanceKm } from "../../lib/geo";
+import { useVisitorPosition } from "../../lib/visitorPosition";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -16,7 +18,8 @@ import { CategoryChips } from "../../components/home/CategoryChips";
 import { BarberPreviewCard } from "../../components/home/BarberPreviewCard";
 import { buttonClasses } from "../../components/ui/buttonStyles";
 
-const PREVIEW_LIMIT = 3;
+// Carrousel « Barbers à découvrir » (issue #54).
+const PREVIEW_LIMIT = 8;
 
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
 const SECONDARY_LINK_CLASS = buttonClasses("secondary");
@@ -49,6 +52,9 @@ export function ClientHomePage() {
   );
 
   const [barbers, setBarbers] = useState<PublicBarberSearchItem[]>([]);
+  // Distance affichée seulement si le visiteur a déjà partagé sa position
+  // (aucune demande depuis l'accueil).
+  const { position } = useVisitorPosition();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
@@ -153,13 +159,16 @@ export function ClientHomePage() {
           {loading ? (
             <div
               aria-busy="true"
-              className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              className="mt-4 flex gap-4 overflow-hidden"
             >
               <span className="sr-only" role="status">
                 Chargement des barbers…
               </span>
               {[0, 1, 2].map((index) => (
-                <Skeleton key={index} className="h-48 w-full rounded-2xl" />
+                <Skeleton
+                  key={index}
+                  className="h-80 w-[78%] shrink-0 rounded-3xl sm:w-[calc(50%-0.5rem)] lg:w-[calc((100%-2rem)/3)]"
+                />
               ))}
             </div>
           ) : error ? (
@@ -189,10 +198,23 @@ export function ClientHomePage() {
               </Button>
             </Card>
           ) : (
-            <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            // Carrousel horizontal : glissement au doigt (accroche par carte),
+            // et chaque carte est un lien atteignable au clavier (le focus fait
+            // défiler la carte en vue).
+            <ul
+              aria-label="Barbers à découvrir"
+              className="-mx-4 mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 pb-3 sm:-mx-8 sm:scroll-px-8 sm:px-8"
+            >
               {barbers.map((barber) => (
-                <li key={barber.id}>
-                  <BarberPreviewCard barber={barber} />
+                <li
+                  key={barber.id}
+                  className="w-[78%] shrink-0 snap-start sm:w-[calc(50%-0.5rem)] lg:w-[calc((100%-2rem)/3)]"
+                >
+                  <BarberPreviewCard
+                    barber={barber}
+                    popularRanking={popularTechniques}
+                    distanceKm={position ? distanceKm(position, barber) : null}
+                  />
                 </li>
               ))}
             </ul>

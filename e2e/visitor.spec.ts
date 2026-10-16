@@ -193,3 +193,34 @@ test("fiche barber sur la carte : note, prix et « Réserver » (issue #53)", as
   await expect(page).toHaveURL(/\/barbers\/[^/]+#reserver$/);
   await expect(page.locator("#reserver")).toBeFocused();
 });
+
+test("cartes « Barbers à découvrir » de l'accueil (issue #54)", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const list = page.getByRole("list", { name: "Barbers à découvrir" });
+  const card = list.getByRole("link", { name: /Karim — Barber Plainpalais/ });
+  await expect(card).toBeVisible();
+  await expect(card.getByText(/\(\d+ avis\)/)).toBeVisible();
+  await expect(card.getByText(/À partir de/)).toBeVisible();
+  // Ni nombre de services ni pays ; pas de distance sans position partagée.
+  await expect(list.getByText(/services? actifs?/)).toHaveCount(0);
+  await expect(list.getByText(/Suisse/)).toHaveCount(0);
+  await expect(list.getByText(/\d km/)).toHaveCount(0);
+
+  // Toute la carte est un lien vers le profil, atteignable au clavier.
+  await tabTo(page, card);
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/barbers\/[^/#]+$/);
+});
+
+test("distance sur les cartes de l'accueil si la position est partagée (issue #54)", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 46.21, longitude: 6.15 });
+  await page.goto("/");
+  const list = page.getByRole("list", { name: "Barbers à découvrir" });
+  await expect(list.getByText(/Genève · .*km/).first()).toBeVisible();
+});
