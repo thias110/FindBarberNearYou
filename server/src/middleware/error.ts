@@ -3,7 +3,13 @@ import { AppError, isUniqueViolation } from "../lib/errors.js";
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof AppError) {
-    res.status(err.status).json({ error: { code: err.code, message: err.message } });
+    res.status(err.status).json({
+      error: {
+        code: err.code,
+        message: err.message,
+        ...(err.fields && err.fields.length > 0 ? { fields: err.fields } : {}),
+      },
+    });
     return;
   }
   if (isUniqueViolation(err)) {

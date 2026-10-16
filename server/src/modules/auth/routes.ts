@@ -1,5 +1,4 @@
 import { Router } from "express";
-import type { ZodError } from "zod";
 import {
   forgotPasswordSchema,
   loginSchema,
@@ -10,7 +9,6 @@ import {
 } from "@findbarber/shared/validation";
 import { requireAuth } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
-import { AppError } from "../../lib/errors.js";
 import { AUTH_COOKIE, CSRF_COOKIE } from "../../lib/cookies.js";
 import { env } from "../../config/env.js";
 import {
@@ -21,15 +19,9 @@ import {
   resetPassword,
   verifyEmail,
 } from "./service.js";
+import { validationError } from "../../lib/validation.js";
 
 export const authRouter = Router();
-
-function validationError(err: ZodError): AppError {
-  const details = err.issues
-    .map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`)
-    .join("; ");
-  return new AppError(400, "VALIDATION_ERROR", details);
-}
 
 function cookieBaseOptions() {
   return {

@@ -14,6 +14,7 @@ import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { buttonClasses } from "../../components/ui/buttonStyles";
+import { focusFirstInvalid } from "../../lib/formErrors";
 
 // Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
@@ -131,6 +132,8 @@ export function BarberTimeOffPage() {
     const parsed = timeOffCreateSchema.safeParse({ startDate, endDate, reason });
     if (!parsed.success) {
       setFieldErrors(applyIssues(parsed.error.issues));
+      // Seul le formulaire d'ajout porte des champs en erreur sur cette page.
+      focusFirstInvalid(document.getElementById("contenu"));
       return;
     }
     setFieldErrors({});

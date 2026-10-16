@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { authApi } from "../../lib/apiClient";
+import { ApiError, authApi } from "../../lib/apiClient";
 import { authErrorMessage } from "../../lib/authMessages";
 import { cn } from "../../lib/cn";
 import { AuthLayout } from "../../components/auth/AuthLayout";
@@ -9,6 +9,7 @@ import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
+import { fieldErrorsFrom, focusFirstInvalid } from "../../lib/formErrors";
 
 interface FieldErrors {
   email?: string;
@@ -37,6 +38,7 @@ export function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
 
@@ -68,7 +70,10 @@ export function RegisterPage() {
     setError(null);
     const errors = validate();
     setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0) {
+      focusFirstInvalid(formRef.current);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -81,7 +86,18 @@ export function RegisterPage() {
       // Pas d'auto-login : on affiche l'état « Vérifiez votre email ».
       setRegistered(true);
     } catch (err) {
-      setError(authErrorMessage(err));
+      // Email déjà utilisé ou champ refusé par le serveur : message sous le
+      // champ concerné plutôt qu'en tête de page (issue #57).
+      const fields: FieldErrors =
+        err instanceof ApiError && err.code === "EMAIL_TAKEN"
+          ? { email: authErrorMessage(err) }
+          : fieldErrorsFrom(err, ["name", "email", "password"]);
+      if (Object.keys(fields).length > 0) {
+        setFieldErrors(fields);
+        focusFirstInvalid(formRef.current);
+      } else {
+        setError(authErrorMessage(err));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -130,16 +146,7 @@ export function RegisterPage() {
         Réservez un barber ou développez votre activité, simplement.
       </p>
 
-      {error && (
-        <div
-          role="alert"
-          className="mt-4 rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger"
-        >
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
+      <form ref={formRef} onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
         <Field label="Nom" hint="Optionnel">
           {(control) => (
             <Input
@@ -226,6 +233,16 @@ export function RegisterPage() {
             })}
           </div>
         </fieldset>
+
+        {/* Erreur globale juste au-dessus du bouton (issue #57). */}
+        {error && (
+          <div
+            role="alert"
+            className="rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger"
+          >
+            {error}
+          </div>
+        )}
 
         <Button
           type="submit"

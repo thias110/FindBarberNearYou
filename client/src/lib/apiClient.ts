@@ -58,6 +58,8 @@ export class ApiError extends Error {
     public readonly status: number,
     public readonly code: string,
     message: string,
+    /** Erreurs par champ d'un 400 VALIDATION_ERROR (issue #57). */
+    public readonly fields: { path: string; message: string }[] = [],
   ) {
     super(message);
     this.name = "ApiError";
@@ -112,7 +114,11 @@ async function parseResponse<T>(res: Response): Promise<T> {
   }
 
   const data = (await res.json().catch(() => null)) as {
-    error?: { code: string; message: string };
+    error?: {
+      code: string;
+      message: string;
+      fields?: { path: string; message: string }[];
+    };
   } | null;
 
   if (!res.ok) {
@@ -120,6 +126,7 @@ async function parseResponse<T>(res: Response): Promise<T> {
       res.status,
       data?.error?.code ?? "UNKNOWN",
       data?.error?.message ?? "Request failed.",
+      Array.isArray(data?.error?.fields) ? data.error.fields : [],
     );
   }
 

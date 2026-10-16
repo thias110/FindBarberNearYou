@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ROLE_HOME } from "@findbarber/shared/constants";
 import { useAuth } from "../../app/auth-context";
@@ -10,6 +10,7 @@ import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
+import { focusFirstInvalid } from "../../lib/formErrors";
 
 interface FieldErrors {
   email?: string;
@@ -29,6 +30,7 @@ export function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [notVerified, setNotVerified] = useState(false);
 
@@ -72,7 +74,10 @@ export function LoginPage() {
     setNotVerified(false);
     const errors = validate();
     setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0) {
+      focusFirstInvalid(formRef.current);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -121,16 +126,7 @@ export function LoginPage() {
         </Alert>
       )}
 
-      {error && (
-        <div
-          role="alert"
-          className="mt-4 rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger"
-        >
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
+      <form ref={formRef} onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
         <Field label="Email" error={fieldErrors.email}>
           {(control) => (
             <Input
@@ -182,6 +178,16 @@ export function LoginPage() {
             Mot de passe oublié ?
           </Link>
         </p>
+
+        {/* Erreur globale juste au-dessus du bouton (issue #57). */}
+        {error && (
+          <div
+            role="alert"
+            className="rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger"
+          >
+            {error}
+          </div>
+        )}
 
         <Button
           type="submit"

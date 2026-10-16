@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { authApi } from "../../lib/apiClient";
 import { authErrorMessage } from "../../lib/authMessages";
@@ -8,6 +8,7 @@ import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
+import { focusFirstInvalid } from "../../lib/formErrors";
 
 const PASSWORD_MIN_LENGTH = 8;
 
@@ -30,6 +31,7 @@ export function ResetPasswordPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     document.title = "Nouveau mot de passe — FindBarber";
@@ -51,7 +53,10 @@ export function ResetPasswordPage() {
       errors.confirmation = "Les deux mots de passe ne correspondent pas.";
     }
     setFieldErrors(errors);
-    if (errors.password || errors.confirmation) return;
+    if (errors.password || errors.confirmation) {
+      focusFirstInvalid(formRef.current);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -119,7 +124,7 @@ export function ResetPasswordPage() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
+      <form ref={formRef} onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
         <Field
           label="Nouveau mot de passe"
           error={fieldErrors.password}

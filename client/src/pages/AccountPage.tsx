@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ROLE_LABELS } from "@findbarber/shared/constants";
 import { useAuth } from "../app/auth-context";
@@ -12,6 +12,7 @@ import { Card } from "../components/ui/Card";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { Field } from "../components/ui/Field";
 import { Input } from "../components/ui/Input";
+import { focusFirstInvalid } from "../lib/formErrors";
 
 // Mon compte : photo de profil (issue #55) et suppression du compte
 // (issue #14 : nLPD / RGPD). L'export des
@@ -26,12 +27,14 @@ export function AccountPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   function handleRequestDelete(event: FormEvent) {
     event.preventDefault();
     setDeleteError(null);
     if (!password) {
       setPasswordError("Saisissez votre mot de passe pour confirmer.");
+      focusFirstInvalid(formRef.current);
       return;
     }
     setPasswordError(null);
@@ -119,7 +122,7 @@ export function AccountPage() {
             )}
           </ul>
           {deleteError && <Alert variant="danger">{deleteError}</Alert>}
-          <form onSubmit={handleRequestDelete} noValidate className="space-y-3">
+          <form ref={formRef} onSubmit={handleRequestDelete} noValidate className="space-y-3">
             <Field label="Mot de passe actuel" error={passwordError}>
               {(control) => (
                 <Input

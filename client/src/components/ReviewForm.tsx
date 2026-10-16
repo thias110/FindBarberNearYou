@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
+import { focusFirstInvalid } from "../lib/formErrors";
 import { LIMITS } from "@findbarber/shared/constants";
 import {
   hasReviewDraftErrors,
@@ -28,12 +29,14 @@ export function ReviewForm({
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [errors, setErrors] = useState<ReviewDraftErrors>({});
+  const formRef = useRef<HTMLFormElement>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const draftErrors = validateReviewDraft({ rating, comment });
     if (hasReviewDraftErrors(draftErrors)) {
       setErrors(draftErrors);
+      focusFirstInvalid(formRef.current);
       return;
     }
     setErrors({});
@@ -42,6 +45,7 @@ export function ReviewForm({
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
       className="mt-3 rounded-xl border border-border bg-surface-muted p-3"
     >
@@ -49,7 +53,13 @@ export function ReviewForm({
 
       <div className="mt-2">
         <span className="text-sm text-foreground-muted">Note</span>
-        <div className="mt-1 flex gap-1">
+        <div
+          role="group"
+          aria-label="Note sur 5"
+          aria-describedby={errors.rating ? "review-rating-error" : undefined}
+          data-invalid={errors.rating ? "true" : undefined}
+          className="mt-1 flex gap-1"
+        >
           {RATING_OPTIONS.map((value) => (
             <button
               key={value}
@@ -67,7 +77,7 @@ export function ReviewForm({
           ))}
         </div>
         {errors.rating && (
-          <p role="alert" className="mt-1 text-xs text-danger">
+          <p id="review-rating-error" role="alert" className="mt-1 text-xs text-danger">
             {errors.rating}
           </p>
         )}
@@ -87,10 +97,12 @@ export function ReviewForm({
           disabled={submitting}
           rows={3}
           maxLength={LIMITS.reviewComment}
+          aria-invalid={errors.comment ? true : undefined}
+          aria-describedby={errors.comment ? "review-comment-error" : undefined}
           className={`mt-1 resize-y ${CONTROL_CLASS}`}
         />
         {errors.comment && (
-          <p role="alert" className="mt-1 text-xs text-danger">
+          <p id="review-comment-error" role="alert" className="mt-1 text-xs text-danger">
             {errors.comment}
           </p>
         )}

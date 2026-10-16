@@ -1,8 +1,17 @@
+/** Erreur rattachée à un champ du corps de requête (issue #57). */
+export interface FieldIssue {
+  /** Chemin du champ, segments séparés par des points (ex. `places.0`). */
+  path: string;
+  message: string;
+}
+
 export class AppError extends Error {
   constructor(
     public readonly status: number,
     public readonly code: string,
     message: string,
+    /** Erreurs par champ, renvoyées au client pour les afficher sous le champ. */
+    public readonly fields?: FieldIssue[],
   ) {
     super(message);
     this.name = "AppError";

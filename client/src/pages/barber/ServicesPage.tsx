@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import type { OwnBarberService } from "@findbarber/shared/types";
 import {
@@ -18,8 +18,12 @@ import {
   minorToInputValue,
   parsePriceToMinor,
 } from "../../lib/formatters";
-import { Alert } from "../../components/ui/Alert";
 import { StickyActionBar } from "../../components/ui/StickyActionBar";
+import {
+  fieldErrorsFrom,
+  focusFirstInvalid,
+  type FieldErrorMap,
+} from "../../lib/formErrors";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -33,6 +37,13 @@ const CHECKBOX_CLASS = "h-5 w-5 shrink-0 accent-accent";
 
 // Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
+
+const SERVICE_FIELDS = [
+  "name",
+  "description",
+  "durationMinutes",
+  "priceMinor",
+] as const;
 
 interface ServiceFormValues {
   name: string;
@@ -60,16 +71,28 @@ function ServiceForm({
   };
   submitLabel: string;
   submitting: boolean;
-  onSubmit: (values: ServiceFormValues) => void;
+  /** Renvoie les erreurs par champ du serveur (vide si aucune). */
+  onSubmit: (values: ServiceFormValues) => Promise<FieldErrorMap>;
   onCancel?: () => void;
 }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [name, setName] = useState(initial.name);
   const [description, setDescription] = useState(initial.description);
   const [durationMinutes, setDurationMinutes] = useState(initial.durationMinutes);
   const [price, setPrice] = useState(initial.price);
   const [audiences, setAudiences] = useState<Audience[]>(initial.audiences);
   const [techniques, setTechniques] = useState<Technique[]>(initial.techniques);
-  const [localError, setLocalError] = useState<string | null>(null);
+  // Erreurs affichées sous chaque champ (issue #57).
+  const [errors, setErrors] = useState<FieldErrorMap>({});
+
+  function clearError(field: string) {
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
 
   function toggleAudience(code: Audience) {
     setAudiences((current) =>
@@ -87,9 +110,11 @@ function ServiceForm({
     );
   }
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setLocalError(null);
+    const next: FieldErrorMap = {};
+
+    if (!name.trim()) next.name = "Le nom du service est requis.";
 
     const duration = Number(durationMinutes);
     if (
@@ -97,25 +122,24 @@ function ServiceForm({
       duration < LIMITS.serviceDurationMin ||
       duration > LIMITS.serviceDurationMax
     ) {
-      setLocalError(
-        `La durée doit être un entier entre ${LIMITS.serviceDurationMin} et ${LIMITS.serviceDurationMax} minutes.`,
-      );
-      return;
+      next.durationMinutes = `La durée doit être un entier entre ${LIMITS.serviceDurationMin} et ${LIMITS.serviceDurationMax} minutes.`;
     }
 
     const priceMinor = parsePriceToMinor(price);
     if (priceMinor === null) {
-      setLocalError(
-        "Prix invalide. Utilisez un montant comme 25.50 ou 25,50 (2 décimales maximum).",
-      );
-      return;
+      next.priceMinor =
+        "Prix invalide. Utilisez un montant comme 25.50 ou 25,50 (2 décimales maximum).";
+    } else if (priceMinor > LIMITS.servicePriceMinorMax) {
+      next.priceMinor = "Le prix est trop élevé.";
     }
-    if (priceMinor > LIMITS.servicePriceMinorMax) {
-      setLocalError("Le prix est trop élevé.");
+
+    setErrors(next);
+    if (Object.keys(next).length > 0 || priceMinor === null) {
+      focusFirstInvalid(formRef.current);
       return;
     }
 
-    onSubmit({
+    const serverErrors = await onSubmit({
       name,
       description: description.trim() ? description.trim() : null,
       durationMinutes: duration,
@@ -123,37 +147,48 @@ function ServiceForm({
       audiences,
       techniques,
     });
+    if (Object.keys(serverErrors).length > 0) {
+      setErrors(serverErrors);
+      focusFirstInvalid(formRef.current);
+    }
   }
 
   return (
     <form
-      onSubmit={handleSubmit}
+      ref={formRef}
+      noValidate
+      onSubmit={(event) => void handleSubmit(event)}
       className="space-y-4 rounded-xl border border-border bg-surface-muted p-4"
     >
-      {localError && <Alert variant="danger">{localError}</Alert>}
-      <Field label="Nom du service">
+      <Field label="Nom du service" error={errors.name}>
         {(control) => (
           <Input
             {...control}
             required
             maxLength={LIMITS.serviceName}
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              clearError("name");
+            }}
           />
         )}
       </Field>
-      <Field label="Description (facultative)">
+      <Field label="Description (facultative)" error={errors.description}>
         {(control) => (
           <Input
             {...control}
             maxLength={LIMITS.serviceDescription}
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              clearError("description");
+            }}
           />
         )}
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Durée (minutes)">
+        <Field label="Durée (minutes)" error={errors.durationMinutes}>
           {(control) => (
             <Input
               {...control}
@@ -163,18 +198,24 @@ function ServiceForm({
               min={LIMITS.serviceDurationMin}
               max={LIMITS.serviceDurationMax}
               value={durationMinutes}
-              onChange={(e) => setDurationMinutes(e.target.value)}
+              onChange={(e) => {
+                setDurationMinutes(e.target.value);
+                clearError("durationMinutes");
+              }}
             />
           )}
         </Field>
-        <Field label="Prix">
+        <Field label="Prix" error={errors.priceMinor}>
           {(control) => (
             <Input
               {...control}
               required
               inputMode="decimal"
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={(e) => {
+                setPrice(e.target.value);
+                clearError("priceMinor");
+              }}
               placeholder="25.50"
             />
           )}
@@ -274,7 +315,17 @@ export function BarberServicesPage() {
     void loadData();
   }, []);
 
-  async function handleCreate(values: ServiceFormValues) {
+  // Une erreur rattachée à un champ s'affiche sous ce champ ; les autres
+  // restent dans la barre d'actions, près du bouton (issue #57).
+  function reportSaveError(err: unknown, fallback: string): FieldErrorMap {
+    const fields = fieldErrorsFrom(err, SERVICE_FIELDS);
+    if (Object.keys(fields).length === 0) {
+      setError(err instanceof Error ? err.message : fallback);
+    }
+    return fields;
+  }
+
+  async function handleCreate(values: ServiceFormValues): Promise<FieldErrorMap> {
     setSubmitting(true);
     setError(null);
     setSuccess(null);
@@ -282,14 +333,18 @@ export function BarberServicesPage() {
       await barberApi.createService(values);
       setSuccess("Service ajouté.");
       await loadData();
+      return {};
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ajout échoué.");
+      return reportSaveError(err, "Ajout échoué.");
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function handleUpdate(id: string, values: ServiceFormValues) {
+  async function handleUpdate(
+    id: string,
+    values: ServiceFormValues,
+  ): Promise<FieldErrorMap> {
     setSubmitting(true);
     setError(null);
     setSuccess(null);
@@ -298,8 +353,9 @@ export function BarberServicesPage() {
       setEditingId(null);
       setSuccess("Service modifié.");
       await loadData();
+      return {};
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Modification échouée.");
+      return reportSaveError(err, "Modification échouée.");
     } finally {
       setSubmitting(false);
     }
@@ -381,7 +437,7 @@ export function BarberServicesPage() {
               }}
               submitLabel="Ajouter"
               submitting={submitting}
-              onSubmit={(values) => void handleCreate(values)}
+              onSubmit={handleCreate}
             />
           </div>
         </Card>
@@ -411,7 +467,7 @@ export function BarberServicesPage() {
                   }}
                   submitLabel="Enregistrer"
                   submitting={submitting}
-                  onSubmit={(values) => void handleUpdate(service.id, values)}
+                  onSubmit={(values) => handleUpdate(service.id, values)}
                   onCancel={() => setEditingId(null)}
                 />
               ) : (

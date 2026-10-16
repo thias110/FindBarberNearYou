@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   LIMITS,
@@ -12,7 +12,8 @@ import type {
 } from "@findbarber/shared/types";
 import type { BookingCreateInput } from "@findbarber/shared/validation";
 import { useAuth } from "../app/auth-context";
-import { barbersApi, bookingApi } from "../lib/apiClient";
+import { ApiError, barbersApi, bookingApi } from "../lib/apiClient";
+import { fieldErrorsFrom, focusFirstInvalid } from "../lib/formErrors";
 import {
   addDays,
   hasErrors,
@@ -30,6 +31,23 @@ import { Card } from "./ui/Card";
 import { Skeleton } from "./ui/Skeleton";
 import { chipClasses } from "./ui/chipStyles";
 import { CONTROL_CLASS } from "./ui/control";
+
+const BOOKING_FIELDS: readonly BookingFormField[] = [
+  "serviceId",
+  "place",
+  "date",
+  "startMinute",
+  "clientAddress",
+];
+
+// Refus du serveur rattachés à un champ du formulaire (issue #57).
+const FIELD_BY_ERROR_CODE: Record<string, BookingFormField> = {
+  SLOT_UNAVAILABLE: "startMinute",
+  PLACE_NOT_OFFERED: "place",
+  ADDRESS_NOT_FOUND: "clientAddress",
+  OUT_OF_SERVICE_AREA: "clientAddress",
+  SERVICE_NOT_FOUND: "serviceId",
+};
 
 // Mêmes classes que les champs du design system (issue #28).
 const FIELD_CLASSES = `mt-1 ${CONTROL_CLASS}`;
@@ -52,6 +70,19 @@ export function BookingForm({
   const [clientAddress, setClientAddress] = useState("");
 
   const [fieldErrors, setFieldErrors] = useState<BookingFormErrors>({});
+  const formRef = useRef<HTMLFormElement>(null);
+  const idPrefix = useId();
+
+  // Liaison champ ↔ message d'erreur (issue #57) : `aria-invalid` et
+  // `aria-describedby` pour que le lecteur d'écran annonce l'erreur.
+  function errorId(field: BookingFormField): string {
+    return `${idPrefix}-${field}-error`;
+  }
+  function invalidProps(field: BookingFormField) {
+    return fieldErrors[field]
+      ? { "aria-invalid": true as const, "aria-describedby": errorId(field) }
+      : {};
+  }
   const [slots, setSlots] = useState<BookingSlotDto[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotsError, setSlotsError] = useState<string | null>(null);
@@ -154,7 +185,10 @@ export function BookingForm({
       clientAddress,
     });
     setFieldErrors(errors);
-    if (hasErrors(errors)) return;
+    if (hasErrors(errors)) {
+      focusFirstInvalid(formRef.current);
+      return;
+    }
 
     if (!user || user.role !== "CLIENT") return;
 
@@ -184,9 +218,19 @@ export function BookingForm({
       // SLOT_UNAVAILABLE, PLACE_NOT_OFFERED, OUT_OF_SERVICE_AREA,
       // ADDRESS_NOT_FOUND, GEOCODING_UNAVAILABLE, BARBER_TIMEZONE_MISSING,
       // VALIDATION_ERROR…).
-      setSubmitError(
-        err instanceof Error ? err.message : "Réservation impossible.",
-      );
+      // Un refus lié à un champ s'affiche sous ce champ (issue #57).
+      const field = err instanceof ApiError ? FIELD_BY_ERROR_CODE[err.code] : undefined;
+      const fields: BookingFormErrors = field
+        ? { [field]: (err as ApiError).message }
+        : fieldErrorsFrom(err, BOOKING_FIELDS);
+      if (hasErrors(fields)) {
+        setFieldErrors(fields);
+        focusFirstInvalid(formRef.current);
+      } else {
+        setSubmitError(
+          err instanceof Error ? err.message : "Réservation impossible.",
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -209,7 +253,7 @@ export function BookingForm({
 
   return (
     <Card className="p-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-4">
         <h2 className="text-lg font-bold text-foreground">Réserver</h2>
 
         {success && (
@@ -222,8 +266,6 @@ export function BookingForm({
             )}
           </Alert>
         )}
-        {submitError && <Alert variant="danger">{submitError}</Alert>}
-
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
           <label className="block">
             <span className="text-sm font-semibold text-foreground">Service</span>
@@ -232,6 +274,7 @@ export function BookingForm({
               disabled={submitting}
               onChange={(e) => handleServiceChange(e.target.value)}
               className={FIELD_CLASSES}
+              {...invalidProps("serviceId")}
             >
               <option value="">Choisir un service</option>
               {services.map((service) => (
@@ -243,7 +286,7 @@ export function BookingForm({
               ))}
             </select>
             {fieldErrors.serviceId && (
-              <p className="mt-1 text-xs text-danger">
+              <p id={errorId("serviceId")} className="mt-1 text-xs text-danger">
                 {fieldErrors.serviceId}
               </p>
             )}
@@ -258,6 +301,7 @@ export function BookingForm({
                 handlePlaceChange(e.target.value as ServicePlace | "")
               }
               className={FIELD_CLASSES}
+              {...invalidProps("place")}
             >
               <option value="">Choisir un lieu</option>
               {profile.places.map((code) => (
@@ -267,7 +311,9 @@ export function BookingForm({
               ))}
             </select>
             {fieldErrors.place && (
-              <p className="mt-1 text-xs text-danger">{fieldErrors.place}</p>
+              <p id={errorId("place")} className="mt-1 text-xs text-danger">
+                {fieldErrors.place}
+              </p>
             )}
           </label>
         </div>
@@ -282,9 +328,12 @@ export function BookingForm({
             disabled={submitting}
             onChange={(e) => handleDateChange(e.target.value)}
             className={FIELD_CLASSES}
+            {...invalidProps("date")}
           />
           {fieldErrors.date && (
-            <p className="mt-1 text-xs text-danger">{fieldErrors.date}</p>
+            <p id={errorId("date")} className="mt-1 text-xs text-danger">
+              {fieldErrors.date}
+            </p>
           )}
         </label>
 
@@ -304,13 +353,14 @@ export function BookingForm({
               }}
               placeholder="Rue et numéro, code postal, ville"
               className={FIELD_CLASSES}
+              {...invalidProps("clientAddress")}
             />
             <p className="mt-1 text-xs text-foreground-muted">
               Utilisée uniquement pour cette prestation à domicile, dans la zone
               d'intervention du professionnel.
             </p>
             {fieldErrors.clientAddress && (
-              <p className="mt-1 text-xs text-danger">
+              <p id={errorId("clientAddress")} className="mt-1 text-xs text-danger">
                 {fieldErrors.clientAddress}
               </p>
             )}
@@ -351,7 +401,15 @@ export function BookingForm({
             </p>
           ) : (
             <>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div
+                role="group"
+                aria-label="Créneaux disponibles"
+                aria-describedby={
+                  fieldErrors.startMinute ? errorId("startMinute") : undefined
+                }
+                data-invalid={fieldErrors.startMinute ? "true" : undefined}
+                className="mt-2 flex flex-wrap gap-2"
+              >
                 {slots.map((slot) => {
                   const selected = startMinute === slot.startMinute;
                   return (
@@ -375,7 +433,7 @@ export function BookingForm({
                 })}
               </div>
               {fieldErrors.startMinute && (
-                <p className="mt-1 text-xs text-danger">
+                <p id={errorId("startMinute")} className="mt-1 text-xs text-danger">
                   {fieldErrors.startMinute}
                 </p>
               )}
@@ -416,6 +474,9 @@ export function BookingForm({
             Seuls les comptes client peuvent réserver.
           </Alert>
         )}
+
+        {/* Erreur globale juste au-dessus du bouton (issue #57). */}
+        {submitError && <Alert variant="danger">{submitError}</Alert>}
 
         <Button
           type="submit"
