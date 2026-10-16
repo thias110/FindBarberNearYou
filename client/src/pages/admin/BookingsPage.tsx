@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   BOOKING_STATUSES,
-  BOOKING_STATUS_LABELS,
-  SERVICE_PLACE_LABELS,
   type BookingStatus,
 } from "@findbarber/shared/constants";
 import type { AdminBooking } from "@findbarber/shared/types";
+import i18n from "../../i18n";
 import { adminApi } from "../../lib/apiClient";
+import { label } from "../../lib/labels";
 import { AdminLayout } from "../../components/AdminLayout";
 import { AdminPagination } from "../../components/AdminPagination";
 import { BookingStatusBadge } from "../../components/BookingStatusBadge";
@@ -27,6 +28,7 @@ const PAGE_SIZE = 20;
 // Vue globale admin. L'adresse client privée n'est jamais renvoyée par le DTO
 // admin (`AdminBooking`) et n'est donc jamais affichée ici.
 export function AdminBookingsPage() {
+  const { t } = useTranslation("admin");
   const [status, setStatus] = useState<StatusFilter>("ALL");
   const [page, setPage] = useState(1);
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
@@ -48,12 +50,12 @@ export function AdminBookingsPage() {
     setCancelBusy(true);
     try {
       await adminApi.cancelBooking(pendingCancel.id);
-      setMessage({ kind: "success", text: "Réservation annulée." });
+      setMessage({ kind: "success", text: t("bookings.cancelSuccess") });
       setReloadKey((key) => key + 1);
     } catch (err) {
       setMessage({
         kind: "error",
-        text: err instanceof Error ? err.message : "Annulation impossible.",
+        text: err instanceof Error ? err.message : t("bookings.cancelFailure"),
       });
     } finally {
       setCancelBusy(false);
@@ -79,7 +81,7 @@ export function AdminBookingsPage() {
       .catch((err: unknown) => {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : "Chargement impossible.",
+            err instanceof Error ? err.message : i18n.t("admin:common.loadError"),
           );
         }
       })
@@ -99,7 +101,9 @@ export function AdminBookingsPage() {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-foreground">Réservations</h2>
+        <h2 className="text-xl font-bold text-foreground">
+          {t("bookings.title")}
+        </h2>
 
         {message && (
           <Alert variant={message.kind === "success" ? "success" : "danger"}>
@@ -107,7 +111,7 @@ export function AdminBookingsPage() {
           </Alert>
         )}
 
-        <Field label="Statut" className="max-w-xs">
+        <Field label={t("bookings.statusLabel")} className="max-w-xs">
           {(control) => (
             <Select
               {...control}
@@ -116,10 +120,10 @@ export function AdminBookingsPage() {
                 handleStatusChange(event.target.value as StatusFilter)
               }
             >
-              <option value="ALL">Tous les statuts</option>
+              <option value="ALL">{t("bookings.allStatuses")}</option>
               {BOOKING_STATUSES.map((value) => (
                 <option key={value} value={value}>
-                  {BOOKING_STATUS_LABELS[value]}
+                  {label("bookingStatus", value)}
                 </option>
               ))}
             </Select>
@@ -131,8 +135,8 @@ export function AdminBookingsPage() {
           error={error}
           onRetry={() => setReloadKey((key) => key + 1)}
           isEmpty={bookings.length === 0}
-          emptyTitle="Aucune réservation pour ce filtre."
-          loadingLabel="Chargement des réservations…"
+          emptyTitle={t("bookings.empty")}
+          loadingLabel={t("bookings.loading")}
         >
           <ul className="space-y-3">
             {bookings.map((booking) => {
@@ -149,18 +153,24 @@ export function AdminBookingsPage() {
                           {formatDateTime(booking.startAt)}
                         </p>
                         <p className="text-sm text-foreground-muted">
-                          {SERVICE_PLACE_LABELS[booking.servicePlace]} ·{" "}
+                          {label("servicePlace", booking.servicePlace)} ·{" "}
                           {formatCurrency(booking.priceMinor, booking.currency)}
                         </p>
                         <p className="mt-1 text-sm text-foreground">
-                          Client : {bookingClientLabel(booking)}
+                          {t("bookings.client", {
+                            name: bookingClientLabel(booking),
+                          })}
                         </p>
                         <p className="text-sm text-foreground">
-                          Professionnel : {booking.barberDisplayName}
+                          {t("bookings.barber", {
+                            name: booking.barberDisplayName,
+                          })}
                         </p>
                         {booking.status === "CANCELLED" && actor && (
                           <p className="mt-1 text-xs text-foreground-muted">
-                            Annulée par : {actor.toLowerCase()}.
+                            {t("bookings.cancelledBy", {
+                              actor: actor.toLowerCase(),
+                            })}
                           </p>
                         )}
                       </div>
@@ -174,7 +184,7 @@ export function AdminBookingsPage() {
                           className="min-h-11"
                           onClick={() => setPendingCancel(booking)}
                         >
-                          Annuler la réservation
+                          {t("bookings.cancel")}
                         </Button>
                       </div>
                     )}
@@ -194,15 +204,15 @@ export function AdminBookingsPage() {
 
       <ConfirmDialog
         open={pendingCancel !== null}
-        title="Annuler cette réservation ?"
-        confirmLabel="Annuler la réservation"
-        cancelLabel="Garder"
+        title={t("bookings.confirm.title")}
+        confirmLabel={t("bookings.cancel")}
+        cancelLabel={t("bookings.confirm.keep")}
         tone="danger"
         isLoading={cancelBusy}
         onConfirm={() => void handleCancel()}
         onCancel={() => setPendingCancel(null)}
       >
-        <p>Le client et le professionnel seront notifiés.</p>
+        <p>{t("bookings.confirm.body")}</p>
       </ConfirmDialog>
     </AdminLayout>
   );

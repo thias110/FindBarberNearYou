@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
-import { ROLE_LABELS, USER_STATUS_LABELS } from "@findbarber/shared/constants";
 import type { AdminUser, Role } from "@findbarber/shared/types";
+import i18n from "../../i18n";
 import { adminApi } from "../../lib/apiClient";
+import { label } from "../../lib/labels";
 import { useAuth } from "../../app/auth-context";
 import { AdminLayout } from "../../components/AdminLayout";
 import { AdminPagination } from "../../components/AdminPagination";
@@ -22,13 +24,8 @@ import { buttonClasses } from "../../components/ui/buttonStyles";
 // accessible directement par /admin/users?filtre=a-approuver.
 type RoleFilter = "ALL" | Role | "PENDING";
 
-const ROLE_FILTERS: { value: RoleFilter; label: string }[] = [
-  { value: "ALL", label: "Tous" },
-  { value: "CLIENT", label: "Clients" },
-  { value: "BARBER", label: "Barbiers" },
-  { value: "ADMIN", label: "Administrateurs" },
-  { value: "PENDING", label: "À approuver" },
-];
+// Libellés : clés `admin:users.filters.<valeur>`.
+const ROLE_FILTERS: RoleFilter[] = ["ALL", "CLIENT", "BARBER", "ADMIN", "PENDING"];
 
 export const PENDING_FILTER_PARAM = "a-approuver";
 
@@ -40,73 +37,41 @@ type ActionKind = "suspend" | "reactivate" | "certify" | "uncertify" | "approve"
 
 type PendingAction = { kind: ActionKind; user: AdminUser };
 
-// Libellés et effets de chaque action confirmée. Le badge « Certifié »
-// (issue #41) cible le profil barber, les autres actions le compte.
+// Effets de chaque action confirmée. Le badge « Certifié » (issue #41) cible
+// le profil barber, les autres actions le compte. Les textes (titre, bouton,
+// description, succès, échec) sont sous `admin:users.actions.<action>`.
 const ACTIONS: Record<
   ActionKind,
   {
-    title: string;
-    confirmLabel: string;
     tone: "danger" | "primary";
-    failure: string;
-    success: (user: AdminUser) => string;
-    description: (user: AdminUser) => string;
     run: (user: AdminUser) => Promise<unknown>;
   }
 > = {
   suspend: {
-    title: "Suspendre ce compte ?",
-    confirmLabel: "Suspendre",
     tone: "danger",
-    failure: "Suspension impossible.",
-    success: (user) => `${user.email} a été suspendu.`,
-    description: (user) =>
-      `${user.email} ne pourra plus se connecter et ses réservations futures seront annulées.`,
     run: (user) => adminApi.suspendUser(user.id),
   },
   reactivate: {
-    title: "Réactiver ce compte ?",
-    confirmLabel: "Réactiver",
     tone: "primary",
-    failure: "Réactivation impossible.",
-    success: (user) => `${user.email} a été réactivé.`,
-    description: (user) => `${user.email} pourra de nouveau se connecter.`,
     run: (user) => adminApi.reactivateUser(user.id),
   },
   certify: {
-    title: "Attribuer le badge « Certifié » ?",
-    confirmLabel: "Certifier",
     tone: "primary",
-    failure: "Attribution du badge impossible.",
-    success: (user) => `${user.email} est désormais certifié.`,
-    description: (user) =>
-      `Le badge « Certifié » de ${user.email} apparaîtra sur son profil public et dans la recherche.`,
     run: (user) => adminApi.certifyBarber(user.barberProfileId!),
   },
   // Approbation d'un nouveau profil barber (issue #40).
   approve: {
-    title: "Approuver ce profil ?",
-    confirmLabel: "Approuver",
     tone: "primary",
-    failure: "Approbation impossible.",
-    success: (user) => `${user.email} est approuvé : son profil est en ligne.`,
-    description: (user) =>
-      `Le profil de ${user.email} apparaîtra immédiatement dans la recherche et pourra recevoir des réservations.`,
     run: (user) => adminApi.approveBarber(user.barberProfileId!),
   },
   uncertify: {
-    title: "Retirer le badge « Certifié » ?",
-    confirmLabel: "Retirer le badge",
     tone: "danger",
-    failure: "Retrait du badge impossible.",
-    success: (user) => `Le badge de ${user.email} a été retiré.`,
-    description: (user) =>
-      `Le badge « Certifié » de ${user.email} disparaîtra de son profil public et de la recherche.`,
     run: (user) => adminApi.uncertifyBarber(user.barberProfileId!),
   },
 };
 
 export function AdminUsersPage() {
+  const { t } = useTranslation("admin");
   const { user: currentUser } = useAuth();
   const [searchParams] = useSearchParams();
   const [role, setRole] = useState<RoleFilter>(() =>
@@ -144,7 +109,7 @@ export function AdminUsersPage() {
       .catch((err: unknown) => {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : "Chargement impossible.",
+            err instanceof Error ? err.message : i18n.t("admin:common.loadError"),
           );
         }
       })
@@ -169,12 +134,18 @@ export function AdminUsersPage() {
     const action = ACTIONS[kind];
     try {
       await action.run(target);
-      setMessage({ kind: "success", text: action.success(target) });
+      setMessage({
+        kind: "success",
+        text: t(`users.actions.${kind}.success`, { email: target.email }),
+      });
       setReloadKey((key) => key + 1);
     } catch (err) {
       setMessage({
         kind: "error",
-        text: err instanceof Error ? err.message : action.failure,
+        text:
+          err instanceof Error
+            ? err.message
+            : t(`users.actions.${kind}.failure`),
       });
     } finally {
       setBusy(false);
@@ -185,11 +156,16 @@ export function AdminUsersPage() {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-foreground">Utilisateurs</h2>
+        <h2 className="text-xl font-bold text-foreground">
+          {t("users.title")}
+        </h2>
 
         <FilterChips
-          label="Filtrer par rôle"
-          options={ROLE_FILTERS}
+          label={t("users.filterLabel")}
+          options={ROLE_FILTERS.map((value) => ({
+            value,
+            label: t(`users.filters.${value}`),
+          }))}
           value={role}
           onChange={handleRoleChange}
         />
@@ -205,8 +181,8 @@ export function AdminUsersPage() {
           error={error}
           onRetry={() => setReloadKey((key) => key + 1)}
           isEmpty={users.length === 0}
-          emptyTitle="Aucun utilisateur pour ce filtre."
-          loadingLabel="Chargement des utilisateurs…"
+          emptyTitle={t("users.empty")}
+          loadingLabel={t("users.loading")}
         >
           <ul className="space-y-3">
             {users.map((item) => {
@@ -226,7 +202,7 @@ export function AdminUsersPage() {
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           <Badge variant="neutral">
-                            {ROLE_LABELS[item.role]}
+                            {label("role", item.role)}
                           </Badge>
                           <Badge
                             variant={
@@ -237,17 +213,21 @@ export function AdminUsersPage() {
                                   : "success"
                             }
                           >
-                            {USER_STATUS_LABELS[item.status]}
+                            {label("userStatus", item.status)}
                           </Badge>
                           {item.certifiedAt && (
                             <CertifiedBadge />
                           )}
                           {item.barberPendingApproval && !deleted && (
-                            <Badge variant="warning">En attente d'approbation</Badge>
+                            <Badge variant="warning">
+                              {t("users.pendingApproval")}
+                            </Badge>
                           )}
                         </div>
                         <p className="mt-2 text-xs text-foreground-muted">
-                          Inscrit le {formatDateTime(item.createdAt)}
+                          {t("users.registeredAt", {
+                            date: formatDateTime(item.createdAt),
+                          })}
                         </p>
                       </div>
 
@@ -259,7 +239,7 @@ export function AdminUsersPage() {
                               setPending({ kind: "approve", user: item })
                             }
                           >
-                            Approuver
+                            {t("users.approve")}
                           </Button>
                         )}
                         {item.role === "BARBER" &&
@@ -269,7 +249,7 @@ export function AdminUsersPage() {
                               to={`/admin/barbers/${item.barberProfileId}/stats`}
                               className={SECONDARY_LINK_CLASS}
                             >
-                              Voir les statistiques
+                              {t("users.viewStats")}
                             </Link>
                           )}
                         {item.role === "BARBER" &&
@@ -285,7 +265,9 @@ export function AdminUsersPage() {
                                 })
                               }
                             >
-                              {item.certifiedAt ? "Retirer le badge" : "Certifier"}
+                              {item.certifiedAt
+                                ? t("users.removeBadge")
+                                : t("users.certify")}
                             </Button>
                           )}
                         {deleted ? null : suspended ? (
@@ -296,7 +278,7 @@ export function AdminUsersPage() {
                               setPending({ kind: "reactivate", user: item })
                             }
                           >
-                            Réactiver
+                            {t("users.reactivate")}
                           </Button>
                         ) : (
                           <Button
@@ -305,14 +287,14 @@ export function AdminUsersPage() {
                             disabled={isSelf}
                             title={
                               isSelf
-                                ? "Vous ne pouvez pas suspendre votre propre compte."
+                                ? t("users.cannotSuspendSelf")
                                 : undefined
                             }
                             onClick={() =>
                               setPending({ kind: "suspend", user: item })
                             }
                           >
-                            Suspendre
+                            {t("users.suspend")}
                           </Button>
                         )}
                       </div>
@@ -333,14 +315,22 @@ export function AdminUsersPage() {
 
       <ConfirmDialog
         open={pending !== null}
-        title={pending ? ACTIONS[pending.kind].title : ""}
-        confirmLabel={pending ? ACTIONS[pending.kind].confirmLabel : ""}
+        title={pending ? t(`users.actions.${pending.kind}.title`) : ""}
+        confirmLabel={
+          pending ? t(`users.actions.${pending.kind}.confirmLabel`) : ""
+        }
         tone={pending ? ACTIONS[pending.kind].tone : "primary"}
         isLoading={busy}
         onConfirm={() => void handleConfirm()}
         onCancel={() => setPending(null)}
       >
-        {pending ? <p>{ACTIONS[pending.kind].description(pending.user)}</p> : null}
+        {pending ? (
+          <p>
+            {t(`users.actions.${pending.kind}.description`, {
+              email: pending.user.email,
+            })}
+          </p>
+        ) : null}
       </ConfirmDialog>
     </AdminLayout>
   );

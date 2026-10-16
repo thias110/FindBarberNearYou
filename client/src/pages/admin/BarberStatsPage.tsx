@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 import type { BarberStatsResponse } from "@findbarber/shared/types";
+import i18n from "../../i18n";
 import { ApiError, adminApi } from "../../lib/apiClient";
 import { AdminLayout } from "../../components/AdminLayout";
 import {
@@ -14,6 +16,7 @@ import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
 
 export function AdminBarberStatsPage() {
+  const { t } = useTranslation("admin");
   const { barberId } = useParams<{ barberId: string }>();
   const [range, setRange] = useState<StatsRange>("30d");
   const [from, setFrom] = useState("");
@@ -49,17 +52,15 @@ export function AdminBarberStatsPage() {
       .catch((err: unknown) => {
         if (cancelled) return;
         if (err instanceof ApiError && err.code === "BARBER_PROFILE_NOT_FOUND") {
-          setError("Profil professionnel introuvable.");
+          setError(i18n.t("admin:barberStats.notFound"));
         } else if (
           err instanceof ApiError &&
           err.code === "BARBER_TIMEZONE_MISSING"
         ) {
-          setError(
-            "Ce professionnel n'a pas renseigné son fuseau horaire : statistiques indisponibles.",
-          );
+          setError(i18n.t("admin:barberStats.timezoneMissing"));
         } else {
           setError(
-            err instanceof Error ? err.message : "Chargement impossible.",
+            err instanceof Error ? err.message : i18n.t("admin:common.loadError"),
           );
         }
       })
@@ -77,14 +78,14 @@ export function AdminBarberStatsPage() {
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-bold text-foreground">
-            Statistiques d'un professionnel
+            {t("barberStats.title")}
           </h2>
           <p className="mt-1 text-sm text-foreground-muted">
             <Link
               to="/admin/users"
               className="font-medium text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Retour aux utilisateurs
+              {t("barberStats.back")}
             </Link>
           </p>
         </div>
@@ -101,7 +102,7 @@ export function AdminBarberStatsPage() {
         {loading ? (
           <Card className="space-y-4 p-6" aria-busy="true">
             <span className="sr-only" role="status">
-              Chargement des statistiques…
+              {t("barberStats.loading")}
             </span>
             <Skeleton className="h-6 w-2/3" />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -121,12 +122,14 @@ export function AdminBarberStatsPage() {
               className="mt-3 min-h-[44px]"
               onClick={() => setRetryKey((key) => key + 1)}
             >
-              Réessayer
+              {t("common.retry")}
             </Button>
           </Alert>
         ) : !canFetch ? (
           <Card className="p-6 text-center">
-            <p className="text-foreground-muted">Choisissez une plage de dates.</p>
+            <p className="text-foreground-muted">
+              {t("barberStats.chooseRange")}
+            </p>
           </Card>
         ) : stats ? (
           <BarberStatsContent stats={stats} />

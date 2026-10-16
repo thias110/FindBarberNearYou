@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { AdminReview } from "@findbarber/shared/types";
+import i18n from "../../i18n";
 import { adminApi } from "../../lib/apiClient";
 import { AdminLayout } from "../../components/AdminLayout";
 import { AdminPagination } from "../../components/AdminPagination";
@@ -14,6 +16,7 @@ import { formatDateTime } from "../../lib/formatters";
 const PAGE_SIZE = 20;
 
 function RatingStars({ rating }: { rating: number }) {
+  const { t } = useTranslation("admin");
   const full = Math.max(0, Math.min(5, rating));
   return (
     <span className="text-sm">
@@ -21,12 +24,15 @@ function RatingStars({ rating }: { rating: number }) {
         {"★".repeat(full)}
         {"☆".repeat(5 - full)}
       </span>{" "}
-      <span className="text-foreground">{rating} / 5</span>
+      <span className="text-foreground">
+        {t("reviews.rating", { rating })}
+      </span>
     </span>
   );
 }
 
 export function AdminReviewsPage() {
+  const { t } = useTranslation("admin");
   const [page, setPage] = useState(1);
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [totalPages, setTotalPages] = useState(0);
@@ -54,7 +60,7 @@ export function AdminReviewsPage() {
       .catch((err: unknown) => {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : "Chargement impossible.",
+            err instanceof Error ? err.message : i18n.t("admin:common.loadError"),
           );
         }
       })
@@ -72,12 +78,12 @@ export function AdminReviewsPage() {
     setMessage(null);
     try {
       await adminApi.hideReview(pending.id);
-      setMessage({ kind: "success", text: "Avis masqué." });
+      setMessage({ kind: "success", text: t("reviews.hideSuccess") });
       setReloadKey((key) => key + 1);
     } catch (err) {
       setMessage({
         kind: "error",
-        text: err instanceof Error ? err.message : "Masquage impossible.",
+        text: err instanceof Error ? err.message : t("reviews.hideFailure"),
       });
     } finally {
       setBusy(false);
@@ -88,7 +94,9 @@ export function AdminReviewsPage() {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-foreground">Avis</h2>
+        <h2 className="text-xl font-bold text-foreground">
+          {t("reviews.title")}
+        </h2>
 
         {message && (
           <Alert variant={message.kind === "success" ? "success" : "danger"}>
@@ -101,8 +109,8 @@ export function AdminReviewsPage() {
           error={error}
           onRetry={() => setReloadKey((key) => key + 1)}
           isEmpty={reviews.length === 0}
-          emptyTitle="Aucun avis pour le moment."
-          loadingLabel="Chargement des avis…"
+          emptyTitle={t("reviews.empty")}
+          loadingLabel={t("reviews.loading")}
         >
           <ul className="space-y-3">
             {reviews.map((review) => {
@@ -115,17 +123,19 @@ export function AdminReviewsPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <RatingStars rating={review.rating} />
                           <Badge variant={hidden ? "danger" : "success"}>
-                            {hidden ? "Masqué" : "Visible"}
+                            {hidden ? t("reviews.hidden") : t("reviews.visible")}
                           </Badge>
                         </div>
                         <p className="mt-2 text-sm text-foreground">
                           {review.comment?.trim()
                             ? review.comment
-                            : "Sans commentaire."}
+                            : t("reviews.noComment")}
                         </p>
                         <p className="mt-2 text-xs text-foreground-muted">
-                          Professionnel : {review.barberDisplayName ?? "—"} ·
-                          Client : {review.clientName ?? "—"}
+                          {t("reviews.meta", {
+                            barber: review.barberDisplayName ?? "—",
+                            client: review.clientName ?? "—",
+                          })}
                         </p>
                         <p className="text-xs text-foreground-muted">
                           {formatDateTime(review.createdAt)}
@@ -138,7 +148,7 @@ export function AdminReviewsPage() {
                           className="min-h-11"
                           onClick={() => setPending(review)}
                         >
-                          Masquer
+                          {t("reviews.hide")}
                         </Button>
                       )}
                     </div>
@@ -158,17 +168,14 @@ export function AdminReviewsPage() {
 
       <ConfirmDialog
         open={pending !== null}
-        title="Masquer cet avis ?"
-        confirmLabel="Masquer"
+        title={t("reviews.confirm.title")}
+        confirmLabel={t("reviews.hide")}
         tone="danger"
         isLoading={busy}
         onConfirm={() => void handleHide()}
         onCancel={() => setPending(null)}
       >
-        <p>
-          Il ne sera plus visible publiquement. Cette action ne peut pas être
-          annulée depuis l'interface.
-        </p>
+        <p>{t("reviews.confirm.body")}</p>
       </ConfirmDialog>
     </AdminLayout>
   );

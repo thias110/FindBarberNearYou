@@ -1,0 +1,186 @@
+{
+  "common": {
+    "loadError": "No se han podido cargar los datos.",
+    "retry": "Reintentar"
+  },
+  "layout": {
+    "title": "Área de administración",
+    "logout": "Cerrar sesión",
+    "navLabel": "Navegación de administración",
+    "nav": {
+      "dashboard": "Panel",
+      "users": "Usuarios",
+      "bookings": "Reservas",
+      "reviews": "Reseñas",
+      "audit": "Registro"
+    }
+  },
+  "pagination": {
+    "label": "Paginación",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pageOf": "Página {{page}} de {{total}}"
+  },
+  "listState": {
+    "loading": "Cargando…"
+  },
+  "lib": {
+    "unknownClient": "Cliente desconocido",
+    "cancelledBy": {
+      "client": "El cliente",
+      "barber": "El barbero",
+      "admin": "La administración"
+    }
+  },
+  "dashboard": {
+    "title": "Panel",
+    "loading": "Cargando indicadores…",
+    "metrics": {
+      "users": "Usuarios",
+      "activeBarbers": "Barberos activos",
+      "pendingProfiles": "Perfiles por aprobar",
+      "bookings": "Reservas",
+      "suspendedUsers": "Usuarios suspendidos",
+      "pendingBookings": "Reservas pendientes",
+      "hiddenReviews": "Reseñas ocultas"
+    },
+    "pendingAlert_one": "{{count}} nuevo perfil de barbero espera tu aprobación.",
+    "pendingAlert_other": "{{count}} nuevos perfiles de barbero esperan tu aprobación.",
+    "pendingLink": "Ver los perfiles por aprobar",
+    "shortcutsLabel": "Accesos directos de administración",
+    "shortcuts": {
+      "users": {
+        "title": "Usuarios",
+        "description": "Lista, roles y suspensión de cuentas"
+      },
+      "bookings": {
+        "title": "Reservas",
+        "description": "Vista general y filtro por estado"
+      },
+      "reviews": {
+        "title": "Reseñas",
+        "description": "Moderación y ocultación de reseñas"
+      }
+    }
+  },
+  "users": {
+    "title": "Usuarios",
+    "filterLabel": "Filtrar por rol",
+    "filters": {
+      "ALL": "Todos",
+      "CLIENT": "Clientes",
+      "BARBER": "Barberos",
+      "ADMIN": "Administradores",
+      "PENDING": "Por aprobar"
+    },
+    "empty": "Ningún usuario para este filtro.",
+    "loading": "Cargando usuarios…",
+    "pendingApproval": "Pendiente de aprobación",
+    "registeredAt": "Registrado el {{date}}",
+    "approve": "Aprobar",
+    "viewStats": "Ver estadísticas",
+    "certify": "Certificar",
+    "removeBadge": "Retirar la insignia",
+    "reactivate": "Reactivar",
+    "suspend": "Suspender",
+    "cannotSuspendSelf": "No puedes suspender tu propia cuenta.",
+    "actions": {
+      "suspend": {
+        "title": "¿Suspender esta cuenta?",
+        "confirmLabel": "Suspender",
+        "failure": "No se ha podido suspender la cuenta.",
+        "success": "{{email}} ha sido suspendido.",
+        "description": "{{email}} ya no podrá iniciar sesión y sus próximas reservas se cancelarán."
+      },
+      "reactivate": {
+        "title": "¿Reactivar esta cuenta?",
+        "confirmLabel": "Reactivar",
+        "failure": "No se ha podido reactivar la cuenta.",
+        "success": "{{email}} ha sido reactivado.",
+        "description": "{{email}} podrá volver a iniciar sesión."
+      },
+      "certify": {
+        "title": "¿Otorgar la insignia «Certificado»?",
+        "confirmLabel": "Certificar",
+        "failure": "No se ha podido otorgar la insignia.",
+        "success": "{{email}} ya está certificado.",
+        "description": "La insignia «Certificado» de {{email}} aparecerá en su perfil público y en la búsqueda."
+      },
+      "approve": {
+        "title": "¿Aprobar este perfil?",
+        "confirmLabel": "Aprobar",
+        "failure": "No se ha podido aprobar el perfil.",
+        "success": "{{email}} ha sido aprobado: su perfil ya está publicado.",
+        "description": "El perfil de {{email}} aparecerá de inmediato en la búsqueda y podrá recibir reservas."
+      },
+      "uncertify": {
+        "title": "¿Retirar la insignia «Certificado»?",
+        "confirmLabel": "Retirar la insignia",
+        "failure": "No se ha podido retirar la insignia.",
+        "success": "Se ha retirado la insignia de {{email}}.",
+        "description": "La insignia «Certificado» de {{email}} desaparecerá de su perfil público y de la búsqueda."
+      }
+    }
+  },
+  "bookings": {
+    "title": "Reservas",
+    "statusLabel": "Estado",
+    "allStatuses": "Todos los estados",
+    "empty": "Ninguna reserva para este filtro.",
+    "loading": "Cargando reservas…",
+    "client": "Cliente: {{name}}",
+    "barber": "Barbero: {{name}}",
+    "cancelledBy": "Cancelada por: {{actor}}.",
+    "cancel": "Cancelar la reserva",
+    "cancelSuccess": "Reserva cancelada.",
+    "cancelFailure": "No se ha podido cancelar la reserva.",
+    "confirm": {
+      "title": "¿Cancelar esta reserva?",
+      "keep": "Mantener",
+      "body": "El cliente y el barbero recibirán una notificación."
+    }
+  },
+  "reviews": {
+    "title": "Reseñas",
+    "empty": "Todavía no hay reseñas.",
+    "loading": "Cargando reseñas…",
+    "rating": "{{rating}} / 5",
+    "hidden": "Oculta",
+    "visible": "Visible",
+    "noComment": "Sin comentario.",
+    "meta": "Barbero: {{barber}} · Cliente: {{client}}",
+    "hide": "Ocultar",
+    "hideSuccess": "Reseña ocultada.",
+    "hideFailure": "No se ha podido ocultar la reseña.",
+    "confirm": {
+      "title": "¿Ocultar esta reseña?",
+      "body": "Dejará de ser visible públicamente. Esta acción no se puede deshacer desde la interfaz."
+    }
+  },
+  "audit": {
+    "title": "Registro de auditoría",
+    "description": "Acciones sensibles: cambios de estado de las reservas, suspensiones de cuentas y moderación de reseñas.",
+    "actionLabel": "Acción",
+    "allActions": "Todas las acciones",
+    "empty": "Ninguna entrada para este filtro.",
+    "loading": "Cargando el registro…",
+    "by": "Por: {{actor}}",
+    "system": "Sistema",
+    "actorWithRole": "{{email}} ({{role}})",
+    "deletedActor": "Cuenta eliminada ({{role}})",
+    "targets": {
+      "BOOKING": "Reserva",
+      "USER": "Cuenta",
+      "REVIEW": "Reseña",
+      "BARBER_PROFILE": "Perfil de barbero"
+    }
+  },
+  "barberStats": {
+    "title": "Estadísticas de un barbero",
+    "back": "Volver a usuarios",
+    "loading": "Cargando estadísticas…",
+    "notFound": "Perfil de barbero no encontrado.",
+    "timezoneMissing": "Este barbero no ha indicado su zona horaria: estadísticas no disponibles.",
+    "chooseRange": "Elige un rango de fechas."
+  }
+}

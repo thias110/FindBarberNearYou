@@ -1,0 +1,186 @@
+{
+  "common": {
+    "loadError": "Impossibile caricare i dati.",
+    "retry": "Riprova"
+  },
+  "layout": {
+    "title": "Area admin",
+    "logout": "Esci",
+    "navLabel": "Navigazione amministrazione",
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Utenti",
+      "bookings": "Prenotazioni",
+      "reviews": "Recensioni",
+      "audit": "Registro"
+    }
+  },
+  "pagination": {
+    "label": "Paginazione",
+    "previous": "Precedente",
+    "next": "Successiva",
+    "pageOf": "Pagina {{page}} di {{total}}"
+  },
+  "listState": {
+    "loading": "Caricamento…"
+  },
+  "lib": {
+    "unknownClient": "Cliente sconosciuto",
+    "cancelledBy": {
+      "client": "Il cliente",
+      "barber": "Il barbiere",
+      "admin": "L'amministrazione"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "loading": "Caricamento degli indicatori…",
+    "metrics": {
+      "users": "Utenti",
+      "activeBarbers": "Barbieri attivi",
+      "pendingProfiles": "Profili da approvare",
+      "bookings": "Prenotazioni",
+      "suspendedUsers": "Utenti sospesi",
+      "pendingBookings": "Prenotazioni in attesa",
+      "hiddenReviews": "Recensioni nascoste"
+    },
+    "pendingAlert_one": "{{count}} nuovo profilo barbiere attende la tua approvazione.",
+    "pendingAlert_other": "{{count}} nuovi profili barbiere attendono la tua approvazione.",
+    "pendingLink": "Vedi i profili da approvare",
+    "shortcutsLabel": "Scorciatoie amministrazione",
+    "shortcuts": {
+      "users": {
+        "title": "Utenti",
+        "description": "Elenco, ruoli e sospensione degli account"
+      },
+      "bookings": {
+        "title": "Prenotazioni",
+        "description": "Panoramica e filtro per stato"
+      },
+      "reviews": {
+        "title": "Recensioni",
+        "description": "Moderazione e occultamento delle recensioni"
+      }
+    }
+  },
+  "users": {
+    "title": "Utenti",
+    "filterLabel": "Filtra per ruolo",
+    "filters": {
+      "ALL": "Tutti",
+      "CLIENT": "Clienti",
+      "BARBER": "Barbieri",
+      "ADMIN": "Amministratori",
+      "PENDING": "Da approvare"
+    },
+    "empty": "Nessun utente per questo filtro.",
+    "loading": "Caricamento degli utenti…",
+    "pendingApproval": "In attesa di approvazione",
+    "registeredAt": "Registrato il {{date}}",
+    "approve": "Approva",
+    "viewStats": "Vedi le statistiche",
+    "certify": "Certifica",
+    "removeBadge": "Rimuovi il badge",
+    "reactivate": "Riattiva",
+    "suspend": "Sospendi",
+    "cannotSuspendSelf": "Non puoi sospendere il tuo account.",
+    "actions": {
+      "suspend": {
+        "title": "Sospendere questo account?",
+        "confirmLabel": "Sospendi",
+        "failure": "Impossibile sospendere l'account.",
+        "success": "{{email}} è stato sospeso.",
+        "description": "{{email}} non potrà più accedere e le sue prenotazioni future verranno annullate."
+      },
+      "reactivate": {
+        "title": "Riattivare questo account?",
+        "confirmLabel": "Riattiva",
+        "failure": "Impossibile riattivare l'account.",
+        "success": "{{email}} è stato riattivato.",
+        "description": "{{email}} potrà di nuovo accedere."
+      },
+      "certify": {
+        "title": "Assegnare il badge «Certificato»?",
+        "confirmLabel": "Certifica",
+        "failure": "Impossibile assegnare il badge.",
+        "success": "{{email}} ora è certificato.",
+        "description": "Il badge «Certificato» di {{email}} apparirà sul suo profilo pubblico e nella ricerca."
+      },
+      "approve": {
+        "title": "Approvare questo profilo?",
+        "confirmLabel": "Approva",
+        "failure": "Impossibile approvare il profilo.",
+        "success": "{{email}} è stato approvato: il suo profilo è online.",
+        "description": "Il profilo di {{email}} apparirà subito nella ricerca e potrà ricevere prenotazioni."
+      },
+      "uncertify": {
+        "title": "Rimuovere il badge «Certificato»?",
+        "confirmLabel": "Rimuovi il badge",
+        "failure": "Impossibile rimuovere il badge.",
+        "success": "Il badge di {{email}} è stato rimosso.",
+        "description": "Il badge «Certificato» di {{email}} scomparirà dal suo profilo pubblico e dalla ricerca."
+      }
+    }
+  },
+  "bookings": {
+    "title": "Prenotazioni",
+    "statusLabel": "Stato",
+    "allStatuses": "Tutti gli stati",
+    "empty": "Nessuna prenotazione per questo filtro.",
+    "loading": "Caricamento delle prenotazioni…",
+    "client": "Cliente: {{name}}",
+    "barber": "Barbiere: {{name}}",
+    "cancelledBy": "Annullata da: {{actor}}.",
+    "cancel": "Annulla la prenotazione",
+    "cancelSuccess": "Prenotazione annullata.",
+    "cancelFailure": "Impossibile annullare la prenotazione.",
+    "confirm": {
+      "title": "Annullare questa prenotazione?",
+      "keep": "Mantieni",
+      "body": "Il cliente e il barbiere riceveranno una notifica."
+    }
+  },
+  "reviews": {
+    "title": "Recensioni",
+    "empty": "Ancora nessuna recensione.",
+    "loading": "Caricamento delle recensioni…",
+    "rating": "{{rating}} / 5",
+    "hidden": "Nascosta",
+    "visible": "Visibile",
+    "noComment": "Nessun commento.",
+    "meta": "Barbiere: {{barber}} · Cliente: {{client}}",
+    "hide": "Nascondi",
+    "hideSuccess": "Recensione nascosta.",
+    "hideFailure": "Impossibile nascondere la recensione.",
+    "confirm": {
+      "title": "Nascondere questa recensione?",
+      "body": "Non sarà più visibile pubblicamente. Questa azione non può essere annullata dall'interfaccia."
+    }
+  },
+  "audit": {
+    "title": "Registro di audit",
+    "description": "Azioni sensibili: cambi di stato delle prenotazioni, sospensioni degli account e moderazione delle recensioni.",
+    "actionLabel": "Azione",
+    "allActions": "Tutte le azioni",
+    "empty": "Nessuna voce per questo filtro.",
+    "loading": "Caricamento del registro…",
+    "by": "Da: {{actor}}",
+    "system": "Sistema",
+    "actorWithRole": "{{email}} ({{role}})",
+    "deletedActor": "Account eliminato ({{role}})",
+    "targets": {
+      "BOOKING": "Prenotazione",
+      "USER": "Account",
+      "REVIEW": "Recensione",
+      "BARBER_PROFILE": "Profilo barbiere"
+    }
+  },
+  "barberStats": {
+    "title": "Statistiche di un barbiere",
+    "back": "Torna agli utenti",
+    "loading": "Caricamento delle statistiche…",
+    "notFound": "Profilo barbiere non trovato.",
+    "timezoneMissing": "Questo barbiere non ha indicato il suo fuso orario: statistiche non disponibili.",
+    "chooseRange": "Scegli un intervallo di date."
+  }
+}
