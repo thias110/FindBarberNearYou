@@ -6,6 +6,7 @@ import { timeOffCreateSchema } from "@findbarber/shared/validation";
 import { ApiError, barberApi } from "../../lib/apiClient";
 import { formatCalendarDateRange } from "../../lib/date";
 import { Alert } from "../../components/ui/Alert";
+import { StickyActionBar } from "../../components/ui/StickyActionBar";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Field } from "../../components/ui/Field";
@@ -248,9 +249,6 @@ export function BarberTimeOffPage() {
           </Alert>
         ) : null}
 
-        {error && <Alert variant="danger">{error}</Alert>}
-        {success && <Alert variant="success">{success}</Alert>}
-
         <Card className="space-y-4 p-6">
           <h2 className="text-lg font-bold text-foreground">
             Ajouter des jours indisponibles
@@ -384,6 +382,10 @@ export function BarberTimeOffPage() {
             </ul>
           )}
         </section>
+
+        {/* Résultat affiché en bas de l'écran, là où l'utilisateur a agi
+            (issue #56). */}
+        <StickyActionBar error={error} success={success} />
       </div>
     </div>
   );

@@ -17,6 +17,9 @@ import {
   listIanaTimeZones,
 } from "@findbarber/shared/timezones";
 import { ApiError, barberApi } from "../../lib/apiClient";
+import { useScrollToHash } from "../../lib/useScrollToHash";
+import { StickyActionBar } from "../../components/ui/StickyActionBar";
+import { buttonClasses } from "../../components/ui/buttonStyles";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -53,6 +56,14 @@ const TIMEZONE_GROUPS = (() => {
 const KNOWN_TIMEZONES = new Set(listIanaTimeZones());
 
 const CHECKBOX_CLASS = "h-5 w-5 shrink-0 accent-accent";
+
+// Sections du formulaire, atteignables par ancre (issue #56).
+const PROFILE_SECTIONS = [
+  { id: "identite", label: "Identité" },
+  { id: "lieux", label: "Lieux de prestation" },
+  { id: "localisation", label: "Localisation" },
+  { id: "devise-fuseau", label: "Devise et fuseau" },
+] as const;
 
 interface FormState {
   displayName: string;
@@ -92,6 +103,9 @@ export function BarberProfilePage() {
   // Devise enregistrée (issue #39) : immuable, sert à prévenir le barber si le
   // pays choisi en utilise une autre (le serveur refuserait le changement).
   const [savedCurrency, setSavedCurrency] = useState<Currency | null>(null);
+  // Lien direct vers une section (ex. /pro/profile#localisation), une fois le
+  // formulaire affiché.
+  useScrollToHash(!loading);
 
   useEffect(() => {
     let cancelled = false;
@@ -254,10 +268,23 @@ export function BarberProfilePage() {
         />
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && <Alert variant="danger">{error}</Alert>}
-          {success && <Alert variant="success">Profil enregistré.</Alert>}
+          {/* Accès direct à chaque section (issue #56). */}
+          <nav aria-label="Sections du profil">
+            <ul className="flex flex-wrap gap-2">
+              {PROFILE_SECTIONS.map((section) => (
+                <li key={section.id}>
+                  <a
+                    href={`#${section.id}`}
+                    className={buttonClasses("secondary", "sm")}
+                  >
+                    {section.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
 
-          <Card className="space-y-4 p-6">
+          <Card id="identite" className="scroll-mt-4 space-y-4 p-6">
             <h2 className="text-lg font-bold text-foreground">Identité</h2>
             <Field label="Nom affiché">
               {(control) => (
@@ -285,7 +312,7 @@ export function BarberProfilePage() {
             </Field>
           </Card>
 
-          <Card className="space-y-4 p-6">
+          <Card id="lieux" className="scroll-mt-4 space-y-4 p-6">
             <h2 className="text-lg font-bold text-foreground">
               Lieux de prestation
             </h2>
@@ -342,7 +369,7 @@ export function BarberProfilePage() {
             )}
           </Card>
 
-          <Card className="space-y-4 p-6">
+          <Card id="localisation" className="scroll-mt-4 space-y-4 p-6">
             <h2 className="text-lg font-bold text-foreground">
               Localisation
             </h2>
@@ -414,7 +441,7 @@ export function BarberProfilePage() {
             </div>
           </Card>
 
-          <Card className="space-y-4 p-6">
+          <Card id="devise-fuseau" className="scroll-mt-4 space-y-4 p-6">
             <h2 className="text-lg font-bold text-foreground">
               Devise et fuseau horaire
             </h2>
@@ -494,13 +521,18 @@ export function BarberProfilePage() {
             (arrondies) ; votre adresse exacte reste privée.
           </Alert>
 
-          <Button
-            type="submit"
-            isLoading={saving}
-            className="min-h-[44px] w-full"
+          <StickyActionBar
+            error={error}
+            success={success ? "Profil enregistré." : null}
           >
-            {saving ? "Enregistrement…" : "Enregistrer"}
-          </Button>
+            <Button
+              type="submit"
+              isLoading={saving}
+              className="min-h-[44px] w-full"
+            >
+              {saving ? "Enregistrement…" : "Enregistrer"}
+            </Button>
+          </StickyActionBar>
         </form>
       </div>
     </div>

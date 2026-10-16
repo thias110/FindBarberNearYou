@@ -19,6 +19,7 @@ import {
   parsePriceToMinor,
 } from "../../lib/formatters";
 import { Alert } from "../../components/ui/Alert";
+import { StickyActionBar } from "../../components/ui/StickyActionBar";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -364,9 +365,6 @@ export function BarberServicesPage() {
           description="Prestations, durées et tarifs."
         />
 
-        {error && <Alert variant="danger">{error}</Alert>}
-        {success && <Alert variant="success">{success}</Alert>}
-
         <Card className="p-6">
           <h2 className="text-lg font-bold text-foreground">
             Ajouter un service
@@ -460,6 +458,10 @@ export function BarberServicesPage() {
             )
           )}
         </section>
+
+        {/* Résultat affiché en bas de l'écran, là où l'utilisateur a agi
+            (issue #56). */}
+        <StickyActionBar error={error} success={success} />
       </div>
     </div>
   );

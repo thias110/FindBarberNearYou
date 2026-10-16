@@ -19,6 +19,7 @@ import {
   splitEndMinute,
 } from "../../lib/time";
 import { Alert } from "../../components/ui/Alert";
+import { StickyActionBar } from "../../components/ui/StickyActionBar";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Field } from "../../components/ui/Field";
@@ -429,9 +430,6 @@ export function BarberWorkingHoursPage() {
           </Alert>
         ) : null}
 
-        {error && <Alert variant="danger">{error}</Alert>}
-        {success && <Alert variant="success">{success}</Alert>}
-
         {!hasContent && (
           <Alert variant="info">
             Aucune plage horaire définie. Activez un jour puis ajoutez une plage.
@@ -587,7 +585,8 @@ export function BarberWorkingHoursPage() {
           </Alert>
         )}
 
-        <div className="flex flex-wrap gap-2">
+        {/* Enregistrement et résultat toujours à portée (issue #56). */}
+        <StickyActionBar error={error} success={success}>
           <Button
             className="min-h-[44px]"
             isLoading={saving}
@@ -603,7 +602,7 @@ export function BarberWorkingHoursPage() {
           >
             Tout effacer
           </Button>
-        </div>
+        </StickyActionBar>
       </div>
     </div>
   );
