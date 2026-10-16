@@ -1,0 +1,83 @@
+{
+  "approximateDistance": "Distancia aproximada",
+  "approximateLocation": "Ubicación aproximada",
+  "audience": {
+    "FEMME": "Mujer",
+    "HOMME": "Hombre",
+    "ENFANT": "Niño"
+  },
+  "auditAction": {
+    "BOOKING_CONFIRMED": "Reserva confirmada",
+    "BOOKING_DECLINED": "Reserva rechazada",
+    "BOOKING_COMPLETED": "Reserva completada",
+    "BOOKING_CANCELLED": "Reserva cancelada",
+    "BOOKING_EXPIRED": "Solicitud caducada",
+    "USER_SUSPENDED": "Cuenta suspendida",
+    "USER_REACTIVATED": "Cuenta reactivada",
+    "REVIEW_HIDDEN": "Reseña ocultada",
+    "USER_DELETED": "Cuenta eliminada (anonimizada)",
+    "BARBER_CERTIFIED": "Insignia «Certificado» otorgada",
+    "BARBER_UNCERTIFIED": "Insignia «Certificado» retirada",
+    "BARBER_APPROVED": "Perfil de barbero aprobado"
+  },
+  "bookingPaymentStatus": {
+    "NOT_REQUIRED": "Pago en el local",
+    "REQUIRES_PAYMENT": "Pago pendiente",
+    "PAID": "Pagado en línea",
+    "REFUND_PENDING": "Reembolso en curso",
+    "REFUNDED": "Reembolsado",
+    "CANCELLED": "Pago no recibido"
+  },
+  "bookingStatus": {
+    "PENDING": "Pendiente de confirmación",
+    "CONFIRMED": "Confirmada",
+    "CANCELLED": "Cancelada",
+    "COMPLETED": "Completada",
+    "NO_SHOW": "Ausencia",
+    "DECLINED": "Rechazada",
+    "EXPIRED": "Caducada"
+  },
+  "currency": {
+    "CHF": "Franco suizo (CHF)",
+    "EUR": "Euro (EUR)",
+    "USD": "Dólar estadounidense (USD)"
+  },
+  "paymentMode": {
+    "NONE": "Solo pago en el local",
+    "DEPOSIT": "Anticipo en línea",
+    "FULL": "Precio completo en línea"
+  },
+  "role": {
+    "CLIENT": "Cliente",
+    "BARBER": "Barbero",
+    "ADMIN": "Administrador"
+  },
+  "servicePlace": {
+    "SALON": "En el salón",
+    "AT_PROVIDER": "En casa del profesional",
+    "AT_CLIENT": "A domicilio"
+  },
+  "technique": {
+    "COUPE": "Corte",
+    "TAPER": "Taper",
+    "DEGRADE": "Degradado",
+    "LOCKS": "Rastas",
+    "TRESSES": "Trenzas",
+    "COLORATION": "Coloración",
+    "BARBE": "Barba"
+  },
+  "userStatus": {
+    "ACTIVE": "Activo",
+    "SUSPENDED": "Suspendido",
+    "DELETED": "Eliminado"
+  },
+  "weekday": {
+    "1": "Lunes",
+    "2": "Martes",
+    "3": "Miércoles",
+    "4": "Jueves",
+    "5": "Viernes",
+    "6": "Sábado",
+    "7": "Domingo"
+  }
+}

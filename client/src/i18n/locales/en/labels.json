@@ -1,0 +1,83 @@
+{
+  "approximateDistance": "Approximate distance",
+  "approximateLocation": "Approximate location",
+  "audience": {
+    "FEMME": "Women",
+    "HOMME": "Men",
+    "ENFANT": "Children"
+  },
+  "auditAction": {
+    "BOOKING_CONFIRMED": "Booking confirmed",
+    "BOOKING_DECLINED": "Booking declined",
+    "BOOKING_COMPLETED": "Booking completed",
+    "BOOKING_CANCELLED": "Booking cancelled",
+    "BOOKING_EXPIRED": "Request expired",
+    "USER_SUSPENDED": "Account suspended",
+    "USER_REACTIVATED": "Account reactivated",
+    "REVIEW_HIDDEN": "Review hidden",
+    "USER_DELETED": "Account deleted (anonymised)",
+    "BARBER_CERTIFIED": "“Certified” badge granted",
+    "BARBER_UNCERTIFIED": "“Certified” badge removed",
+    "BARBER_APPROVED": "Barber profile approved"
+  },
+  "bookingPaymentStatus": {
+    "NOT_REQUIRED": "Pay on site",
+    "REQUIRES_PAYMENT": "Payment pending",
+    "PAID": "Paid online",
+    "REFUND_PENDING": "Refund in progress",
+    "REFUNDED": "Refunded",
+    "CANCELLED": "Payment not received"
+  },
+  "bookingStatus": {
+    "PENDING": "Awaiting confirmation",
+    "CONFIRMED": "Confirmed",
+    "CANCELLED": "Cancelled",
+    "COMPLETED": "Completed",
+    "NO_SHOW": "No-show",
+    "DECLINED": "Declined",
+    "EXPIRED": "Expired"
+  },
+  "currency": {
+    "CHF": "Swiss franc (CHF)",
+    "EUR": "Euro (EUR)",
+    "USD": "US dollar (USD)"
+  },
+  "paymentMode": {
+    "NONE": "Pay on site only",
+    "DEPOSIT": "Online deposit",
+    "FULL": "Full price online"
+  },
+  "role": {
+    "CLIENT": "Client",
+    "BARBER": "Barber",
+    "ADMIN": "Administrator"
+  },
+  "servicePlace": {
+    "SALON": "In the salon",
+    "AT_PROVIDER": "At the barber's place",
+    "AT_CLIENT": "At the client's home"
+  },
+  "technique": {
+    "COUPE": "Haircut",
+    "TAPER": "Taper",
+    "DEGRADE": "Fade",
+    "LOCKS": "Locs",
+    "TRESSES": "Braids",
+    "COLORATION": "Colouring",
+    "BARBE": "Beard"
+  },
+  "userStatus": {
+    "ACTIVE": "Active",
+    "SUSPENDED": "Suspended",
+    "DELETED": "Deleted"
+  },
+  "weekday": {
+    "1": "Monday",
+    "2": "Tuesday",
+    "3": "Wednesday",
+    "4": "Thursday",
+    "5": "Friday",
+    "6": "Saturday",
+    "7": "Sunday"
+  }
+}

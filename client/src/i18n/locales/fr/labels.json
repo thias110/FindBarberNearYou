@@ -1,0 +1,83 @@
+{
+  "approximateDistance": "Distance approximative",
+  "approximateLocation": "Localisation approximative",
+  "audience": {
+    "FEMME": "Femme",
+    "HOMME": "Homme",
+    "ENFANT": "Enfant"
+  },
+  "auditAction": {
+    "BOOKING_CONFIRMED": "Réservation confirmée",
+    "BOOKING_DECLINED": "Réservation refusée",
+    "BOOKING_COMPLETED": "Réservation terminée",
+    "BOOKING_CANCELLED": "Réservation annulée",
+    "BOOKING_EXPIRED": "Demande expirée",
+    "USER_SUSPENDED": "Compte suspendu",
+    "USER_REACTIVATED": "Compte réactivé",
+    "REVIEW_HIDDEN": "Avis masqué",
+    "USER_DELETED": "Compte supprimé (anonymisé)",
+    "BARBER_CERTIFIED": "Badge « Certifié » attribué",
+    "BARBER_UNCERTIFIED": "Badge « Certifié » retiré",
+    "BARBER_APPROVED": "Profil barber approuvé"
+  },
+  "bookingPaymentStatus": {
+    "NOT_REQUIRED": "Paiement sur place",
+    "REQUIRES_PAYMENT": "Paiement en attente",
+    "PAID": "Payé en ligne",
+    "REFUND_PENDING": "Remboursement en cours",
+    "REFUNDED": "Remboursé",
+    "CANCELLED": "Paiement non reçu"
+  },
+  "bookingStatus": {
+    "PENDING": "En attente de confirmation",
+    "CONFIRMED": "Confirmée",
+    "CANCELLED": "Annulée",
+    "COMPLETED": "Terminée",
+    "NO_SHOW": "Absence",
+    "DECLINED": "Refusée",
+    "EXPIRED": "Expirée"
+  },
+  "currency": {
+    "CHF": "Franc suisse (CHF)",
+    "EUR": "Euro (EUR)",
+    "USD": "Dollar américain (USD)"
+  },
+  "paymentMode": {
+    "NONE": "Paiement sur place uniquement",
+    "DEPOSIT": "Acompte en ligne",
+    "FULL": "Prix complet en ligne"
+  },
+  "role": {
+    "CLIENT": "Client",
+    "BARBER": "Barbier",
+    "ADMIN": "Administrateur"
+  },
+  "servicePlace": {
+    "SALON": "En salon",
+    "AT_PROVIDER": "Chez le professionnel",
+    "AT_CLIENT": "Chez le client"
+  },
+  "technique": {
+    "COUPE": "Coupe",
+    "TAPER": "Taper",
+    "DEGRADE": "Dégradé",
+    "LOCKS": "Locks",
+    "TRESSES": "Tresses",
+    "COLORATION": "Coloration",
+    "BARBE": "Barbe"
+  },
+  "userStatus": {
+    "ACTIVE": "Actif",
+    "SUSPENDED": "Suspendu",
+    "DELETED": "Supprimé"
+  },
+  "weekday": {
+    "1": "Lundi",
+    "2": "Mardi",
+    "3": "Mercredi",
+    "4": "Jeudi",
+    "5": "Vendredi",
+    "6": "Samedi",
+    "7": "Dimanche"
+  }
+}

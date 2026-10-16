@@ -1,0 +1,83 @@
+{
+  "approximateDistance": "Distanza approssimativa",
+  "approximateLocation": "Posizione approssimativa",
+  "audience": {
+    "FEMME": "Donna",
+    "HOMME": "Uomo",
+    "ENFANT": "Bambino"
+  },
+  "auditAction": {
+    "BOOKING_CONFIRMED": "Prenotazione confermata",
+    "BOOKING_DECLINED": "Prenotazione rifiutata",
+    "BOOKING_COMPLETED": "Prenotazione completata",
+    "BOOKING_CANCELLED": "Prenotazione annullata",
+    "BOOKING_EXPIRED": "Richiesta scaduta",
+    "USER_SUSPENDED": "Account sospeso",
+    "USER_REACTIVATED": "Account riattivato",
+    "REVIEW_HIDDEN": "Recensione nascosta",
+    "USER_DELETED": "Account eliminato (anonimizzato)",
+    "BARBER_CERTIFIED": "Badge «Certificato» assegnato",
+    "BARBER_UNCERTIFIED": "Badge «Certificato» rimosso",
+    "BARBER_APPROVED": "Profilo barbiere approvato"
+  },
+  "bookingPaymentStatus": {
+    "NOT_REQUIRED": "Pagamento sul posto",
+    "REQUIRES_PAYMENT": "Pagamento in attesa",
+    "PAID": "Pagato online",
+    "REFUND_PENDING": "Rimborso in corso",
+    "REFUNDED": "Rimborsato",
+    "CANCELLED": "Pagamento non ricevuto"
+  },
+  "bookingStatus": {
+    "PENDING": "In attesa di conferma",
+    "CONFIRMED": "Confermata",
+    "CANCELLED": "Annullata",
+    "COMPLETED": "Completata",
+    "NO_SHOW": "Assenza",
+    "DECLINED": "Rifiutata",
+    "EXPIRED": "Scaduta"
+  },
+  "currency": {
+    "CHF": "Franco svizzero (CHF)",
+    "EUR": "Euro (EUR)",
+    "USD": "Dollaro statunitense (USD)"
+  },
+  "paymentMode": {
+    "NONE": "Solo pagamento sul posto",
+    "DEPOSIT": "Acconto online",
+    "FULL": "Prezzo intero online"
+  },
+  "role": {
+    "CLIENT": "Cliente",
+    "BARBER": "Barbiere",
+    "ADMIN": "Amministratore"
+  },
+  "servicePlace": {
+    "SALON": "In salone",
+    "AT_PROVIDER": "Presso il professionista",
+    "AT_CLIENT": "A domicilio del cliente"
+  },
+  "technique": {
+    "COUPE": "Taglio",
+    "TAPER": "Taper",
+    "DEGRADE": "Sfumatura",
+    "LOCKS": "Dreadlock",
+    "TRESSES": "Trecce",
+    "COLORATION": "Colorazione",
+    "BARBE": "Barba"
+  },
+  "userStatus": {
+    "ACTIVE": "Attivo",
+    "SUSPENDED": "Sospeso",
+    "DELETED": "Eliminato"
+  },
+  "weekday": {
+    "1": "Lunedì",
+    "2": "Martedì",
+    "3": "Mercoledì",
+    "4": "Giovedì",
+    "5": "Venerdì",
+    "6": "Sabato",
+    "7": "Domenica"
+  }
+}
