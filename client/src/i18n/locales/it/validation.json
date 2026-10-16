@@ -1,0 +1,113 @@
+{
+  "common": {
+    "controlChars": "Caratteri di controllo non consentiti.",
+    "countryCodeInvalid": "Codice paese non valido.",
+    "dateInvalid": "Data non valida: è prevista una data reale nel formato AAAA-MM-GG.",
+    "idRequired": "Identificativo obbligatorio.",
+    "idTooLong": "Identificativo troppo lungo.",
+    "addressTooLong": "L'indirizzo è troppo lungo."
+  },
+  "auth": {
+    "emailInvalid": "Indirizzo email non valido.",
+    "emailTooLong": "L'indirizzo email è troppo lungo.",
+    "passwordTooShort": "La password deve contenere almeno {{min}} caratteri.",
+    "passwordTooLong": "La password è troppo lunga.",
+    "passwordTooManyBytes": "La password non deve superare {{max}} byte (i caratteri accentati e le emoji ne contano più di uno).",
+    "nameTooLong": "Il nome è troppo lungo.",
+    "nameRequired": "Il nome non può essere vuoto.",
+    "passwordRequired": "La password è obbligatoria.",
+    "tokenRequired": "Il token è obbligatorio.",
+    "tokenTooLong": "Il token è troppo lungo."
+  },
+  "profile": {
+    "placesRequired": "Seleziona almeno un luogo del servizio.",
+    "latitudeNotFinite": "La latitudine deve essere un numero finito.",
+    "latitudeRange": "La latitudine deve essere compresa tra -90 e 90.",
+    "longitudeNotFinite": "La longitudine deve essere un numero finito.",
+    "longitudeRange": "La longitudine deve essere compresa tra -180 e 180.",
+    "timezoneTooLong": "Il fuso orario è troppo lungo.",
+    "timezoneInvalid": "Fuso orario non valido: è previsto un identificativo IANA (ad es. Europe/Zurich o UTC).",
+    "timezoneRestricted": "I fusi orari a offset fisso (Etc/…) non sono accettati. Scegli un fuso orario geografico, ad es. Europe/Zurich.",
+    "displayNameTooLong": "Il nome visualizzato è troppo lungo.",
+    "displayNameRequired": "Il nome visualizzato è obbligatorio.",
+    "descriptionTooLong": "La descrizione è troppo lunga.",
+    "descriptionRequired": "La descrizione è obbligatoria.",
+    "cityTooLong": "Il nome della città è troppo lungo.",
+    "cityRequired": "La città è obbligatoria.",
+    "postalCodeTooLong": "Il codice postale è troppo lungo.",
+    "radiusInteger": "Il raggio deve essere un numero intero.",
+    "radiusMin": "Il raggio deve essere di almeno {{min}} km.",
+    "radiusMax": "Il raggio non può superare {{max}} km.",
+    "currencyDerived": "La valuta è determinata dal paese del profilo e non può essere scelta.",
+    "addressRequired": "È richiesto un indirizzo per le prestazioni in salone o presso il professionista.",
+    "radiusRequired": "È richiesto un raggio d'intervento per le prestazioni a domicilio del cliente.",
+    "radiusNotAllowed": "Il raggio d'intervento è consentito solo per le prestazioni a domicilio del cliente."
+  },
+  "service": {
+    "nameTooLong": "Il nome del servizio è troppo lungo.",
+    "nameRequired": "Il nome del servizio è obbligatorio.",
+    "descriptionTooLong": "La descrizione del servizio è troppo lunga.",
+    "durationInteger": "La durata deve essere un numero intero.",
+    "durationMin": "La durata deve essere maggiore di 0.",
+    "durationMax": "La durata non può superare {{max}} minuti.",
+    "priceInteger": "Il prezzo deve essere un numero intero di unità minori (ad es. centesimi).",
+    "priceNegative": "Il prezzo non può essere negativo.",
+    "priceTooHigh": "Il prezzo è troppo alto.",
+    "emptyUpdate": "Non ci sono modifiche da salvare."
+  },
+  "search": {
+    "maxPriceCurrency": "Il prezzo massimo deve indicare una valuta.",
+    "boundsIncomplete": "L'area deve indicare minLat, maxLat, minLng e maxLng.",
+    "latitudeOrder": "minLat deve essere minore o uguale a maxLat.",
+    "longitudeOrder": "minLng deve essere minore o uguale a maxLng."
+  },
+  "addressSuggestions": {
+    "queryTooShort": "Inserisci almeno 3 caratteri.",
+    "queryTooLong": "La ricerca è troppo lunga."
+  },
+  "workingHours": {
+    "weekdayInteger": "Il giorno deve essere un numero intero.",
+    "weekdayRange": "Il giorno deve essere compreso tra 1 (lunedì) e 7 (domenica).",
+    "startInteger": "L'ora di inizio deve essere un numero intero.",
+    "startMin": "L'ora di inizio non può essere prima delle 00:00.",
+    "startMax": "L'ora di inizio non può essere dopo le 23:59.",
+    "endInteger": "L'ora di fine deve essere un numero intero.",
+    "endMin": "L'ora di fine non può essere prima delle 00:01.",
+    "endMax": "L'ora di fine non può superare le 24:00.",
+    "endBeforeStart": "La fine deve essere dopo l'inizio (nessuna fascia può superare la mezzanotte).",
+    "tooManyIntervals": "Il calendario non può superare {{max}} fasce.",
+    "tooManyPerDay": "{{day}}: più di {{max}} fasce.",
+    "overlap": "{{day}}: fasce sovrapposte."
+  },
+  "timeOff": {
+    "reasonTooLong": "Il motivo non può superare {{max}} caratteri.",
+    "endBeforeStart": "La data di fine deve essere uguale o successiva alla data di inizio.",
+    "rangeTooLong": "Il periodo non può superare {{max}} giorni inclusi."
+  },
+  "booking": {
+    "addressRequired": "L'indirizzo è obbligatorio.",
+    "startMinuteInteger": "L'ora di inizio deve essere un numero intero di minuti.",
+    "startMinuteNegative": "L'ora di inizio non può essere negativa.",
+    "startMinuteMax": "L'ora di inizio non può superare le 23:59.",
+    "clientAddressRequired": "È richiesto un indirizzo per una prestazione a domicilio del cliente.",
+    "clientAddressNotAllowed": "L'indirizzo del cliente è consentito solo per una prestazione a domicilio.",
+    "declineReasonTooLong": "Il motivo è troppo lungo."
+  },
+  "gallery": {
+    "captionTooLong": "La didascalia è troppo lunga."
+  },
+  "review": {
+    "ratingInteger": "La valutazione deve essere un numero intero.",
+    "ratingRange": "La valutazione deve essere compresa tra 1 e 5.",
+    "commentTooLong": "Il commento non può superare {{max}} caratteri."
+  },
+  "stats": {
+    "fromToNotAllowed": "from e to sono consentiti solo con range=custom.",
+    "fromRequired": "from è obbligatorio con range=custom.",
+    "toRequired": "to è obbligatorio con range=custom.",
+    "fromInvalid": "from deve essere una data valida nel formato AAAA-MM-GG.",
+    "toInvalid": "to deve essere una data valida nel formato AAAA-MM-GG.",
+    "fromAfterTo": "from deve essere precedente o uguale a to.",
+    "rangeTooLong": "L'intervallo non può superare {{max}} giorni."
+  }
+}

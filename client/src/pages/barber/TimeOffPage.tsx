@@ -16,6 +16,7 @@ import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { buttonClasses } from "../../components/ui/buttonStyles";
 import { focusFirstInvalid } from "../../lib/formErrors";
+import { translateValidationMessage } from "../../lib/validationMessages";
 
 // Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
@@ -33,7 +34,7 @@ function applyIssues(issues: { path: (string | number)[]; message: string }[]) {
   const next: Record<string, string> = {};
   for (const issue of issues) {
     const key = String(issue.path[0] ?? "form");
-    if (!(key in next)) next[key] = issue.message;
+    if (!(key in next)) next[key] = translateValidationMessage(issue.message);
   }
   return next;
 }

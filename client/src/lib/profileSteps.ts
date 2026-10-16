@@ -3,6 +3,7 @@ import type { CountryCode } from "@findbarber/shared/countries";
 import type { OwnBarberProfile } from "@findbarber/shared/types";
 import { profileSchema, type ProfileRequest } from "@findbarber/shared/validation";
 import i18n from "../i18n";
+import { translateValidationMessage } from "./validationMessages";
 
 // --- Formulaire de profil barber en étapes (issue #43) ---
 // Les règles de validation restent celles du schéma partagé `profileSchema`
@@ -190,7 +191,7 @@ export function validateProfileSteps(
       errors[field] =
         numberKey && typeof value === "string" && !Number.isFinite(parseNumber(value))
           ? i18n.t(numberKey)
-          : issue.message;
+          : translateValidationMessage(issue.message);
     }
   }
   return errors;

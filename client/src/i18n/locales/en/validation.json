@@ -1,0 +1,113 @@
+{
+  "common": {
+    "controlChars": "Control characters are not allowed.",
+    "countryCodeInvalid": "Invalid country code.",
+    "dateInvalid": "Invalid date: a real calendar date in YYYY-MM-DD format is expected.",
+    "idRequired": "Identifier is required.",
+    "idTooLong": "Identifier is too long.",
+    "addressTooLong": "The address is too long."
+  },
+  "auth": {
+    "emailInvalid": "Invalid email address.",
+    "emailTooLong": "The email address is too long.",
+    "passwordTooShort": "Password must be at least {{min}} characters long.",
+    "passwordTooLong": "Password is too long.",
+    "passwordTooManyBytes": "Password must not exceed {{max}} bytes (accented characters and emoji count as several).",
+    "nameTooLong": "Name is too long.",
+    "nameRequired": "Name cannot be empty.",
+    "passwordRequired": "Password is required.",
+    "tokenRequired": "Token is required.",
+    "tokenTooLong": "Token is too long."
+  },
+  "profile": {
+    "placesRequired": "Select at least one service location.",
+    "latitudeNotFinite": "Latitude must be a finite number.",
+    "latitudeRange": "Latitude must be between -90 and 90.",
+    "longitudeNotFinite": "Longitude must be a finite number.",
+    "longitudeRange": "Longitude must be between -180 and 180.",
+    "timezoneTooLong": "The time zone is too long.",
+    "timezoneInvalid": "Invalid time zone: an IANA identifier is expected (e.g. Europe/Zurich or UTC).",
+    "timezoneRestricted": "Fixed-offset time zones (Etc/…) are not accepted. Choose a geographical time zone, e.g. Europe/Zurich.",
+    "displayNameTooLong": "The display name is too long.",
+    "displayNameRequired": "Display name is required.",
+    "descriptionTooLong": "The description is too long.",
+    "descriptionRequired": "Description is required.",
+    "cityTooLong": "The town or city name is too long.",
+    "cityRequired": "Town or city is required.",
+    "postalCodeTooLong": "The postcode is too long.",
+    "radiusInteger": "The radius must be a whole number.",
+    "radiusMin": "The radius must be at least {{min}} km.",
+    "radiusMax": "The radius cannot exceed {{max}} km.",
+    "currencyDerived": "The currency is set by the profile's country and cannot be chosen.",
+    "addressRequired": "An address is required for services in the salon or at the barber's place.",
+    "radiusRequired": "A travel radius is required for home visits.",
+    "radiusNotAllowed": "A travel radius is only allowed for home visits."
+  },
+  "service": {
+    "nameTooLong": "The service name is too long.",
+    "nameRequired": "Service name is required.",
+    "descriptionTooLong": "The service description is too long.",
+    "durationInteger": "The duration must be a whole number.",
+    "durationMin": "The duration must be greater than 0.",
+    "durationMax": "The duration cannot exceed {{max}} minutes.",
+    "priceInteger": "The price must be a whole number of minor units (e.g. cents).",
+    "priceNegative": "The price cannot be negative.",
+    "priceTooHigh": "The price is too high.",
+    "emptyUpdate": "There are no changes to save."
+  },
+  "search": {
+    "maxPriceCurrency": "A maximum price must specify a currency.",
+    "boundsIncomplete": "The area must specify minLat, maxLat, minLng and maxLng.",
+    "latitudeOrder": "minLat must be less than or equal to maxLat.",
+    "longitudeOrder": "minLng must be less than or equal to maxLng."
+  },
+  "addressSuggestions": {
+    "queryTooShort": "Enter at least 3 characters.",
+    "queryTooLong": "The search is too long."
+  },
+  "workingHours": {
+    "weekdayInteger": "The day must be a whole number.",
+    "weekdayRange": "The day must be between 1 (Monday) and 7 (Sunday).",
+    "startInteger": "The start time must be a whole number.",
+    "startMin": "The start time cannot be before 00:00.",
+    "startMax": "The start time cannot be after 23:59.",
+    "endInteger": "The end time must be a whole number.",
+    "endMin": "The end time cannot be before 00:01.",
+    "endMax": "The end time cannot be later than 24:00.",
+    "endBeforeStart": "The end must be after the start (a slot cannot run past midnight).",
+    "tooManyIntervals": "The schedule cannot have more than {{max}} slots.",
+    "tooManyPerDay": "{{day}}: more than {{max}} slots.",
+    "overlap": "{{day}}: overlapping slots."
+  },
+  "timeOff": {
+    "reasonTooLong": "The reason cannot exceed {{max}} characters.",
+    "endBeforeStart": "The end date must be the same as or after the start date.",
+    "rangeTooLong": "The period cannot exceed {{max}} days, inclusive."
+  },
+  "booking": {
+    "addressRequired": "Address is required.",
+    "startMinuteInteger": "The start time must be a whole number of minutes.",
+    "startMinuteNegative": "The start time cannot be negative.",
+    "startMinuteMax": "The start time cannot be later than 23:59.",
+    "clientAddressRequired": "An address is required for a home visit.",
+    "clientAddressNotAllowed": "A client address is only allowed for a home visit.",
+    "declineReasonTooLong": "The reason is too long."
+  },
+  "gallery": {
+    "captionTooLong": "The caption is too long."
+  },
+  "review": {
+    "ratingInteger": "The rating must be a whole number.",
+    "ratingRange": "The rating must be between 1 and 5.",
+    "commentTooLong": "The comment cannot exceed {{max}} characters."
+  },
+  "stats": {
+    "fromToNotAllowed": "from and to are only allowed with range=custom.",
+    "fromRequired": "from is required with range=custom.",
+    "toRequired": "to is required with range=custom.",
+    "fromInvalid": "from must be a valid YYYY-MM-DD date.",
+    "toInvalid": "to must be a valid YYYY-MM-DD date.",
+    "fromAfterTo": "from must be on or before to.",
+    "rangeTooLong": "The range cannot exceed {{max}} days."
+  }
+}

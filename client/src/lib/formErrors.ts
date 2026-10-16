@@ -1,4 +1,5 @@
 import { ApiError } from "./apiClient";
+import { translateValidationMessage } from "./validationMessages";
 
 // Erreurs de formulaire au plus près du champ (issue #57).
 
@@ -18,7 +19,7 @@ export function fieldErrorsFrom(
   const result: FieldErrorMap = {};
   for (const issue of err.fields) {
     const key = issue.path.split(".")[0];
-    if (known.includes(key) && !result[key]) result[key] = issue.message;
+    if (known.includes(key) && !result[key]) result[key] = translateValidationMessage(issue.message);
   }
   return result;
 }

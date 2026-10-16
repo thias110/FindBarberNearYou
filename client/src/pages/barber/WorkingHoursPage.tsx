@@ -10,6 +10,7 @@ import type { WorkingHoursInterval } from "@findbarber/shared/types";
 import { workingHoursSchema } from "@findbarber/shared/validation";
 import { ApiError, barberApi } from "../../lib/apiClient";
 import { label } from "../../lib/labels";
+import { translateValidationMessage } from "../../lib/validationMessages";
 import {
   extractIntervalIndex,
   formatIntervalError,
@@ -300,11 +301,11 @@ export function BarberWorkingHoursPage() {
           nextRowErrors[entry.key] = formatIntervalError(
             entry.weekday,
             entry.plageNo,
-            issue.message,
+            translateValidationMessage(issue.message),
           );
         }
       } else {
-        banner.push(issue.message);
+        banner.push(translateValidationMessage(issue.message));
       }
     }
     setRowErrors(nextRowErrors);
