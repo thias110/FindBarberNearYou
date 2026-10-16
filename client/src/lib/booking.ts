@@ -3,6 +3,7 @@
 // uniquement à guider l'utilisateur avant l'envoi et à éviter les soumissions
 // manifestement incomplètes.
 import type { ServicePlace } from "@findbarber/shared/constants";
+import i18n from "../i18n";
 
 export interface BookingFormValues {
   serviceId: string;
@@ -27,20 +28,19 @@ export function validateBookingForm(
   const errors: BookingFormErrors = {};
 
   if (!values.serviceId.trim()) {
-    errors.serviceId = "Choisissez un service.";
+    errors.serviceId = i18n.t("client:booking.validation.serviceId");
   }
   if (!values.place) {
-    errors.place = "Choisissez un lieu de prestation.";
+    errors.place = i18n.t("client:booking.validation.place");
   }
   if (!values.date) {
-    errors.date = "Choisissez une date.";
+    errors.date = i18n.t("client:booking.validation.date");
   }
   if (values.startMinute === null) {
-    errors.startMinute = "Choisissez un créneau.";
+    errors.startMinute = i18n.t("client:booking.validation.startMinute");
   }
   if (values.place === "AT_CLIENT" && values.clientAddress.trim() === "") {
-    errors.clientAddress =
-      "Une adresse est requise pour une prestation chez le client.";
+    errors.clientAddress = i18n.t("client:booking.validation.clientAddress");
   }
 
   return errors;

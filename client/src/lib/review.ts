@@ -3,6 +3,7 @@
 // uniquement à guider l'utilisateur avant l'envoi (note 1..5 requise,
 // commentaire facultatif borné).
 import { LIMITS } from "@findbarber/shared/constants";
+import i18n from "../i18n";
 
 export interface ReviewDraft {
   rating: number | null;
@@ -21,11 +22,13 @@ export function validateReviewDraft(draft: ReviewDraft): ReviewDraftErrors {
     draft.rating < LIMITS.reviewRatingMin ||
     draft.rating > LIMITS.reviewRatingMax
   ) {
-    errors.rating = "Choisissez une note entre 1 et 5.";
+    errors.rating = i18n.t("client:review.validation.rating");
   }
 
   if (draft.comment.trim().length > LIMITS.reviewComment) {
-    errors.comment = `Le commentaire ne peut pas dépasser ${LIMITS.reviewComment} caractères.`;
+    errors.comment = i18n.t("client:review.validation.commentTooLong", {
+      max: LIMITS.reviewComment,
+    });
   }
 
   return errors;

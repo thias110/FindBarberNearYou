@@ -1,0 +1,270 @@
+{
+  "audience": {
+    "mixed": "Unisex"
+  },
+  "distance": {
+    "lessThanOneKm": "less than 1 km"
+  },
+  "home": {
+    "accountDeleted": "Your account has been deleted and your personal data erased.",
+    "hero": {
+      "greeting": "Hello, {{name}}.",
+      "welcome": "Welcome to FindBarber.",
+      "account": "Your account",
+      "title": "Find your barber, at the right time.",
+      "subtitle": "Book in moments, at the salon or at home.",
+      "cityLabel": "City",
+      "cityPlaceholder": "Which city are you looking in?",
+      "submit": "Search"
+    },
+    "categories": {
+      "title": "Popular services"
+    },
+    "preview": {
+      "atHome": "At home",
+      "placesAndServices": "Locations and services"
+    },
+    "barbers": {
+      "title": "Barbers to discover",
+      "subtitle": "Professionals ready to welcome you.",
+      "viewAll": "See all barbers",
+      "loading": "Loading barbers…",
+      "loadError": "Unable to load barbers.",
+      "retry": "Try again",
+      "empty": "No barbers to show at the moment.",
+      "search": "Find a barber"
+    },
+    "appointments": {
+      "title": "Your appointments",
+      "description": "See your upcoming appointments and your history.",
+      "view": "View my appointments"
+    },
+    "join": {
+      "title": "Join FindBarber",
+      "clientTitle": "Booking made simple",
+      "clientDescription": "Create an account to book and keep track of your appointments.",
+      "register": "Create an account",
+      "login": "Log in",
+      "barberTitle": "Are you a barber?",
+      "barberDescription": "Showcase your services, manage your hours and receive bookings, at the salon or at clients' homes.",
+      "barberCta": "Offer my services"
+    },
+    "steps": {
+      "title": "How it works",
+      "search": {
+        "title": "1. Search",
+        "description": "Find a barber that suits your needs."
+      },
+      "compare": {
+        "title": "2. Compare",
+        "description": "Browse the available services and profiles."
+      },
+      "book": {
+        "title": "3. Book",
+        "description": "Choose a time slot and confirm your appointment."
+      }
+    },
+    "logout": "Log out"
+  },
+  "search": {
+    "page": {
+      "title": "Find a barber",
+      "error": "Search failed.",
+      "results": "Search results",
+      "loading": "Loading results…",
+      "searching": "Searching…",
+      "retry": "Try again",
+      "emptyPage": "This page has no results.",
+      "firstPage": "Back to the first page",
+      "noResults": "No results.",
+      "resetFilters": "Reset filters",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {{page}} of {{total}}",
+      "resultCount_one": "{{count}} result",
+      "resultCount_other": "{{count}} results",
+      "resultCountInArea_one": "{{count}} result in this area",
+      "resultCountInArea_other": "{{count}} results in this area",
+      "resultCountRadius_one": "{{count}} result within {{radius}} km",
+      "resultCountRadius_other": "{{count}} results within {{radius}} km",
+      "radiusTruncated": "there are more barbers within this radius, refine your filters.",
+      "moreInArea": "more barbers in this area: go to the next page or zoom in on the map.",
+      "areaTag": "Visible map area",
+      "hideList": "Hide list",
+      "showList": "Show list",
+      "mapRegion": "Map of barbers (results on this page)",
+      "mapAlternative": "The list of results is the text alternative to this map.",
+      "mapCrashed": "The map could not be displayed. The list of results is still available."
+    },
+    "filters": {
+      "cityLabel": "City",
+      "submit": "Search",
+      "toggle": "Filters",
+      "reset": "Reset",
+      "activeTags": "Other active filters",
+      "removeTag": "Remove filter {{label}}",
+      "maxPrice": "Maximum price",
+      "maxPriceCurrency": "Currency of the maximum price",
+      "distance": "Distance",
+      "distanceHelp": {
+        "denied": "Filter disabled: you haven't shared your location. Allow it in your browser settings to use it.",
+        "unavailable": "Filter disabled: your location can't be found on this device.",
+        "pending": "Finding your location…",
+        "granted": "Around your location (never sent to the server).",
+        "idle": "You'll be asked for your location; it stays on your device."
+      },
+      "minRating": "Minimum rating",
+      "ratingMaxAria": "Rating of 5 out of 5",
+      "ratingAria": "Rating of {{rating}} out of 5 and above",
+      "ratingChip": "{{rating}} ★ & up"
+    },
+    "tags": {
+      "technique": "Service: {{value}}",
+      "audience": "For: {{value}}",
+      "place": "Location: {{value}}",
+      "name": "Name: {{value}}"
+    },
+    "highlights": {
+      "noReviews": "No reviews yet",
+      "ratingAria_one": "Rated {{rating}} out of 5, {{count}} review",
+      "ratingAria_other": "Rated {{rating}} out of 5, {{count}} reviews",
+      "reviewCount_one": "({{count}} review)",
+      "reviewCount_other": "({{count}} reviews)",
+      "startingFrom": "From"
+    },
+    "result": {
+      "showOnMap": "Show {{name}} on the map",
+      "viewProfile": "View profile"
+    }
+  },
+  "map": {
+    "loading": "Loading map…",
+    "marker": "{{name}} in {{city}} — show on the map",
+    "backToList": "Back to the list",
+    "tileError": "Some map tiles could not be loaded.",
+    "unconfigured": {
+      "devTitle": "Map not configured.",
+      "devHelp": "Set <code>VITE_MAP_API_KEY</code> (a public MapTiler key restricted by origin) in the <code>.env</code> file, then restart the development server. The list remains fully usable.",
+      "message": "The map is temporarily unavailable. You can carry on with the list."
+    },
+    "error": {
+      "title": "The map could not be loaded.",
+      "listStillWorks": "The list of results is still available.",
+      "retry": "Retry the map"
+    },
+    "card": {
+      "label": "{{name}}'s details",
+      "close": "Close the barber's details",
+      "book": "Book",
+      "viewProfile": "View profile"
+    }
+  },
+  "profile": {
+    "loading": "Loading profile…",
+    "notFoundTitle": "Profile not found",
+    "notFoundMessage": "Profile not found.",
+    "unavailable": "This profile doesn't exist or is no longer available.",
+    "reviewsError": "Unable to load reviews.",
+    "booking": "Booking",
+    "noServices": "This professional doesn't offer any bookable services yet.",
+    "noPlaces": "This professional hasn't specified where they provide services yet."
+  },
+  "booking": {
+    "form": {
+      "title": "Book",
+      "success": "Booking sent. The professional still needs to confirm it.",
+      "viewAppointments": "View my appointments",
+      "service": "Service",
+      "servicePlaceholder": "Choose a service",
+      "place": "Location",
+      "placePlaceholder": "Choose a location",
+      "date": "Date",
+      "address": "Your address",
+      "addressPlaceholder": "Street and number, postcode, city",
+      "addressHelp": "Used only for this home service, within the professional's service area.",
+      "slot": "Time slot",
+      "slotHint": "Select a service, a location and a date to see the available time slots.",
+      "slotsLoading": "Loading time slots…",
+      "slotsUnavailable": "Time slots unavailable.",
+      "retry": "Try again",
+      "noSlots": "No time slots available on this date.",
+      "slotsGroup": "Available time slots",
+      "onlineFull": "Full amount paid online",
+      "onlineDeposit": "{{amount}} deposit paid online, the rest on the day",
+      "onlineDetails": "(card or Twint). Refunded automatically if the professional declines or if you cancel in time.",
+      "loginPrompt": "<link>Log in</link> to send a booking.",
+      "clientsOnly": "Only client accounts can make bookings.",
+      "bookingFailed": "Booking failed.",
+      "submitting": "Sending…",
+      "submitAndPay": "Book and pay",
+      "submit": "Book"
+    },
+    "validation": {
+      "serviceId": "Choose a service.",
+      "place": "Choose a service location.",
+      "date": "Choose a date.",
+      "startMinute": "Choose a time slot.",
+      "clientAddress": "An address is required for a service at the client's home."
+    }
+  },
+  "bookings": {
+    "title": "My appointments",
+    "searchBarber": "Find a barber",
+    "paymentSuccess": "Payment received. Your request has been sent to the professional, who still needs to confirm it.",
+    "paymentCancelled": "Payment not completed. Your request stays on hold for a few minutes: you can still pay for it below, otherwise the time slot will be released.",
+    "loading": "Loading appointments…",
+    "loadError": "Unable to load.",
+    "retry": "Try again",
+    "empty": "No appointments yet.",
+    "upcoming_one": "Upcoming ({{count}})",
+    "upcoming_other": "Upcoming ({{count}})",
+    "past_one": "Past ({{count}})",
+    "past_other": "Past ({{count}})",
+    "cancelError": "Cancellation failed.",
+    "reviewError": "Your review could not be sent.",
+    "detailError": "Unable to load the details.",
+    "card": {
+      "with": "with {{name}}",
+      "cancelledBy": {
+        "client": "Cancelled by you.",
+        "admin": "Cancelled by the administrators.",
+        "barber": "Cancelled by the professional."
+      },
+      "declined": "Declined by the professional. The time slot has been released.",
+      "declinedWithReason": "Declined by the professional: {{reason}} The time slot has been released.",
+      "expiredUnpaid": "Payment wasn't made in time: the request has expired.",
+      "expiredNoAnswer": "The professional didn't reply in time: the request has expired.",
+      "pendingUntil": "Awaiting a reply until {{date}}.",
+      "deposit": "(deposit)",
+      "paymentPending": "Payment pending: the request will only be sent to the professional once it has been paid.",
+      "paymentPendingBefore": "Payment pending: the request will only be sent to the professional once it has been paid (before {{date}}).",
+      "payNow": "Pay now",
+      "address": "Service address",
+      "addressMissing": "No address provided.",
+      "showAddress": "Show address",
+      "reviewThanks": "Thank you, your review has been saved.",
+      "reviewAlreadyLeft": "You've already left a review.",
+      "leaveReview": "Leave a review",
+      "cancelConfirmQuestion": "Cancel this appointment?",
+      "cancelNo": "No",
+      "cancelConfirm": "Confirm cancellation",
+      "cancel": "Cancel",
+      "cancelTerms": "Cancellation is subject to the applicable terms."
+    }
+  },
+  "review": {
+    "form": {
+      "title": "Your review",
+      "rating": "Rating",
+      "ratingGroup": "Rating out of 5",
+      "comment": "Comment (optional)",
+      "submitting": "Sending…",
+      "submit": "Submit my review",
+      "cancel": "Cancel"
+    },
+    "validation": {
+      "rating": "Choose a rating between 1 and 5.",
+      "commentTooLong": "The comment cannot exceed {{max}} characters."
+    }
+  }
+}

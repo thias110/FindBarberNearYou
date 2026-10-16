@@ -1,7 +1,6 @@
-import {
-  BOOKING_STATUS_LABELS,
-  type BookingStatus,
-} from "@findbarber/shared/constants";
+import { useTranslation } from "react-i18next";
+import type { BookingStatus } from "@findbarber/shared/constants";
+import { label } from "../lib/labels";
 import { Badge, type BadgeVariant } from "./ui/Badge";
 
 // Seules les couleurs changent (tokens de statut). Statuts, libellés, props et
@@ -17,9 +16,11 @@ const STATUS_VARIANTS: Record<BookingStatus, BadgeVariant> = {
 };
 
 export function BookingStatusBadge({ status }: { status: BookingStatus }) {
+  // Abonnement au changement de langue (le libellé passe par `label()`).
+  useTranslation("client");
   return (
     <Badge variant={STATUS_VARIANTS[status]}>
-      {BOOKING_STATUS_LABELS[status]}
+      {label("bookingStatus", status)}
     </Badge>
   );
 }

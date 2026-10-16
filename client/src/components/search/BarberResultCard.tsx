@@ -1,13 +1,11 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { COUNTRY_NAME_BY_CODE } from "@findbarber/shared/countries";
-import {
-  SERVICE_PLACE_LABELS,
-  TECHNIQUE_LABELS,
-} from "@findbarber/shared/constants";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { audienceChips } from "../../lib/barberTags";
 import { cn } from "../../lib/cn";
 import { formatDistance } from "../../lib/geo";
+import { label } from "../../lib/labels";
 import { Badge } from "../ui/Badge";
 import { CertifiedBadge } from "../barber/CertifiedBadge";
 import { Card } from "../ui/Card";
@@ -30,6 +28,7 @@ export function BarberResultCard({
   selected,
   onSelect,
 }: BarberResultCardProps) {
+  const { t } = useTranslation("client");
   const country = COUNTRY_NAME_BY_CODE[barber.countryCode] ?? barber.countryCode;
   const audiences = audienceChips(barber.audiences);
 
@@ -44,7 +43,7 @@ export function BarberResultCard({
       <button
         type="button"
         onClick={() => onSelect(barber.id)}
-        aria-label={`Afficher ${barber.displayName} sur la carte`}
+        aria-label={t("search.result.showOnMap", { name: barber.displayName })}
         aria-pressed={selected}
         className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       />
@@ -80,7 +79,7 @@ export function BarberResultCard({
             ))}
             {barber.techniques.map((code) => (
               <Badge key={code} variant="neutral">
-                {TECHNIQUE_LABELS[code]}
+                {label("technique", code)}
               </Badge>
             ))}
           </div>
@@ -90,7 +89,7 @@ export function BarberResultCard({
           <div className="mt-2 flex flex-wrap gap-1">
             {barber.places.map((place) => (
               <Badge key={place} variant="neutral">
-                {SERVICE_PLACE_LABELS[place]}
+                {label("servicePlace", place)}
               </Badge>
             ))}
           </div>
@@ -100,7 +99,7 @@ export function BarberResultCard({
           to={`/barbers/${barber.id}`}
           className={buttonClasses("secondary", "md", "pointer-events-auto mt-3")}
         >
-          Voir le profil
+          {t("search.result.viewProfile")}
         </Link>
       </div>
     </Card>

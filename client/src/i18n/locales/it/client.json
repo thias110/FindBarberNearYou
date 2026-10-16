@@ -1,0 +1,270 @@
+{
+  "audience": {
+    "mixed": "Unisex"
+  },
+  "distance": {
+    "lessThanOneKm": "meno di 1 km"
+  },
+  "home": {
+    "accountDeleted": "Il tuo account è stato eliminato e i tuoi dati personali cancellati.",
+    "hero": {
+      "greeting": "Ciao, {{name}}.",
+      "welcome": "Benvenuto su FindBarber.",
+      "account": "Il tuo account",
+      "title": "Trova il tuo barbiere, al momento giusto.",
+      "subtitle": "Prenota in pochi istanti, in salone o a domicilio.",
+      "cityLabel": "Città",
+      "cityPlaceholder": "In quale città stai cercando?",
+      "submit": "Cerca"
+    },
+    "categories": {
+      "title": "Prestazioni più richieste"
+    },
+    "preview": {
+      "atHome": "A domicilio",
+      "placesAndServices": "Luoghi e prestazioni"
+    },
+    "barbers": {
+      "title": "Barbieri da scoprire",
+      "subtitle": "Professionisti pronti ad accoglierti.",
+      "viewAll": "Vedi tutti i barbieri",
+      "loading": "Caricamento dei barbieri…",
+      "loadError": "Impossibile caricare i barbieri.",
+      "retry": "Riprova",
+      "empty": "Nessun barbiere da mostrare al momento.",
+      "search": "Cerca un barbiere"
+    },
+    "appointments": {
+      "title": "I tuoi appuntamenti",
+      "description": "Ritrova i tuoi prossimi appuntamenti e lo storico.",
+      "view": "Vedi i miei appuntamenti"
+    },
+    "join": {
+      "title": "Unisciti a FindBarber",
+      "clientTitle": "Prenota in tutta semplicità",
+      "clientDescription": "Crea un account per prenotare e seguire i tuoi appuntamenti.",
+      "register": "Crea un account",
+      "login": "Accedi",
+      "barberTitle": "Sei un barbiere?",
+      "barberDescription": "Presenta i tuoi servizi, gestisci i tuoi orari e ricevi prenotazioni, in salone o a domicilio.",
+      "barberCta": "Offri i miei servizi"
+    },
+    "steps": {
+      "title": "Come funziona",
+      "search": {
+        "title": "1. Cerca",
+        "description": "Trova un barbiere in base alle tue esigenze."
+      },
+      "compare": {
+        "title": "2. Confronta",
+        "description": "Consulta i servizi e i profili disponibili."
+      },
+      "book": {
+        "title": "3. Prenota",
+        "description": "Scegli una fascia oraria e conferma il tuo appuntamento."
+      }
+    },
+    "logout": "Esci"
+  },
+  "search": {
+    "page": {
+      "title": "Cerca un barbiere",
+      "error": "Ricerca non riuscita.",
+      "results": "Risultati della ricerca",
+      "loading": "Caricamento dei risultati…",
+      "searching": "Ricerca in corso…",
+      "retry": "Riprova",
+      "emptyPage": "Questa pagina non contiene risultati.",
+      "firstPage": "Torna alla prima pagina",
+      "noResults": "Nessun risultato.",
+      "resetFilters": "Reimposta i filtri",
+      "previous": "Precedente",
+      "next": "Successiva",
+      "pageOf": "Pagina {{page}} di {{total}}",
+      "resultCount_one": "{{count}} risultato",
+      "resultCount_other": "{{count}} risultati",
+      "resultCountInArea_one": "{{count}} risultato in questa zona",
+      "resultCountInArea_other": "{{count}} risultati in questa zona",
+      "resultCountRadius_one": "{{count}} risultato entro {{radius}} km",
+      "resultCountRadius_other": "{{count}} risultati entro {{radius}} km",
+      "radiusTruncated": "ci sono altri barbieri in questo raggio, affina i filtri.",
+      "moreInArea": "altri barbieri in questa zona: vai alla pagina successiva o ingrandisci la mappa.",
+      "areaTag": "Zona visibile della mappa",
+      "hideList": "Nascondi l'elenco",
+      "showList": "Mostra l'elenco",
+      "mapRegion": "Mappa dei barbieri (risultati di questa pagina)",
+      "mapAlternative": "L'elenco dei risultati è l'alternativa testuale a questa mappa.",
+      "mapCrashed": "Non è stato possibile visualizzare la mappa. L'elenco dei risultati resta utilizzabile."
+    },
+    "filters": {
+      "cityLabel": "Città",
+      "submit": "Cerca",
+      "toggle": "Filtri",
+      "reset": "Reimposta",
+      "activeTags": "Altri filtri attivi",
+      "removeTag": "Rimuovi il filtro {{label}}",
+      "maxPrice": "Prezzo massimo",
+      "maxPriceCurrency": "Valuta del prezzo massimo",
+      "distance": "Distanza",
+      "distanceHelp": {
+        "denied": "Filtro disattivato: non hai condiviso la tua posizione. Consentila nelle impostazioni del browser per usarlo.",
+        "unavailable": "Filtro disattivato: impossibile trovare la tua posizione su questo dispositivo.",
+        "pending": "Ricerca della tua posizione…",
+        "granted": "Intorno alla tua posizione (mai inviata al server).",
+        "idle": "Ti verrà chiesta la posizione; resta sul tuo dispositivo."
+      },
+      "minRating": "Valutazione minima",
+      "ratingMaxAria": "Valutazione di 5 su 5",
+      "ratingAria": "Valutazione di {{rating}} su 5 o più",
+      "ratingChip": "{{rating}} ★ e +"
+    },
+    "tags": {
+      "technique": "Prestazione: {{value}}",
+      "audience": "Clientela: {{value}}",
+      "place": "Luogo: {{value}}",
+      "name": "Nome: {{value}}"
+    },
+    "highlights": {
+      "noReviews": "Ancora nessuna recensione",
+      "ratingAria_one": "Valutazione {{rating}} su 5, {{count}} recensione",
+      "ratingAria_other": "Valutazione {{rating}} su 5, {{count}} recensioni",
+      "reviewCount_one": "({{count}} recensione)",
+      "reviewCount_other": "({{count}} recensioni)",
+      "startingFrom": "A partire da"
+    },
+    "result": {
+      "showOnMap": "Mostra {{name}} sulla mappa",
+      "viewProfile": "Vedi il profilo"
+    }
+  },
+  "map": {
+    "loading": "Caricamento della mappa…",
+    "marker": "{{name}} a {{city}} — mostra sulla mappa",
+    "backToList": "Torna all'elenco",
+    "tileError": "Alcune porzioni della mappa non sono state caricate.",
+    "unconfigured": {
+      "devTitle": "Mappa non configurata.",
+      "devHelp": "Imposta <code>VITE_MAP_API_KEY</code> (chiave pubblica MapTiler limitata per origine) nel file <code>.env</code>, poi riavvia il server di sviluppo. L'elenco resta pienamente utilizzabile.",
+      "message": "La mappa è momentaneamente non disponibile. Puoi continuare con l'elenco."
+    },
+    "error": {
+      "title": "Non è stato possibile caricare la mappa.",
+      "listStillWorks": "L'elenco dei risultati resta utilizzabile.",
+      "retry": "Ricarica la mappa"
+    },
+    "card": {
+      "label": "Scheda di {{name}}",
+      "close": "Chiudi la scheda del barbiere",
+      "book": "Prenota",
+      "viewProfile": "Vedi il profilo"
+    }
+  },
+  "profile": {
+    "loading": "Caricamento del profilo…",
+    "notFoundTitle": "Profilo non trovato",
+    "notFoundMessage": "Profilo non trovato.",
+    "unavailable": "Questo profilo non esiste o non è più disponibile.",
+    "reviewsError": "Impossibile caricare le recensioni.",
+    "booking": "Prenotazione",
+    "noServices": "Questo professionista non offre ancora servizi prenotabili.",
+    "noPlaces": "Questo professionista non ha ancora indicato dove svolge le sue prestazioni."
+  },
+  "booking": {
+    "form": {
+      "title": "Prenota",
+      "success": "Prenotazione inviata. Il professionista deve ancora confermarla.",
+      "viewAppointments": "Vedi i miei appuntamenti",
+      "service": "Servizio",
+      "servicePlaceholder": "Scegli un servizio",
+      "place": "Luogo",
+      "placePlaceholder": "Scegli un luogo",
+      "date": "Data",
+      "address": "Il tuo indirizzo",
+      "addressPlaceholder": "Via e numero, CAP, città",
+      "addressHelp": "Usato solo per questa prestazione a domicilio, nella zona di intervento del professionista.",
+      "slot": "Fascia oraria",
+      "slotHint": "Seleziona un servizio, un luogo e una data per vedere le fasce orarie.",
+      "slotsLoading": "Caricamento delle fasce orarie…",
+      "slotsUnavailable": "Fasce orarie non disponibili.",
+      "retry": "Riprova",
+      "noSlots": "Nessuna fascia oraria disponibile in questa data.",
+      "slotsGroup": "Fasce orarie disponibili",
+      "onlineFull": "Pagamento online dell'importo totale",
+      "onlineDeposit": "Acconto di {{amount}} pagato online, il resto sul posto",
+      "onlineDetails": "(carta o Twint). Rimborsato automaticamente se il professionista rifiuta o se annulli in tempo.",
+      "loginPrompt": "<link>Accedi</link> per inviare una prenotazione.",
+      "clientsOnly": "Solo gli account cliente possono prenotare.",
+      "bookingFailed": "Prenotazione non riuscita.",
+      "submitting": "Invio…",
+      "submitAndPay": "Prenota e paga",
+      "submit": "Prenota"
+    },
+    "validation": {
+      "serviceId": "Scegli un servizio.",
+      "place": "Scegli un luogo della prestazione.",
+      "date": "Scegli una data.",
+      "startMinute": "Scegli una fascia oraria.",
+      "clientAddress": "Serve un indirizzo per una prestazione a domicilio del cliente."
+    }
+  },
+  "bookings": {
+    "title": "I miei appuntamenti",
+    "searchBarber": "Cerca un barbiere",
+    "paymentSuccess": "Pagamento ricevuto. La tua richiesta è stata inviata al professionista, che deve ancora confermarla.",
+    "paymentCancelled": "Pagamento non effettuato. La tua richiesta resta in sospeso per qualche minuto: puoi ancora pagarla qui sotto, altrimenti la fascia oraria verrà liberata.",
+    "loading": "Caricamento degli appuntamenti…",
+    "loadError": "Caricamento non riuscito.",
+    "retry": "Riprova",
+    "empty": "Nessun appuntamento per il momento.",
+    "upcoming_one": "In programma ({{count}})",
+    "upcoming_other": "In programma ({{count}})",
+    "past_one": "Passati ({{count}})",
+    "past_other": "Passati ({{count}})",
+    "cancelError": "Annullamento non riuscito.",
+    "reviewError": "Invio della recensione non riuscito.",
+    "detailError": "Impossibile caricare i dettagli.",
+    "card": {
+      "with": "con {{name}}",
+      "cancelledBy": {
+        "client": "Annullato da te.",
+        "admin": "Annullato dall'amministrazione.",
+        "barber": "Annullato dal professionista."
+      },
+      "declined": "Rifiutato dal professionista. La fascia oraria è stata liberata.",
+      "declinedWithReason": "Rifiutato dal professionista: {{reason}} La fascia oraria è stata liberata.",
+      "expiredUnpaid": "Il pagamento non è stato effettuato in tempo: la richiesta è scaduta.",
+      "expiredNoAnswer": "Il professionista non ha risposto in tempo: la richiesta è scaduta.",
+      "pendingUntil": "In attesa di risposta fino al {{date}}.",
+      "deposit": "(acconto)",
+      "paymentPending": "Pagamento in sospeso: la richiesta verrà inviata al professionista solo dopo il pagamento.",
+      "paymentPendingBefore": "Pagamento in sospeso: la richiesta verrà inviata al professionista solo dopo il pagamento (entro il {{date}}).",
+      "payNow": "Paga ora",
+      "address": "Indirizzo della prestazione",
+      "addressMissing": "Indirizzo non indicato.",
+      "showAddress": "Vedi l'indirizzo",
+      "reviewThanks": "Grazie, la tua recensione è stata registrata.",
+      "reviewAlreadyLeft": "Hai già lasciato una recensione.",
+      "leaveReview": "Lascia una recensione",
+      "cancelConfirmQuestion": "Annullare questo appuntamento?",
+      "cancelNo": "No",
+      "cancelConfirm": "Conferma l'annullamento",
+      "cancel": "Annulla",
+      "cancelTerms": "L'annullamento è soggetto alle condizioni applicabili."
+    }
+  },
+  "review": {
+    "form": {
+      "title": "La tua recensione",
+      "rating": "Valutazione",
+      "ratingGroup": "Valutazione su 5",
+      "comment": "Commento (facoltativo)",
+      "submitting": "Invio…",
+      "submit": "Invia la mia recensione",
+      "cancel": "Annulla"
+    },
+    "validation": {
+      "rating": "Scegli una valutazione tra 1 e 5.",
+      "commentTooLong": "Il commento non può superare {{max}} caratteri."
+    }
+  }
+}

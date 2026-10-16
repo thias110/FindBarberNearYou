@@ -1,13 +1,11 @@
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import {
-  SERVICE_PLACE_LABELS,
-  TECHNIQUE_LABELS,
-  type ServicePlace,
-  type Technique,
-} from "@findbarber/shared/constants";
+import type { ServicePlace, Technique } from "@findbarber/shared/constants";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { popularTechniquesOf } from "../../lib/barberTags";
 import { formatDistance } from "../../lib/geo";
+import { label } from "../../lib/labels";
 import { CertifiedBadge } from "../barber/CertifiedBadge";
 import { Badge } from "../ui/Badge";
 import {
@@ -18,11 +16,11 @@ import {
 
 // Lieu résumé pour le visiteur (issue #54) : « En salon », « À domicile »
 // (le barber se déplace) ou « Chez le professionnel ».
-function placeLabels(places: ServicePlace[]): string[] {
+function placeLabels(places: ServicePlace[], t: TFunction<"client">): string[] {
   const labels: string[] = [];
-  if (places.includes("SALON")) labels.push(SERVICE_PLACE_LABELS.SALON);
-  if (places.includes("AT_CLIENT")) labels.push("À domicile");
-  if (places.includes("AT_PROVIDER")) labels.push(SERVICE_PLACE_LABELS.AT_PROVIDER);
+  if (places.includes("SALON")) labels.push(label("servicePlace", "SALON"));
+  if (places.includes("AT_CLIENT")) labels.push(t("home.preview.atHome"));
+  if (places.includes("AT_PROVIDER")) labels.push(label("servicePlace", "AT_PROVIDER"));
   return labels;
 }
 
@@ -40,8 +38,9 @@ export function BarberPreviewCard({
   popularRanking,
   distanceKm,
 }: BarberPreviewCardProps) {
+  const { t } = useTranslation("client");
   const popular = popularTechniquesOf(barber.techniques, popularRanking);
-  const places = placeLabels(barber.places);
+  const places = placeLabels(barber.places, t);
 
   return (
     <Link
@@ -71,7 +70,7 @@ export function BarberPreviewCard({
         </p>
 
         {(places.length > 0 || popular.length > 0) && (
-          <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Lieux et prestations">
+          <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t("home.preview.placesAndServices")}>
             {places.map((label) => (
               <li key={label}>
                 <Badge variant="neutral">{label}</Badge>
@@ -79,7 +78,7 @@ export function BarberPreviewCard({
             ))}
             {popular.map((technique) => (
               <li key={technique}>
-                <Badge variant="neutral">{TECHNIQUE_LABELS[technique]}</Badge>
+                <Badge variant="neutral">{label("technique", technique)}</Badge>
               </li>
             ))}
           </ul>

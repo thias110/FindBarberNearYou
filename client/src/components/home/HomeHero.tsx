@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from "react";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { PublicUser } from "@findbarber/shared/types";
 import { resolveUploadUrl } from "../../lib/apiClient";
@@ -13,12 +15,15 @@ interface HomeHeroProps {
   onSubmitCity: (city: string) => void;
 }
 
-function greetingFor(user: PublicUser | null): string {
+function greetingFor(user: PublicUser | null, t: TFunction<"client">): string {
   const firstName = user?.name?.trim().split(/\s+/)[0];
-  return firstName ? `Bonjour, ${firstName}.` : "Bienvenue sur FindBarber.";
+  return firstName
+    ? t("home.hero.greeting", { name: firstName })
+    : t("home.hero.welcome");
 }
 
 export function HomeHero({ user, onSubmitCity }: HomeHeroProps) {
+  const { t } = useTranslation("client");
   const [city, setCity] = useState("");
 
   const initialSource = user?.name?.trim() || user?.email || "";
@@ -41,8 +46,8 @@ export function HomeHero({ user, onSubmitCity }: HomeHeroProps) {
           {user && (
             <Link
               to="/account"
-              aria-label="Votre compte"
-              title="Votre compte"
+              aria-label={t("home.hero.account")}
+              title={t("home.hero.account")}
               className="shrink-0 rounded-full transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               {avatarUrl ? (
@@ -62,28 +67,28 @@ export function HomeHero({ user, onSubmitCity }: HomeHeroProps) {
             </Link>
           )}
           <p className="text-sm font-medium text-foreground-muted">
-            {greetingFor(user)}
+            {greetingFor(user, t)}
           </p>
         </div>
 
         <h1 className="mt-5 text-3xl font-extrabold leading-tight text-foreground sm:text-4xl">
-          Trouvez votre barber, au bon moment.
+          {t("home.hero.title")}
         </h1>
         <p className="mt-3 text-base text-foreground-muted">
-          Réservez en quelques instants, au salon ou à domicile.
+          {t("home.hero.subtitle")}
         </p>
 
         <form
           onSubmit={handleSubmit}
           className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end"
         >
-          <Field label="Ville" className="min-w-0 flex-1">
+          <Field label={t("home.hero.cityLabel")} className="min-w-0 flex-1">
             {(control) => (
               <Input
                 {...control}
                 value={city}
                 onChange={(event) => setCity(event.target.value)}
-                placeholder="Dans quelle ville cherchez-vous ?"
+                placeholder={t("home.hero.cityPlaceholder")}
                 autoComplete="address-level2"
                 className="min-h-[44px]"
               />
@@ -93,7 +98,7 @@ export function HomeHero({ user, onSubmitCity }: HomeHeroProps) {
             type="submit"
             className="min-h-[44px] w-full sm:w-auto sm:shrink-0"
           >
-            Rechercher
+            {t("home.hero.submit")}
           </Button>
         </form>
       </div>

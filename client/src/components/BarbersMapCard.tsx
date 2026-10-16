@@ -1,11 +1,9 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import {
-  APPROXIMATE_LOCATION_LABEL,
-  SERVICE_PLACE_LABELS,
-} from "@findbarber/shared/constants";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { formatDistance } from "../lib/geo";
+import { label } from "../lib/labels";
 import { CertifiedBadge } from "./barber/CertifiedBadge";
 import { Badge } from "./ui/Badge";
 import { buttonClasses } from "./ui/buttonStyles";
@@ -30,6 +28,7 @@ export function BarbersMapCard({
   distanceKm = null,
   onClose,
 }: BarbersMapCardProps) {
+  const { t } = useTranslation("client");
   const touchStartY = useRef<number | null>(null);
 
   useEffect(() => {
@@ -43,7 +42,7 @@ export function BarbersMapCard({
   return (
     <section
       data-testid="barbers-map-card"
-      aria-label={`Fiche de ${barber.displayName}`}
+      aria-label={t("map.card.label", { name: barber.displayName })}
       onTouchStart={(event) => {
         touchStartY.current = event.touches[0]?.clientY ?? null;
       }}
@@ -64,7 +63,7 @@ export function BarbersMapCard({
       <button
         type="button"
         onClick={onClose}
-        aria-label="Fermer la fiche du barbier"
+        aria-label={t("map.card.close")}
         className="absolute right-2 top-2 z-10 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface/90 text-xl leading-none text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <span aria-hidden="true">×</span>
@@ -90,7 +89,7 @@ export function BarbersMapCard({
           {barber.certified && <CertifiedBadge />}
           {barber.places.map((place) => (
             <Badge key={place} variant="neutral">
-              {SERVICE_PLACE_LABELS[place]}
+              {label("servicePlace", place)}
             </Badge>
           ))}
         </div>
@@ -101,17 +100,17 @@ export function BarbersMapCard({
           to={`/barbers/${barber.id}#reserver`}
           className={buttonClasses("primary", "md", "flex-1")}
         >
-          Réserver
+          {t("map.card.book")}
         </Link>
         <Link
           to={`/barbers/${barber.id}`}
           className={buttonClasses("secondary", "md", "flex-1")}
         >
-          Voir le profil
+          {t("map.card.viewProfile")}
         </Link>
       </div>
       <p className="px-4 pb-3 text-xs text-foreground-muted">
-        {APPROXIMATE_LOCATION_LABEL}
+        {t("labels:approximateLocation")}
       </p>
     </section>
   );

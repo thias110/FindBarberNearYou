@@ -1,4 +1,4 @@
-import { intlLocale } from "../i18n";
+import i18n, { intlLocale } from "../i18n";
 // Géométrie de la recherche (issues #50, #52 et #54) : calculs purs, sans
 // dépendance au navigateur. La position du visiteur ne quitte jamais
 // l'appareil : seule une zone englobante (rectangle autour du rayon) est
@@ -90,7 +90,7 @@ export function normalizeBounds(bounds: GeoBounds): GeoBounds {
  * publique des barbers est arrondie (≈ 1 km).
  */
 export function formatDistance(km: number): string {
-  if (km < 1) return "moins de 1 km";
+  if (km < 1) return i18n.t("client:distance.lessThanOneKm");
   if (km < 10) {
     return `${new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 1 }).format(km)} km`;
   }

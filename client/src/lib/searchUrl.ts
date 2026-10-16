@@ -1,14 +1,16 @@
 import {
-  AUDIENCE_LABELS,
+  AUDIENCES,
   DEFAULT_CURRENCY,
-  SERVICE_PLACE_LABELS,
+  SERVICE_PLACES,
   SUPPORTED_CURRENCIES,
-  TECHNIQUE_LABELS,
+  TECHNIQUES,
   type Audience,
   type Currency,
   type ServicePlace,
   type Technique,
 } from "@findbarber/shared/constants";
+import i18n from "../i18n";
+import { label } from "./labels";
 
 // État de la recherche lu depuis l'URL (source de vérité, partageable). La
 // position du visiteur n'y figure jamais : seul le rayon choisi y est.
@@ -61,26 +63,35 @@ export function parseSearchUrl(sp: URLSearchParams): SearchUrlState {
 /** Pastilles des filtres hérités (retirables), dans un ordre stable. */
 export function legacyFilterTags(state: SearchUrlState): { key: string; label: string }[] {
   const tags: { key: string; label: string }[] = [];
-  if (state.technique && state.technique in TECHNIQUE_LABELS) {
+  if (state.technique && (TECHNIQUES as readonly string[]).includes(state.technique)) {
     tags.push({
       key: "technique",
-      label: `Prestation : ${TECHNIQUE_LABELS[state.technique as Technique]}`,
+      label: i18n.t("client:search.tags.technique", {
+        value: label("technique", state.technique as Technique),
+      }),
     });
   }
-  if (state.audience && state.audience in AUDIENCE_LABELS) {
+  if (state.audience && (AUDIENCES as readonly string[]).includes(state.audience)) {
     tags.push({
       key: "audience",
-      label: `Public : ${AUDIENCE_LABELS[state.audience as Audience]}`,
+      label: i18n.t("client:search.tags.audience", {
+        value: label("audience", state.audience as Audience),
+      }),
     });
   }
-  if (state.place && state.place in SERVICE_PLACE_LABELS) {
+  if (state.place && (SERVICE_PLACES as readonly string[]).includes(state.place)) {
     tags.push({
       key: "place",
-      label: `Lieu : ${SERVICE_PLACE_LABELS[state.place as ServicePlace]}`,
+      label: i18n.t("client:search.tags.place", {
+        value: label("servicePlace", state.place as ServicePlace),
+      }),
     });
   }
   if (state.q.trim()) {
-    tags.push({ key: "q", label: `Nom : ${state.q.trim()}` });
+    tags.push({
+      key: "q",
+      label: i18n.t("client:search.tags.name", { value: state.q.trim() }),
+    });
   }
   return tags;
 }

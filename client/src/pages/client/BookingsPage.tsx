@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
 import type { BookingStatus } from "@findbarber/shared/constants";
 import type { Booking, BookingDetails } from "@findbarber/shared/types";
+import i18n from "../../i18n";
 import { ApiError, bookingApi } from "../../lib/apiClient";
 import { BookingCard } from "../../components/client/BookingCard";
 import { Alert } from "../../components/ui/Alert";
@@ -11,6 +13,7 @@ import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
 
 export function ClientBookingsPage() {
+  const { t } = useTranslation("client");
   const [searchParams] = useSearchParams();
   const paymentReturn = searchParams.get("payment");
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -42,7 +45,9 @@ export function ClientBookingsPage() {
       const res = await bookingApi.list();
       setBookings(res.bookings);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Chargement impossible.");
+      setError(
+        err instanceof Error ? err.message : i18n.t("client:bookings.loadError"),
+      );
     } finally {
       setLoading(false);
     }
@@ -75,7 +80,7 @@ export function ClientBookingsPage() {
       // reste visible et l'utilisateur peut réessayer si possible.
       setCancelError({
         bookingId,
-        message: err instanceof Error ? err.message : "Annulation échouée.",
+        message: err instanceof Error ? err.message : t("bookings.cancelError"),
       });
     } finally {
       setActionId(null);
@@ -103,7 +108,7 @@ export function ClientBookingsPage() {
       setReviewThanksId(bookingId);
     } catch (err) {
       setReviewError(
-        err instanceof ApiError ? err.message : "Envoi de l'avis échoué.",
+        err instanceof ApiError ? err.message : t("bookings.reviewError"),
       );
     } finally {
       setReviewSubmittingId(null);
@@ -120,7 +125,7 @@ export function ClientBookingsPage() {
       setDetailError(
         err instanceof Error
           ? err.message
-          : "Impossible de charger le détail.",
+          : t("bookings.detailError"),
       );
     } finally {
       setDetailLoadingId(null);
@@ -178,11 +183,11 @@ export function ClientBookingsPage() {
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-            Mes rendez-vous
+            {t("bookings.title")}
           </h1>
           <p className="mt-1 text-sm text-foreground-muted">
             <Link to="/barbers" className="text-accent-strong underline">
-              Rechercher un barber
+              {t("bookings.searchBarber")}
             </Link>
           </p>
         </div>
@@ -192,22 +197,19 @@ export function ClientBookingsPage() {
             secondes. */}
         {paymentReturn === "success" && (
           <Alert variant="success">
-            Paiement reçu. Votre demande a été envoyée au professionnel, qui doit
-            encore la confirmer.
+            {t("bookings.paymentSuccess")}
           </Alert>
         )}
         {paymentReturn === "cancelled" && (
           <Alert variant="warning">
-            Paiement non effectué. Votre demande reste en attente quelques
-            minutes : vous pouvez encore la payer ci-dessous, sinon le créneau
-            sera libéré.
+            {t("bookings.paymentCancelled")}
           </Alert>
         )}
 
         {loading ? (
           <div aria-busy="true" className="space-y-3">
             <span className="sr-only" role="status">
-              Chargement des rendez-vous…
+              {t("bookings.loading")}
             </span>
             {[0, 1, 2].map((index) => (
               <Skeleton key={index} className="h-44 w-full rounded-2xl" />
@@ -222,19 +224,19 @@ export function ClientBookingsPage() {
               className="mt-2 min-h-[44px]"
               onClick={() => void loadBookings()}
             >
-              Réessayer
+              {t("bookings.retry")}
             </Button>
           </Alert>
         ) : bookings.length === 0 ? (
           <Card className="p-6 text-center">
             <p className="text-foreground-muted">
-              Aucun rendez-vous pour le moment.
+              {t("bookings.empty")}
             </p>
             <Link
               to="/barbers"
               className={buttonClasses("primary", "md", "mt-3")}
             >
-              Rechercher un barber
+              {t("bookings.searchBarber")}
             </Link>
           </Card>
         ) : (
@@ -247,7 +249,7 @@ export function ClientBookingsPage() {
                   id="bookings-upcoming-title"
                   className="text-lg font-bold text-foreground"
                 >
-                  À venir ({upcoming.length})
+                  {t("bookings.upcoming", { count: upcoming.length })}
                 </h2>
                 <ul className="mt-3 space-y-3">{upcoming.map(renderCard)}</ul>
               </section>
@@ -259,7 +261,7 @@ export function ClientBookingsPage() {
                   id="bookings-past-title"
                   className="text-lg font-bold text-foreground"
                 >
-                  Passés ({past.length})
+                  {t("bookings.past", { count: past.length })}
                 </h2>
                 <ul className="mt-3 space-y-3">{past.map(renderCard)}</ul>
               </section>

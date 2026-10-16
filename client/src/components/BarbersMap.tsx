@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import type { TFunction } from "i18next";
+import { Trans, useTranslation } from "react-i18next";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // MapLibre 6 charge son worker depuis `maplibre-gl-worker.mjs` à côté de son
@@ -63,6 +65,7 @@ const LOAD_TIMEOUT_MS = 12000;
 function createMarkerElement(
   barber: PublicBarberSearchItem,
   selected: boolean,
+  t: TFunction<"client">,
 ): HTMLButtonElement {
   const element = document.createElement("button");
   element.type = "button";
@@ -70,10 +73,7 @@ function createMarkerElement(
     selected ? " fb-map-marker--selected" : ""
   }`;
   element.dataset.barberId = barber.id;
-  element.setAttribute(
-    "aria-label",
-    `${barber.displayName} à ${barber.city} — afficher sur la carte`,
-  );
+  element.setAttribute("aria-label", markerLabel(barber, t));
   element.setAttribute("aria-pressed", selected ? "true" : "false");
 
   // SVG construit via DOM (jamais innerHTML) : aucune donnée utilisateur n'entre
@@ -105,6 +105,10 @@ function createMarkerElement(
   svg.append(pin, ring, dot);
   element.appendChild(svg);
   return element;
+}
+
+function markerLabel(barber: PublicBarberSearchItem, t: TFunction<"client">): string {
+  return t("map.marker", { name: barber.displayName, city: barber.city });
 }
 
 // Signature des résultats : sert à ne recadrer QUE lors d'un changement réel
@@ -166,6 +170,7 @@ export default function BarbersMap({
   onViewportChange,
   autoFit = true,
 }: BarbersMapProps) {
+  const { t } = useTranslation("client");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<
@@ -346,7 +351,7 @@ export default function BarbersMap({
       const selected = barber.id === selectedId;
       let entry = markersRef.current.get(barber.id);
       if (!entry) {
-        const element = createMarkerElement(barber, selected);
+        const element = createMarkerElement(barber, selected, t);
         element.addEventListener("click", () =>
           onSelectRef.current(barber.id),
         );
@@ -362,6 +367,7 @@ export default function BarbersMap({
           "aria-pressed",
           selected ? "true" : "false",
         );
+        entry.element.setAttribute("aria-label", markerLabel(barber, t));
       }
     }
 
@@ -374,7 +380,7 @@ export default function BarbersMap({
         }
       }
     }
-  }, [barbers, status, selectedId, autoFit]);
+  }, [barbers, status, selectedId, autoFit, t]);
 
   // --- La sélection (clic liste) amène le marqueur dans la vue, sans recentrage global ---
   useEffect(() => {
@@ -401,7 +407,7 @@ export default function BarbersMap({
       {status === "loading" && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-surface/70">
           <p className="text-sm text-foreground-muted">
-            Chargement de la carte…
+            {t("map.loading")}
           </p>
         </div>
       )}
@@ -412,20 +418,20 @@ export default function BarbersMap({
             // Développement (serveur Vite) : instructions techniques pour la clé.
             <>
               <p className="text-sm font-medium text-foreground">
-                Carte non configurée.
+                {t("map.unconfigured.devTitle")}
               </p>
               <p className="max-w-xs text-xs text-foreground-muted">
-                Renseignez <code>VITE_MAP_API_KEY</code> (clé publique MapTiler
-                restreinte par origine) dans le fichier <code>.env</code>, puis
-                redémarrez le serveur de développement. La liste reste
-                pleinement utilisable.
+                <Trans
+                  t={t}
+                  i18nKey="map.unconfigured.devHelp"
+                  components={{ code: <code /> }}
+                />
               </p>
             </>
           ) : (
             // Production : message utilisateur neutre, sans détail technique.
             <p className="max-w-xs text-sm text-foreground">
-              La carte est momentanément indisponible. Vous pouvez continuer
-              avec la liste.
+              {t("map.unconfigured.message")}
             </p>
           )}
           <button
@@ -433,7 +439,7 @@ export default function BarbersMap({
             onClick={onShowList}
             className="mt-1 inline-flex min-h-[44px] items-center rounded-lg border border-accent px-3 text-sm text-accent-strong lg:hidden"
           >
-            Revenir à la liste
+            {t("map.backToList")}
           </button>
         </div>
       )}
@@ -444,10 +450,10 @@ export default function BarbersMap({
           className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface p-6 text-center"
         >
           <p className="text-sm font-medium text-foreground">
-            La carte n'a pas pu se charger.
+            {t("map.error.title")}
           </p>
           <p className="max-w-xs text-xs text-foreground-muted">
-            La liste des résultats reste utilisable.
+            {t("map.error.listStillWorks")}
           </p>
           <div className="mt-1 flex flex-wrap justify-center gap-2">
             <button
@@ -455,14 +461,14 @@ export default function BarbersMap({
               onClick={onRetry}
               className="inline-flex min-h-[44px] items-center rounded-lg border border-accent px-3 text-sm text-accent-strong"
             >
-              Réessayer la carte
+              {t("map.error.retry")}
             </button>
             <button
               type="button"
               onClick={onShowList}
               className="inline-flex min-h-[44px] items-center rounded-lg border border-border px-3 text-sm text-foreground-muted lg:hidden"
             >
-              Revenir à la liste
+              {t("map.backToList")}
             </button>
           </div>
         </div>
@@ -470,7 +476,7 @@ export default function BarbersMap({
 
       {status === "ready" && transientTileError && (
         <p className="pointer-events-none absolute bottom-2 left-2 z-10 rounded-full bg-surface/90 px-2 py-0.5 text-[11px] text-foreground-muted">
-          Certaines tuiles n'ont pas pu se charger.
+          {t("map.tileError")}
         </p>
       )}
     </div>

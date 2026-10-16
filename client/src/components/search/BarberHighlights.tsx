@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { resolveUploadUrl } from "../../lib/apiClient";
 import { cn } from "../../lib/cn";
@@ -71,10 +72,11 @@ export function RatingSummary({
   barber: BarberLike;
   className?: string;
 }) {
+  const { t } = useTranslation("client");
   if (barber.reviewCount === 0 || barber.averageRating === null) {
     return (
       <p className={cn("text-sm text-foreground-muted", className)}>
-        Pas encore d'avis
+        {t("search.highlights.noReviews")}
       </p>
     );
   }
@@ -82,11 +84,16 @@ export function RatingSummary({
   return (
     <p
       className={cn("flex items-center gap-1 text-sm text-foreground", className)}
-      aria-label={`Note ${rating} sur 5, ${barber.reviewCount} avis`}
+      aria-label={t("search.highlights.ratingAria", {
+        rating,
+        count: barber.reviewCount,
+      })}
     >
       <StarIcon />
       <span className="font-semibold">{rating}</span>
-      <span className="text-foreground-muted">({barber.reviewCount} avis)</span>
+      <span className="text-foreground-muted">
+        {t("search.highlights.reviewCount", { count: barber.reviewCount })}
+      </span>
     </p>
   );
 }
@@ -99,10 +106,13 @@ export function StartingPrice({
   barber: BarberLike;
   className?: string;
 }) {
+  const { t } = useTranslation("client");
   if (barber.startingPriceMinor === null) return null;
   return (
     <p className={cn("text-sm text-foreground", className)}>
-      <span className="text-foreground-muted">À partir de </span>
+      <span className="text-foreground-muted">
+        {t("search.highlights.startingFrom")}{" "}
+      </span>
       <span className="font-semibold">
         {formatCurrency(barber.startingPriceMinor, barber.currency)}
       </span>

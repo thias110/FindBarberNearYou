@@ -1,10 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import {
-  LIMITS,
-  SERVICE_PLACE_LABELS,
-  type ServicePlace,
-} from "@findbarber/shared/constants";
+import { LIMITS, type ServicePlace } from "@findbarber/shared/constants";
 import type {
   BookingSlotDto,
   PublicBarberProfile,
@@ -12,6 +9,7 @@ import type {
 } from "@findbarber/shared/types";
 import type { BookingCreateInput } from "@findbarber/shared/validation";
 import { useAuth } from "../app/auth-context";
+import i18n from "../i18n";
 import { ApiError, barbersApi, bookingApi } from "../lib/apiClient";
 import { fieldErrorsFrom, focusFirstInvalid } from "../lib/formErrors";
 import {
@@ -24,6 +22,7 @@ import {
 } from "../lib/booking";
 import { amountDueOnline } from "@findbarber/shared/booking";
 import { formatCurrency, formatDuration } from "../lib/formatters";
+import { label } from "../lib/labels";
 import { formatMinutes } from "../lib/time";
 import { Alert } from "./ui/Alert";
 import { Button } from "./ui/Button";
@@ -61,6 +60,7 @@ export function BookingForm({
   profile: PublicBarberProfile;
   services: PublicBarberService[];
 }) {
+  const { t } = useTranslation("client");
   const { user } = useAuth();
 
   const [serviceId, setServiceId] = useState("");
@@ -162,7 +162,9 @@ export function BookingForm({
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setSlotsError(
-          err instanceof Error ? err.message : "Créneaux indisponibles.",
+          err instanceof Error
+            ? err.message
+            : i18n.t("client:booking.form.slotsUnavailable"),
         );
       })
       .finally(() => {
@@ -228,7 +230,7 @@ export function BookingForm({
         focusFirstInvalid(formRef.current);
       } else {
         setSubmitError(
-          err instanceof Error ? err.message : "Réservation impossible.",
+          err instanceof Error ? err.message : t("booking.form.bookingFailed"),
         );
       }
     } finally {
@@ -254,21 +256,23 @@ export function BookingForm({
   return (
     <Card className="p-6">
       <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-4">
-        <h2 className="text-lg font-bold text-foreground">Réserver</h2>
+        <h2 className="text-lg font-bold text-foreground">{t("booking.form.title")}</h2>
 
         {success && (
           <Alert variant="success">
-            Réservation envoyée. Le professionnel doit encore la confirmer.{" "}
+            {t("booking.form.success")}{" "}
             {user?.role === "CLIENT" && (
               <Link to="/appointments" className="font-medium underline">
-                Voir mes rendez-vous
+                {t("booking.form.viewAppointments")}
               </Link>
             )}
           </Alert>
         )}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
           <label className="block">
-            <span className="text-sm font-semibold text-foreground">Service</span>
+            <span className="text-sm font-semibold text-foreground">
+              {t("booking.form.service")}
+            </span>
             <select
               value={serviceId}
               disabled={submitting}
@@ -276,7 +280,7 @@ export function BookingForm({
               className={FIELD_CLASSES}
               {...invalidProps("serviceId")}
             >
-              <option value="">Choisir un service</option>
+              <option value="">{t("booking.form.servicePlaceholder")}</option>
               {services.map((service) => (
                 <option key={service.id} value={service.id}>
                   {service.name} —{" "}
@@ -293,7 +297,9 @@ export function BookingForm({
           </label>
 
           <label className="block">
-            <span className="text-sm font-semibold text-foreground">Lieu</span>
+            <span className="text-sm font-semibold text-foreground">
+              {t("booking.form.place")}
+            </span>
             <select
               value={place}
               disabled={submitting}
@@ -303,10 +309,10 @@ export function BookingForm({
               className={FIELD_CLASSES}
               {...invalidProps("place")}
             >
-              <option value="">Choisir un lieu</option>
+              <option value="">{t("booking.form.placePlaceholder")}</option>
               {profile.places.map((code) => (
                 <option key={code} value={code}>
-                  {SERVICE_PLACE_LABELS[code]}
+                  {label("servicePlace", code)}
                 </option>
               ))}
             </select>
@@ -319,7 +325,9 @@ export function BookingForm({
         </div>
 
         <label className="block">
-          <span className="text-sm font-semibold text-foreground">Date</span>
+          <span className="text-sm font-semibold text-foreground">
+            {t("booking.form.date")}
+          </span>
           <input
             type="date"
             value={date}
@@ -340,7 +348,7 @@ export function BookingForm({
         {place === "AT_CLIENT" && (
           <label className="block">
             <span className="text-sm font-semibold text-foreground">
-              Votre adresse
+              {t("booking.form.address")}
             </span>
             <input
               type="text"
@@ -351,13 +359,12 @@ export function BookingForm({
                 setClientAddress(e.target.value);
                 clearFieldError("clientAddress");
               }}
-              placeholder="Rue et numéro, code postal, ville"
+              placeholder={t("booking.form.addressPlaceholder")}
               className={FIELD_CLASSES}
               {...invalidProps("clientAddress")}
             />
             <p className="mt-1 text-xs text-foreground-muted">
-              Utilisée uniquement pour cette prestation à domicile, dans la zone
-              d'intervention du professionnel.
+              {t("booking.form.addressHelp")}
             </p>
             {fieldErrors.clientAddress && (
               <p id={errorId("clientAddress")} className="mt-1 text-xs text-danger">
@@ -368,16 +375,17 @@ export function BookingForm({
         )}
 
         <div>
-          <span className="text-sm font-semibold text-foreground">Créneau</span>
+          <span className="text-sm font-semibold text-foreground">
+            {t("booking.form.slot")}
+          </span>
           {!serviceId || !place || !date ? (
             <p className="mt-1 text-sm text-foreground-muted">
-              Sélectionnez un service, un lieu et une date pour afficher les
-              créneaux.
+              {t("booking.form.slotHint")}
             </p>
           ) : slotsLoading ? (
             <div aria-busy="true" className="mt-2 flex flex-wrap gap-2">
               <span className="sr-only" role="status">
-                Chargement des créneaux…
+                {t("booking.form.slotsLoading")}
               </span>
               {[0, 1, 2, 3].map((index) => (
                 <Skeleton key={index} className="h-11 w-20 rounded-lg" />
@@ -390,20 +398,20 @@ export function BookingForm({
                 type="button"
                 variant="secondary"
                 className="mt-2 min-h-[44px]"
-                onClick={() => setSlotsReload((t) => t + 1)}
+                onClick={() => setSlotsReload((n) => n + 1)}
               >
-                Réessayer
+                {t("booking.form.retry")}
               </Button>
             </Alert>
           ) : slots.length === 0 ? (
             <p className="mt-1 text-sm text-foreground-muted">
-              Aucun créneau disponible pour cette date.
+              {t("booking.form.noSlots")}
             </p>
           ) : (
             <>
               <div
                 role="group"
-                aria-label="Créneaux disponibles"
+                aria-label={t("booking.form.slotsGroup")}
                 aria-describedby={
                   fieldErrors.startMinute ? errorId("startMinute") : undefined
                 }
@@ -449,10 +457,11 @@ export function BookingForm({
             {onlineAmount > 0 && (
               <span className="mt-1 block">
                 {onlineAmount === selectedService.priceMinor
-                  ? "Paiement en ligne du montant total"
-                  : `Acompte de ${formatCurrency(onlineAmount, profile.currency)} payé en ligne, le reste sur place`}{" "}
-                (carte ou Twint). Remboursé automatiquement si le professionnel
-                refuse ou si vous annulez à temps.
+                  ? t("booking.form.onlineFull")
+                  : t("booking.form.onlineDeposit", {
+                      amount: formatCurrency(onlineAmount, profile.currency),
+                    })}{" "}
+                {t("booking.form.onlineDetails")}
               </span>
             )}
           </Alert>
@@ -460,18 +469,23 @@ export function BookingForm({
 
         {!user && (
           <Alert variant="info">
-            <Link
-              to="/login"
-              className="font-medium text-accent-strong underline"
-            >
-              Connectez-vous
-            </Link>{" "}
-            pour envoyer une réservation.
+            <Trans
+              t={t}
+              i18nKey="booking.form.loginPrompt"
+              components={{
+                link: (
+                  <Link
+                    to="/login"
+                    className="font-medium text-accent-strong underline"
+                  />
+                ),
+              }}
+            />
           </Alert>
         )}
         {user && user.role !== "CLIENT" && (
           <Alert variant="warning">
-            Seuls les comptes client peuvent réserver.
+            {t("booking.form.clientsOnly")}
           </Alert>
         )}
 
@@ -485,10 +499,10 @@ export function BookingForm({
           className="min-h-[44px] w-full"
         >
           {submitting
-            ? "Envoi…"
+            ? t("booking.form.submitting")
             : onlineAmount > 0
-              ? "Réserver et payer"
-              : "Réserver"}
+              ? t("booking.form.submitAndPay")
+              : t("booking.form.submit")}
         </Button>
       </form>
     </Card>

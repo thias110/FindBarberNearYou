@@ -1,20 +1,18 @@
-import {
-  AUDIENCE_LABELS,
-  type Audience,
-  type Technique,
-} from "@findbarber/shared/constants";
+import type { Audience, Technique } from "@findbarber/shared/constants";
+import i18n from "../i18n";
+import { label } from "./labels";
 
 // « Mixte » n'est pas un code stocké : il se calcule (FEMME + HOMME présents).
 // Partagé entre la carte de résultat et l'encart du barber sélectionné.
 export function audienceChips(audiences: Audience[]): string[] {
   const labels: string[] = [];
   if (audiences.includes("FEMME") && audiences.includes("HOMME")) {
-    labels.push("Mixte");
+    labels.push(i18n.t("client:audience.mixed"));
   } else {
-    if (audiences.includes("FEMME")) labels.push(AUDIENCE_LABELS.FEMME);
-    if (audiences.includes("HOMME")) labels.push(AUDIENCE_LABELS.HOMME);
+    if (audiences.includes("FEMME")) labels.push(label("audience", "FEMME"));
+    if (audiences.includes("HOMME")) labels.push(label("audience", "HOMME"));
   }
-  if (audiences.includes("ENFANT")) labels.push(AUDIENCE_LABELS.ENFANT);
+  if (audiences.includes("ENFANT")) labels.push(label("audience", "ENFANT"));
   return labels;
 }
 

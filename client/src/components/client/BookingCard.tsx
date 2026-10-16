@@ -1,13 +1,12 @@
-import {
-  BOOKING_PAYMENT_STATUS_LABELS,
-  SERVICE_PLACE_LABELS,
-} from "@findbarber/shared/constants";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import type { Booking, BookingDetails } from "@findbarber/shared/types";
 import {
   formatCurrency,
   formatDateTime,
   formatDuration,
 } from "../../lib/formatters";
+import { label } from "../../lib/labels";
 import { BookingStatusBadge } from "../BookingStatusBadge";
 import { ReviewForm } from "../ReviewForm";
 import { Alert } from "../ui/Alert";
@@ -15,10 +14,10 @@ import { Button } from "../ui/Button";
 import { buttonClasses } from "../ui/buttonStyles";
 import { Card } from "../ui/Card";
 
-function cancelledByLabel(cancelledBy: string): string {
-  if (cancelledBy === "CLIENT") return "vous";
-  if (cancelledBy === "ADMIN") return "l'administration";
-  return "le professionnel";
+function cancelledByLabel(cancelledBy: string, t: TFunction<"client">): string {
+  if (cancelledBy === "CLIENT") return t("bookings.card.cancelledBy.client");
+  if (cancelledBy === "ADMIN") return t("bookings.card.cancelledBy.admin");
+  return t("bookings.card.cancelledBy.barber");
 }
 
 export interface BookingCardProps {
@@ -67,56 +66,60 @@ export function BookingCard({
   onCloseReview,
   onSubmitReview,
 }: BookingCardProps) {
+  const { t } = useTranslation("client");
   return (
     <Card className="p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-semibold text-foreground">{booking.serviceName}</p>
           <p className="text-sm text-foreground-muted">
-            avec {booking.barberDisplayName}
+            {t("bookings.card.with", { name: booking.barberDisplayName })}
           </p>
           <p className="mt-1 text-sm text-foreground">
             {formatDateTime(booking.startAt)}
           </p>
           <p className="text-sm text-foreground-muted">
-            {SERVICE_PLACE_LABELS[booking.servicePlace]} ·{" "}
+            {label("servicePlace", booking.servicePlace)} ·{" "}
             {formatDuration(booking.durationMinutes)} ·{" "}
             {formatCurrency(booking.priceMinor, booking.currency)}
           </p>
           {booking.status === "CANCELLED" && booking.cancelledBy && (
             <p className="mt-1 text-xs text-foreground-muted">
-              Annulée par {cancelledByLabel(booking.cancelledBy)}.
+              {cancelledByLabel(booking.cancelledBy, t)}
             </p>
           )}
           {booking.status === "DECLINED" && (
             <p className="mt-1 text-xs text-foreground-muted">
-              Refusée par le professionnel
-              {booking.declineReason ? ` : ${booking.declineReason}` : "."} Le
-              créneau est libéré.
+              {booking.declineReason
+                ? t("bookings.card.declinedWithReason", {
+                    reason: booking.declineReason,
+                  })
+                : t("bookings.card.declined")}
             </p>
           )}
           {booking.status === "EXPIRED" && (
             <p className="mt-1 text-xs text-foreground-muted">
               {booking.paymentStatus === "CANCELLED"
-                ? "Le paiement n'a pas été effectué à temps : la demande a expiré."
-                : "Le professionnel n'a pas répondu à temps : la demande a expiré."}
+                ? t("bookings.card.expiredUnpaid")
+                : t("bookings.card.expiredNoAnswer")}
             </p>
           )}
           {booking.status === "PENDING" &&
             booking.expiresAt &&
             booking.paymentStatus !== "REQUIRES_PAYMENT" && (
               <p className="mt-1 text-xs text-foreground-muted">
-                En attente de réponse jusqu'au{" "}
-                {formatDateTime(booking.expiresAt)}.
+                {t("bookings.card.pendingUntil", {
+                  date: formatDateTime(booking.expiresAt),
+                })}
               </p>
             )}
           {booking.amountDueMinor !== null &&
             booking.paymentStatus !== "NOT_REQUIRED" && (
               <p className="mt-1 text-xs text-foreground-muted">
-                {BOOKING_PAYMENT_STATUS_LABELS[booking.paymentStatus]} ·{" "}
+                {label("bookingPaymentStatus", booking.paymentStatus)} ·{" "}
                 {formatCurrency(booking.amountDueMinor, booking.currency)}
                 {booking.amountDueMinor < booking.priceMinor
-                  ? " (acompte)"
+                  ? ` ${t("bookings.card.deposit")}`
                   : ""}
               </p>
             )}
@@ -127,18 +130,17 @@ export function BookingCard({
       {booking.checkoutUrl && (
         <Alert variant="warning" className="mt-3">
           <p>
-            Paiement en attente : la demande ne sera envoyée au professionnel
-            qu'une fois payée
             {booking.expiresAt
-              ? ` (avant ${formatDateTime(booking.expiresAt)})`
-              : ""}
-            .
+              ? t("bookings.card.paymentPendingBefore", {
+                  date: formatDateTime(booking.expiresAt),
+                })
+              : t("bookings.card.paymentPending")}
           </p>
           <a
             href={booking.checkoutUrl}
             className={buttonClasses("primary", "md", "mt-3")}
           >
-            Payer maintenant
+            {t("bookings.card.payNow")}
           </a>
         </Alert>
       )}
@@ -148,10 +150,10 @@ export function BookingCard({
           {detail ? (
             <div className="rounded-lg bg-surface-muted p-3">
               <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
-                Adresse de la prestation
+                {t("bookings.card.address")}
               </p>
               <p className="mt-1 text-sm text-foreground">
-                {detail.clientAddress ?? "Adresse non renseignée."}
+                {detail.clientAddress ?? t("bookings.card.addressMissing")}
               </p>
             </div>
           ) : (
@@ -163,7 +165,7 @@ export function BookingCard({
               disabled={detailLoading}
               onClick={onShowAddress}
             >
-              Voir l'adresse
+              {t("bookings.card.showAddress")}
             </Button>
           )}
         </div>
@@ -174,8 +176,8 @@ export function BookingCard({
           {booking.hasReview ? (
             <p className="text-sm text-foreground-muted">
               {reviewThanks
-                ? "Merci, votre avis a été enregistré."
-                : "Vous avez déjà laissé un avis."}
+                ? t("bookings.card.reviewThanks")
+                : t("bookings.card.reviewAlreadyLeft")}
             </p>
           ) : reviewFormOpen ? (
             <ReviewForm
@@ -192,7 +194,7 @@ export function BookingCard({
               disabled={reviewSubmitting}
               onClick={onOpenReview}
             >
-              Laisser un avis
+              {t("bookings.card.leaveReview")}
             </Button>
           )}
         </div>
@@ -203,7 +205,7 @@ export function BookingCard({
           {confirming ? (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-danger">
-                Annuler ce rendez-vous ?
+                {t("bookings.card.cancelConfirmQuestion")}
               </span>
               <Button
                 type="button"
@@ -212,7 +214,7 @@ export function BookingCard({
                 disabled={busy}
                 onClick={onAbortCancel}
               >
-                Non
+                {t("bookings.card.cancelNo")}
               </Button>
               <Button
                 type="button"
@@ -222,7 +224,7 @@ export function BookingCard({
                 disabled={busy}
                 onClick={onConfirmCancel}
               >
-                Confirmer l'annulation
+                {t("bookings.card.cancelConfirm")}
               </Button>
             </div>
           ) : (
@@ -233,7 +235,7 @@ export function BookingCard({
               disabled={busy}
               onClick={onRequestCancel}
             >
-              Annuler
+              {t("bookings.card.cancel")}
             </Button>
           )}
 
@@ -243,7 +245,7 @@ export function BookingCard({
             </Alert>
           )}
           <p className="mt-2 text-xs text-foreground-muted">
-            L'annulation est soumise aux conditions applicables.
+            {t("bookings.card.cancelTerms")}
           </p>
         </div>
       )}

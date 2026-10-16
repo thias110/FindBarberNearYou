@@ -1,4 +1,5 @@
 import { useRef, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { focusFirstInvalid } from "../lib/formErrors";
 import { LIMITS } from "@findbarber/shared/constants";
 import {
@@ -26,6 +27,7 @@ export function ReviewForm({
   onCancel,
   serverError,
 }: ReviewFormProps) {
+  const { t } = useTranslation("client");
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [errors, setErrors] = useState<ReviewDraftErrors>({});
@@ -49,13 +51,13 @@ export function ReviewForm({
       onSubmit={handleSubmit}
       className="mt-3 rounded-xl border border-border bg-surface-muted p-3"
     >
-      <p className="text-sm font-medium text-foreground">Votre avis</p>
+      <p className="text-sm font-medium text-foreground">{t("review.form.title")}</p>
 
       <div className="mt-2">
-        <span className="text-sm text-foreground-muted">Note</span>
+        <span className="text-sm text-foreground-muted">{t("review.form.rating")}</span>
         <div
           role="group"
-          aria-label="Note sur 5"
+          aria-label={t("review.form.ratingGroup")}
           aria-describedby={errors.rating ? "review-rating-error" : undefined}
           data-invalid={errors.rating ? "true" : undefined}
           className="mt-1 flex gap-1"
@@ -88,7 +90,7 @@ export function ReviewForm({
           htmlFor="review-comment"
           className="text-sm text-foreground-muted"
         >
-          Commentaire (facultatif)
+          {t("review.form.comment")}
         </label>
         <textarea
           id="review-comment"
@@ -120,7 +122,7 @@ export function ReviewForm({
           isLoading={submitting}
           className="min-h-[44px]"
         >
-          {submitting ? "Envoi…" : "Envoyer mon avis"}
+          {submitting ? t("review.form.submitting") : t("review.form.submit")}
         </Button>
         <Button
           type="button"
@@ -129,7 +131,7 @@ export function ReviewForm({
           className="min-h-[44px]"
           onClick={onCancel}
         >
-          Annuler
+          {t("review.form.cancel")}
         </Button>
       </div>
     </form>

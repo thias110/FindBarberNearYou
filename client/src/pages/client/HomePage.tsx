@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import {
@@ -6,6 +7,7 @@ import {
   type Technique,
 } from "@findbarber/shared/constants";
 import { useAuth } from "../../app/auth-context";
+import i18n from "../../i18n";
 import { barbersApi } from "../../lib/apiClient";
 import { distanceKm } from "../../lib/geo";
 import { useVisitorPosition } from "../../lib/visitorPosition";
@@ -24,25 +26,14 @@ const PREVIEW_LIMIT = 8;
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
 const SECONDARY_LINK_CLASS = buttonClasses("secondary");
 
-const STEPS = [
-  {
-    title: "1. Cherchez",
-    description: "Trouvez un barber selon vos besoins.",
-  },
-  {
-    title: "2. Comparez",
-    description: "Consultez les services et profils disponibles.",
-  },
-  {
-    title: "3. Réservez",
-    description: "Choisissez un créneau et confirmez votre rendez-vous.",
-  },
-];
+// Étapes « Comment ça marche » : textes dans `client:home.steps.<clé>`.
+const STEPS = ["search", "compare", "book"] as const;
 
 // Accueil : public pour les visiteurs (incitation à l'inscription), enrichi
 // pour un CLIENT connecté (rendez-vous, déconnexion). Les BARBER et ADMIN sont
 // redirigés vers leur espace par la route.
 export function ClientHomePage() {
+  const { t } = useTranslation("client");
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -95,7 +86,7 @@ export function ClientHomePage() {
         setError(
           err instanceof Error
             ? err.message
-            : "Impossible de charger les barbers.",
+            : i18n.t("client:home.barbers.loadError"),
         );
       })
       .finally(() => {
@@ -126,7 +117,7 @@ export function ClientHomePage() {
       <div className="mx-auto max-w-5xl space-y-8">
         {accountDeleted && (
           <Alert variant="success">
-            Votre compte a été supprimé et vos données personnelles effacées.
+            {t("home.accountDeleted")}
           </Alert>
         )}
 
@@ -141,10 +132,10 @@ export function ClientHomePage() {
                 id="home-barbers-title"
                 className="text-xl font-bold text-foreground"
               >
-                Barbers à découvrir
+                {t("home.barbers.title")}
               </h2>
               <p className="mt-1 text-sm text-foreground-muted">
-                Des professionnels prêts à vous accueillir.
+                {t("home.barbers.subtitle")}
               </p>
             </div>
             <Button
@@ -152,7 +143,7 @@ export function ClientHomePage() {
               className="min-h-[44px]"
               onClick={() => navigate("/barbers")}
             >
-              Voir tous les barbers
+              {t("home.barbers.viewAll")}
             </Button>
           </div>
 
@@ -162,7 +153,7 @@ export function ClientHomePage() {
               className="mt-4 flex gap-4 overflow-hidden"
             >
               <span className="sr-only" role="status">
-                Chargement des barbers…
+                {t("home.barbers.loading")}
               </span>
               {[0, 1, 2].map((index) => (
                 <Skeleton
@@ -182,19 +173,19 @@ export function ClientHomePage() {
                 className="mt-3 min-h-[44px]"
                 onClick={() => setReloadToken((token) => token + 1)}
               >
-                Réessayer
+                {t("home.barbers.retry")}
               </Button>
             </div>
           ) : barbers.length === 0 ? (
             <Card className="mt-4 p-6 text-center">
               <p className="text-foreground-muted">
-                Aucun barber à afficher pour le moment.
+                {t("home.barbers.empty")}
               </p>
               <Button
                 className="mt-4 min-h-[44px]"
                 onClick={() => navigate("/barbers")}
               >
-                Rechercher un barber
+                {t("home.barbers.search")}
               </Button>
             </Card>
           ) : (
@@ -202,7 +193,7 @@ export function ClientHomePage() {
             // et chaque carte est un lien atteignable au clavier (le focus fait
             // défiler la carte en vue).
             <ul
-              aria-label="Barbers à découvrir"
+              aria-label={t("home.barbers.title")}
               className="-mx-4 mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 pb-3 sm:-mx-8 sm:scroll-px-8 sm:px-8"
             >
               {barbers.map((barber) => (
@@ -229,17 +220,17 @@ export function ClientHomePage() {
                   id="home-appointments-title"
                   className="text-lg font-bold text-foreground"
                 >
-                  Vos rendez-vous
+                  {t("home.appointments.title")}
                 </h2>
                 <p className="mt-1 text-sm text-foreground-muted">
-                  Retrouvez vos prochains rendez-vous et votre historique.
+                  {t("home.appointments.description")}
                 </p>
               </div>
               <Button
                 className="min-h-[44px] shrink-0"
                 onClick={() => navigate("/appointments")}
               >
-                Voir mes rendez-vous
+                {t("home.appointments.view")}
               </Button>
             </Card>
           </section>
@@ -249,38 +240,37 @@ export function ClientHomePage() {
             className="grid gap-4 sm:grid-cols-2"
           >
             <h2 id="home-join-title" className="sr-only">
-              Rejoindre FindBarber
+              {t("home.join.title")}
             </h2>
             <Card className="flex flex-col gap-3 p-6">
               <p className="text-lg font-semibold text-foreground">
-                Réservez en toute simplicité
+                {t("home.join.clientTitle")}
               </p>
               <p className="text-sm text-foreground-muted">
-                Créez un compte pour réserver et suivre vos rendez-vous.
+                {t("home.join.clientDescription")}
               </p>
               <div className="mt-auto flex flex-wrap gap-2">
                 <Link to="/register" className={PRIMARY_LINK_CLASS}>
-                  Créer un compte
+                  {t("home.join.register")}
                 </Link>
                 <Link to="/login" className={SECONDARY_LINK_CLASS}>
-                  Se connecter
+                  {t("home.join.login")}
                 </Link>
               </div>
             </Card>
             <Card className="flex flex-col gap-3 p-6">
               <p className="text-lg font-semibold text-foreground">
-                Vous êtes barber ?
+                {t("home.join.barberTitle")}
               </p>
               <p className="text-sm text-foreground-muted">
-                Présentez vos services, gérez vos horaires et recevez des
-                réservations, au salon ou à domicile.
+                {t("home.join.barberDescription")}
               </p>
               <div className="mt-auto">
                 <Link
                   to="/register?role=BARBER"
                   className={SECONDARY_LINK_CLASS}
                 >
-                  Proposer mes services
+                  {t("home.join.barberCta")}
                 </Link>
               </div>
             </Card>
@@ -292,17 +282,17 @@ export function ClientHomePage() {
             id="home-steps-title"
             className="text-xl font-bold text-foreground"
           >
-            Comment ça marche
+            {t("home.steps.title")}
           </h2>
           <ol className="mt-4 grid gap-4 sm:grid-cols-3">
             {STEPS.map((step) => (
-              <li key={step.title}>
+              <li key={step}>
                 <Card className="h-full p-5">
                   <p className="text-sm font-semibold text-foreground">
-                    {step.title}
+                    {t(`home.steps.${step}.title`)}
                   </p>
                   <p className="mt-2 text-sm text-foreground-muted">
-                    {step.description}
+                    {t(`home.steps.${step}.description`)}
                   </p>
                 </Card>
               </li>
@@ -317,7 +307,7 @@ export function ClientHomePage() {
               className="min-h-[44px]"
               onClick={() => void handleLogout()}
             >
-              Se déconnecter
+              {t("home.logout")}
             </Button>
           </div>
         )}

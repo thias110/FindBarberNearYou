@@ -1,4 +1,5 @@
 import type { FormEvent, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import {
   SUPPORTED_CURRENCIES,
   type Currency,
@@ -71,6 +72,7 @@ export function SearchFilters({
   onToggleFilters,
   advancedVisible,
 }: SearchFiltersProps) {
+  const { t } = useTranslation("client");
   function update<K extends keyof SmartFilters>(key: K, value: SmartFilters[K]) {
     onFiltersChange({ ...filters, [key]: value });
   }
@@ -91,20 +93,20 @@ export function SearchFilters({
       <form onSubmit={onSubmit} className="space-y-3" role="search">
         {/* Ligne toujours visible : ville + recherche + accès aux filtres. */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <Field label="Ville" className="min-w-0 flex-1">
+          <Field label={t("search.filters.cityLabel")} className="min-w-0 flex-1">
             {(control) => (
               <Input
                 {...control}
                 value={city}
                 onChange={(event) => onCityChange(event.target.value)}
-                placeholder="Ville"
+                placeholder={t("search.filters.cityLabel")}
                 autoComplete="address-level2"
               />
             )}
           </Field>
           <div className="flex flex-wrap gap-2">
             <Button type="submit" className="min-h-[44px]">
-              Rechercher
+              {t("search.filters.submit")}
             </Button>
             <Button
               type="button"
@@ -115,7 +117,7 @@ export function SearchFilters({
               data-active-filters={activeCount}
               onClick={onToggleFilters}
             >
-              Filtres
+              {t("search.filters.toggle")}
               {activeCount > 0 && (
                 <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1.5 text-xs font-medium text-accent-foreground">
                   {activeCount}
@@ -128,20 +130,20 @@ export function SearchFilters({
               className="min-h-[44px]"
               onClick={onReset}
             >
-              Réinitialiser
+              {t("search.filters.reset")}
             </Button>
           </div>
         </div>
 
         {activeTags.length > 0 && (
-          <ul className="flex flex-wrap gap-2" aria-label="Autres filtres actifs">
+          <ul className="flex flex-wrap gap-2" aria-label={t("search.filters.activeTags")}>
             {activeTags.map((tag) => (
               <li key={tag.key}>
                 <button
                   type="button"
                   onClick={() => onRemoveTag(tag.key)}
                   className={chipClasses(true, { className: "gap-2" })}
-                  aria-label={`Retirer le filtre ${tag.label}`}
+                  aria-label={t("search.filters.removeTag", { label: tag.label })}
                 >
                   {tag.label}
                   <span aria-hidden="true">×</span>
@@ -159,9 +161,9 @@ export function SearchFilters({
             advancedVisible || filtersOpen ? "grid" : "hidden",
           )}
         >
-          <ChipGroup legend="Prix maximum">
+          <ChipGroup legend={t("search.filters.maxPrice")}>
             <label className="w-24">
-              <span className="sr-only">Devise du prix maximum</span>
+              <span className="sr-only">{t("search.filters.maxPriceCurrency")}</span>
               <select
                 value={filters.currency}
                 onChange={(event) =>
@@ -189,7 +191,7 @@ export function SearchFilters({
             ))}
           </ChipGroup>
 
-          <ChipGroup legend="Distance">
+          <ChipGroup legend={t("search.filters.distance")}>
             {RADIUS_OPTIONS.map((radius) => (
               <button
                 key={radius}
@@ -205,30 +207,32 @@ export function SearchFilters({
             ))}
             <p id="distance-help" className="w-full text-xs text-foreground-muted">
               {positionStatus === "denied"
-                ? "Filtre désactivé : vous n'avez pas partagé votre position. Autorisez-la dans les réglages du navigateur pour l'utiliser."
+                ? t("search.filters.distanceHelp.denied")
                 : positionStatus === "unavailable"
-                  ? "Filtre désactivé : votre position est introuvable sur cet appareil."
+                  ? t("search.filters.distanceHelp.unavailable")
                   : positionStatus === "pending"
-                    ? "Recherche de votre position…"
+                    ? t("search.filters.distanceHelp.pending")
                     : positionStatus === "granted"
-                      ? "Autour de votre position (jamais envoyée au serveur)."
-                      : "Votre position sera demandée ; elle reste sur votre appareil."}
+                      ? t("search.filters.distanceHelp.granted")
+                      : t("search.filters.distanceHelp.idle")}
             </p>
           </ChipGroup>
 
-          <ChipGroup legend="Note minimale">
+          <ChipGroup legend={t("search.filters.minRating")}>
             {RATING_OPTIONS.map((rating) => (
               <button
                 key={rating}
                 type="button"
                 aria-pressed={filters.minRating === String(rating)}
                 aria-label={
-                  rating === 5 ? "Note de 5 sur 5" : `Note de ${rating} sur 5 et plus`
+                  rating === 5
+                    ? t("search.filters.ratingMaxAria")
+                    : t("search.filters.ratingAria", { rating })
                 }
                 onClick={() => toggle("minRating", rating)}
                 className={chipClasses(filters.minRating === String(rating))}
               >
-                {rating === 5 ? "5 ★" : `${rating} ★ et +`}
+                {rating === 5 ? "5 ★" : t("search.filters.ratingChip", { rating })}
               </button>
             ))}
           </ChipGroup>

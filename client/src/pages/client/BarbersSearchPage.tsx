@@ -8,12 +8,13 @@ import {
   useState,
   type FormEvent,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import type {
   BarbersSearchResponse,
   PublicBarberSearchItem,
 } from "@findbarber/shared/types";
-import { APPROXIMATE_LOCATION_LABEL } from "@findbarber/shared/constants";
+import i18n from "../../i18n";
 import { barbersApi, type BarbersSearchParams } from "../../lib/apiClient";
 import {
   boundsAround,
@@ -50,6 +51,7 @@ const PAGE_SIZE = 12;
 const RADIUS_PAGE_SIZE = 50;
 
 export function BarbersSearchPage() {
+  const { t } = useTranslation("client");
   const [searchParams, setSearchParams] = useSearchParams();
   const urlState = useMemo(() => parseSearchUrl(searchParams), [searchParams]);
   const [city, setCity] = useState(urlState.city);
@@ -150,7 +152,9 @@ export function BarbersSearchPage() {
         // Une annulation n'est pas une erreur utilisateur.
         if (err instanceof DOMException && err.name === "AbortError") return;
         if (seq === requestSeq.current) {
-          setError(err instanceof Error ? err.message : "Recherche impossible.");
+          setError(
+            err instanceof Error ? err.message : i18n.t("client:search.page.error"),
+          );
         }
       })
       .finally(() => {
@@ -297,16 +301,18 @@ export function BarbersSearchPage() {
     : { top: 150, bottom: 110, left: 32, right: 32 };
   const areaActive = area !== null && !radiusActive;
   const resultCountLabel = radiusActive
-    ? `${barbers.length} résultat(s) à moins de ${radiusKm} km`
+    ? t("search.page.resultCountRadius", { count: barbers.length, radius: radiusKm })
     : pagination
-      ? `${pagination.total} résultat(s)${areaActive ? " dans cette zone" : ""}`
+      ? areaActive
+        ? t("search.page.resultCountInArea", { count: pagination.total })
+        : t("search.page.resultCount", { count: pagination.total })
       : "";
   // Zone : plus de barbers que la page affichée → on l'indique (issue #50).
   const moreInArea = Boolean(
     areaActive && pagination && pagination.total > pagination.page * pagination.pageSize,
   );
   const activeTags = [
-    ...(areaActive ? [{ key: "area", label: "Zone visible de la carte" }] : []),
+    ...(areaActive ? [{ key: "area", label: t("search.page.areaTag") }] : []),
     ...legacyFilterTags(urlState),
   ];
 
@@ -331,7 +337,7 @@ export function BarbersSearchPage() {
     loading || waitingForPosition ? (
       <div aria-busy="true" className="space-y-3">
         <span className="sr-only" role="status">
-          Chargement des résultats…
+          {t("search.page.loading")}
         </span>
         {[0, 1, 2].map((index) => (
           <Skeleton key={index} className="h-32 w-full rounded-2xl" />
@@ -345,28 +351,28 @@ export function BarbersSearchPage() {
           className="mt-3 min-h-[44px]"
           onClick={() => setReloadToken((token) => token + 1)}
         >
-          Réessayer
+          {t("search.page.retry")}
         </Button>
       </Card>
     ) : data && barbers.length === 0 ? (
       pagination && pagination.total > 0 ? (
         <Card className="p-6 text-center">
           <p className="text-foreground-muted">
-            Cette page ne contient aucun résultat.
+            {t("search.page.emptyPage")}
           </p>
           <Button
             variant="secondary"
             className="mt-3 min-h-[44px]"
             onClick={() => goToPage(1)}
           >
-            Revenir à la première page
+            {t("search.page.firstPage")}
           </Button>
         </Card>
       ) : (
         <Card className="p-6 text-center">
-          <p className="text-foreground-muted">Aucun résultat.</p>
+          <p className="text-foreground-muted">{t("search.page.noResults")}</p>
           <Button className="mt-3 min-h-[44px]" onClick={handleReset}>
-            Réinitialiser les filtres
+            {t("search.page.resetFilters")}
           </Button>
         </Card>
       )
@@ -393,10 +399,13 @@ export function BarbersSearchPage() {
               disabled={!canPrev}
               onClick={() => goToPage(page - 1)}
             >
-              Précédent
+              {t("search.page.previous")}
             </Button>
             <span className="text-sm text-foreground-muted">
-              Page {pagination.page} / {pagination.totalPages}
+              {t("search.page.pageOf", {
+                page: pagination.page,
+                total: pagination.totalPages,
+              })}
             </span>
             <Button
               variant="secondary"
@@ -404,7 +413,7 @@ export function BarbersSearchPage() {
               disabled={!canNext}
               onClick={() => goToPage(page + 1)}
             >
-              Suivant
+              {t("search.page.next")}
             </Button>
           </div>
         )}
@@ -413,11 +422,9 @@ export function BarbersSearchPage() {
 
   const resultsSummary = (
     <p className="text-sm text-foreground-muted" role="status">
-      {loading || waitingForPosition ? "Recherche…" : resultCountLabel}
-      {radiusTruncated &&
-        " · d'autres barbers existent dans ce rayon, affinez les filtres."}
-      {moreInArea &&
-        " · d'autres barbers dans cette zone : page suivante, ou zoomez sur la carte."}
+      {loading || waitingForPosition ? t("search.page.searching") : resultCountLabel}
+      {radiusTruncated && ` · ${t("search.page.radiusTruncated")}`}
+      {moreInArea && ` · ${t("search.page.moreInArea")}`}
     </p>
   );
 
@@ -431,13 +438,13 @@ export function BarbersSearchPage() {
       style={height ? { height } : undefined}
       className="relative h-[calc(100dvh-4.5rem)] overflow-hidden bg-background"
     >
-      <h1 className="sr-only">Rechercher un barber</h1>
+      <h1 className="sr-only">{t("search.page.title")}</h1>
 
       {isDesktop ? (
         listOpen ? (
           <section
             id="search-results"
-            aria-label="Résultats de la recherche"
+            aria-label={t("search.page.results")}
             className="absolute bottom-4 left-4 top-4 z-20 flex w-[27rem] flex-col overflow-hidden rounded-3xl border border-border bg-background/95 shadow-card backdrop-blur"
           >
             <div className="space-y-3 overflow-y-auto p-4">
@@ -451,7 +458,7 @@ export function BarbersSearchPage() {
                   aria-expanded="true"
                   onClick={() => setListOpen(false)}
                 >
-                  Masquer la liste
+                  {t("search.page.hideList")}
                 </Button>
               </div>
               {resultsContent}
@@ -464,7 +471,7 @@ export function BarbersSearchPage() {
             aria-expanded="false"
             onClick={() => setListOpen(true)}
           >
-            Afficher la liste
+            {t("search.page.showList")}
           </Button>
         )
       ) : (
@@ -474,7 +481,7 @@ export function BarbersSearchPage() {
           </div>
           <section
             id="search-results"
-            aria-label="Résultats de la recherche"
+            aria-label={t("search.page.results")}
             className={cn(
               "absolute inset-x-0 bottom-0 z-20 flex flex-col rounded-t-3xl border-t border-border bg-background shadow-card transition-[max-height] duration-300 motion-reduce:transition-none",
               listOpen ? "max-h-[75%]" : "max-h-20",
@@ -489,9 +496,11 @@ export function BarbersSearchPage() {
             >
               <span aria-hidden="true" className="h-1.5 w-10 rounded-full bg-border-strong" />
               <span className="text-sm font-semibold text-foreground">
-                {listOpen ? "Masquer la liste" : "Afficher la liste"}
+                {listOpen ? t("search.page.hideList") : t("search.page.showList")}
                 {" · "}
-                {loading || waitingForPosition ? "Recherche…" : resultCountLabel}
+                {loading || waitingForPosition
+                  ? t("search.page.searching")
+                  : resultCountLabel}
               </span>
             </button>
             <div
@@ -509,11 +518,11 @@ export function BarbersSearchPage() {
 
       <div
         role="region"
-        aria-label="Carte des barbiers (résultats de cette page)"
+        aria-label={t("search.page.mapRegion")}
         className="fb-search-map absolute inset-0 z-0"
       >
         <p className="sr-only">
-          La liste des résultats est l'alternative textuelle de cette carte.
+          {t("search.page.mapAlternative")}
         </p>
         <MapErrorBoundary
           fallback={
@@ -521,15 +530,14 @@ export function BarbersSearchPage() {
               role="alert"
               className="flex h-full items-center justify-center p-6 text-center text-sm text-foreground-muted"
             >
-              La carte n'a pas pu être affichée. La liste des résultats reste
-              utilisable.
+              {t("search.page.mapCrashed")}
             </div>
           }
         >
           <Suspense
             fallback={
               <div className="flex h-full items-center justify-center text-sm text-foreground-muted">
-                Chargement de la carte…
+                {t("map.loading")}
               </div>
             }
           >
@@ -539,7 +547,7 @@ export function BarbersSearchPage() {
               selectedId={selectedId}
               onSelect={selectBarber}
               reducedMotion={reducedMotion}
-              onRetry={() => setMapRetryToken((t) => t + 1)}
+              onRetry={() => setMapRetryToken((n) => n + 1)}
               onShowList={() => setListOpen(true)}
               theme={resolvedTheme}
               padding={mapPadding}
@@ -558,7 +566,7 @@ export function BarbersSearchPage() {
         {/* La fiche affiche déjà cette mention : pas de doublon. */}
         {!selectedBarber && (
           <p className="pointer-events-none absolute bottom-[7.5rem] left-3 z-10 rounded-full lg:bottom-8 lg:left-auto lg:right-3 bg-surface/90 px-3 py-1 text-xs text-foreground-muted shadow-sm">
-            {APPROXIMATE_LOCATION_LABEL}
+            {t("labels:approximateLocation")}
           </p>
         )}
       </div>
