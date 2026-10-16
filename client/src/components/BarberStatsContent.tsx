@@ -1,6 +1,10 @@
+import { useTranslation } from "react-i18next";
+import type { Weekday } from "@findbarber/shared/constants";
 import type { BarberStatsResponse } from "@findbarber/shared/types";
+import { intlLocale } from "../i18n";
 import { formatCurrency } from "../lib/formatters";
 import { formatCalendarDateRange } from "../lib/date";
+import { label as businessLabel } from "../lib/labels";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { Field } from "./ui/Field";
@@ -8,12 +12,27 @@ import { Input } from "./ui/Input";
 
 export type StatsRange = "7d" | "30d" | "month" | "custom";
 
-const STATS_RANGES: { value: StatsRange; label: string }[] = [
-  { value: "7d", label: "7 jours" },
-  { value: "30d", label: "30 jours" },
-  { value: "month", label: "Ce mois" },
-  { value: "custom", label: "Personnalisé" },
-];
+// Libellés : `stats.ranges.<valeur>` (espace barber).
+const STATS_RANGES: StatsRange[] = ["7d", "30d", "month", "custom"];
+
+// Les libellés des buckets calculés par le serveur sont en français : ils sont
+// reconstruits ici depuis leur clé, dans la langue courante.
+function monthBucketLabel(key: string, fallback: string): string {
+  const match = /^(\d{4})-(\d{2})$/.exec(key);
+  if (!match) return fallback;
+  return new Intl.DateTimeFormat(intlLocale(), {
+    timeZone: "UTC",
+    month: "long",
+    year: "numeric",
+  }).format(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1));
+}
+
+function weekdayBucketLabel(key: string, fallback: string): string {
+  const day = Number(key);
+  return Number.isInteger(day) && day >= 1 && day <= 7
+    ? businessLabel("weekday", day as Weekday)
+    : fallback;
+}
 
 // Sélecteur de période partagé entre l'espace barber et l'admin. Props et
 // valeurs de `StatsRange` inchangées : seule la présentation utilise le design
@@ -33,25 +52,26 @@ export function StatsRangeSelector({
   onFromChange: (value: string) => void;
   onToChange: (value: string) => void;
 }) {
+  const { t } = useTranslation("barber");
   return (
     <>
       <div
         role="group"
-        aria-label="Période des statistiques"
+        aria-label={t("stats.rangeGroupLabel")}
         className="flex flex-wrap gap-2"
       >
-        {STATS_RANGES.map((option) => {
-          const isActive = range === option.value;
+        {STATS_RANGES.map((value) => {
+          const isActive = range === value;
           return (
             <Button
-              key={option.value}
+              key={value}
               variant={isActive ? "primary" : "secondary"}
               size="sm"
               className="min-h-[44px]"
               aria-pressed={isActive}
-              onClick={() => onRangeChange(option.value)}
+              onClick={() => onRangeChange(value)}
             >
-              {option.label}
+              {t(`stats.ranges.${value}`)}
             </Button>
           );
         })}
@@ -59,7 +79,7 @@ export function StatsRangeSelector({
 
       {range === "custom" && (
         <div className="flex flex-wrap items-end gap-3">
-          <Field label="Du" className="w-40">
+          <Field label={t("stats.from")} className="w-40">
             {(control) => (
               <Input
                 {...control}
@@ -69,7 +89,7 @@ export function StatsRangeSelector({
               />
             )}
           </Field>
-          <Field label="Au" className="w-40">
+          <Field label={t("stats.to")} className="w-40">
             {(control) => (
               <Input
                 {...control}
@@ -141,75 +161,84 @@ function StatCard({ label, value }: { label: string; value: string }) {
 // Rendu complet des statistiques (cartes + graphiques). Présentation pure :
 // les données proviennent du DTO partagé, quelle que soit la page appelante.
 export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
-  const rate = (value: number) => `${Math.round(value * 100)} %`;
+  const { t } = useTranslation("barber");
+  const rate = (value: number) =>
+    t("stats.rate", { value: Math.round(value * 100) });
 
   return (
     <>
       <Card className="p-4">
         <p className="text-sm text-foreground-muted">
-          Période : {formatCalendarDateRange(stats.period.from, stats.period.to)}{" "}
+          {t("stats.period", {
+            range: formatCalendarDateRange(stats.period.from, stats.period.to),
+          })}{" "}
           ({stats.period.timezone})
         </p>
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Rendez-vous" value={String(stats.totals.bookings)} />
-        <StatCard label="Terminés" value={String(stats.totals.completed)} />
+        <StatCard label={t("stats.cards.bookings")} value={String(stats.totals.bookings)} />
+        <StatCard label={t("stats.cards.completed")} value={String(stats.totals.completed)} />
         <StatCard
-          label="Revenus (terminés)"
+          label={t("stats.cards.revenue")}
           value={formatCurrency(stats.totals.revenueMinor, stats.currency)}
         />
-        <StatCard label="Annulés" value={String(stats.totals.cancelled)} />
-        <StatCard label="Refusés" value={String(stats.totals.refused)} />
+        <StatCard label={t("stats.cards.cancelled")} value={String(stats.totals.cancelled)} />
+        <StatCard label={t("stats.cards.refused")} value={String(stats.totals.refused)} />
         <StatCard
-          label="Taux d'annulation"
+          label={t("stats.cards.cancellationRate")}
           value={rate(stats.rates.cancellationRate)}
         />
         <StatCard
-          label="Taux de refus"
+          label={t("stats.cards.refusalRate")}
           value={rate(stats.rates.refusalRate)}
         />
         <StatCard
-          label="Note moyenne"
+          label={t("stats.cards.averageRating")}
           value={
             stats.rating.averageRating === null
               ? "—"
-              : `${stats.rating.averageRating.toFixed(2)} / 5`
+              : t("stats.ratingValue", {
+                  value: stats.rating.averageRating.toFixed(2),
+                })
           }
         />
-        <StatCard label="Avis" value={String(stats.rating.totalReviews)} />
+        <StatCard label={t("stats.cards.reviews")} value={String(stats.rating.totalReviews)} />
         <StatCard
-          label="Nouveaux clients"
+          label={t("stats.cards.newClients")}
           value={String(stats.clients.newClients)}
         />
         <StatCard
-          label="Clients réguliers"
+          label={t("stats.cards.returningClients")}
           value={String(stats.clients.returningClients)}
         />
       </div>
 
       <Card className="p-4">
         <h2 className="mb-3 font-bold text-foreground">
-          Rendez-vous par semaine
+          {t("stats.charts.byWeek")}
         </h2>
         <Bars
-          data={stats.appointmentsByWeek.map((bucket) => ({
-            key: bucket.key,
-            label: bucket.label,
-            value: bucket.count,
-            display: String(bucket.count),
-          }))}
+          data={stats.appointmentsByWeek.map((bucket) => {
+            const [year, week] = bucket.key.split("-W");
+            return {
+              key: bucket.key,
+              label: week ? t("stats.weekLabel", { week, year }) : bucket.label,
+              value: bucket.count,
+              display: String(bucket.count),
+            };
+          })}
         />
       </Card>
 
       <Card className="p-4">
         <h2 className="mb-3 font-bold text-foreground">
-          Rendez-vous par mois
+          {t("stats.charts.byMonth")}
         </h2>
         <Bars
           data={stats.appointmentsByMonth.map((bucket) => ({
             key: bucket.key,
-            label: bucket.label,
+            label: monthBucketLabel(bucket.key, bucket.label),
             value: bucket.count,
             display: String(bucket.count),
           }))}
@@ -218,12 +247,12 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
 
       <Card className="p-4">
         <h2 className="mb-3 font-bold text-foreground">
-          Revenus par mois
+          {t("stats.charts.revenueByMonth")}
         </h2>
         <Bars
           data={stats.revenueByMonth.map((bucket) => ({
             key: bucket.key,
-            label: bucket.label,
+            label: monthBucketLabel(bucket.key, bucket.label),
             value: bucket.revenueMinor,
             display: formatCurrency(bucket.revenueMinor, stats.currency),
           }))}
@@ -232,7 +261,7 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
 
       <Card className="p-4">
         <h2 className="mb-3 font-bold text-foreground">
-          Services les plus demandés
+          {t("stats.charts.topServices")}
         </h2>
         <ul className="space-y-2">
           {stats.topServices.map((service) => (
@@ -244,7 +273,7 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
                 {service.serviceName}
               </span>
               <span className="text-foreground-muted">
-                {service.count} rdv ·{" "}
+                {t("stats.serviceCount", { count: service.count })} ·{" "}
                 {formatCurrency(service.revenueMinor, stats.currency)}
               </span>
             </li>
@@ -254,12 +283,12 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
 
       <Card className="p-4">
         <h2 className="mb-3 font-bold text-foreground">
-          Jours les plus chargés
+          {t("stats.charts.busiestWeekdays")}
         </h2>
         <Bars
           data={stats.busiestWeekdays.map((bucket) => ({
             key: bucket.key,
-            label: bucket.label,
+            label: weekdayBucketLabel(bucket.key, bucket.label),
             value: bucket.count,
             display: String(bucket.count),
           }))}
@@ -268,7 +297,7 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
 
       <Card className="p-4">
         <h2 className="mb-3 font-bold text-foreground">
-          Heures les plus chargées
+          {t("stats.charts.busiestHours")}
         </h2>
         <Bars
           data={stats.busiestHours.map((bucket) => ({

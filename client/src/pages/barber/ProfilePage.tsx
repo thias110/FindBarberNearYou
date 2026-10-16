@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   COUNTRIES,
@@ -6,9 +7,7 @@ import {
   type CountryCode,
 } from "@findbarber/shared/countries";
 import {
-  CURRENCY_LABELS,
   LIMITS,
-  SERVICE_PLACE_LABELS,
   SERVICE_PLACES,
   type Currency,
   type ServicePlace,
@@ -18,9 +17,11 @@ import {
   listIanaTimeZones,
 } from "@findbarber/shared/timezones";
 import { useAuth } from "../../app/auth-context";
+import { intlLocale } from "../../i18n";
 import { ApiError, barberApi } from "../../lib/apiClient";
 import { cn } from "../../lib/cn";
 import { fieldErrorsFrom } from "../../lib/formErrors";
+import { label } from "../../lib/labels";
 import { useScrollToHash } from "../../lib/useScrollToHash";
 import {
   EMPTY_PROFILE_FORM,
@@ -32,6 +33,7 @@ import {
   fromProfile,
   loadProfileDraft,
   positionOf,
+  profileStepTitle,
   saveProfileDraft,
   stepFromHash,
   toProfileRequest,
@@ -52,9 +54,23 @@ import { StickyActionBar } from "../../components/ui/StickyActionBar";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { CONTROL_CLASS } from "../../components/ui/control";
 
-const COUNTRIES_SORTED = [...COUNTRIES].sort((a, b) =>
-  a.nameFr.localeCompare(b.nameFr, "fr"),
-);
+// Noms de pays dans la langue courante (Intl), le français de référence en
+// français ou si Intl ne connaît pas le code.
+function countriesSorted(language: string) {
+  const locale = intlLocale();
+  let names: Intl.DisplayNames | null = null;
+  if (!language.startsWith("fr")) {
+    try {
+      names = new Intl.DisplayNames([locale], { type: "region" });
+    } catch {
+      names = null;
+    }
+  }
+  return COUNTRIES.map((country) => ({
+    code: country.code,
+    name: names?.of(country.code) ?? country.nameFr,
+  })).sort((a, b) => a.name.localeCompare(b.name, locale));
+}
 
 // Fuseaux groupés par région (premier segment de l'identifiant IANA), triés
 // par libellé. "UTC" est proposé à part (exclu de la liste canonique).
@@ -95,10 +111,11 @@ function StepIndicator({
   reachable: number;
   onSelect: (step: number) => void;
 }) {
+  const { t } = useTranslation("barber");
   return (
-    <nav aria-label="Étapes du profil">
+    <nav aria-label={t("profile.stepsLabel")}>
       <p className="mb-2 text-sm text-foreground-muted">
-        Étape {current + 1} sur {PROFILE_STEP_COUNT}
+        {t("profile.stepOf", { current: current + 1, total: PROFILE_STEP_COUNT })}
       </p>
       <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {PROFILE_STEPS.map((step, index) => {
@@ -135,7 +152,7 @@ function StepIndicator({
                 >
                   {isDone ? "✓" : index + 1}
                 </span>
-                <span className="min-w-0">{step.title}</span>
+                <span className="min-w-0">{profileStepTitle(index)}</span>
               </button>
             </li>
           );
@@ -151,7 +168,12 @@ function StepIndicator({
 // sans perte), le profil est créé à la dernière étape (l'API n'accepte qu'un
 // profil complet). Modification : chaque étape est enregistrée directement.
 export function BarberProfilePage() {
+  const { t, i18n } = useTranslation("barber");
   const { user } = useAuth();
+  const countries = useMemo(
+    () => countriesSorted(i18n.language),
+    [i18n.language],
+  );
   // Photo obligatoire pour créer un profil (issue #44), vérifiée aussi côté
   // serveur. Gérée par AvatarEditor, hors du brouillon du formulaire.
   const hasAvatar = Boolean(user?.avatarPath);
@@ -199,7 +221,7 @@ export function BarberProfilePage() {
             setReachable(draft.step);
           }
         } else {
-          setError(err instanceof Error ? err.message : "Chargement impossible.");
+          setError(err instanceof Error ? err.message : t("common.loadFailed"));
         }
       })
       .finally(() => {
@@ -208,6 +230,7 @@ export function BarberProfilePage() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` : texte de repli seulement.
   }, [userId]);
 
   // Brouillon de création : conservé à chaque saisie, après le chargement
@@ -282,11 +305,11 @@ export function BarberProfilePage() {
         const errors: ProfileErrors = fieldErrorsFrom(err, PROFILE_FIELDS);
         if (Object.keys(errors).length > 0) {
           showErrors(errors);
-          setError("Certaines informations sont à corriger.");
+          setError(t("profile.errors.fixFields"));
           return false;
         }
       }
-      setError(err instanceof Error ? err.message : "Enregistrement échoué.");
+      setError(err instanceof Error ? err.message : t("profile.errors.saveFailed"));
       return false;
     } finally {
       setSaving(false);
@@ -308,7 +331,7 @@ export function BarberProfilePage() {
     const missingAvatar = mode === "create" && !hasAvatar;
     if (Object.keys(errors).length > 0 || missingAvatar) {
       setAvatarError(
-        missingAvatar ? "Ajoutez une photo de profil pour continuer." : null,
+        missingAvatar ? t("profile.errors.avatarRequired") : null,
       );
       showErrors(errors);
       if (missingAvatar && step !== 0) goTo(0);
@@ -325,9 +348,11 @@ export function BarberProfilePage() {
     const wasCreate = mode === "create";
     if (!(await save())) return;
     if (isLast) {
-      setSuccess(wasCreate ? "Profil créé." : "Profil enregistré.");
+      setSuccess(
+        wasCreate ? t("profile.success.created") : t("profile.success.saved"),
+      );
     } else {
-      setSuccess("Étape enregistrée.");
+      setSuccess(t("profile.success.stepSaved"));
       goTo(step + 1);
     }
   }
@@ -335,14 +360,14 @@ export function BarberProfilePage() {
   const countryCurrency = currencyForCountry(form.countryCode as CountryCode);
   const isLast = step === LAST_STEP;
   const submitLabel = saving
-    ? "Enregistrement…"
+    ? t("profile.actions.saving")
     : mode === "create"
       ? isLast
-        ? "Créer mon profil"
-        : "Continuer"
+        ? t("profile.actions.create")
+        : t("profile.actions.continue")
       : isLast
-        ? "Enregistrer"
-        : "Enregistrer et continuer";
+        ? t("profile.actions.save")
+        : t("profile.actions.saveAndContinue");
 
   if (loading) {
     return (
@@ -354,7 +379,7 @@ export function BarberProfilePage() {
           </div>
           <Card className="space-y-4 p-6" aria-busy="true">
             <span className="sr-only" role="status">
-              Chargement du profil…
+              {t("profile.loading")}
             </span>
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-24 w-full" />
@@ -370,11 +395,15 @@ export function BarberProfilePage() {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <ProPageHeader
-          title={mode === "create" ? "Créer mon profil" : "Modifier mon profil"}
+          title={
+            mode === "create"
+              ? t("profile.title.create")
+              : t("profile.title.edit")
+          }
           description={
             mode === "create"
-              ? "Quatre étapes courtes. Votre saisie est gardée sur cet appareil jusqu'à la création du profil."
-              : "Nom, lieux, localisation et fuseau horaire."
+              ? t("profile.description.create")
+              : t("profile.description.edit")
           }
         />
 
@@ -394,7 +423,7 @@ export function BarberProfilePage() {
             className="scroll-mt-4 space-y-4 p-6"
           >
             <h2 className="text-lg font-bold text-foreground">
-              {PROFILE_STEPS[step].title}
+              {profileStepTitle(step)}
             </h2>
 
             {step === 0 && (
@@ -408,10 +437,10 @@ export function BarberProfilePage() {
                       id="profile-photo-title"
                       className="text-sm font-semibold text-foreground"
                     >
-                      Photo de profil (obligatoire)
+                      {t("profile.identity.photoTitle")}
                     </h3>
                     <p className="text-sm text-foreground-muted">
-                      Les clients voient à qui ils confient leur coupe.
+                      {t("profile.identity.photoHint")}
                     </p>
                     <AvatarEditor />
                     {avatarError && !hasAvatar && (
@@ -421,7 +450,7 @@ export function BarberProfilePage() {
                     )}
                   </section>
                 )}
-                <Field label="Nom affiché" error={fieldErrors.displayName}>
+                <Field label={t("profile.identity.displayName")} error={fieldErrors.displayName}>
                   {(control) => (
                     <Input
                       {...control}
@@ -432,7 +461,7 @@ export function BarberProfilePage() {
                     />
                   )}
                 </Field>
-                <Field label="Description" error={fieldErrors.description}>
+                <Field label={t("profile.identity.description")} error={fieldErrors.description}>
                   {(control) => (
                     <textarea
                       {...control}
@@ -456,7 +485,7 @@ export function BarberProfilePage() {
                   aria-describedby={fieldErrors.places ? "places-error" : undefined}
                 >
                   <legend className="px-1 text-sm font-medium text-foreground">
-                    Lieux de prestation (au moins un)
+                    {t("profile.places.legend")}
                   </legend>
                   {SERVICE_PLACES.map((place) => (
                     <label
@@ -469,7 +498,7 @@ export function BarberProfilePage() {
                         checked={form.places.includes(place)}
                         onChange={() => togglePlace(place)}
                       />
-                      {SERVICE_PLACE_LABELS[place]}
+                      {label("servicePlace", place)}
                     </label>
                   ))}
                   {fieldErrors.places ? (
@@ -478,14 +507,14 @@ export function BarberProfilePage() {
                     </p>
                   ) : (
                     <p className="text-xs text-foreground-muted">
-                      Vos horaires et indisponibilités s'appliquent à tous les lieux.
+                      {t("profile.places.hint")}
                     </p>
                   )}
                 </fieldset>
 
                 <Field
-                  label="Adresse privée (facultative)"
-                  hint="Requise pour un lieu en salon ou chez le professionnel. Jamais publiée : seul le propriétaire la voit."
+                  label={t("profile.places.address")}
+                  hint={t("profile.places.addressHint")}
                   error={fieldErrors.address}
                 >
                   {(control) => (
@@ -500,7 +529,7 @@ export function BarberProfilePage() {
 
                 {form.places.includes("AT_CLIENT") && (
                   <Field
-                    label="Rayon d'intervention chez le client (km)"
+                    label={t("profile.places.travelRadius")}
                     error={fieldErrors.travelRadiusKm}
                   >
                     {(control) => (
@@ -521,7 +550,7 @@ export function BarberProfilePage() {
             {step === 2 && (
               <>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Ville" error={fieldErrors.city}>
+                  <Field label={t("profile.location.city")} error={fieldErrors.city}>
                     {(control) => (
                       <Input
                         {...control}
@@ -533,7 +562,7 @@ export function BarberProfilePage() {
                     )}
                   </Field>
                   <Field
-                    label="Code postal (facultatif)"
+                    label={t("profile.location.postalCode")}
                     error={fieldErrors.postalCode}
                   >
                     {(control) => (
@@ -546,7 +575,7 @@ export function BarberProfilePage() {
                     )}
                   </Field>
                 </div>
-                <Field label="Pays" error={fieldErrors.countryCode}>
+                <Field label={t("profile.location.country")} error={fieldErrors.countryCode}>
                   {(control) => (
                     <select
                       {...control}
@@ -555,28 +584,28 @@ export function BarberProfilePage() {
                       onChange={(e) => update("countryCode", e.target.value)}
                       className={CONTROL_CLASS}
                     >
-                      {COUNTRIES_SORTED.map((country) => (
+                      {countries.map((country) => (
                         <option key={country.code} value={country.code}>
-                          {country.nameFr}
+                          {country.name}
                         </option>
                       ))}
                     </select>
                   )}
                 </Field>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">Devise</p>
+                  <p className="text-sm font-medium text-foreground">{t("profile.location.currency")}</p>
                   <p className="text-sm text-foreground">
-                    {CURRENCY_LABELS[countryCurrency]}
+                    {label("currency", countryCurrency)}
                   </p>
                   <p className="text-xs text-foreground-muted">
-                    Déduite automatiquement du pays : vos prix sont affichés
-                    dans cette devise, sans conversion.
+                    {t("profile.location.currencyHint")}
                   </p>
                 </div>
                 {savedCurrency !== null && countryCurrency !== savedCurrency && (
                   <Alert variant="warning">
-                    Ce pays utilise une autre devise que votre profil (
-                    {savedCurrency}) : le changement de pays sera refusé.
+                    {t("profile.location.currencyMismatch", {
+                      currency: savedCurrency,
+                    })}
                   </Alert>
                 )}
                 <LocationPicker
@@ -593,10 +622,7 @@ export function BarberProfilePage() {
                   error={fieldErrors.latitude ?? fieldErrors.longitude}
                 />
                 <Alert variant="info">
-                  Votre nom, description, ville et lieux de prestation sont
-                  publics. Les coordonnées affichées publiquement sont
-                  approximatives (arrondies) ; votre adresse exacte reste
-                  privée.
+                  {t("profile.location.privacy")}
                 </Alert>
               </>
             )}
@@ -604,8 +630,8 @@ export function BarberProfilePage() {
             {step === 3 && (
               <>
                 <Field
-                  label="Fuseau horaire du salon"
-                  hint="Choisi explicitement : jamais déduit du pays ni du navigateur. Il servira à calculer vos créneaux de réservation."
+                  label={t("profile.timezone.label")}
+                  hint={t("profile.timezone.hint")}
                   error={fieldErrors.timezone}
                 >
                   {(control) =>
@@ -616,13 +642,13 @@ export function BarberProfilePage() {
                         onChange={(e) => update("timezone", e.target.value)}
                         className={CONTROL_CLASS}
                       >
-                        <option value="">— Non renseigné —</option>
-                        <optgroup label="Temps universel">
+                        <option value="">{t("profile.timezone.none")}</option>
+                        <optgroup label={t("profile.timezone.universal")}>
                           <option value="UTC">UTC</option>
                         </optgroup>
                         {form.timezone !== "" &&
                           !KNOWN_TIMEZONES.has(form.timezone) && (
-                            <optgroup label="Valeur enregistrée">
+                            <optgroup label={t("profile.timezone.saved")}>
                               <option value={form.timezone}>{form.timezone}</option>
                             </optgroup>
                           )}
@@ -651,8 +677,7 @@ export function BarberProfilePage() {
 
                 {form.timezone === "" && (
                   <Alert variant="warning">
-                    Fuseau non renseigné : la réservation en ligne restera
-                    indisponible tant qu'il n'est pas défini.
+                    {t("profile.timezone.missing")}
                   </Alert>
                 )}
               </>
@@ -673,7 +698,7 @@ export function BarberProfilePage() {
                   goTo(step - 1);
                 }}
               >
-                Précédent
+                {t("profile.actions.previous")}
               </Button>
               <Button
                 type="submit"

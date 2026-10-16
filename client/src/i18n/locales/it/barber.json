@@ -1,0 +1,456 @@
+{
+  "bookings": {
+    "amountDue": "{{status}}: {{amount}}",
+    "amountDuePartial": "{{status}}: {{amount}} su {{total}}",
+    "cancel": "Annulla",
+    "cancelQuestion": "Annullare questa prenotazione?",
+    "cancelledBy": {
+      "ADMIN": "Annullata dall'amministrazione.",
+      "BARBER": "Annullata da te.",
+      "CLIENT": "Annullata dal cliente."
+    },
+    "cancelling": "Annullamento…",
+    "client": "Cliente: {{name}}",
+    "clientAddress": "Indirizzo del cliente",
+    "completeLater": "Potrà essere segnata come completata dopo la fine dell'appuntamento.",
+    "completing": "Completamento…",
+    "confirm": "Conferma",
+    "confirmCancel": "Conferma l'annullamento",
+    "confirmDecline": "Conferma il rifiuto",
+    "confirming": "Conferma in corso…",
+    "decline": "Rifiuta",
+    "declineReasonLabel": "Motivo del rifiuto (facoltativo, visibile al cliente)",
+    "declineReasonPlaceholder": "Motivo (facoltativo, visibile al cliente)",
+    "declineReasonShown": "Motivo del rifiuto: {{reason}}",
+    "declining": "Rifiuto in corso…",
+    "description": "Richieste in attesa, conferme e annullamenti.",
+    "empty": "Ancora nessuna prenotazione.",
+    "errors": {
+      "cancel": "Annullamento non riuscito.",
+      "complete": "Impossibile segnare come completato.",
+      "confirm": "Conferma non riuscita.",
+      "decline": "Rifiuto non riuscito.",
+      "details": "Impossibile caricare i dettagli."
+    },
+    "expiresAt": "Senza risposta, la richiesta scade il {{date}}.",
+    "loading": "Caricamento delle prenotazioni…",
+    "loadingShort": "Caricamento…",
+    "markCompleted": "Segna come completato",
+    "no": "No",
+    "noAddress": "Indirizzo non indicato.",
+    "profileMissing": "Crea prima il tuo profilo professionale per gestire le tue prenotazioni.",
+    "showAddress": "Vedi l'indirizzo",
+    "title": "Le mie prenotazioni"
+  },
+  "certified": {
+    "label": "Certificato",
+    "title": "Professionista verificato da FindBarber"
+  },
+  "checklist": {
+    "complete": "Profilo completo: tutti i passaggi di finalizzazione sono stati fatti.",
+    "done": "(fatto)",
+    "percent": "{{percent}}%",
+    "progress": "{{done}} di {{total}} passaggi",
+    "progressLabel": "Avanzamento del completamento del profilo",
+    "steps": {
+      "AVATAR": {
+        "title": "Aggiungi la tua foto profilo",
+        "todo": "Obbligatoria per creare il profilo: i clienti vedono a chi affidano il loro taglio."
+      },
+      "GALLERY": {
+        "title": "Pubblica una foto",
+        "todo": "Almeno un lavoro nella tua galleria."
+      },
+      "PROFILE": {
+        "title": "Compila il tuo profilo",
+        "todo": "Nome, descrizione, luoghi del servizio e posizione."
+      },
+      "SERVICES": {
+        "title": "Aggiungi un servizio attivo",
+        "todo": "Almeno un servizio con durata e prezzo."
+      },
+      "WORKING_HOURS": {
+        "title": "Imposta i tuoi orari",
+        "todo": "Almeno una fascia di lavoro nella settimana."
+      }
+    },
+    "title": "Completa il mio profilo",
+    "todo": "(da fare)"
+  },
+  "common": {
+    "backToDashboard": "Torna alla dashboard",
+    "completeProfile": "Completa il mio profilo",
+    "createProfile": "Crea il mio profilo",
+    "loadFailed": "Impossibile caricare.",
+    "retry": "Riprova",
+    "reviewCount_one": "({{count}} recensione)",
+    "reviewCount_other": "({{count}} recensioni)"
+  },
+  "dashboard": {
+    "avatarTitle": "Foto profilo",
+    "copyFailed": "Impossibile copiare automaticamente. Seleziona manualmente il link qui sotto.",
+    "loadProfileFailed": "Impossibile caricare il tuo profilo.",
+    "logout": "Esci",
+    "nav": {
+      "bookings": {
+        "description": "Richieste in attesa, conferme e annullamenti",
+        "title": "Le mie prenotazioni"
+      },
+      "gallery": {
+        "description": "Foto dei tuoi lavori",
+        "title": "La mia galleria"
+      },
+      "payments": {
+        "description": "Stripe, acconto o pagamento completo alla prenotazione",
+        "title": "Pagamenti online"
+      },
+      "profile": {
+        "description": "Nome, indirizzo, posizione e paese",
+        "title": "Il mio profilo"
+      },
+      "services": {
+        "description": "Servizi, durate e prezzi",
+        "title": "I miei servizi"
+      },
+      "stats": {
+        "description": "Ricavi, appuntamenti, servizi e recensioni",
+        "title": "Le mie statistiche"
+      },
+      "timeOff": {
+        "description": "Ferie e chiusure straordinarie",
+        "title": "Le mie indisponibilità"
+      },
+      "workingHours": {
+        "description": "Giorni e fasce di lavoro (ora locale del salone)",
+        "title": "I miei orari"
+      }
+    },
+    "navLabel": "Navigazione dell'area professionale",
+    "pendingApproval": {
+      "body": "Il nostro team verifica ogni nuovo profilo prima della pubblicazione. Nel frattempo non compare nella ricerca e non può ricevere prenotazioni. Puoi già completare i tuoi servizi e i tuoi orari.",
+      "title": "Il tuo profilo è in attesa di approvazione."
+    },
+    "publicLink": {
+      "copied": "Link copiato!",
+      "copiedStatus": "Link copiato negli appunti.",
+      "copy": "Copia il mio link",
+      "help": "Questo link resta invariato anche se modifichi il profilo o i servizi. Aggiungilo alla tua bio di Instagram o condividilo altrove.",
+      "inputLabel": "Link pubblico del tuo profilo",
+      "loading": "Caricamento del profilo…",
+      "profileMissing": "Crea il tuo profilo per ottenere il link pubblico.",
+      "title": "Link pubblico condivisibile",
+      "view": "Vedi il mio profilo pubblico"
+    },
+    "title": "Area professionale"
+  },
+  "gallery": {
+    "added": "Foto aggiunta.",
+    "chooseImage": "Scegli un'immagine.",
+    "confirm": {
+      "body": "Verrà rimossa dal tuo profilo pubblico.",
+      "title": "Eliminare questa foto?"
+    },
+    "delete": "Elimina",
+    "deleted": "Foto eliminata.",
+    "deleting": "Eliminazione…",
+    "description": "Foto dei tuoi lavori.",
+    "empty": "Ancora nessuna foto.",
+    "form": {
+      "captionLabel": "Didascalia (facoltativa)",
+      "count": "{{count}} / {{max}} foto",
+      "imageHint": "JPEG, PNG o WebP, max {{max}} MB.",
+      "imageLabel": "Immagine",
+      "limitReached": "Hai raggiunto il limite di {{max}} foto. Elimina una foto per aggiungerne un'altra.",
+      "submit": "Aggiungi la foto",
+      "title": "Aggiungi una foto",
+      "uploading": "Invio…"
+    },
+    "loading": "Caricamento della galleria…",
+    "photoAlt": "Foto della galleria",
+    "profileMissing": "Crea prima il tuo profilo professionale per gestire la tua galleria.",
+    "title": "La mia galleria"
+  },
+  "location": {
+    "geocodingUnavailable": "La ricerca degli indirizzi non è disponibile al momento: clicca sulla mappa.",
+    "hint": "Scegli un indirizzo dall'elenco oppure clicca sulla mappa (ad esempio se lavori solo a domicilio).",
+    "mapLabel": "Mappa di anteprima: clicca per indicare la tua posizione",
+    "mapUnavailable": "Mappa non disponibile: usa la ricerca dell'indirizzo.",
+    "noResults": "Nessun indirizzo trovato. Precisa la ricerca o clicca sulla mappa.",
+    "none": "Nessuna posizione impostata.",
+    "savedAddress": "Posizione registrata: {{label}}.",
+    "searchFailed": "Ricerca non riuscita.",
+    "searchLabel": "Cerca il tuo indirizzo",
+    "searchPlaceholder": "Via, numero, città",
+    "searching": "Ricerca in corso…",
+    "setOnMap": "Posizione impostata sulla mappa.",
+    "suggestionsLabel": "Indirizzi suggeriti"
+  },
+  "payments": {
+    "depositError": "Indica una percentuale intera tra {{min}} e {{max}}.",
+    "description": "Acconto o pagamento completo alla prenotazione, tramite Stripe.",
+    "loading": "Caricamento dei pagamenti…",
+    "policy": {
+      "depositHint": "Tra {{min}} e {{max}}%. Il resto si paga sul posto.",
+      "depositLabel": "Acconto (% del prezzo)",
+      "enableFirst": "Attiva prima i pagamenti con Stripe per richiedere un pagamento online.",
+      "modeLabel": "Modalità di pagamento",
+      "refunds": "Il cliente paga inviando la richiesta (carta o Twint). Viene rimborsato automaticamente se rifiuti, se la richiesta scade, se annulli o se annulla entro i termini.",
+      "title": "Pagamento alla prenotazione"
+    },
+    "save": "Salva",
+    "saved": "Preferenze di pagamento salvate.",
+    "stripe": {
+      "activate": "Attiva i pagamenti con Stripe",
+      "enabled": "Pagamenti attivati",
+      "finish": "Completa la registrazione Stripe",
+      "notConfigured": "Non configurato",
+      "payout": "I pagamenti dei tuoi clienti vengono versati direttamente sul tuo account Stripe. Durante la registrazione Stripe ti chiede i tuoi dati d'identità e il tuo IBAN.",
+      "payoutWithFee": "I pagamenti dei tuoi clienti vengono versati direttamente sul tuo account Stripe, al netto di una commissione del {{percent}}%. Durante la registrazione Stripe ti chiede i tuoi dati d'identità e il tuo IBAN.",
+      "returned": "Registrazione ricevuta: Stripe sta verificando i tuoi dati. I pagamenti saranno attivati non appena verrà approvata.",
+      "title": "Account Stripe",
+      "toFinish": "Registrazione da completare"
+    },
+    "title": "Pagamenti online",
+    "unavailable": "Il pagamento online non è ancora disponibile sulla piattaforma. I tuoi clienti pagano sul posto."
+  },
+  "profile": {
+    "actions": {
+      "continue": "Continua",
+      "create": "Crea il mio profilo",
+      "previous": "Indietro",
+      "save": "Salva",
+      "saveAndContinue": "Salva e continua",
+      "saving": "Salvataggio…"
+    },
+    "description": {
+      "create": "Quattro brevi passaggi. I dati inseriti restano su questo dispositivo fino alla creazione del profilo.",
+      "edit": "Nome, luoghi, posizione e fuso orario."
+    },
+    "errors": {
+      "avatarRequired": "Aggiungi una foto profilo per continuare.",
+      "fixFields": "Alcune informazioni vanno corrette.",
+      "positionRequired": "Indica la tua posizione: scegli un indirizzo suggerito o clicca sulla mappa.",
+      "radiusInteger": "Il raggio d'intervento deve essere un numero intero di chilometri.",
+      "saveFailed": "Salvataggio non riuscito."
+    },
+    "identity": {
+      "description": "Descrizione",
+      "displayName": "Nome visualizzato",
+      "photoHint": "I clienti vedono a chi affidano il loro taglio.",
+      "photoTitle": "Foto profilo (obbligatoria)"
+    },
+    "loading": "Caricamento del profilo…",
+    "location": {
+      "city": "Città",
+      "country": "Paese",
+      "currency": "Valuta",
+      "currencyHint": "Dedotta automaticamente dal paese: i tuoi prezzi sono mostrati in questa valuta, senza conversione.",
+      "currencyMismatch": "Questo paese usa una valuta diversa da quella del tuo profilo ({{currency}}): il cambio di paese verrà rifiutato.",
+      "postalCode": "CAP (facoltativo)",
+      "privacy": "Nome, descrizione, città e luoghi del servizio sono pubblici. Le coordinate mostrate pubblicamente sono approssimative (arrotondate); il tuo indirizzo esatto resta privato."
+    },
+    "places": {
+      "address": "Indirizzo privato (facoltativo)",
+      "addressHint": "Obbligatorio per un salone o presso il professionista. Mai pubblicato: lo vede solo il titolare.",
+      "hint": "I tuoi orari e le tue indisponibilità valgono per tutti i luoghi.",
+      "legend": "Luoghi del servizio (almeno uno)",
+      "travelRadius": "Raggio d'intervento a domicilio (km)"
+    },
+    "stepOf": "Passaggio {{current}} di {{total}}",
+    "steps": {
+      "identity": "Identità",
+      "location": "Posizione",
+      "places": "Luoghi del servizio",
+      "timezone": "Fuso orario"
+    },
+    "stepsLabel": "Passaggi del profilo",
+    "success": {
+      "created": "Profilo creato.",
+      "saved": "Profilo salvato.",
+      "stepSaved": "Passaggio salvato."
+    },
+    "timezone": {
+      "hint": "Scelto esplicitamente: mai dedotto dal paese o dal browser. Servirà a calcolare le tue fasce prenotabili.",
+      "label": "Fuso orario del salone",
+      "missing": "Fuso orario non indicato: la prenotazione online resterà non disponibile finché non sarà impostato.",
+      "none": "— Non indicato —",
+      "saved": "Valore salvato",
+      "universal": "Tempo universale"
+    },
+    "title": {
+      "create": "Crea il mio profilo",
+      "edit": "Modifica il mio profilo"
+    }
+  },
+  "public": {
+    "gallery": {
+      "empty": "Ancora nessuna foto.",
+      "loading": "Caricamento della galleria…",
+      "photoAlt": "Foto di un lavoro",
+      "title": "Galleria"
+    },
+    "header": {
+      "avatarAlt": "Avatar di {{name}}",
+      "noPlaces": "Luoghi non indicati"
+    },
+    "reviews": {
+      "anonymousClient": "Cliente",
+      "empty": "Ancora nessuna recensione.",
+      "loading": "Caricamento delle recensioni…",
+      "title": "Recensioni"
+    },
+    "services": {
+      "empty": "Ancora nessun servizio.",
+      "title": "Servizi"
+    }
+  },
+  "services": {
+    "actionFailed": "Azione non riuscita.",
+    "active": "Attivo",
+    "add": "Aggiungi",
+    "addFailed": "Aggiunta non riuscita.",
+    "addTitle": "Aggiungi un servizio",
+    "added": "Servizio aggiunto.",
+    "deactivate": "Disattiva",
+    "description": "Servizi, durate e prezzi.",
+    "edit": "Modifica",
+    "empty": "Ancora nessun servizio.",
+    "form": {
+      "audiences": "Clientela",
+      "cancel": "Annulla",
+      "descriptionLabel": "Descrizione (facoltativa)",
+      "durationInvalid": "La durata deve essere un numero intero tra {{min}} e {{max}} minuti.",
+      "durationLabel": "Durata (minuti)",
+      "nameLabel": "Nome del servizio",
+      "nameRequired": "Il nome del servizio è obbligatorio.",
+      "priceInvalid": "Prezzo non valido. Usa un importo come 25.50 o 25,50 (massimo 2 decimali).",
+      "priceLabel": "Prezzo",
+      "priceTooHigh": "Il prezzo è troppo alto.",
+      "saving": "Salvataggio…",
+      "techniques": "Tecniche / servizi"
+    },
+    "inactive": "Inattivo",
+    "listTitle": "Servizi ({{count}})",
+    "loading": "Caricamento dei servizi…",
+    "profileMissing": "Crea prima il tuo profilo professionale per gestire i tuoi servizi.",
+    "reactivate": "Riattiva",
+    "save": "Salva",
+    "title": "I miei servizi",
+    "updateFailed": "Modifica non riuscita.",
+    "updated": "Servizio modificato."
+  },
+  "stats": {
+    "cards": {
+      "averageRating": "Valutazione media",
+      "bookings": "Appuntamenti",
+      "cancellationRate": "Tasso di annullamento",
+      "cancelled": "Annullati",
+      "completed": "Completati",
+      "newClients": "Nuovi clienti",
+      "refusalRate": "Tasso di rifiuto",
+      "refused": "Rifiutati",
+      "returningClients": "Clienti abituali",
+      "revenue": "Ricavi (completati)",
+      "reviews": "Recensioni"
+    },
+    "charts": {
+      "busiestHours": "Orari più impegnativi",
+      "busiestWeekdays": "Giorni più impegnativi",
+      "byMonth": "Appuntamenti per mese",
+      "byWeek": "Appuntamenti per settimana",
+      "revenueByMonth": "Ricavi per mese",
+      "topServices": "Servizi più richiesti"
+    },
+    "from": "Dal",
+    "page": {
+      "chooseRange": "Scegli un intervallo di date.",
+      "description": "Appuntamenti, ricavi, servizi e recensioni.",
+      "loading": "Caricamento delle statistiche…",
+      "profileMissing": "Crea prima il tuo profilo professionale per vedere le tue statistiche.",
+      "timezoneMissing": "Indica il tuo fuso orario per vedere le tue statistiche.",
+      "title": "Le mie statistiche"
+    },
+    "period": "Periodo: {{range}}",
+    "rangeGroupLabel": "Periodo delle statistiche",
+    "ranges": {
+      "30d": "30 giorni",
+      "7d": "7 giorni",
+      "custom": "Personalizzato",
+      "month": "Questo mese"
+    },
+    "rate": "{{value}}%",
+    "ratingValue": "{{value}} / 5",
+    "serviceCount": "{{count}} app.",
+    "to": "Al",
+    "weekLabel": "Settimana {{week}} · {{year}}"
+  },
+  "timeOff": {
+    "deleteFailed": "Eliminazione non riuscita.",
+    "deleted": "Indisponibilità eliminata.",
+    "description": "Ferie e chiusure straordinarie, a giornate intere.",
+    "form": {
+      "end": "Fine",
+      "hint": "Inizio e fine inclusi. Per un solo giorno inserisci la stessa data. Il periodo non può superare {{max}} giorni.",
+      "reason": "Motivo (facoltativo, privato)",
+      "reasonPlaceholder": "Ferie, chiusura straordinaria…",
+      "saving": "Salvataggio…",
+      "start": "Inizio",
+      "submit": "Aggiungi",
+      "title": "Aggiungi giorni di indisponibilità"
+    },
+    "list": {
+      "cancel": "Annulla",
+      "confirm": "Conferma",
+      "delete": "Elimina",
+      "deleteQuestion": "Eliminare questa indisponibilità?",
+      "deleting": "Eliminazione…",
+      "empty": "Nessuna indisponibilità salvata.",
+      "title": "Giorni di indisponibilità"
+    },
+    "loading": "Caricamento delle indisponibilità…",
+    "profileMissing": "Crea prima il tuo profilo professionale per gestire le tue indisponibilità.",
+    "saveFailed": "Salvataggio non riuscito.",
+    "saved": "Indisponibilità salvata.",
+    "timezone": {
+      "error": "Il tuo fuso orario non è disponibile al momento. I tuoi giorni di indisponibilità restano salvati.",
+      "known": "Il tuo fuso orario: {{timezone}}. I giorni di indisponibilità sono date di calendario in questo fuso.",
+      "missing": "Il tuo fuso orario non è indicato: puoi salvare i giorni di indisponibilità, ma verranno applicati solo dopo aver impostato il fuso.",
+      "setLink": "Imposta il mio fuso orario"
+    },
+    "title": "Le mie indisponibilità"
+  },
+  "workingHours": {
+    "addSlot": "Aggiungi una fascia",
+    "cancel": "Annulla",
+    "clearAll": "Cancella tutto",
+    "clearFailed": "Cancellazione non riuscita.",
+    "clearQuestion": "Cancellare tutti gli orari salvati?",
+    "cleared": "Orari cancellati.",
+    "confirm": "Conferma",
+    "description": "Giorni e fasce di lavoro, nell'ora locale del salone.",
+    "empty": "Nessuna fascia oraria impostata. Attiva un giorno e poi aggiungi una fascia.",
+    "end": "Fine",
+    "endOfDay": "Fine giornata (24:00)",
+    "errors": {
+      "endInvalid": "ora di fine non valida (HH:MM o «Fine giornata»).",
+      "startInvalid": "ora di inizio non valida (formato HH:MM)."
+    },
+    "intervalError": "{{day}}, fascia {{number}}: {{message}}",
+    "loading": "Caricamento degli orari…",
+    "noSlotThisDay": "Nessuna fascia in questo giorno.",
+    "profileMissing": "Crea prima il tuo profilo professionale per impostare i tuoi orari.",
+    "removeSlot": "Rimuovi",
+    "save": "Salva gli orari",
+    "saveFailed": "Salvataggio non riuscito.",
+    "saved": "Orari salvati.",
+    "saving": "Salvataggio…",
+    "start": "Inizio",
+    "timezone": {
+      "error": "Fuso orario non disponibile al momento. I tuoi orari restano salvati in ora locale.",
+      "known": "Ora locale del salone ({{timezone}}). Questo fuso orario si sceglie nel tuo profilo e serve a calcolare le fasce prenotabili.",
+      "missing": "Fuso orario non indicato: la prenotazione online resterà non disponibile finché non sceglierai il tuo fuso orario.",
+      "setLink": "Imposta il mio fuso orario"
+    },
+    "title": "I miei orari"
+  }
+}

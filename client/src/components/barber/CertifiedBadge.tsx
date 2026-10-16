@@ -1,13 +1,15 @@
+import { useTranslation } from "react-i18next";
 import { Badge } from "../ui/Badge";
 
 // Badge « Certifié » (issue #41) : attribué uniquement par un ADMIN. Affiché sur
 // le profil public, dans la recherche et dans l'administration.
 export function CertifiedBadge({ className }: { className?: string }) {
+  const { t } = useTranslation("barber");
   return (
     <Badge
       variant="accent"
       className={className}
-      title="Professionnel vérifié par FindBarber"
+      title={t("certified.title")}
     >
       <svg
         aria-hidden="true"
@@ -21,7 +23,7 @@ export function CertifiedBadge({ className }: { className?: string }) {
           clipRule="evenodd"
         />
       </svg>
-      Certifié
+      {t("certified.label")}
     </Badge>
   );
 }

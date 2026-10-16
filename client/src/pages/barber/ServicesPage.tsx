@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { OwnBarberService } from "@findbarber/shared/types";
 import {
-  AUDIENCE_LABELS,
   AUDIENCES,
   LIMITS,
-  TECHNIQUE_LABELS,
   TECHNIQUES,
   type Audience,
   type Currency,
@@ -18,6 +17,7 @@ import {
   minorToInputValue,
   parsePriceToMinor,
 } from "../../lib/formatters";
+import { label } from "../../lib/labels";
 import { StickyActionBar } from "../../components/ui/StickyActionBar";
 import {
   fieldErrorsFrom,
@@ -75,6 +75,7 @@ function ServiceForm({
   onSubmit: (values: ServiceFormValues) => Promise<FieldErrorMap>;
   onCancel?: () => void;
 }) {
+  const { t } = useTranslation("barber");
   const formRef = useRef<HTMLFormElement>(null);
   const [name, setName] = useState(initial.name);
   const [description, setDescription] = useState(initial.description);
@@ -114,7 +115,7 @@ function ServiceForm({
     event.preventDefault();
     const next: FieldErrorMap = {};
 
-    if (!name.trim()) next.name = "Le nom du service est requis.";
+    if (!name.trim()) next.name = t("services.form.nameRequired");
 
     const duration = Number(durationMinutes);
     if (
@@ -122,15 +123,17 @@ function ServiceForm({
       duration < LIMITS.serviceDurationMin ||
       duration > LIMITS.serviceDurationMax
     ) {
-      next.durationMinutes = `La durée doit être un entier entre ${LIMITS.serviceDurationMin} et ${LIMITS.serviceDurationMax} minutes.`;
+      next.durationMinutes = t("services.form.durationInvalid", {
+        min: LIMITS.serviceDurationMin,
+        max: LIMITS.serviceDurationMax,
+      });
     }
 
     const priceMinor = parsePriceToMinor(price);
     if (priceMinor === null) {
-      next.priceMinor =
-        "Prix invalide. Utilisez un montant comme 25.50 ou 25,50 (2 décimales maximum).";
+      next.priceMinor = t("services.form.priceInvalid");
     } else if (priceMinor > LIMITS.servicePriceMinorMax) {
-      next.priceMinor = "Le prix est trop élevé.";
+      next.priceMinor = t("services.form.priceTooHigh");
     }
 
     setErrors(next);
@@ -160,7 +163,7 @@ function ServiceForm({
       onSubmit={(event) => void handleSubmit(event)}
       className="space-y-4 rounded-xl border border-border bg-surface-muted p-4"
     >
-      <Field label="Nom du service" error={errors.name}>
+      <Field label={t("services.form.nameLabel")} error={errors.name}>
         {(control) => (
           <Input
             {...control}
@@ -174,7 +177,7 @@ function ServiceForm({
           />
         )}
       </Field>
-      <Field label="Description (facultative)" error={errors.description}>
+      <Field label={t("services.form.descriptionLabel")} error={errors.description}>
         {(control) => (
           <Input
             {...control}
@@ -188,7 +191,7 @@ function ServiceForm({
         )}
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Durée (minutes)" error={errors.durationMinutes}>
+        <Field label={t("services.form.durationLabel")} error={errors.durationMinutes}>
           {(control) => (
             <Input
               {...control}
@@ -205,7 +208,7 @@ function ServiceForm({
             />
           )}
         </Field>
-        <Field label="Prix" error={errors.priceMinor}>
+        <Field label={t("services.form.priceLabel")} error={errors.priceMinor}>
           {(control) => (
             <Input
               {...control}
@@ -222,7 +225,7 @@ function ServiceForm({
         </Field>
       </div>
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-foreground">Publics</legend>
+        <legend className="text-sm font-medium text-foreground">{t("services.form.audiences")}</legend>
         <div className="flex flex-wrap gap-x-4 gap-y-2">
           {AUDIENCES.map((code) => (
             <label
@@ -235,14 +238,14 @@ function ServiceForm({
                 checked={audiences.includes(code)}
                 onChange={() => toggleAudience(code)}
               />
-              {AUDIENCE_LABELS[code]}
+              {label("audience", code)}
             </label>
           ))}
         </div>
       </fieldset>
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium text-foreground">
-          Techniques / prestations
+          {t("services.form.techniques")}
         </legend>
         <div className="flex flex-wrap gap-x-4 gap-y-2">
           {TECHNIQUES.map((code) => (
@@ -256,14 +259,14 @@ function ServiceForm({
                 checked={techniques.includes(code)}
                 onChange={() => toggleTechnique(code)}
               />
-              {TECHNIQUE_LABELS[code]}
+              {label("technique", code)}
             </label>
           ))}
         </div>
       </fieldset>
       <div className="flex flex-wrap gap-2">
         <Button type="submit" isLoading={submitting} className="min-h-[44px]">
-          {submitting ? "Enregistrement…" : submitLabel}
+          {submitting ? t("services.form.saving") : submitLabel}
         </Button>
         {onCancel && (
           <Button
@@ -271,7 +274,7 @@ function ServiceForm({
             className="min-h-[44px]"
             onClick={onCancel}
           >
-            Annuler
+            {t("services.form.cancel")}
           </Button>
         )}
       </div>
@@ -280,6 +283,7 @@ function ServiceForm({
 }
 
 export function BarberServicesPage() {
+  const { t } = useTranslation("barber");
   const [currency, setCurrency] = useState<Currency | null>(null);
   const [services, setServices] = useState<OwnBarberService[]>([]);
   const [loading, setLoading] = useState(true);
@@ -304,7 +308,7 @@ export function BarberServicesPage() {
       if (err instanceof ApiError && err.code === "BARBER_PROFILE_NOT_FOUND") {
         setProfileMissing(true);
       } else {
-        setError(err instanceof Error ? err.message : "Chargement impossible.");
+        setError(err instanceof Error ? err.message : t("common.loadFailed"));
       }
     } finally {
       setLoading(false);
@@ -331,11 +335,11 @@ export function BarberServicesPage() {
     setSuccess(null);
     try {
       await barberApi.createService(values);
-      setSuccess("Service ajouté.");
+      setSuccess(t("services.added"));
       await loadData();
       return {};
     } catch (err) {
-      return reportSaveError(err, "Ajout échoué.");
+      return reportSaveError(err, t("services.addFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -351,11 +355,11 @@ export function BarberServicesPage() {
     try {
       await barberApi.updateService(id, values);
       setEditingId(null);
-      setSuccess("Service modifié.");
+      setSuccess(t("services.updated"));
       await loadData();
       return {};
     } catch (err) {
-      return reportSaveError(err, "Modification échouée.");
+      return reportSaveError(err, t("services.updateFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -368,7 +372,7 @@ export function BarberServicesPage() {
       await barberApi.updateService(service.id, { isActive: !service.isActive });
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Action échouée.");
+      setError(err instanceof Error ? err.message : t("services.actionFailed"));
     }
   }
 
@@ -382,7 +386,7 @@ export function BarberServicesPage() {
           </div>
           <Card className="space-y-4 p-6" aria-busy="true">
             <span className="sr-only" role="status">
-              Chargement des services…
+              {t("services.loading")}
             </span>
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
@@ -397,13 +401,13 @@ export function BarberServicesPage() {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
         <div className="mx-auto max-w-2xl space-y-6">
-          <ProPageHeader title="Mes services" />
+          <ProPageHeader title={t("services.title")} />
           <Card className="p-6 text-center">
             <p className="text-foreground">
-              Créez d'abord votre profil professionnel pour gérer vos services.
+              {t("services.profileMissing")}
             </p>
             <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              Créer mon profil
+              {t("common.createProfile")}
             </Link>
           </Card>
         </div>
@@ -417,13 +421,13 @@ export function BarberServicesPage() {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <ProPageHeader
-          title="Mes services"
-          description="Prestations, durées et tarifs."
+          title={t("services.title")}
+          description={t("services.description")}
         />
 
         <Card className="p-6">
           <h2 className="text-lg font-bold text-foreground">
-            Ajouter un service
+            {t("services.addTitle")}
           </h2>
           <div className="mt-4">
             <ServiceForm
@@ -435,7 +439,7 @@ export function BarberServicesPage() {
                 audiences: [],
                 techniques: [],
               }}
-              submitLabel="Ajouter"
+              submitLabel={t("services.add")}
               submitting={submitting}
               onSubmit={handleCreate}
             />
@@ -444,12 +448,12 @@ export function BarberServicesPage() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-foreground">
-            Services ({services.length})
+            {t("services.listTitle", { count: services.length })}
           </h2>
           {services.length === 0 ? (
             <Card className="p-6 text-center">
               <p className="text-foreground-muted">
-                Aucun service pour le moment.
+                {t("services.empty")}
               </p>
             </Card>
           ) : (
@@ -465,7 +469,7 @@ export function BarberServicesPage() {
                     audiences: service.audiences,
                     techniques: service.techniques,
                   }}
-                  submitLabel="Enregistrer"
+                  submitLabel={t("services.save")}
                   submitting={submitting}
                   onSubmit={(values) => handleUpdate(service.id, values)}
                   onCancel={() => setEditingId(null)}
@@ -490,7 +494,7 @@ export function BarberServicesPage() {
                       </p>
                     </div>
                     <Badge variant={service.isActive ? "success" : "neutral"}>
-                      {service.isActive ? "Actif" : "Inactif"}
+                      {service.isActive ? t("services.active") : t("services.inactive")}
                     </Badge>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -499,14 +503,16 @@ export function BarberServicesPage() {
                       className="min-h-[44px]"
                       onClick={() => setEditingId(service.id)}
                     >
-                      Modifier
+                      {t("services.edit")}
                     </Button>
                     <Button
                       variant="ghost"
                       className="min-h-[44px]"
                       onClick={() => void handleToggle(service)}
                     >
-                      {service.isActive ? "Désactiver" : "Réactiver"}
+                      {service.isActive
+                        ? t("services.deactivate")
+                        : t("services.reactivate")}
                     </Button>
                   </div>
                 </Card>

@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   LIMITS,
-  BOOKING_PAYMENT_STATUS_LABELS,
-  SERVICE_PLACE_LABELS,
   type BookingStatus,
 } from "@findbarber/shared/constants";
 import { isBookingEnded } from "@findbarber/shared/booking";
 import type { Booking, BookingDetails } from "@findbarber/shared/types";
 import { ApiError, bookingApi } from "../../lib/apiClient";
 import { formatCurrency, formatDateTime } from "../../lib/formatters";
+import { label } from "../../lib/labels";
 import { BookingStatusBadge } from "../../components/BookingStatusBadge";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
@@ -23,6 +23,7 @@ import { buttonClasses } from "../../components/ui/buttonStyles";
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
 
 export function BarberBookingsPage() {
+  const { t } = useTranslation("barber");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileMissing, setProfileMissing] = useState(false);
@@ -49,11 +50,12 @@ export function BarberBookingsPage() {
       if (err instanceof ApiError && err.code === "BARBER_PROFILE_NOT_FOUND") {
         setProfileMissing(true);
       } else {
-        setError(err instanceof Error ? err.message : "Chargement impossible.");
+        setError(err instanceof Error ? err.message : t("common.loadFailed"));
       }
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` : texte de repli seulement.
   }, []);
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export function BarberBookingsPage() {
         ),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Confirmation échouée.");
+      setError(err instanceof Error ? err.message : t("bookings.errors.confirm"));
     } finally {
       setActionId(null);
     }
@@ -90,7 +92,7 @@ export function BarberBookingsPage() {
       setDecliningId(null);
       setDeclineReason("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Refus échoué.");
+      setError(err instanceof Error ? err.message : t("bookings.errors.decline"));
     } finally {
       setActionId(null);
     }
@@ -108,7 +110,7 @@ export function BarberBookingsPage() {
         ),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Terminaison échouée.");
+      setError(err instanceof Error ? err.message : t("bookings.errors.complete"));
     } finally {
       setActionId(null);
       setCompletingId(null);
@@ -126,7 +128,7 @@ export function BarberBookingsPage() {
         ),
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Annulation échouée.");
+      setError(err instanceof Error ? err.message : t("bookings.errors.cancel"));
     } finally {
       setActionId(null);
       setConfirmingId(null);
@@ -141,7 +143,7 @@ export function BarberBookingsPage() {
       setDetails((current) => ({ ...current, [booking.id]: res.booking }));
     } catch (err) {
       setDetailError(
-        err instanceof Error ? err.message : "Impossible de charger le détail.",
+        err instanceof Error ? err.message : t("bookings.errors.details"),
       );
     } finally {
       setDetailLoadingId(null);
@@ -158,7 +160,7 @@ export function BarberBookingsPage() {
           </div>
           <Card className="space-y-4 p-6" aria-busy="true">
             <span className="sr-only" role="status">
-              Chargement des réservations…
+              {t("bookings.loading")}
             </span>
             <Skeleton className="h-16 w-full" />
             <Skeleton className="h-16 w-full" />
@@ -173,14 +175,13 @@ export function BarberBookingsPage() {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
         <div className="mx-auto max-w-2xl space-y-6">
-          <ProPageHeader title="Mes réservations" />
+          <ProPageHeader title={t("bookings.title")} />
           <Card className="p-6 text-center">
             <p className="text-foreground">
-              Créez d'abord votre profil professionnel pour gérer vos
-              réservations.
+              {t("bookings.profileMissing")}
             </p>
             <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              Créer mon profil
+              {t("common.createProfile")}
             </Link>
           </Card>
         </div>
@@ -195,8 +196,8 @@ export function BarberBookingsPage() {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <ProPageHeader
-          title="Mes réservations"
-          description="Demandes en attente, confirmations et annulations."
+          title={t("bookings.title")}
+          description={t("bookings.description")}
         />
 
         {error && (
@@ -207,7 +208,7 @@ export function BarberBookingsPage() {
               className="mt-3 min-h-[44px]"
               onClick={() => void loadBookings()}
             >
-              Réessayer
+              {t("common.retry")}
             </Button>
           </Alert>
         )}
@@ -216,7 +217,7 @@ export function BarberBookingsPage() {
         {bookings.length === 0 && !error ? (
           <Card className="p-6 text-center">
             <p className="text-foreground-muted">
-              Aucune réservation pour le moment.
+              {t("bookings.empty")}
             </p>
           </Card>
         ) : (
@@ -234,55 +235,62 @@ export function BarberBookingsPage() {
                         </p>
                         {booking.clientName && (
                           <p className="text-sm text-foreground-muted">
-                            Client : {booking.clientName}
+                            {t("bookings.client", { name: booking.clientName })}
                           </p>
                         )}
                         <p className="mt-1 text-sm text-foreground">
                           {formatDateTime(booking.startAt)}
                         </p>
                         <p className="text-sm text-foreground-muted">
-                          {SERVICE_PLACE_LABELS[booking.servicePlace]}
+                          {label("servicePlace", booking.servicePlace)}
                         </p>
                         {booking.amountDueMinor !== null &&
                           booking.paymentStatus !== "NOT_REQUIRED" && (
                             <p className="text-sm text-foreground-muted">
-                              {
-                                BOOKING_PAYMENT_STATUS_LABELS[
-                                  booking.paymentStatus
-                                ]
-                              }{" "}
-                              :{" "}
-                              {formatCurrency(
-                                booking.amountDueMinor,
-                                booking.currency,
+                              {t(
+                                booking.amountDueMinor < booking.priceMinor
+                                  ? "bookings.amountDuePartial"
+                                  : "bookings.amountDue",
+                                {
+                                  status: label(
+                                    "bookingPaymentStatus",
+                                    booking.paymentStatus,
+                                  ),
+                                  amount: formatCurrency(
+                                    booking.amountDueMinor,
+                                    booking.currency,
+                                  ),
+                                  total: formatCurrency(
+                                    booking.priceMinor,
+                                    booking.currency,
+                                  ),
+                                },
                               )}
-                              {booking.amountDueMinor < booking.priceMinor
-                                ? ` sur ${formatCurrency(booking.priceMinor, booking.currency)}`
-                                : ""}
                             </p>
                           )}
                         {booking.status === "CANCELLED" &&
                           booking.cancelledBy && (
                             <p className="mt-1 text-xs text-foreground-muted">
-                              Annulée par{" "}
                               {booking.cancelledBy === "CLIENT"
-                                ? "le client"
+                                ? t("bookings.cancelledBy.CLIENT")
                                 : booking.cancelledBy === "ADMIN"
-                                  ? "l'administration"
-                                  : "vous"}
-                              .
+                                  ? t("bookings.cancelledBy.ADMIN")
+                                  : t("bookings.cancelledBy.BARBER")}
                             </p>
                           )}
                         {booking.status === "DECLINED" &&
                           booking.declineReason && (
                             <p className="mt-1 text-xs text-foreground-muted">
-                              Motif du refus : {booking.declineReason}
+                              {t("bookings.declineReasonShown", {
+                                reason: booking.declineReason,
+                              })}
                             </p>
                           )}
                         {booking.status === "PENDING" && booking.expiresAt && (
                           <p className="mt-1 text-xs text-foreground-muted">
-                            Sans réponse, la demande expire le{" "}
-                            {formatDateTime(booking.expiresAt)}.
+                            {t("bookings.expiresAt", {
+                              date: formatDateTime(booking.expiresAt),
+                            })}
                           </p>
                         )}
                       </div>
@@ -294,11 +302,11 @@ export function BarberBookingsPage() {
                         {detail ? (
                           <div>
                             <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
-                              Adresse du client
+                              {t("bookings.clientAddress")}
                             </p>
                             <p className="mt-1 text-sm text-foreground">
                               {detail.clientAddress ??
-                                "Adresse non renseignée."}
+                                t("bookings.noAddress")}
                             </p>
                           </div>
                         ) : (
@@ -310,8 +318,8 @@ export function BarberBookingsPage() {
                             onClick={() => void handleShowAddress(booking)}
                           >
                             {detailLoadingId === booking.id
-                              ? "Chargement…"
-                              : "Voir l'adresse"}
+                              ? t("bookings.loadingShort")
+                              : t("bookings.showAddress")}
                           </Button>
                         )}
                       </div>
@@ -325,15 +333,15 @@ export function BarberBookingsPage() {
                             disabled={busy}
                             onClick={() => void handleConfirm(booking.id)}
                           >
-                            {busy ? "Confirmation…" : "Confirmer"}
+                            {busy ? t("bookings.confirming") : t("bookings.confirm")}
                           </Button>
                         )}
                         {booking.status === "PENDING" &&
                           (decliningId === booking.id ? (
                             <div className="flex w-full flex-wrap items-center gap-2">
                               <Input
-                                aria-label="Motif du refus (facultatif, visible par le client)"
-                                placeholder="Motif (facultatif, visible par le client)"
+                                aria-label={t("bookings.declineReasonLabel")}
+                                placeholder={t("bookings.declineReasonPlaceholder")}
                                 maxLength={LIMITS.bookingDeclineReason}
                                 value={declineReason}
                                 onChange={(event) =>
@@ -350,7 +358,7 @@ export function BarberBookingsPage() {
                                   setDeclineReason("");
                                 }}
                               >
-                                Non
+                                {t("bookings.no")}
                               </Button>
                               <Button
                                 variant="danger"
@@ -358,7 +366,9 @@ export function BarberBookingsPage() {
                                 disabled={busy}
                                 onClick={() => void handleDecline(booking.id)}
                               >
-                                {busy ? "Refus…" : "Confirmer le refus"}
+                                {busy
+                                  ? t("bookings.declining")
+                                  : t("bookings.confirmDecline")}
                               </Button>
                             </div>
                           ) : (
@@ -371,7 +381,7 @@ export function BarberBookingsPage() {
                                 setDeclineReason("");
                               }}
                             >
-                              Refuser
+                              {t("bookings.decline")}
                             </Button>
                           ))}
                         {booking.status === "CONFIRMED" &&
@@ -382,20 +392,19 @@ export function BarberBookingsPage() {
                               onClick={() => void handleComplete(booking.id)}
                             >
                               {completingId === booking.id
-                                ? "Terminaison…"
-                                : "Marquer comme terminé"}
+                                ? t("bookings.completing")
+                                : t("bookings.markCompleted")}
                             </Button>
                           ) : (
                             <span className="self-center text-sm text-foreground-muted">
-                              Pourra être marquée comme terminée après la fin du
-                              rendez-vous.
+                              {t("bookings.completeLater")}
                             </span>
                           ))}
                         {cancellable(booking.status) &&
                           (confirmingId === booking.id ? (
                             <>
                               <span className="self-center text-sm text-danger">
-                                Annuler cette réservation ?
+                                {t("bookings.cancelQuestion")}
                               </span>
                               <Button
                                 variant="secondary"
@@ -403,7 +412,7 @@ export function BarberBookingsPage() {
                                 disabled={busy}
                                 onClick={() => setConfirmingId(null)}
                               >
-                                Non
+                                {t("bookings.no")}
                               </Button>
                               <Button
                                 variant="danger"
@@ -412,8 +421,8 @@ export function BarberBookingsPage() {
                                 onClick={() => void handleCancel(booking.id)}
                               >
                                 {busy
-                                  ? "Annulation…"
-                                  : "Confirmer l'annulation"}
+                                  ? t("bookings.cancelling")
+                                  : t("bookings.confirmCancel")}
                               </Button>
                             </>
                           ) : (
@@ -423,7 +432,7 @@ export function BarberBookingsPage() {
                               disabled={busy}
                               onClick={() => setConfirmingId(booking.id)}
                             >
-                              Annuler
+                              {t("bookings.cancel")}
                             </Button>
                           ))}
                       </div>

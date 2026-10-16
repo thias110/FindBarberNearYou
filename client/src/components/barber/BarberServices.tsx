@@ -1,12 +1,10 @@
-import {
-  AUDIENCE_LABELS,
-  TECHNIQUE_LABELS,
-} from "@findbarber/shared/constants";
+import { useTranslation } from "react-i18next";
 import type {
   PublicBarberProfile,
   PublicBarberService,
 } from "@findbarber/shared/types";
 import { formatCurrency, formatDuration } from "../../lib/formatters";
+import { label } from "../../lib/labels";
 import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
 
@@ -18,12 +16,13 @@ interface BarberServicesProps {
 // Lecture seule : aucun clic de pré-sélection ; le formulaire conserve son
 // propre select de service.
 export function BarberServices({ profile, services }: BarberServicesProps) {
+  const { t } = useTranslation("barber");
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-bold text-foreground">Services</h2>
+      <h2 className="text-lg font-bold text-foreground">{t("public.services.title")}</h2>
       {services.length === 0 ? (
         <p className="mt-2 text-foreground-muted">
-          Aucun service pour le moment.
+          {t("public.services.empty")}
         </p>
       ) : (
         <ul className="mt-3 divide-y divide-border">
@@ -48,12 +47,12 @@ export function BarberServices({ profile, services }: BarberServicesProps) {
                           key={code}
                           className="inline-flex items-center rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-foreground"
                         >
-                          {AUDIENCE_LABELS[code]}
+                          {label("audience", code)}
                         </span>
                       ))}
                       {service.techniques.map((code) => (
                         <Badge key={code} variant="neutral">
-                          {TECHNIQUE_LABELS[code]}
+                          {label("technique", code)}
                         </Badge>
                       ))}
                     </div>

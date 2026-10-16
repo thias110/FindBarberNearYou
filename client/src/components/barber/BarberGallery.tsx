@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { PublicBarberPhoto } from "@findbarber/shared/types";
 import { resolveUploadUrl } from "../../lib/apiClient";
 import { Alert } from "../ui/Alert";
@@ -19,9 +20,10 @@ export function BarberGallery({
   error,
   onRetry,
 }: BarberGalleryProps) {
+  const { t } = useTranslation("barber");
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-bold text-foreground">Galerie</h2>
+      <h2 className="text-lg font-bold text-foreground">{t("public.gallery.title")}</h2>
 
       {loading ? (
         <div
@@ -29,7 +31,7 @@ export function BarberGallery({
           className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3"
         >
           <span className="sr-only" role="status">
-            Chargement de la galerie…
+            {t("public.gallery.loading")}
           </span>
           {[0, 1, 2].map((index) => (
             <Skeleton key={index} className="h-40 w-full rounded-xl" />
@@ -44,12 +46,12 @@ export function BarberGallery({
             className="mt-2 min-h-[44px]"
             onClick={onRetry}
           >
-            Réessayer
+            {t("common.retry")}
           </Button>
         </Alert>
       ) : photos.length === 0 ? (
         <p className="mt-2 text-foreground-muted">
-          Aucune photo pour le moment.
+          {t("public.gallery.empty")}
         </p>
       ) : (
         <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -60,7 +62,7 @@ export function BarberGallery({
             >
               <img
                 src={resolveUploadUrl(photo.imagePath) ?? ""}
-                alt={photo.caption ?? "Photo de réalisation"}
+                alt={photo.caption ?? t("public.gallery.photoAlt")}
                 loading="lazy"
                 className="h-40 w-full object-cover"
               />

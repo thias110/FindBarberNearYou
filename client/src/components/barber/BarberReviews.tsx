@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type {
   BarberReviewsResponse,
   PublicReview,
@@ -36,14 +37,15 @@ export function BarberReviews({
   error,
   onRetry,
 }: BarberReviewsProps) {
+  const { t } = useTranslation("barber");
   const hasSummary = summary !== null && summary.totalReviews > 0;
 
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-bold text-foreground">Avis</h2>
+      <h2 className="text-lg font-bold text-foreground">{t("public.reviews.title")}</h2>
 
       {loading ? (
-        <p className="mt-2 text-foreground-muted">Chargement des avis…</p>
+        <p className="mt-2 text-foreground-muted">{t("public.reviews.loading")}</p>
       ) : error ? (
         <Alert variant="danger" className="mt-3">
           <p>{error}</p>
@@ -53,12 +55,12 @@ export function BarberReviews({
             className="mt-2 min-h-[44px]"
             onClick={onRetry}
           >
-            Réessayer
+            {t("common.retry")}
           </Button>
         </Alert>
       ) : reviews.length === 0 ? (
         <p className="mt-2 text-foreground-muted">
-          Aucun avis pour le moment.
+          {t("public.reviews.empty")}
         </p>
       ) : (
         <div className="mt-3 space-y-1">
@@ -71,7 +73,7 @@ export function BarberReviews({
                   : summary.averageRating.toFixed(1)}
               </span>
               <span className="text-foreground-muted">
-                ({summary.totalReviews} avis)
+                {t("common.reviewCount", { count: summary.totalReviews })}
               </span>
             </p>
           )}
@@ -80,7 +82,7 @@ export function BarberReviews({
               <li key={review.id} className="py-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-foreground">
-                    {review.clientName ?? "Client"}
+                    {review.clientName ?? t("public.reviews.anonymousClient")}
                   </p>
                   <p className="flex items-center gap-1 text-sm text-foreground">
                     <StarIcon />

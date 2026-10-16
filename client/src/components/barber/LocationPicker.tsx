@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { AddressSuggestion } from "@findbarber/shared/types";
 import { useTheme } from "../../app/theme-context";
 import { ApiError, barberApi } from "../../lib/apiClient";
@@ -34,6 +35,7 @@ export function LocationPicker({
   initialQuery,
   error,
 }: LocationPickerProps) {
+  const { t } = useTranslation("barber");
   const { resolvedTheme } = useTheme();
   const id = useId();
   const listId = `${id}-suggestions`;
@@ -68,7 +70,7 @@ export function LocationPicker({
           setSuggestions(res.suggestions);
           setSearchError(
             res.suggestions.length === 0
-              ? "Aucune adresse trouvée. Précisez la saisie ou cliquez sur la carte."
+              ? t("location.noResults")
               : null,
           );
         })
@@ -77,10 +79,10 @@ export function LocationPicker({
           setSuggestions([]);
           setSearchError(
             err instanceof ApiError && err.code === "GEOCODING_UNAVAILABLE"
-              ? "Recherche d'adresse indisponible pour le moment : cliquez sur la carte."
+              ? t("location.geocodingUnavailable")
               : err instanceof Error
                 ? err.message
-                : "Recherche impossible.",
+                : t("location.searchFailed"),
           );
         })
         .finally(() => {
@@ -91,6 +93,8 @@ export function LocationPicker({
       window.clearTimeout(timer);
       controller.abort();
     };
+    // `t` change avec la langue : pas de nouvelle recherche pour autant.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, countryCode, searchRequest]);
 
   function choose(suggestion: AddressSuggestion) {
@@ -106,7 +110,7 @@ export function LocationPicker({
     <div className="space-y-3">
       <div className="space-y-1.5">
         <label htmlFor={`${id}-search`} className="block text-sm font-semibold text-foreground">
-          Rechercher votre adresse
+          {t("location.searchLabel")}
         </label>
         <Input
           id={`${id}-search`}
@@ -119,7 +123,7 @@ export function LocationPicker({
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
           value={query}
-          placeholder="Rue, numéro, ville"
+          placeholder={t("location.searchPlaceholder")}
           onChange={(event) => {
             touched.current = true;
             setQuery(event.target.value);
@@ -133,15 +137,14 @@ export function LocationPicker({
           }}
         />
         <p className="text-sm text-foreground-muted">
-          Choisissez une adresse dans la liste, ou cliquez sur la carte (par
-          exemple si vous ne travaillez qu'à domicile).
+          {t("location.hint")}
         </p>
       </div>
 
       <ul
         id={listId}
         role="listbox"
-        aria-label="Adresses suggérées"
+        aria-label={t("location.suggestionsLabel")}
         className={cn("space-y-1", suggestions.length === 0 && "hidden")}
       >
         {suggestions.map((suggestion) => (
@@ -159,14 +162,14 @@ export function LocationPicker({
 
       <p id={statusId} role="status" className="text-sm text-foreground-muted">
         {searching
-          ? "Recherche…"
+          ? t("location.searching")
           : searchError
             ? searchError
             : position
               ? chosenLabel
-                ? `Position enregistrée : ${chosenLabel}.`
-                : "Position définie sur la carte."
-              : "Aucune position définie."}
+                ? t("location.savedAddress", { label: chosenLabel })
+                : t("location.setOnMap")
+              : t("location.none")}
       </p>
       {error && (
         <p id={errorId} className="text-sm text-danger">
@@ -176,13 +179,13 @@ export function LocationPicker({
 
       {mapUnavailable ? (
         <p className="rounded-xl border border-border p-3 text-sm text-foreground-muted">
-          Carte indisponible : utilisez la recherche d'adresse.
+          {t("location.mapUnavailable")}
         </p>
       ) : (
         <MapErrorBoundary
           fallback={
             <p className="rounded-xl border border-border p-3 text-sm text-foreground-muted">
-              Carte indisponible : utilisez la recherche d'adresse.
+              {t("location.mapUnavailable")}
             </p>
           }
         >

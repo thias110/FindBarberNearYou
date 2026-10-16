@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { BarberStatsResponse } from "@findbarber/shared/types";
 import { ApiError, barberApi } from "../../lib/apiClient";
@@ -18,6 +19,7 @@ import { buttonClasses } from "../../components/ui/buttonStyles";
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
 
 export function BarberStatsPage() {
+  const { t } = useTranslation("barber");
   const [range, setRange] = useState<StatsRange>("30d");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -62,7 +64,7 @@ export function BarberStatsPage() {
           setTimezoneMissing(true);
         } else {
           setError(
-            err instanceof Error ? err.message : "Chargement impossible.",
+            err instanceof Error ? err.message : t("common.loadFailed"),
           );
         }
       })
@@ -73,14 +75,15 @@ export function BarberStatsPage() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` : texte de repli seulement.
   }, [range, from, to, canFetch, retryKey]);
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-4xl space-y-6">
         <ProPageHeader
-          title="Mes statistiques"
-          description="Rendez-vous, revenus, services et avis."
+          title={t("stats.page.title")}
+          description={t("stats.page.description")}
         />
 
         <StatsRangeSelector
@@ -95,7 +98,7 @@ export function BarberStatsPage() {
         {loading ? (
           <Card className="space-y-4 p-6" aria-busy="true">
             <span className="sr-only" role="status">
-              Chargement des statistiques…
+              {t("stats.page.loading")}
             </span>
             <Skeleton className="h-6 w-2/3" />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -110,20 +113,19 @@ export function BarberStatsPage() {
         ) : profileMissing ? (
           <Card className="p-6 text-center">
             <p className="text-foreground">
-              Créez d'abord votre profil professionnel pour consulter vos
-              statistiques.
+              {t("stats.page.profileMissing")}
             </p>
             <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              Créer mon profil
+              {t("common.createProfile")}
             </Link>
           </Card>
         ) : timezoneMissing ? (
           <Card className="p-6 text-center">
             <p className="text-foreground">
-              Renseignez votre fuseau horaire pour consulter vos statistiques.
+              {t("stats.page.timezoneMissing")}
             </p>
             <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              Compléter mon profil
+              {t("common.completeProfile")}
             </Link>
           </Card>
         ) : error ? (
@@ -134,12 +136,12 @@ export function BarberStatsPage() {
               className="mt-3 min-h-[44px]"
               onClick={() => setRetryKey((key) => key + 1)}
             >
-              Réessayer
+              {t("common.retry")}
             </Button>
           </Alert>
         ) : !canFetch ? (
           <Card className="p-6 text-center">
-            <p className="text-foreground-muted">Choisissez une plage de dates.</p>
+            <p className="text-foreground-muted">{t("stats.page.chooseRange")}</p>
           </Card>
         ) : stats ? (
           <BarberStatsContent stats={stats} />

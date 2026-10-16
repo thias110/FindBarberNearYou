@@ -2,6 +2,7 @@ import type { ServicePlace } from "@findbarber/shared/constants";
 import type { CountryCode } from "@findbarber/shared/countries";
 import type { OwnBarberProfile } from "@findbarber/shared/types";
 import { profileSchema, type ProfileRequest } from "@findbarber/shared/validation";
+import i18n from "../i18n";
 
 // --- Formulaire de profil barber en étapes (issue #43) ---
 // Les règles de validation restent celles du schéma partagé `profileSchema`
@@ -40,37 +41,39 @@ export const EMPTY_PROFILE_FORM: ProfileFormState = {
   travelRadiusKm: "",
 };
 
+// Titre de chaque étape : `profile.steps.<key>` (espace barber), voir
+// `profileStepTitle`.
 export const PROFILE_STEPS = [
   {
     key: "identity",
     anchor: "identite",
-    title: "Identité",
     fields: ["displayName", "description"],
   },
   {
     key: "places",
     anchor: "lieux",
-    title: "Lieux de prestation",
     fields: ["places", "address", "travelRadiusKm"],
   },
   {
     key: "location",
     anchor: "localisation",
-    title: "Localisation",
     fields: ["city", "postalCode", "countryCode", "latitude", "longitude"],
   },
   {
     key: "timezone",
     anchor: "fuseau",
-    title: "Fuseau horaire",
     fields: ["timezone"],
   },
 ] as const satisfies readonly {
   key: string;
   anchor: string;
-  title: string;
   fields: readonly ProfileField[];
 }[];
+
+/** Titre traduit d'une étape (langue courante). */
+export function profileStepTitle(stepIndex: number): string {
+  return i18n.t(`barber:profile.steps.${PROFILE_STEPS[stepIndex].key}`);
+}
 
 export const PROFILE_STEP_COUNT = PROFILE_STEPS.length;
 
@@ -103,13 +106,11 @@ const FILLER: ProfileFormState = {
 
 // Position (issue #45) : plus de champ latitude/longitude, le barber choisit
 // une adresse ou clique sur la carte. Message unique sous le sélecteur.
-const POSITION_MESSAGE =
-  "Indiquez votre position : choisissez une adresse suggérée ou cliquez sur la carte.";
-
-const NUMBER_MESSAGES: Partial<Record<ProfileField, string>> = {
-  latitude: POSITION_MESSAGE,
-  longitude: POSITION_MESSAGE,
-  travelRadiusKm: "Le rayon d'intervention doit être un nombre entier de kilomètres.",
+// Messages traduits à chaque validation (langue courante).
+const NUMBER_MESSAGE_KEYS: Partial<Record<ProfileField, string>> = {
+  latitude: "barber:profile.errors.positionRequired",
+  longitude: "barber:profile.errors.positionRequired",
+  travelRadiusKm: "barber:profile.errors.radiusInteger",
 };
 
 // "" → NaN (et non 0) pour qu'un champ vide soit refusé ; virgule décimale tolérée.
@@ -185,9 +186,10 @@ export function validateProfileSteps(
       const field = issue.path[0] as ProfileField;
       if (!visible.has(field) || errors[field]) continue;
       const value = merged[field];
+      const numberKey = NUMBER_MESSAGE_KEYS[field];
       errors[field] =
-        NUMBER_MESSAGES[field] && typeof value === "string" && !Number.isFinite(parseNumber(value))
-          ? NUMBER_MESSAGES[field]
+        numberKey && typeof value === "string" && !Number.isFinite(parseNumber(value))
+          ? i18n.t(numberKey)
           : issue.message;
     }
   }

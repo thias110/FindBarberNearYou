@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { ProfileCompletionStep } from "@findbarber/shared/constants";
 import type { ProfileCompletion } from "@findbarber/shared/types";
@@ -6,35 +7,13 @@ import { Alert } from "../ui/Alert";
 import { Card } from "../ui/Card";
 
 // Écran qui permet de compléter chaque étape (routes BARBER existantes).
-const STEP_DETAILS: Record<
-  ProfileCompletionStep,
-  { to: string; title: string; todo: string }
-> = {
-  AVATAR: {
-    to: "/pro/dashboard#photo-profil",
-    title: "Ajouter votre photo de profil",
-    todo: "Obligatoire pour créer votre profil : les clients voient à qui ils confient leur coupe.",
-  },
-  PROFILE: {
-    to: "/pro/profile",
-    title: "Renseigner votre profil",
-    todo: "Nom, description, lieux de prestation et localisation.",
-  },
-  SERVICES: {
-    to: "/pro/services",
-    title: "Ajouter un service actif",
-    todo: "Au moins une prestation avec sa durée et son prix.",
-  },
-  WORKING_HOURS: {
-    to: "/pro/working-hours",
-    title: "Définir vos horaires",
-    todo: "Au moins une plage de travail dans la semaine.",
-  },
-  GALLERY: {
-    to: "/pro/gallery",
-    title: "Publier une photo",
-    todo: "Au moins une réalisation dans votre galerie.",
-  },
+// Titre et consigne : `checklist.steps.<ÉTAPE>.title` / `.todo` (espace barber).
+const STEP_ROUTES: Record<ProfileCompletionStep, string> = {
+  AVATAR: "/pro/dashboard#photo-profil",
+  PROFILE: "/pro/profile",
+  SERVICES: "/pro/services",
+  WORKING_HOURS: "/pro/working-hours",
+  GALLERY: "/pro/gallery",
 };
 
 function StepIcon({ done }: { done: boolean }) {
@@ -59,10 +38,11 @@ function StepIcon({ done }: { done: boolean }) {
  * complète. Présentation pure : le chargement est géré par la page.
  */
 export function ProfileChecklist({ completion }: { completion: ProfileCompletion }) {
+  const { t } = useTranslation("barber");
   if (completion.complete) {
     return (
       <Alert variant="success">
-        Profil complet : toutes les étapes de finalisation sont faites.
+        {t("checklist.complete")}
       </Alert>
     );
   }
@@ -71,19 +51,22 @@ export function ProfileChecklist({ completion }: { completion: ProfileCompletion
     <Card className="p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-bold text-foreground">
-          Finaliser mon profil
+          {t("checklist.title")}
         </h2>
         <p className="text-sm text-foreground-muted">
-          {completion.completedCount} sur {completion.totalCount} étapes
+          {t("checklist.progress", {
+            done: completion.completedCount,
+            total: completion.totalCount,
+          })}
         </p>
       </div>
       <div
         role="progressbar"
-        aria-label="Progression de la finalisation du profil"
+        aria-label={t("checklist.progressLabel")}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={completion.percent}
-        aria-valuetext={`${completion.percent} %`}
+        aria-valuetext={t("checklist.percent", { percent: completion.percent })}
         className="mt-3 h-2 overflow-hidden rounded-full bg-surface-muted"
       >
         <div
@@ -92,15 +75,14 @@ export function ProfileChecklist({ completion }: { completion: ProfileCompletion
         />
       </div>
       <p className="mt-1 text-right text-xs font-semibold text-foreground">
-        {completion.percent} %
+        {t("checklist.percent", { percent: completion.percent })}
       </p>
       <ol className="mt-3 space-y-2">
         {completion.steps.map(({ step, done }) => {
-          const details = STEP_DETAILS[step];
           return (
             <li key={step}>
               <Link
-                to={details.to}
+                to={STEP_ROUTES[step]}
                 className={cn(
                   "flex min-h-11 items-center gap-3 rounded-xl border border-border p-3",
                   "transition-colors hover:border-accent/60",
@@ -115,15 +97,17 @@ export function ProfileChecklist({ completion }: { completion: ProfileCompletion
                       done ? "text-foreground-muted line-through" : "text-foreground",
                     )}
                   >
-                    {details.title}
+                    {t(`checklist.steps.${step}.title`)}
                   </span>
                   {!done && (
                     <span className="block text-xs text-foreground-muted">
-                      {details.todo}
+                      {t(`checklist.steps.${step}.todo`)}
                     </span>
                   )}
                 </span>
-                <span className="sr-only">{done ? "(fait)" : "(à faire)"}</span>
+                <span className="sr-only">
+                  {done ? t("checklist.done") : t("checklist.todo")}
+                </span>
               </Link>
             </li>
           );

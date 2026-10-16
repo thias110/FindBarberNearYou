@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import type { OwnBarberProfile, ProfileCompletion } from "@findbarber/shared/types";
 import { useAuth } from "../../app/auth-context";
@@ -15,50 +16,20 @@ import { buttonClasses } from "../../components/ui/buttonStyles";
 import { CONTROL_CLASS } from "../../components/ui/control";
 
 // Routes BARBER existantes : aucune URL n'est introduite ni modifiée.
+// Titre et description : `dashboard.nav.<clé>.title` / `.description`.
 const PRO_NAV = [
-  {
-    to: "/pro/profile",
-    title: "Mon profil",
-    description: "Nom, adresse, coordonnées et pays",
-  },
-  {
-    to: "/pro/services",
-    title: "Mes services",
-    description: "Prestations, durées et tarifs",
-  },
-  {
-    to: "/pro/working-hours",
-    title: "Mes horaires",
-    description: "Jours et plages de travail (heures locales du salon)",
-  },
-  {
-    to: "/pro/time-off",
-    title: "Mes indisponibilités",
-    description: "Congés et fermetures exceptionnelles",
-  },
-  {
-    to: "/pro/bookings",
-    title: "Mes réservations",
-    description: "Demandes en attente, confirmations et annulations",
-  },
-  {
-    to: "/pro/stats",
-    title: "Mes statistiques",
-    description: "Revenus, rendez-vous, services et avis",
-  },
-  {
-    to: "/pro/gallery",
-    title: "Ma galerie",
-    description: "Photos de vos réalisations",
-  },
-  {
-    to: "/pro/payments",
-    title: "Paiements en ligne",
-    description: "Stripe, acompte ou paiement complet à la réservation",
-  },
+  { to: "/pro/profile", key: "profile" },
+  { to: "/pro/services", key: "services" },
+  { to: "/pro/working-hours", key: "workingHours" },
+  { to: "/pro/time-off", key: "timeOff" },
+  { to: "/pro/bookings", key: "bookings" },
+  { to: "/pro/stats", key: "stats" },
+  { to: "/pro/gallery", key: "gallery" },
+  { to: "/pro/payments", key: "payments" },
 ] as const;
 
 export function BarberDashboardPage() {
+  const { t } = useTranslation("barber");
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const copyTimeoutRef = useRef<number | null>(null);
@@ -89,13 +60,14 @@ export function BarberDashboardPage() {
           setLoadError(
             err instanceof Error
               ? err.message
-              : "Impossible de charger votre profil.",
+              : t("dashboard.loadProfileFailed"),
           );
         }
       })
       .finally(() => {
         setLoading(false);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` : texte de repli seulement.
   }, []);
 
   useEffect(() => {
@@ -148,7 +120,7 @@ export function BarberDashboardPage() {
       copyTimeoutRef.current = window.setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopyError(
-        "Copie automatique impossible. Sélectionnez le lien ci-dessous manuellement.",
+        t("dashboard.copyFailed"),
       );
     }
   }
@@ -164,7 +136,7 @@ export function BarberDashboardPage() {
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-              Espace professionnel
+              {t("dashboard.title")}
             </h1>
             <p className="mt-1 break-words text-sm text-foreground-muted">
               {user?.name ? `${user.name} · ${user.email}` : user?.email}
@@ -175,20 +147,15 @@ export function BarberDashboardPage() {
             className="min-h-[44px]"
             onClick={() => void handleLogout()}
           >
-            Se déconnecter
+            {t("dashboard.logout")}
           </Button>
         </header>
 
         {/* Profil en attente d'approbation (issue #40) : invisible du public. */}
         {profile && !profile.approved && (
           <Alert variant="info">
-            <p className="font-semibold">Votre profil attend une validation.</p>
-            <p className="mt-1">
-              Notre équipe vérifie chaque nouveau profil avant sa mise en ligne.
-              En attendant, il n'apparaît pas dans la recherche et ne peut pas
-              recevoir de réservations. Vous pouvez déjà compléter vos
-              prestations et vos horaires.
-            </p>
+            <p className="font-semibold">{t("dashboard.pendingApproval.title")}</p>
+            <p className="mt-1">{t("dashboard.pendingApproval.body")}</p>
           </Alert>
         )}
 
@@ -196,34 +163,34 @@ export function BarberDashboardPage() {
 
         <Card id="photo-profil" className="scroll-mt-4 p-6">
           <h2 className="mb-4 text-lg font-bold text-foreground">
-            Photo de profil
+            {t("dashboard.avatarTitle")}
           </h2>
           <AvatarEditor />
         </Card>
 
         <nav
-          aria-label="Navigation de l'espace professionnel"
+          aria-label={t("dashboard.navLabel")}
           className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
         >
           {PRO_NAV.map((item) => (
             <ProNavCard
               key={item.to}
               to={item.to}
-              title={item.title}
-              description={item.description}
+              title={t(`dashboard.nav.${item.key}.title`)}
+              description={t(`dashboard.nav.${item.key}.description`)}
             />
           ))}
         </nav>
 
         <Card className="p-6">
           <h2 className="text-lg font-bold text-foreground">
-            Lien public partageable
+            {t("dashboard.publicLink.title")}
           </h2>
 
           {loading ? (
             <div className="mt-3 space-y-2" aria-busy="true">
               <span className="sr-only" role="status">
-                Chargement du profil…
+                {t("dashboard.publicLink.loading")}
               </span>
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-10 w-full" />
@@ -237,33 +204,31 @@ export function BarberDashboardPage() {
                 className="mt-3 min-h-[44px]"
                 onClick={loadProfile}
               >
-                Réessayer
+                {t("common.retry")}
               </Button>
             </Alert>
           ) : profileMissing ? (
             <div className="mt-3">
               <Alert variant="info">
-                Créez votre profil pour obtenir votre lien public.
+                {t("dashboard.publicLink.profileMissing")}
               </Alert>
               <Button
                 className="mt-3 min-h-[44px]"
                 onClick={() => navigate("/pro/profile")}
               >
-                Créer mon profil
+                {t("common.createProfile")}
               </Button>
             </div>
           ) : publicLink ? (
             <div className="mt-3 space-y-3">
               <p className="text-sm text-foreground-muted">
-                Ce lien reste identique, même après modification de votre profil
-                ou de vos services. Ajoutez-le à votre bio Instagram ou
-                partagez-le ailleurs.
+                {t("dashboard.publicLink.help")}
               </p>
               <input
                 readOnly
                 value={publicLink}
                 onFocus={(event) => event.currentTarget.select()}
-                aria-label="Lien public de votre profil"
+                aria-label={t("dashboard.publicLink.inputLabel")}
                 className={CONTROL_CLASS}
               />
               <div className="flex flex-wrap gap-2">
@@ -271,7 +236,9 @@ export function BarberDashboardPage() {
                   className="min-h-[44px]"
                   onClick={() => void handleCopy()}
                 >
-                  {copied ? "Lien copié !" : "Copier mon lien"}
+                  {copied
+                    ? t("dashboard.publicLink.copied")
+                    : t("dashboard.publicLink.copy")}
                 </Button>
                 <a
                   href={publicLink}
@@ -279,12 +246,12 @@ export function BarberDashboardPage() {
                   rel="noreferrer"
                   className={buttonClasses("secondary")}
                 >
-                  Voir mon profil public
+                  {t("dashboard.publicLink.view")}
                 </a>
               </div>
               {copied && (
                 <p role="status" className="text-sm text-success">
-                  Lien copié dans le presse-papiers.
+                  {t("dashboard.publicLink.copiedStatus")}
                 </p>
               )}
               {copyError && <Alert variant="warning">{copyError}</Alert>}

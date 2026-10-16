@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   LIMITS,
-  WEEKDAY_LABELS,
   WEEKDAYS,
   type Weekday,
 } from "@findbarber/shared/constants";
 import type { WorkingHoursInterval } from "@findbarber/shared/types";
 import { workingHoursSchema } from "@findbarber/shared/validation";
 import { ApiError, barberApi } from "../../lib/apiClient";
+import { label } from "../../lib/labels";
 import {
   extractIntervalIndex,
   formatIntervalError,
@@ -64,6 +65,7 @@ function emptyDay(weekday: Weekday): DayDraft {
 }
 
 export function BarberWorkingHoursPage() {
+  const { t } = useTranslation("barber");
   const [days, setDays] = useState<DayDraft[]>(
     WEEKDAYS.map((weekday) => emptyDay(weekday)),
   );
@@ -118,7 +120,7 @@ export function BarberWorkingHoursPage() {
         if (err instanceof ApiError && err.code === "BARBER_PROFILE_NOT_FOUND") {
           setProfileMissing(true);
         } else {
-          setError(err instanceof Error ? err.message : "Chargement impossible.");
+          setError(err instanceof Error ? err.message : t("common.loadFailed"));
         }
         return;
       }
@@ -135,6 +137,7 @@ export function BarberWorkingHoursPage() {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` : texte de repli seulement.
   }, [applyIntervals]);
 
   useEffect(() => {
@@ -256,7 +259,7 @@ export function BarberWorkingHoursPage() {
           nextRowErrors[row.key] = formatIntervalError(
             day.weekday,
             plageNo,
-            "heure de début invalide (HH:MM attendue).",
+            t("workingHours.errors.startInvalid"),
           );
           continue;
         }
@@ -265,7 +268,7 @@ export function BarberWorkingHoursPage() {
           nextRowErrors[row.key] = formatIntervalError(
             day.weekday,
             plageNo,
-            "heure de fin invalide (HH:MM ou « Fin de journée »).",
+            t("workingHours.errors.endInvalid"),
           );
           continue;
         }
@@ -322,12 +325,12 @@ export function BarberWorkingHoursPage() {
     setSaving(true);
     try {
       const res = await barberApi.replaceWorkingHours(parsed.data);
-      setSuccess("Planning enregistré.");
+      setSuccess(t("workingHours.saved"));
       applyIntervals(res.intervals);
       setRowErrors({});
     } catch (err) {
       // Le brouillon n'est pas modifié en cas d'échec.
-      setError(err instanceof Error ? err.message : "Enregistrement échoué.");
+      setError(err instanceof Error ? err.message : t("workingHours.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -339,11 +342,11 @@ export function BarberWorkingHoursPage() {
     setSaving(true);
     try {
       await barberApi.replaceWorkingHours({ intervals: [] });
-      setSuccess("Planning effacé.");
+      setSuccess(t("workingHours.cleared"));
       applyIntervals([]);
       setRowErrors({});
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Effacement échoué.");
+      setError(err instanceof Error ? err.message : t("workingHours.clearFailed"));
     } finally {
       setSaving(false);
     }
@@ -359,7 +362,7 @@ export function BarberWorkingHoursPage() {
           </div>
           <Card className="space-y-4 p-6" aria-busy="true">
             <span className="sr-only" role="status">
-              Chargement du planning…
+              {t("workingHours.loading")}
             </span>
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
@@ -374,13 +377,13 @@ export function BarberWorkingHoursPage() {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
         <div className="mx-auto max-w-2xl space-y-6">
-          <ProPageHeader title="Mes horaires" />
+          <ProPageHeader title={t("workingHours.title")} />
           <Card className="p-6 text-center">
             <p className="text-foreground">
-              Créez d'abord votre profil professionnel pour définir vos horaires.
+              {t("workingHours.profileMissing")}
             </p>
             <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              Créer mon profil
+              {t("common.createProfile")}
             </Link>
           </Card>
         </div>
@@ -394,45 +397,42 @@ export function BarberWorkingHoursPage() {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <ProPageHeader
-          title="Mes horaires"
-          description="Jours et plages de travail, en heures locales du salon."
+          title={t("workingHours.title")}
+          description={t("workingHours.description")}
         />
 
         {timezoneStatus === "loaded" && timezone ? (
           <Alert variant="info">
-            Heures locales du salon ({timezone}). Ce fuseau est choisi sur votre
-            profil et servira à calculer vos créneaux de réservation.
+            {t("workingHours.timezone.known", { timezone })}
           </Alert>
         ) : timezoneStatus === "loaded" ? (
           <Alert variant="warning">
-            Fuseau non renseigné : la réservation en ligne restera indisponible
-            tant que vous n'aurez pas choisi votre fuseau.{" "}
+            {t("workingHours.timezone.missing")}{" "}
             <Link
               to="/pro/profile"
               className="font-medium text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Définir mon fuseau
+              {t("workingHours.timezone.setLink")}
             </Link>
           </Alert>
         ) : timezoneStatus === "error" ? (
           <Alert variant="warning">
             <p>
-              Fuseau horaire indisponible pour le moment. Votre planning reste
-              enregistré en heures murales.
+              {t("workingHours.timezone.error")}
             </p>
             <Button
               variant="secondary"
               className="mt-3 min-h-[44px]"
               onClick={() => void retryTimezone()}
             >
-              Réessayer
+              {t("common.retry")}
             </Button>
           </Alert>
         ) : null}
 
         {!hasContent && (
           <Alert variant="info">
-            Aucune plage horaire définie. Activez un jour puis ajoutez une plage.
+            {t("workingHours.empty")}
           </Alert>
         )}
 
@@ -448,7 +448,7 @@ export function BarberWorkingHoursPage() {
                   onChange={() => toggleDay(day.weekday)}
                 />
                 <span className="font-semibold text-foreground">
-                  {WEEKDAY_LABELS[day.weekday]}
+                  {label("weekday", day.weekday)}
                 </span>
               </label>
 
@@ -456,7 +456,7 @@ export function BarberWorkingHoursPage() {
                 <div className="mt-3 space-y-2">
                   {day.intervals.length === 0 && (
                     <p className="text-sm text-foreground-muted">
-                      Aucune plage ce jour.
+                      {t("workingHours.noSlotThisDay")}
                     </p>
                   )}
                   {day.intervals.map((row) => {
@@ -474,7 +474,7 @@ export function BarberWorkingHoursPage() {
                         className="rounded-lg border border-border bg-surface-muted p-3"
                       >
                         <div className="flex flex-wrap items-end gap-3">
-                          <Field label="Début" className="w-32">
+                          <Field label={t("workingHours.start")} className="w-32">
                             {(control) => (
                               <Input
                                 {...control}
@@ -489,7 +489,7 @@ export function BarberWorkingHoursPage() {
                               />
                             )}
                           </Field>
-                          <Field label="Fin" className="w-32">
+                          <Field label={t("workingHours.end")} className="w-32">
                             {(control) => (
                               <Input
                                 {...control}
@@ -517,7 +517,7 @@ export function BarberWorkingHoursPage() {
                                 })
                               }
                             />
-                            Fin de journée (24:00)
+                            {t("workingHours.endOfDay")}
                           </label>
                           <Button
                             variant="ghost"
@@ -525,7 +525,7 @@ export function BarberWorkingHoursPage() {
                             disabled={saving}
                             onClick={() => removeInterval(day.weekday, row.key)}
                           >
-                            Supprimer
+                            {t("workingHours.removeSlot")}
                           </Button>
                           {preview && (
                             <span className="pb-2 text-sm text-foreground-muted">
@@ -549,7 +549,7 @@ export function BarberWorkingHoursPage() {
                       disabled={saving}
                       onClick={() => addInterval(day.weekday)}
                     >
-                      Ajouter une plage
+                      {t("workingHours.addSlot")}
                     </Button>
                   )}
                 </div>
@@ -560,14 +560,14 @@ export function BarberWorkingHoursPage() {
 
         {confirmingClear && (
           <Alert variant="danger">
-            <p>Effacer tous vos horaires enregistrés ?</p>
+            <p>{t("workingHours.clearQuestion")}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button
                 variant="secondary"
                 className="min-h-[44px]"
                 onClick={() => setConfirmingClear(false)}
               >
-                Annuler
+                {t("workingHours.cancel")}
               </Button>
               <Button
                 variant="danger"
@@ -579,7 +579,7 @@ export function BarberWorkingHoursPage() {
                   void handleClearAll();
                 }}
               >
-                Confirmer
+                {t("workingHours.confirm")}
               </Button>
             </div>
           </Alert>
@@ -592,7 +592,7 @@ export function BarberWorkingHoursPage() {
             isLoading={saving}
             onClick={() => void handleSave()}
           >
-            {saving ? "Enregistrement…" : "Enregistrer le planning"}
+            {saving ? t("workingHours.saving") : t("workingHours.save")}
           </Button>
           <Button
             variant="secondary"
@@ -600,7 +600,7 @@ export function BarberWorkingHoursPage() {
             disabled={saving || !hasContent}
             onClick={() => setConfirmingClear(true)}
           >
-            Tout effacer
+            {t("workingHours.clearAll")}
           </Button>
         </StickyActionBar>
       </div>

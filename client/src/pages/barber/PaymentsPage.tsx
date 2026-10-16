@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import {
   LIMITS,
   PAYMENT_MODES,
-  PAYMENT_MODE_LABELS,
   type PaymentMode,
 } from "@findbarber/shared/constants";
 import type { BarberPaymentSettings } from "@findbarber/shared/types";
 import { apiErrorMessage, barberPaymentsApi } from "../../lib/apiClient";
+import { label } from "../../lib/labels";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { Alert } from "../../components/ui/Alert";
 import { Badge } from "../../components/ui/Badge";
@@ -21,6 +22,7 @@ import { Skeleton } from "../../components/ui/Skeleton";
 // Paiement en ligne (issue #10, Stripe Connect) : activation du compte Stripe
 // du barber puis choix de la politique (sur place, acompte, prix complet).
 export function BarberPaymentsPage() {
+  const { t } = useTranslation("barber");
   const [searchParams] = useSearchParams();
   const stripeReturn = searchParams.get("stripe");
 
@@ -79,7 +81,10 @@ export function BarberPaymentsPage() {
         percent > LIMITS.depositPercentMax)
     ) {
       setDepositError(
-        `Indiquez un pourcentage entier entre ${LIMITS.depositPercentMin} et ${LIMITS.depositPercentMax}.`,
+        t("payments.depositError", {
+          min: LIMITS.depositPercentMin,
+          max: LIMITS.depositPercentMax,
+        }),
       );
       return;
     }
@@ -93,7 +98,7 @@ export function BarberPaymentsPage() {
       setSettings(res.settings);
       setMessage({
         kind: "success",
-        text: "Préférences de paiement enregistrées.",
+        text: t("payments.saved"),
       });
     } catch (err) {
       setMessage({ kind: "error", text: apiErrorMessage(err) });
@@ -106,14 +111,14 @@ export function BarberPaymentsPage() {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <ProPageHeader
-          title="Paiements en ligne"
-          description="Acompte ou paiement complet à la réservation, via Stripe."
+          title={t("payments.title")}
+          description={t("payments.description")}
         />
 
         {loading ? (
           <Card className="space-y-3 p-6" aria-busy="true">
             <span className="sr-only" role="status">
-              Chargement des paiements…
+              {t("payments.loading")}
             </span>
             <Skeleton className="h-6 w-1/2" />
             <Skeleton className="h-10 w-full" />
@@ -126,13 +131,12 @@ export function BarberPaymentsPage() {
               className="mt-3"
               onClick={() => void load()}
             >
-              Réessayer
+              {t("common.retry")}
             </Button>
           </Alert>
         ) : settings && !settings.available ? (
           <Alert variant="info">
-            Le paiement en ligne n'est pas encore disponible sur la plateforme.
-            Vos clients paient sur place.
+            {t("payments.unavailable")}
           </Alert>
         ) : settings ? (
           <>
@@ -147,31 +151,28 @@ export function BarberPaymentsPage() {
             <Card className="space-y-3 p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-bold text-foreground">
-                  Compte Stripe
+                  {t("payments.stripe.title")}
                 </h2>
                 <Badge
                   variant={settings.chargesEnabled ? "success" : "warning"}
                 >
                   {settings.chargesEnabled
-                    ? "Paiements activés"
+                    ? t("payments.stripe.enabled")
                     : settings.connected
-                      ? "Inscription à terminer"
-                      : "Non configuré"}
+                      ? t("payments.stripe.toFinish")
+                      : t("payments.stripe.notConfigured")}
                 </Badge>
               </div>
               <p className="text-sm text-foreground-muted">
-                Les paiements de vos clients sont versés directement sur votre
-                compte Stripe
                 {settings.platformFeePercent > 0
-                  ? `, déduction faite d'une commission de ${settings.platformFeePercent} %`
-                  : ""}
-                . Stripe vous demande votre identité et votre IBAN lors de
-                l'inscription.
+                  ? t("payments.stripe.payoutWithFee", {
+                      percent: settings.platformFeePercent,
+                    })
+                  : t("payments.stripe.payout")}
               </p>
               {stripeReturn === "return" && !settings.chargesEnabled && (
                 <Alert variant="info">
-                  Inscription reçue : Stripe vérifie vos informations. Les
-                  paiements seront activés dès sa validation.
+                  {t("payments.stripe.returned")}
                 </Alert>
               )}
               {!settings.chargesEnabled && (
@@ -180,8 +181,8 @@ export function BarberPaymentsPage() {
                   onClick={() => void handleOnboarding()}
                 >
                   {settings.connected
-                    ? "Terminer l'inscription Stripe"
-                    : "Activer les paiements avec Stripe"}
+                    ? t("payments.stripe.finish")
+                    : t("payments.stripe.activate")}
                 </Button>
               )}
             </Card>
@@ -189,15 +190,14 @@ export function BarberPaymentsPage() {
             <Card className="p-6">
               <form onSubmit={handleSave} noValidate className="space-y-4">
                 <h2 className="text-lg font-bold text-foreground">
-                  Paiement à la réservation
+                  {t("payments.policy.title")}
                 </h2>
                 {!settings.chargesEnabled && (
                   <p className="text-sm text-foreground-muted">
-                    Activez d'abord les paiements avec Stripe pour exiger un
-                    paiement en ligne.
+                    {t("payments.policy.enableFirst")}
                   </p>
                 )}
-                <Field label="Mode de paiement">
+                <Field label={t("payments.policy.modeLabel")}>
                   {(control) => (
                     <Select
                       {...control}
@@ -209,7 +209,7 @@ export function BarberPaymentsPage() {
                     >
                       {PAYMENT_MODES.map((value) => (
                         <option key={value} value={value}>
-                          {PAYMENT_MODE_LABELS[value]}
+                          {label("paymentMode", value)}
                         </option>
                       ))}
                     </Select>
@@ -217,9 +217,12 @@ export function BarberPaymentsPage() {
                 </Field>
                 {mode === "DEPOSIT" && (
                   <Field
-                    label="Acompte (% du prix)"
+                    label={t("payments.policy.depositLabel")}
                     error={depositError}
-                    hint={`Entre ${LIMITS.depositPercentMin} et ${LIMITS.depositPercentMax} %. Le reste est payé sur place.`}
+                    hint={t("payments.policy.depositHint", {
+                      min: LIMITS.depositPercentMin,
+                      max: LIMITS.depositPercentMax,
+                    })}
                   >
                     {(control) => (
                       <Input
@@ -236,9 +239,7 @@ export function BarberPaymentsPage() {
                   </Field>
                 )}
                 <p className="text-sm text-foreground-muted">
-                  Le client paie en envoyant sa demande (carte ou Twint). Il est
-                  remboursé automatiquement si vous refusez, si la demande
-                  expire, si vous annulez, ou s'il annule dans les délais.
+                  {t("payments.policy.refunds")}
                 </p>
                 <Button
                   type="submit"
@@ -247,7 +248,7 @@ export function BarberPaymentsPage() {
                     !settings.chargesEnabled && mode === settings.paymentMode
                   }
                 >
-                  Enregistrer
+                  {t("payments.save")}
                 </Button>
               </form>
             </Card>

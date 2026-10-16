@@ -1,8 +1,6 @@
-import {
-  LIMITS,
-  WEEKDAY_LABELS,
-  type Weekday,
-} from "@findbarber/shared/constants";
+import { LIMITS, type Weekday } from "@findbarber/shared/constants";
+import i18n from "../i18n";
+import { label } from "./labels";
 
 /**
  * Convertit une saisie « HH:MM » (00:00–23:59) en minutes depuis minuit.
@@ -96,5 +94,9 @@ export function formatIntervalError(
   plageNo: number,
   message: string,
 ): string {
-  return `${WEEKDAY_LABELS[weekday]}, plage ${plageNo} : ${message}`;
+  return i18n.t("barber:workingHours.intervalError", {
+    day: label("weekday", weekday),
+    number: plageNo,
+    message,
+  });
 }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { LIMITS } from "@findbarber/shared/constants";
 import type { TimeOff } from "@findbarber/shared/types";
@@ -38,6 +39,7 @@ function applyIssues(issues: { path: (string | number)[]; message: string }[]) {
 }
 
 export function BarberTimeOffPage() {
+  const { t } = useTranslation("barber");
   const [timeOff, setTimeOff] = useState<TimeOff[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileMissing, setProfileMissing] = useState(false);
@@ -75,7 +77,7 @@ export function BarberTimeOffPage() {
         if (err instanceof ApiError && err.code === "BARBER_PROFILE_NOT_FOUND") {
           setProfileMissing(true);
         } else {
-          setError(err instanceof Error ? err.message : "Chargement impossible.");
+          setError(err instanceof Error ? err.message : t("common.loadFailed"));
         }
         return;
       }
@@ -91,6 +93,7 @@ export function BarberTimeOffPage() {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` : texte de repli seulement.
   }, []);
 
   useEffect(() => {
@@ -144,10 +147,10 @@ export function BarberTimeOffPage() {
       setStartDate("");
       setEndDate("");
       setReason("");
-      setSuccess("Indisponibilité enregistrée.");
+      setSuccess(t("timeOff.saved"));
     } catch (err) {
       // Le formulaire et la liste affichée restent intacts en cas d'échec.
-      setError(err instanceof Error ? err.message : "Enregistrement échoué.");
+      setError(err instanceof Error ? err.message : t("timeOff.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -160,9 +163,9 @@ export function BarberTimeOffPage() {
     try {
       await barberApi.deleteTimeOff(timeOffId);
       setTimeOff((current) => current.filter((item) => item.id !== timeOffId));
-      setSuccess("Indisponibilité supprimée.");
+      setSuccess(t("timeOff.deleted"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Suppression échouée.");
+      setError(err instanceof Error ? err.message : t("timeOff.deleteFailed"));
     } finally {
       setDeletingId(null);
       setConfirmingId(null);
@@ -179,7 +182,7 @@ export function BarberTimeOffPage() {
           </div>
           <Card className="space-y-4 p-6" aria-busy="true">
             <span className="sr-only" role="status">
-              Chargement des indisponibilités…
+              {t("timeOff.loading")}
             </span>
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
@@ -194,14 +197,13 @@ export function BarberTimeOffPage() {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
         <div className="mx-auto max-w-2xl space-y-6">
-          <ProPageHeader title="Mes indisponibilités" />
+          <ProPageHeader title={t("timeOff.title")} />
           <Card className="p-6 text-center">
             <p className="text-foreground">
-              Créez d'abord votre profil professionnel pour gérer vos
-              indisponibilités.
+              {t("timeOff.profileMissing")}
             </p>
             <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              Créer mon profil
+              {t("common.createProfile")}
             </Link>
           </Card>
         </div>
@@ -215,49 +217,45 @@ export function BarberTimeOffPage() {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <ProPageHeader
-          title="Mes indisponibilités"
-          description="Congés et fermetures exceptionnelles, en journées entières."
+          title={t("timeOff.title")}
+          description={t("timeOff.description")}
         />
 
         {timezoneStatus === "loaded" && timezone ? (
           <Alert variant="info">
-            Votre fuseau horaire : {timezone}. Les jours indisponibles sont des
-            dates civiles dans ce fuseau.
+            {t("timeOff.timezone.known", { timezone })}
           </Alert>
         ) : timezoneStatus === "loaded" ? (
           <Alert variant="warning">
-            Votre fuseau horaire n'est pas renseigné : vous pouvez enregistrer
-            vos jours indisponibles, mais ils ne seront interprétés qu'une fois
-            votre fuseau défini.{" "}
+            {t("timeOff.timezone.missing")}{" "}
             <Link
               to="/pro/profile"
               className="font-medium text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Définir mon fuseau
+              {t("timeOff.timezone.setLink")}
             </Link>
           </Alert>
         ) : timezoneStatus === "error" ? (
           <Alert variant="warning">
             <p>
-              Votre fuseau horaire est indisponible pour le moment. Vos jours
-              indisponibles restent enregistrés.
+              {t("timeOff.timezone.error")}
             </p>
             <Button
               variant="secondary"
               className="mt-3 min-h-[44px]"
               onClick={() => void retryTimezone()}
             >
-              Réessayer
+              {t("common.retry")}
             </Button>
           </Alert>
         ) : null}
 
         <Card className="space-y-4 p-6">
           <h2 className="text-lg font-bold text-foreground">
-            Ajouter des jours indisponibles
+            {t("timeOff.form.title")}
           </h2>
           <div className="flex flex-wrap items-end gap-3">
-            <Field label="Début" className="w-40" error={fieldErrors.startDate}>
+            <Field label={t("timeOff.form.start")} className="w-40" error={fieldErrors.startDate}>
               {(control) => (
                 <Input
                   {...control}
@@ -271,7 +269,7 @@ export function BarberTimeOffPage() {
                 />
               )}
             </Field>
-            <Field label="Fin" className="w-40" error={fieldErrors.endDate}>
+            <Field label={t("timeOff.form.end")} className="w-40" error={fieldErrors.endDate}>
               {(control) => (
                 <Input
                   {...control}
@@ -287,7 +285,7 @@ export function BarberTimeOffPage() {
             </Field>
           </div>
           <Field
-            label="Motif (facultatif, privé)"
+            label={t("timeOff.form.reason")}
             error={fieldErrors.reason}
           >
             {(control) => (
@@ -297,7 +295,7 @@ export function BarberTimeOffPage() {
                 value={reason}
                 disabled={busy}
                 maxLength={LIMITS.timeOffReason}
-                placeholder="Congés, fermeture exceptionnelle…"
+                placeholder={t("timeOff.form.reasonPlaceholder")}
                 onChange={(event) => {
                   setReason(event.target.value);
                   clearFieldError("reason");
@@ -306,8 +304,7 @@ export function BarberTimeOffPage() {
             )}
           </Field>
           <p className="text-xs text-foreground-muted">
-            Début et fin inclus. Une journée unique se saisit avec la même date.
-            La période ne peut pas dépasser {LIMITS.timeOffMaxRangeDays} jours.
+            {t("timeOff.form.hint", { max: LIMITS.timeOffMaxRangeDays })}
           </p>
           <Button
             className="min-h-[44px]"
@@ -315,18 +312,18 @@ export function BarberTimeOffPage() {
             disabled={busy}
             onClick={() => void handleCreate()}
           >
-            {saving ? "Enregistrement…" : "Ajouter"}
+            {saving ? t("timeOff.form.saving") : t("timeOff.form.submit")}
           </Button>
         </Card>
 
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-foreground">
-            Jours indisponibles
+            {t("timeOff.list.title")}
           </h2>
           {timeOff.length === 0 ? (
             <Card className="p-6 text-center">
               <p className="text-foreground-muted">
-                Aucune indisponibilité enregistrée.
+                {t("timeOff.list.empty")}
               </p>
             </Card>
           ) : (
@@ -348,7 +345,7 @@ export function BarberTimeOffPage() {
                       {confirmingId === item.id ? (
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm text-foreground">
-                            Supprimer cette indisponibilité ?
+                            {t("timeOff.list.deleteQuestion")}
                           </span>
                           <Button
                             variant="secondary"
@@ -356,7 +353,7 @@ export function BarberTimeOffPage() {
                             disabled={busy}
                             onClick={() => setConfirmingId(null)}
                           >
-                            Annuler
+                            {t("timeOff.list.cancel")}
                           </Button>
                           <Button
                             variant="danger"
@@ -365,7 +362,9 @@ export function BarberTimeOffPage() {
                             isLoading={deletingId === item.id}
                             onClick={() => void handleDelete(item.id)}
                           >
-                            {deletingId === item.id ? "Suppression…" : "Confirmer"}
+                            {deletingId === item.id
+                              ? t("timeOff.list.deleting")
+                              : t("timeOff.list.confirm")}
                           </Button>
                         </div>
                       ) : (
@@ -375,7 +374,7 @@ export function BarberTimeOffPage() {
                           disabled={busy}
                           onClick={() => setConfirmingId(item.id)}
                         >
-                          Supprimer
+                          {t("timeOff.list.delete")}
                         </Button>
                       )}
                     </div>

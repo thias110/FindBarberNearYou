@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // Worker bundlé par Vite (voir BarbersMap) : compatible CSP `worker-src 'self'`.
@@ -60,6 +61,7 @@ export default function LocationMap({
   theme,
   onUnavailable,
 }: LocationMapProps) {
+  const { t } = useTranslation("barber");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
@@ -150,7 +152,7 @@ export default function LocationMap({
     <div
       ref={containerRef}
       role="region"
-      aria-label="Carte de prévisualisation : cliquez pour placer votre position"
+      aria-label={t("location.mapLabel")}
       className="h-64 w-full overflow-hidden rounded-xl border border-border"
     />
   );

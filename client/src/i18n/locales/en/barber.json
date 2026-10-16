@@ -1,0 +1,456 @@
+{
+  "bookings": {
+    "amountDue": "{{status}}: {{amount}}",
+    "amountDuePartial": "{{status}}: {{amount}} of {{total}}",
+    "cancel": "Cancel",
+    "cancelQuestion": "Cancel this booking?",
+    "cancelledBy": {
+      "ADMIN": "Cancelled by the administrators.",
+      "BARBER": "Cancelled by you.",
+      "CLIENT": "Cancelled by the client."
+    },
+    "cancelling": "Cancelling…",
+    "client": "Client: {{name}}",
+    "clientAddress": "Client's address",
+    "completeLater": "Can be marked as completed once the appointment has ended.",
+    "completing": "Completing…",
+    "confirm": "Confirm",
+    "confirmCancel": "Confirm cancellation",
+    "confirmDecline": "Confirm decline",
+    "confirming": "Confirming…",
+    "decline": "Decline",
+    "declineReasonLabel": "Reason for declining (optional, visible to the client)",
+    "declineReasonPlaceholder": "Reason (optional, visible to the client)",
+    "declineReasonShown": "Reason for declining: {{reason}}",
+    "declining": "Declining…",
+    "description": "Pending requests, confirmations and cancellations.",
+    "empty": "No bookings yet.",
+    "errors": {
+      "cancel": "Cancellation failed.",
+      "complete": "Could not mark as completed.",
+      "confirm": "Confirmation failed.",
+      "decline": "Decline failed.",
+      "details": "Unable to load the details."
+    },
+    "expiresAt": "Without a reply, the request expires on {{date}}.",
+    "loading": "Loading bookings…",
+    "loadingShort": "Loading…",
+    "markCompleted": "Mark as completed",
+    "no": "No",
+    "noAddress": "No address provided.",
+    "profileMissing": "Create your professional profile first to manage your bookings.",
+    "showAddress": "View address",
+    "title": "My bookings"
+  },
+  "certified": {
+    "label": "Certified",
+    "title": "Professional verified by FindBarber"
+  },
+  "checklist": {
+    "complete": "Profile complete: all the finishing steps are done.",
+    "done": "(done)",
+    "percent": "{{percent}}%",
+    "progress": "{{done}} of {{total}} steps",
+    "progressLabel": "Profile completion progress",
+    "steps": {
+      "AVATAR": {
+        "title": "Add your profile photo",
+        "todo": "Required to create your profile: clients can see who they are trusting with their haircut."
+      },
+      "GALLERY": {
+        "title": "Post a photo",
+        "todo": "At least one piece of work in your gallery."
+      },
+      "PROFILE": {
+        "title": "Fill in your profile",
+        "todo": "Name, description, service locations and location."
+      },
+      "SERVICES": {
+        "title": "Add an active service",
+        "todo": "At least one service with its duration and price."
+      },
+      "WORKING_HOURS": {
+        "title": "Set your opening hours",
+        "todo": "At least one working slot during the week."
+      }
+    },
+    "title": "Finish my profile",
+    "todo": "(to do)"
+  },
+  "common": {
+    "backToDashboard": "Back to dashboard",
+    "completeProfile": "Complete my profile",
+    "createProfile": "Create my profile",
+    "loadFailed": "Unable to load.",
+    "retry": "Try again",
+    "reviewCount_one": "({{count}} review)",
+    "reviewCount_other": "({{count}} reviews)"
+  },
+  "dashboard": {
+    "avatarTitle": "Profile photo",
+    "copyFailed": "Automatic copying isn't possible. Select the link below manually.",
+    "loadProfileFailed": "Unable to load your profile.",
+    "logout": "Log out",
+    "nav": {
+      "bookings": {
+        "description": "Pending requests, confirmations and cancellations",
+        "title": "My bookings"
+      },
+      "gallery": {
+        "description": "Photos of your work",
+        "title": "My gallery"
+      },
+      "payments": {
+        "description": "Stripe, deposit or full payment when booking",
+        "title": "Online payments"
+      },
+      "profile": {
+        "description": "Name, address, location and country",
+        "title": "My profile"
+      },
+      "services": {
+        "description": "Services, durations and prices",
+        "title": "My services"
+      },
+      "stats": {
+        "description": "Revenue, appointments, services and reviews",
+        "title": "My statistics"
+      },
+      "timeOff": {
+        "description": "Holidays and exceptional closures",
+        "title": "My time off"
+      },
+      "workingHours": {
+        "description": "Working days and slots (salon's local time)",
+        "title": "My opening hours"
+      }
+    },
+    "navLabel": "Professional area navigation",
+    "pendingApproval": {
+      "body": "Our team checks every new profile before it goes live. In the meantime, it doesn't appear in search results and can't receive bookings. You can already add your services and opening hours.",
+      "title": "Your profile is awaiting approval."
+    },
+    "publicLink": {
+      "copied": "Link copied!",
+      "copiedStatus": "Link copied to the clipboard.",
+      "copy": "Copy my link",
+      "help": "This link stays the same, even after you change your profile or services. Add it to your Instagram bio or share it elsewhere.",
+      "inputLabel": "Public link to your profile",
+      "loading": "Loading profile…",
+      "profileMissing": "Create your profile to get your public link.",
+      "title": "Shareable public link",
+      "view": "View my public profile"
+    },
+    "title": "Professional area"
+  },
+  "gallery": {
+    "added": "Photo added.",
+    "chooseImage": "Choose an image.",
+    "confirm": {
+      "body": "It will be removed from your public profile.",
+      "title": "Delete this photo?"
+    },
+    "delete": "Delete",
+    "deleted": "Photo deleted.",
+    "deleting": "Deleting…",
+    "description": "Photos of your work.",
+    "empty": "No photos yet.",
+    "form": {
+      "captionLabel": "Caption (optional)",
+      "count": "{{count}} / {{max}} photos",
+      "imageHint": "JPEG, PNG or WebP, {{max}} MB max.",
+      "imageLabel": "Image",
+      "limitReached": "You've reached the limit of {{max}} photos. Delete a photo to add another one.",
+      "submit": "Add photo",
+      "title": "Add a photo",
+      "uploading": "Uploading…"
+    },
+    "loading": "Loading gallery…",
+    "photoAlt": "Gallery photo",
+    "profileMissing": "Create your professional profile first to manage your gallery.",
+    "title": "My gallery"
+  },
+  "location": {
+    "geocodingUnavailable": "Address search is unavailable at the moment: click on the map.",
+    "hint": "Choose an address from the list, or click on the map (for example if you only work at clients' homes).",
+    "mapLabel": "Preview map: click to set your location",
+    "mapUnavailable": "Map unavailable: use the address search.",
+    "noResults": "No address found. Refine your search or click on the map.",
+    "none": "No location set.",
+    "savedAddress": "Location saved: {{label}}.",
+    "searchFailed": "Search failed.",
+    "searchLabel": "Search for your address",
+    "searchPlaceholder": "Street, number, town",
+    "searching": "Searching…",
+    "setOnMap": "Location set on the map.",
+    "suggestionsLabel": "Suggested addresses"
+  },
+  "payments": {
+    "depositError": "Enter a whole percentage between {{min}} and {{max}}.",
+    "description": "Deposit or full payment when booking, via Stripe.",
+    "loading": "Loading payments…",
+    "policy": {
+      "depositHint": "Between {{min}} and {{max}}%. The rest is paid on site.",
+      "depositLabel": "Deposit (% of price)",
+      "enableFirst": "Enable payments with Stripe first to require online payment.",
+      "modeLabel": "Payment method",
+      "refunds": "The client pays when sending their request (card or Twint). They are refunded automatically if you decline, if the request expires, if you cancel, or if they cancel in time.",
+      "title": "Payment when booking"
+    },
+    "save": "Save",
+    "saved": "Payment preferences saved.",
+    "stripe": {
+      "activate": "Enable payments with Stripe",
+      "enabled": "Payments enabled",
+      "finish": "Finish Stripe sign-up",
+      "notConfigured": "Not set up",
+      "payout": "Your clients' payments are paid directly into your Stripe account. Stripe will ask for your identity and IBAN when you sign up.",
+      "payoutWithFee": "Your clients' payments are paid directly into your Stripe account, minus a {{percent}}% commission. Stripe will ask for your identity and IBAN when you sign up.",
+      "returned": "Sign-up received: Stripe is checking your details. Payments will be enabled as soon as it is approved.",
+      "title": "Stripe account",
+      "toFinish": "Sign-up to finish"
+    },
+    "title": "Online payments",
+    "unavailable": "Online payment isn't available on the platform yet. Your clients pay on site."
+  },
+  "profile": {
+    "actions": {
+      "continue": "Continue",
+      "create": "Create my profile",
+      "previous": "Back",
+      "save": "Save",
+      "saveAndContinue": "Save and continue",
+      "saving": "Saving…"
+    },
+    "description": {
+      "create": "Four short steps. What you enter is kept on this device until your profile is created.",
+      "edit": "Name, locations, location and time zone."
+    },
+    "errors": {
+      "avatarRequired": "Add a profile photo to continue.",
+      "fixFields": "Some details need correcting.",
+      "positionRequired": "Set your location: choose a suggested address or click on the map.",
+      "radiusInteger": "The travel radius must be a whole number of kilometres.",
+      "saveFailed": "Saving failed."
+    },
+    "identity": {
+      "description": "Description",
+      "displayName": "Display name",
+      "photoHint": "Clients can see who they are trusting with their haircut.",
+      "photoTitle": "Profile photo (required)"
+    },
+    "loading": "Loading profile…",
+    "location": {
+      "city": "Town/city",
+      "country": "Country",
+      "currency": "Currency",
+      "currencyHint": "Set automatically from the country: your prices are shown in this currency, without conversion.",
+      "currencyMismatch": "This country uses a different currency from your profile ({{currency}}): the change of country will be refused.",
+      "postalCode": "Postcode (optional)",
+      "privacy": "Your name, description, town and service locations are public. The coordinates shown publicly are approximate (rounded); your exact address remains private."
+    },
+    "places": {
+      "address": "Private address (optional)",
+      "addressHint": "Required for a salon or at the professional's premises. Never published: only the owner can see it.",
+      "hint": "Your opening hours and time off apply to all locations.",
+      "legend": "Service locations (at least one)",
+      "travelRadius": "Travel radius for home visits (km)"
+    },
+    "stepOf": "Step {{current}} of {{total}}",
+    "steps": {
+      "identity": "Identity",
+      "location": "Location",
+      "places": "Service locations",
+      "timezone": "Time zone"
+    },
+    "stepsLabel": "Profile steps",
+    "success": {
+      "created": "Profile created.",
+      "saved": "Profile saved.",
+      "stepSaved": "Step saved."
+    },
+    "timezone": {
+      "hint": "Chosen explicitly: never inferred from the country or browser. It is used to calculate your booking slots.",
+      "label": "Salon time zone",
+      "missing": "Time zone not set: online booking will remain unavailable until it is set.",
+      "none": "— Not set —",
+      "saved": "Saved value",
+      "universal": "Universal time"
+    },
+    "title": {
+      "create": "Create my profile",
+      "edit": "Edit my profile"
+    }
+  },
+  "public": {
+    "gallery": {
+      "empty": "No photos yet.",
+      "loading": "Loading gallery…",
+      "photoAlt": "Photo of a haircut",
+      "title": "Gallery"
+    },
+    "header": {
+      "avatarAlt": "{{name}}'s avatar",
+      "noPlaces": "Locations not specified"
+    },
+    "reviews": {
+      "anonymousClient": "Client",
+      "empty": "No reviews yet.",
+      "loading": "Loading reviews…",
+      "title": "Reviews"
+    },
+    "services": {
+      "empty": "No services yet.",
+      "title": "Services"
+    }
+  },
+  "services": {
+    "actionFailed": "Action failed.",
+    "active": "Active",
+    "add": "Add",
+    "addFailed": "Adding failed.",
+    "addTitle": "Add a service",
+    "added": "Service added.",
+    "deactivate": "Deactivate",
+    "description": "Services, durations and prices.",
+    "edit": "Edit",
+    "empty": "No services yet.",
+    "form": {
+      "audiences": "Clientele",
+      "cancel": "Cancel",
+      "descriptionLabel": "Description (optional)",
+      "durationInvalid": "The duration must be a whole number between {{min}} and {{max}} minutes.",
+      "durationLabel": "Duration (minutes)",
+      "nameLabel": "Service name",
+      "nameRequired": "The service name is required.",
+      "priceInvalid": "Invalid price. Use an amount such as 25.50 or 25,50 (2 decimal places maximum).",
+      "priceLabel": "Price",
+      "priceTooHigh": "The price is too high.",
+      "saving": "Saving…",
+      "techniques": "Techniques / services"
+    },
+    "inactive": "Inactive",
+    "listTitle": "Services ({{count}})",
+    "loading": "Loading services…",
+    "profileMissing": "Create your professional profile first to manage your services.",
+    "reactivate": "Reactivate",
+    "save": "Save",
+    "title": "My services",
+    "updateFailed": "Update failed.",
+    "updated": "Service updated."
+  },
+  "stats": {
+    "cards": {
+      "averageRating": "Average rating",
+      "bookings": "Appointments",
+      "cancellationRate": "Cancellation rate",
+      "cancelled": "Cancelled",
+      "completed": "Completed",
+      "newClients": "New clients",
+      "refusalRate": "Decline rate",
+      "refused": "Declined",
+      "returningClients": "Returning clients",
+      "revenue": "Revenue (completed)",
+      "reviews": "Reviews"
+    },
+    "charts": {
+      "busiestHours": "Busiest hours",
+      "busiestWeekdays": "Busiest days",
+      "byMonth": "Appointments per month",
+      "byWeek": "Appointments per week",
+      "revenueByMonth": "Revenue per month",
+      "topServices": "Most popular services"
+    },
+    "from": "From",
+    "page": {
+      "chooseRange": "Choose a date range.",
+      "description": "Appointments, revenue, services and reviews.",
+      "loading": "Loading statistics…",
+      "profileMissing": "Create your professional profile first to view your statistics.",
+      "timezoneMissing": "Set your time zone to view your statistics.",
+      "title": "My statistics"
+    },
+    "period": "Period: {{range}}",
+    "rangeGroupLabel": "Statistics period",
+    "ranges": {
+      "30d": "30 days",
+      "7d": "7 days",
+      "custom": "Custom",
+      "month": "This month"
+    },
+    "rate": "{{value}}%",
+    "ratingValue": "{{value}} / 5",
+    "serviceCount": "{{count}} appts",
+    "to": "To",
+    "weekLabel": "Week {{week}} · {{year}}"
+  },
+  "timeOff": {
+    "deleteFailed": "Deletion failed.",
+    "deleted": "Time off deleted.",
+    "description": "Holidays and exceptional closures, in whole days.",
+    "form": {
+      "end": "End",
+      "hint": "Start and end dates included. For a single day, enter the same date twice. The period can't exceed {{max}} days.",
+      "reason": "Reason (optional, private)",
+      "reasonPlaceholder": "Holiday, exceptional closure…",
+      "saving": "Saving…",
+      "start": "Start",
+      "submit": "Add",
+      "title": "Add days off"
+    },
+    "list": {
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "delete": "Delete",
+      "deleteQuestion": "Delete this time off?",
+      "deleting": "Deleting…",
+      "empty": "No time off saved.",
+      "title": "Days off"
+    },
+    "loading": "Loading time off…",
+    "profileMissing": "Create your professional profile first to manage your time off.",
+    "saveFailed": "Saving failed.",
+    "saved": "Time off saved.",
+    "timezone": {
+      "error": "Your time zone is unavailable at the moment. Your days off remain saved.",
+      "known": "Your time zone: {{timezone}}. Days off are calendar dates in this time zone.",
+      "missing": "Your time zone isn't set: you can save your days off, but they will only be applied once your time zone is set.",
+      "setLink": "Set my time zone"
+    },
+    "title": "My time off"
+  },
+  "workingHours": {
+    "addSlot": "Add a slot",
+    "cancel": "Cancel",
+    "clearAll": "Clear all",
+    "clearFailed": "Clearing failed.",
+    "clearQuestion": "Clear all your saved opening hours?",
+    "cleared": "Schedule cleared.",
+    "confirm": "Confirm",
+    "description": "Working days and slots, in the salon's local time.",
+    "empty": "No time slots set. Turn on a day, then add a slot.",
+    "end": "End",
+    "endOfDay": "End of day (24:00)",
+    "errors": {
+      "endInvalid": "invalid end time (HH:MM or “End of day”).",
+      "startInvalid": "invalid start time (HH:MM expected)."
+    },
+    "intervalError": "{{day}}, slot {{number}}: {{message}}",
+    "loading": "Loading schedule…",
+    "noSlotThisDay": "No slots on this day.",
+    "profileMissing": "Create your professional profile first to set your opening hours.",
+    "removeSlot": "Remove",
+    "save": "Save schedule",
+    "saveFailed": "Saving failed.",
+    "saved": "Schedule saved.",
+    "saving": "Saving…",
+    "start": "Start",
+    "timezone": {
+      "error": "Time zone unavailable at the moment. Your schedule remains saved in local clock time.",
+      "known": "Salon's local time ({{timezone}}). This time zone is set in your profile and is used to calculate your booking slots.",
+      "missing": "Time zone not set: online booking will remain unavailable until you choose your time zone.",
+      "setLink": "Set my time zone"
+    },
+    "title": "My opening hours"
+  }
+}

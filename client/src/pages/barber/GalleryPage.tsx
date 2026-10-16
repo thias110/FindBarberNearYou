@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { LIMITS, UPLOAD_IMAGE_MIME_TYPES } from "@findbarber/shared/constants";
 import type { OwnBarberPhoto } from "@findbarber/shared/types";
@@ -28,6 +29,7 @@ const FILE_INPUT_CLASS =
   "block w-full cursor-pointer rounded-xl border border-border-strong bg-surface text-sm text-foreground file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-semibold file:text-accent-foreground hover:file:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50";
 
 export function BarberGalleryPage() {
+  const { t } = useTranslation("barber");
   const [photos, setPhotos] = useState<OwnBarberPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export function BarberGalleryPage() {
     event.preventDefault();
     setMessage(null);
     if (!file) {
-      setMessage({ kind: "error", text: "Choisissez une image." });
+      setMessage({ kind: "error", text: t("gallery.chooseImage") });
       return;
     }
     const validation = validateImageFile(file);
@@ -90,7 +92,7 @@ export function BarberGalleryPage() {
       await barberApi.addPhoto(file, caption);
       setFile(null);
       setCaption("");
-      setMessage({ kind: "success", text: "Photo ajoutée." });
+      setMessage({ kind: "success", text: t("gallery.added") });
       setReloadKey((key) => key + 1);
     } catch (err: unknown) {
       // 400 (format/légende), 409 (limite), 413 (taille) portés par le serveur.
@@ -107,7 +109,7 @@ export function BarberGalleryPage() {
     setMessage(null);
     try {
       await barberApi.deletePhoto(photo.id);
-      setMessage({ kind: "success", text: "Photo supprimée." });
+      setMessage({ kind: "success", text: t("gallery.deleted") });
       setReloadKey((key) => key + 1);
     } catch (err: unknown) {
       setMessage({ kind: "error", text: apiErrorMessage(err) });
@@ -124,14 +126,14 @@ export function BarberGalleryPage() {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-4xl space-y-6">
         <ProPageHeader
-          title="Ma galerie"
-          description="Photos de vos réalisations."
+          title={t("gallery.title")}
+          description={t("gallery.description")}
         />
 
         {loading ? (
           <Card className="space-y-4 p-6" aria-busy="true">
             <span className="sr-only" role="status">
-              Chargement de la galerie…
+              {t("gallery.loading")}
             </span>
             <Skeleton className="h-10 w-2/3" />
             <Skeleton className="h-10 w-full" />
@@ -144,10 +146,10 @@ export function BarberGalleryPage() {
         ) : profileMissing ? (
           <Card className="p-6 text-center">
             <p className="text-foreground">
-              Créez d'abord votre profil professionnel pour gérer votre galerie.
+              {t("gallery.profileMissing")}
             </p>
             <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              Créer mon profil
+              {t("common.createProfile")}
             </Link>
           </Card>
         ) : error ? (
@@ -158,7 +160,7 @@ export function BarberGalleryPage() {
               className="mt-3 min-h-[44px]"
               onClick={() => setReloadKey((key) => key + 1)}
             >
-              Réessayer
+              {t("common.retry")}
             </Button>
           </Alert>
         ) : (
@@ -169,15 +171,18 @@ export function BarberGalleryPage() {
                 className="space-y-4"
               >
                 <h2 className="text-lg font-bold text-foreground">
-                  Ajouter une photo
+                  {t("gallery.form.title")}
                 </h2>
                 <p className="text-sm text-foreground-muted">
-                  {photos.length} / {LIMITS.galleryMaxPhotos} photos
+                  {t("gallery.form.count", {
+                    count: photos.length,
+                    max: LIMITS.galleryMaxPhotos,
+                  })}
                 </p>
 
                 <Field
-                  label="Image"
-                  hint={`JPEG, PNG ou WebP, ${maxMegabytes} Mo max.`}
+                  label={t("gallery.form.imageLabel")}
+                  hint={t("gallery.form.imageHint", { max: maxMegabytes })}
                 >
                   {(control) => (
                     <input
@@ -193,7 +198,7 @@ export function BarberGalleryPage() {
                   )}
                 </Field>
 
-                <Field label="Légende (facultative)">
+                <Field label={t("gallery.form.captionLabel")}>
                   {(control) => (
                     <Input
                       {...control}
@@ -208,8 +213,9 @@ export function BarberGalleryPage() {
 
                 {limitReached && (
                   <Alert variant="warning">
-                    La limite de {LIMITS.galleryMaxPhotos} photos est atteinte.
-                    Supprimez une photo pour en ajouter une autre.
+                    {t("gallery.form.limitReached", {
+                      max: LIMITS.galleryMaxPhotos,
+                    })}
                   </Alert>
                 )}
 
@@ -219,7 +225,9 @@ export function BarberGalleryPage() {
                   isLoading={uploading}
                   disabled={uploading || limitReached}
                 >
-                  {uploading ? "Envoi…" : "Ajouter la photo"}
+                  {uploading
+                    ? t("gallery.form.uploading")
+                    : t("gallery.form.submit")}
                 </Button>
               </form>
             </Card>
@@ -235,7 +243,7 @@ export function BarberGalleryPage() {
             {photos.length === 0 ? (
               <Card className="p-6 text-center">
                 <p className="text-foreground-muted">
-                  Aucune photo pour le moment.
+                  {t("gallery.empty")}
                 </p>
               </Card>
             ) : (
@@ -246,7 +254,7 @@ export function BarberGalleryPage() {
                     <Card className="overflow-hidden">
                       <img
                         src={resolveUploadUrl(photo.imagePath) ?? ""}
-                        alt={photo.caption ?? "Photo de galerie"}
+                        alt={photo.caption ?? t("gallery.photoAlt")}
                         loading="lazy"
                         className="h-40 w-full object-cover"
                       />
@@ -263,7 +271,9 @@ export function BarberGalleryPage() {
                           isLoading={deletingId === photo.id}
                           onClick={() => setPendingDelete(photo)}
                         >
-                          {deletingId === photo.id ? "Suppression…" : "Supprimer"}
+                          {deletingId === photo.id
+                            ? t("gallery.deleting")
+                            : t("gallery.delete")}
                         </Button>
                       </div>
                     </Card>
@@ -277,14 +287,14 @@ export function BarberGalleryPage() {
 
       <ConfirmDialog
         open={pendingDelete !== null}
-        title="Supprimer cette photo ?"
-        confirmLabel="Supprimer"
+        title={t("gallery.confirm.title")}
+        confirmLabel={t("gallery.delete")}
         tone="danger"
         isLoading={deletingId !== null}
         onConfirm={() => void handleDelete()}
         onCancel={() => setPendingDelete(null)}
       >
-        <p>Elle sera retirée de votre profil public.</p>
+        <p>{t("gallery.confirm.body")}</p>
       </ConfirmDialog>
     </div>
   );

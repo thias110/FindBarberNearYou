@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { cn } from "../../lib/cn";
 import { buttonClasses } from "../ui/buttonStyles";
@@ -20,6 +21,7 @@ export function ProPageHeader({
   description,
   className,
 }: ProPageHeaderProps) {
+  const { t } = useTranslation("barber");
   return (
     <header
       className={cn(
@@ -39,7 +41,7 @@ export function ProPageHeader({
         to="/pro/dashboard"
         className={buttonClasses("ghost", "md", "shrink-0")}
       >
-        Retour au tableau de bord
+        {t("common.backToDashboard")}
       </Link>
     </header>
   );
