@@ -119,8 +119,14 @@ export function apiErrorMessage(err: unknown): string {
     : i18n.t("errors:UNKNOWN", { defaultValue: "Une erreur est survenue." });
 }
 
+// Un code renvoyé avec plusieurs messages serveur précis (ex.
+// INVALID_STATUS_TRANSITION) vaut « {{serverMessage}} » en français : le
+// message serveur, plus précis, est alors affiché tel quel.
 export function translateErrorCode(code: string, fallback: string): string {
-  return i18n.t(`errors:${code}`, { defaultValue: fallback });
+  return i18n.t(`errors:${code}`, {
+    defaultValue: fallback,
+    serverMessage: fallback,
+  });
 }
 
 async function parseResponse<T>(res: Response): Promise<T> {
