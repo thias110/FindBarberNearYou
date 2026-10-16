@@ -1,34 +1,34 @@
 // Enregistrer sans remonter (issue #56) : sur les longs formulaires de
 // l'espace pro, le bouton d'enregistrement et le résultat restent à l'écran,
-// et chaque section du profil est atteignable par une ancre.
+// et chaque étape du profil (issue #43) est atteignable par une ancre.
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, expectNoA11yViolations, loginByApi } from "./helpers";
 
 test.use({ viewport: { width: 1280, height: 640 } });
 
-test("profil : sections par ancre, bouton et résultat toujours visibles", async ({
+test("profil : étapes par ancre, bouton et résultat toujours visibles", async ({
   page,
 }) => {
   await loginByApi(page, ACCOUNTS.barber);
   await page.goto("/pro/profile");
-  const save = page.getByRole("button", { name: "Enregistrer", exact: true });
+  const next = page.getByRole("button", { name: "Enregistrer et continuer" });
 
   // En haut de la page, le bouton est déjà à l'écran.
-  await expect(save).toBeInViewport();
+  await expect(next).toBeInViewport();
 
-  // Le sommaire mène directement à une section.
+  // Le formulaire est découpé en étapes (issue #43) : chaque étape a son ancre.
   await page
-    .getByRole("navigation", { name: "Sections du profil" })
-    .getByRole("link", { name: "Devise et fuseau" })
+    .getByRole("navigation", { name: "Étapes du profil" })
+    .getByRole("button", { name: /Fuseau horaire/ })
     .click();
-  await expect(page).toHaveURL(/#devise-fuseau$/);
+  await expect(page).toHaveURL(/#fuseau$/);
   await expect(
-    page.getByRole("heading", { name: "Devise et fuseau horaire" }),
+    page.getByRole("heading", { name: "Fuseau horaire" }),
   ).toBeInViewport();
 
-  // Enregistrement depuis le milieu de la page : le résultat apparaît à côté
-  // du bouton, sans remonter.
-  await page.getByRole("heading", { name: "Localisation" }).scrollIntoViewIfNeeded();
+  // Le résultat apparaît à côté du bouton, sans remonter.
+  const save = page.getByRole("button", { name: "Enregistrer", exact: true });
+  await expect(save).toBeInViewport();
   await save.click();
   await expect(page.getByText("Profil enregistré.")).toBeInViewport();
   await expectNoA11yViolations(page);

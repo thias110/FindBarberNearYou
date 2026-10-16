@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   COUNTRIES,
   currencyForCountry,
@@ -16,16 +17,34 @@ import {
   hasIanaTimeZoneList,
   listIanaTimeZones,
 } from "@findbarber/shared/timezones";
+import { useAuth } from "../../app/auth-context";
 import { ApiError, barberApi } from "../../lib/apiClient";
+import { cn } from "../../lib/cn";
 import { useScrollToHash } from "../../lib/useScrollToHash";
-import { StickyActionBar } from "../../components/ui/StickyActionBar";
-import { buttonClasses } from "../../components/ui/buttonStyles";
+import {
+  EMPTY_PROFILE_FORM,
+  PROFILE_STEP_COUNT,
+  PROFILE_STEPS,
+  clearProfileDraft,
+  firstStepWithError,
+  fromProfile,
+  loadProfileDraft,
+  parseServerFieldErrors,
+  saveProfileDraft,
+  stepFromHash,
+  toProfileRequest,
+  validateProfileSteps,
+  type ProfileErrors,
+  type ProfileField,
+  type ProfileFormState,
+} from "../../lib/profileSteps";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
+import { StickyActionBar } from "../../components/ui/StickyActionBar";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { CONTROL_CLASS } from "../../components/ui/control";
 
@@ -57,54 +76,97 @@ const KNOWN_TIMEZONES = new Set(listIanaTimeZones());
 
 const CHECKBOX_CLASS = "h-5 w-5 shrink-0 accent-accent";
 
-// Sections du formulaire, atteignables par ancre (issue #56).
-const PROFILE_SECTIONS = [
-  { id: "identite", label: "Identité" },
-  { id: "lieux", label: "Lieux de prestation" },
-  { id: "localisation", label: "Localisation" },
-  { id: "devise-fuseau", label: "Devise et fuseau" },
-] as const;
+const LAST_STEP = PROFILE_STEP_COUNT - 1;
 
-interface FormState {
-  displayName: string;
-  description: string;
-  address: string;
-  city: string;
-  postalCode: string;
-  countryCode: string;
-  latitude: string;
-  longitude: string;
-  timezone: string;
-  places: ServicePlace[];
-  travelRadiusKm: string;
+/**
+ * Indicateur d'avancement (issue #43). En création, seules les étapes déjà
+ * atteintes sont cliquables ; en modification, toutes le sont.
+ */
+function StepIndicator({
+  current,
+  reachable,
+  onSelect,
+}: {
+  current: number;
+  reachable: number;
+  onSelect: (step: number) => void;
+}) {
+  return (
+    <nav aria-label="Étapes du profil">
+      <p className="mb-2 text-sm text-foreground-muted">
+        Étape {current + 1} sur {PROFILE_STEP_COUNT}
+      </p>
+      <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {PROFILE_STEPS.map((step, index) => {
+          const isCurrent = index === current;
+          const isDone = index < current;
+          const enabled = index <= reachable && !isCurrent;
+          return (
+            <li key={step.key}>
+              <button
+                type="button"
+                disabled={!enabled}
+                aria-current={isCurrent ? "step" : undefined}
+                onClick={() => onSelect(index)}
+                className={cn(
+                  "flex min-h-11 w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                  isCurrent
+                    ? "border-accent bg-accent-soft font-semibold text-accent-strong"
+                    : "border-border text-foreground",
+                  enabled ? "hover:border-accent/60" : "cursor-default",
+                  !enabled && !isCurrent && "opacity-60",
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
+                    isCurrent
+                      ? "border-accent-strong"
+                      : isDone
+                        ? "border-success bg-success/15 text-success"
+                        : "border-border",
+                  )}
+                >
+                  {isDone ? "✓" : index + 1}
+                </span>
+                <span className="min-w-0">{step.title}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
 }
 
-const EMPTY_FORM: FormState = {
-  displayName: "",
-  description: "",
-  address: "",
-  city: "",
-  postalCode: "",
-  countryCode: "CH",
-  latitude: "",
-  longitude: "",
-  timezone: "",
-  places: [],
-  travelRadiusKm: "",
-};
-
+// Formulaire de profil barber en étapes courtes (issue #43). Chaque étape est
+// validée avec le schéma partagé et l'erreur est affichée à côté du champ.
+// Création : les étapes validées sont gardées en brouillon local (rechargement
+// sans perte), le profil est créé à la dernière étape (l'API n'accepte qu'un
+// profil complet). Modification : chaque étape est enregistrée directement.
 export function BarberProfilePage() {
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const [form, setForm] = useState<ProfileFormState>(EMPTY_PROFILE_FORM);
   const [mode, setMode] = useState<"create" | "edit">("create");
+  const [step, setStep] = useState(0);
+  // Étape la plus avancée atteinte (création) : borne la navigation directe.
+  const [reachable, setReachable] = useState(0);
+  const [fieldErrors, setFieldErrors] = useState<ProfileErrors>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
   // Devise enregistrée (issue #39) : immuable, sert à prévenir le barber si le
   // pays choisi en utilise une autre (le serveur refuserait le changement).
   const [savedCurrency, setSavedCurrency] = useState<Currency | null>(null);
-  // Lien direct vers une section (ex. /pro/profile#localisation), une fois le
-  // formulaire affiché.
+  const { hash } = useLocation();
+  const navigate = useNavigate();
+  // Chaque étape a son ancre (/pro/profile#localisation, issue #56) : l'URL
+  // suit l'étape affichée et un lien direct ouvre l'étape visée, avec le
+  // focus sur sa carte (useScrollToHash).
   useScrollToHash(!loading);
 
   useEffect(() => {
@@ -113,30 +175,21 @@ export function BarberProfilePage() {
       .getProfile()
       .then((res) => {
         if (cancelled) return;
-        const profile = res.profile;
-        setForm({
-          displayName: profile.displayName,
-          description: profile.description,
-          address: profile.address ?? "",
-          city: profile.city,
-          postalCode: profile.postalCode ?? "",
-          countryCode: profile.countryCode,
-          latitude: String(profile.latitude),
-          longitude: String(profile.longitude),
-          timezone: profile.timezone ?? "",
-          places: profile.places,
-          travelRadiusKm:
-            profile.travelRadiusKm === null
-              ? ""
-              : String(profile.travelRadiusKm),
-        });
-        setSavedCurrency(profile.currency);
+        setForm(fromProfile(res.profile));
+        setSavedCurrency(res.profile.currency);
         setMode("edit");
+        setReachable(LAST_STEP);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
         if (err instanceof ApiError && err.code === "BARBER_PROFILE_NOT_FOUND") {
           setMode("create");
+          const draft = userId ? loadProfileDraft(userId) : null;
+          if (draft) {
+            setForm(draft.form);
+            setStep(draft.step);
+            setReachable(draft.step);
+          }
         } else {
           setError(err instanceof Error ? err.message : "Chargement impossible.");
         }
@@ -147,95 +200,130 @@ export function BarberProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [userId]);
 
-  function update(field: keyof FormState, value: string) {
+  // Brouillon de création : conservé à chaque saisie, après le chargement
+  // (sinon le formulaire vide écraserait le brouillon à restaurer).
+  useEffect(() => {
+    if (loading || mode !== "create" || !userId) return;
+    saveProfileDraft(userId, { form, step: reachable });
+  }, [form, reachable, loading, mode, userId]);
+
+  // Ancre d'URL → étape, si elle est déjà atteignable (toutes en modification).
+  useEffect(() => {
+    if (loading) return;
+    const target = stepFromHash(hash);
+    if (target !== -1 && target <= reachable) setStep(target);
+  }, [hash, loading, reachable]);
+
+  function goTo(next: number) {
+    setStep(next);
+    setReachable((current) => Math.max(current, next));
+    navigate({ hash: PROFILE_STEPS[next].anchor }, { replace: true });
+  }
+
+  function update<K extends ProfileField>(field: K, value: ProfileFormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+    setSuccess(null);
   }
 
   function togglePlace(place: ServicePlace) {
-    setForm((current) => ({
-      ...current,
-      places: current.places.includes(place)
-        ? current.places.filter((item) => item !== place)
-        : [...current.places, place],
-    }));
+    update(
+      "places",
+      form.places.includes(place)
+        ? form.places.filter((item) => item !== place)
+        : [...form.places, place],
+    );
+    // Les règles croisées (adresse, rayon) dépendent des lieux choisis.
+    setFieldErrors((current) => {
+      const next = { ...current };
+      delete next.address;
+      delete next.travelRadiusKm;
+      return next;
+    });
   }
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setError(null);
-    setSuccess(false);
+  function showErrors(errors: ProfileErrors) {
+    setFieldErrors(errors);
+    const errorStep = firstStepWithError(errors);
+    if (errorStep !== -1 && errorStep !== step) goTo(errorStep);
+  }
 
-    const latitude = Number(form.latitude);
-    const longitude = Number(form.longitude);
-
-    if (form.places.length === 0) {
-      setError("Sélectionnez au moins un lieu de prestation.");
-      return;
-    }
-    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
-      setError("La latitude doit être un nombre entre -90 et 90.");
-      return;
-    }
-    if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-      setError("La longitude doit être un nombre entre -180 et 180.");
-      return;
-    }
-
-    const requiresAddress =
-      form.places.includes("SALON") || form.places.includes("AT_PROVIDER");
-    if (requiresAddress && form.address.trim() === "") {
-      setError(
-        "Une adresse est requise pour un lieu en salon ou chez le professionnel.",
-      );
-      return;
-    }
-
-    const isMobile = form.places.includes("AT_CLIENT");
-    const travelRadiusKm =
-      form.travelRadiusKm.trim() === "" ? null : Number(form.travelRadiusKm);
-    if (
-      isMobile &&
-      (travelRadiusKm === null ||
-        !Number.isInteger(travelRadiusKm) ||
-        travelRadiusKm < LIMITS.travelRadiusKmMin ||
-        travelRadiusKm > LIMITS.travelRadiusKmMax)
-    ) {
-      setError(
-        `Un rayon d'intervention entier entre ${LIMITS.travelRadiusKmMin} et ${LIMITS.travelRadiusKmMax} km est requis pour les prestations chez le client.`,
-      );
-      return;
-    }
-
+  async function save(): Promise<boolean> {
     setSaving(true);
     try {
-      const saved = await barberApi.updateProfile({
-        displayName: form.displayName,
-        description: form.description,
-        address: form.address.trim() === "" ? null : form.address.trim(),
-        city: form.city,
-        postalCode: form.postalCode.trim() ? form.postalCode.trim() : null,
-        countryCode: form.countryCode as CountryCode,
-        latitude,
-        longitude,
-        // "" = « Non renseigné » : effacement explicite (null). Sinon le
-        // fuseau choisi est envoyé tel quel, validé côté serveur.
-        timezone: form.timezone.trim() === "" ? null : form.timezone,
-        travelRadiusKm: isMobile ? travelRadiusKm : null,
-        places: form.places,
-      });
+      const saved = await barberApi.updateProfile(toProfileRequest(form));
       setSavedCurrency(saved.profile.currency);
+      if (mode === "create" && userId) clearProfileDraft(userId);
       setMode("edit");
-      setSuccess(true);
+      setReachable(LAST_STEP);
+      return true;
     } catch (err) {
+      if (err instanceof ApiError && err.code === "VALIDATION_ERROR") {
+        const errors = parseServerFieldErrors(err.message);
+        if (Object.keys(errors).length > 0) {
+          showErrors(errors);
+          setError("Certaines informations sont à corriger.");
+          return false;
+        }
+      }
       setError(err instanceof Error ? err.message : "Enregistrement échoué.");
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    const isLast = step === LAST_STEP;
+    // En modification (ou à la dernière étape), tout le profil est envoyé :
+    // toutes les étapes sont donc validées, pas seulement l'étape courante.
+    const errors = validateProfileSteps(
+      form,
+      mode === "edit" || isLast ? LAST_STEP : step,
+    );
+    if (Object.keys(errors).length > 0) {
+      showErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+
+    if (mode === "create" && !isLast) {
+      goTo(step + 1);
+      return;
+    }
+
+    const wasCreate = mode === "create";
+    if (!(await save())) return;
+    if (isLast) {
+      setSuccess(wasCreate ? "Profil créé." : "Profil enregistré.");
+    } else {
+      setSuccess("Étape enregistrée.");
+      goTo(step + 1);
+    }
+  }
+
   const countryCurrency = currencyForCountry(form.countryCode as CountryCode);
+  const isLast = step === LAST_STEP;
+  const submitLabel = saving
+    ? "Enregistrement…"
+    : mode === "create"
+      ? isLast
+        ? "Créer mon profil"
+        : "Continuer"
+      : isLast
+        ? "Enregistrer"
+        : "Enregistrer et continuer";
 
   if (loading) {
     return (
@@ -264,274 +352,309 @@ export function BarberProfilePage() {
       <div className="mx-auto max-w-2xl space-y-6">
         <ProPageHeader
           title={mode === "create" ? "Créer mon profil" : "Modifier mon profil"}
-          description="Nom, adresse, coordonnées et pays."
+          description={
+            mode === "create"
+              ? "Quatre étapes courtes. Votre saisie est gardée sur cet appareil jusqu'à la création du profil."
+              : "Nom, lieux, localisation et fuseau horaire."
+          }
         />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Accès direct à chaque section (issue #56). */}
-          <nav aria-label="Sections du profil">
-            <ul className="flex flex-wrap gap-2">
-              {PROFILE_SECTIONS.map((section) => (
-                <li key={section.id}>
-                  <a
-                    href={`#${section.id}`}
-                    className={buttonClasses("secondary", "sm")}
-                  >
-                    {section.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+        <StepIndicator
+          current={step}
+          reachable={reachable}
+          onSelect={(index) => {
+            setError(null);
+            setSuccess(null);
+            goTo(index);
+          }}
+        />
 
-          <Card id="identite" className="scroll-mt-4 space-y-4 p-6">
-            <h2 className="text-lg font-bold text-foreground">Identité</h2>
-            <Field label="Nom affiché">
-              {(control) => (
-                <Input
-                  {...control}
-                  required
-                  maxLength={LIMITS.profileDisplayName}
-                  value={form.displayName}
-                  onChange={(e) => update("displayName", e.target.value)}
-                />
-              )}
-            </Field>
-            <Field label="Description">
-              {(control) => (
-                <textarea
-                  {...control}
-                  required
-                  rows={4}
-                  maxLength={LIMITS.profileDescription}
-                  value={form.description}
-                  onChange={(e) => update("description", e.target.value)}
-                  className={CONTROL_CLASS}
-                />
-              )}
-            </Field>
-          </Card>
-
-          <Card id="lieux" className="scroll-mt-4 space-y-4 p-6">
-            <h2 className="text-lg font-bold text-foreground">
-              Lieux de prestation
-            </h2>
-            <fieldset className="space-y-2 rounded-lg border border-border p-3">
-              <legend className="px-1 text-sm font-medium text-foreground">
-                Lieux de prestation (au moins un)
-              </legend>
-              {SERVICE_PLACES.map((place) => (
-                <label
-                  key={place}
-                  className="flex min-h-11 items-center gap-2.5 text-sm text-foreground"
-                >
-                  <input
-                    type="checkbox"
-                    className={CHECKBOX_CLASS}
-                    checked={form.places.includes(place)}
-                    onChange={() => togglePlace(place)}
-                  />
-                  {SERVICE_PLACE_LABELS[place]}
-                </label>
-              ))}
-              <p className="text-xs text-foreground-muted">
-                Vos horaires et indisponibilités s'appliquent à tous les lieux.
-              </p>
-            </fieldset>
-
-            <Field
-              label="Adresse privée (facultative)"
-              hint="Requise pour un lieu en salon ou chez le professionnel. Jamais publiée : seul le propriétaire la voit."
-            >
-              {(control) => (
-                <Input
-                  {...control}
-                  maxLength={LIMITS.profileAddress}
-                  value={form.address}
-                  onChange={(e) => update("address", e.target.value)}
-                />
-              )}
-            </Field>
-
-            {form.places.includes("AT_CLIENT") && (
-              <Field label="Rayon d'intervention chez le client (km)">
-                {(control) => (
-                  <Input
-                    {...control}
-                    type="number"
-                    min={LIMITS.travelRadiusKmMin}
-                    max={LIMITS.travelRadiusKmMax}
-                    value={form.travelRadiusKm}
-                    onChange={(e) => update("travelRadiusKm", e.target.value)}
-                  />
-                )}
-              </Field>
-            )}
-          </Card>
-
-          <Card id="localisation" className="scroll-mt-4 space-y-4 p-6">
-            <h2 className="text-lg font-bold text-foreground">
-              Localisation
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Ville">
-                {(control) => (
-                  <Input
-                    {...control}
-                    required
-                    maxLength={LIMITS.profileCity}
-                    value={form.city}
-                    onChange={(e) => update("city", e.target.value)}
-                  />
-                )}
-              </Field>
-              <Field label="Code postal (facultatif)">
-                {(control) => (
-                  <Input
-                    {...control}
-                    maxLength={LIMITS.profilePostalCode}
-                    value={form.postalCode}
-                    onChange={(e) => update("postalCode", e.target.value)}
-                  />
-                )}
-              </Field>
-            </div>
-            <Field label="Pays">
-              {(control) => (
-                <select
-                  {...control}
-                  required
-                  value={form.countryCode}
-                  onChange={(e) => update("countryCode", e.target.value)}
-                  className={CONTROL_CLASS}
-                >
-                  {COUNTRIES_SORTED.map((country) => (
-                    <option key={country.code} value={country.code}>
-                      {country.nameFr}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Latitude">
-                {(control) => (
-                  <Input
-                    {...control}
-                    required
-                    inputMode="decimal"
-                    value={form.latitude}
-                    placeholder="46.2044"
-                    onChange={(e) => update("latitude", e.target.value)}
-                  />
-                )}
-              </Field>
-              <Field label="Longitude">
-                {(control) => (
-                  <Input
-                    {...control}
-                    required
-                    inputMode="decimal"
-                    value={form.longitude}
-                    placeholder="6.1432"
-                    onChange={(e) => update("longitude", e.target.value)}
-                  />
-                )}
-              </Field>
-            </div>
-          </Card>
-
-          <Card id="devise-fuseau" className="scroll-mt-4 space-y-4 p-6">
-            <h2 className="text-lg font-bold text-foreground">
-              Devise et fuseau horaire
-            </h2>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-foreground">Devise</p>
-              <p className="text-sm text-foreground">
-                {CURRENCY_LABELS[countryCurrency]}
-              </p>
-              <p className="text-xs text-foreground-muted">
-                Déduite automatiquement du pays : vos prix sont affichés dans
-                cette devise, sans conversion.
-              </p>
-            </div>
-            {savedCurrency !== null && countryCurrency !== savedCurrency && (
-              <Alert variant="warning">
-                Ce pays utilise une autre devise que votre profil (
-                {savedCurrency}) : le changement de pays sera refusé.
-              </Alert>
-            )}
-
-            <Field
-              label="Fuseau horaire du salon"
-              hint="Choisi explicitement : jamais déduit du pays ni du navigateur. Il servira à calculer vos créneaux de réservation."
-            >
-              {(control) =>
-                hasIanaTimeZoneList() ? (
-                  <select
-                    {...control}
-                    value={form.timezone}
-                    onChange={(e) => update("timezone", e.target.value)}
-                    className={CONTROL_CLASS}
-                  >
-                    <option value="">— Non renseigné —</option>
-                    <optgroup label="Temps universel">
-                      <option value="UTC">UTC</option>
-                    </optgroup>
-                    {form.timezone !== "" &&
-                      !KNOWN_TIMEZONES.has(form.timezone) && (
-                        <optgroup label="Valeur enregistrée">
-                          <option value={form.timezone}>{form.timezone}</option>
-                        </optgroup>
-                      )}
-                    {TIMEZONE_GROUPS.map((group) => (
-                      <optgroup key={group.label} label={group.label}>
-                        {group.zones.map((zone) => (
-                          <option key={zone} value={zone}>
-                            {zone}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    {...control}
-                    maxLength={LIMITS.profileTimezone}
-                    value={form.timezone}
-                    placeholder="Europe/Zurich"
-                    onChange={(e) => update("timezone", e.target.value)}
-                    className={CONTROL_CLASS}
-                  />
-                )
-              }
-            </Field>
-
-            {mode === "edit" && form.timezone === "" && (
-              <Alert variant="warning">
-                Fuseau non renseigné : la réservation en ligne restera
-                indisponible tant qu'il n'est pas défini.
-              </Alert>
-            )}
-          </Card>
-
-          <Alert variant="info">
-            Votre nom, description, ville et lieux de prestation sont publics.
-            Les coordonnées affichées publiquement sont approximatives
-            (arrondies) ; votre adresse exacte reste privée.
-          </Alert>
-
-          <StickyActionBar
-            error={error}
-            success={success ? "Profil enregistré." : null}
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
+          <Card
+            id={PROFILE_STEPS[step].anchor}
+            className="scroll-mt-4 space-y-4 p-6"
           >
-            <Button
-              type="submit"
-              isLoading={saving}
-              className="min-h-[44px] w-full"
-            >
-              {saving ? "Enregistrement…" : "Enregistrer"}
-            </Button>
+            <h2 className="text-lg font-bold text-foreground">
+              {PROFILE_STEPS[step].title}
+            </h2>
+
+            {step === 0 && (
+              <>
+                <Field label="Nom affiché" error={fieldErrors.displayName}>
+                  {(control) => (
+                    <Input
+                      {...control}
+                      required
+                      maxLength={LIMITS.profileDisplayName}
+                      value={form.displayName}
+                      onChange={(e) => update("displayName", e.target.value)}
+                    />
+                  )}
+                </Field>
+                <Field label="Description" error={fieldErrors.description}>
+                  {(control) => (
+                    <textarea
+                      {...control}
+                      required
+                      rows={4}
+                      maxLength={LIMITS.profileDescription}
+                      value={form.description}
+                      onChange={(e) => update("description", e.target.value)}
+                      className={CONTROL_CLASS}
+                    />
+                  )}
+                </Field>
+              </>
+            )}
+
+            {step === 1 && (
+              <>
+                <fieldset
+                  className="space-y-2 rounded-lg border border-border p-3"
+                  aria-invalid={fieldErrors.places ? true : undefined}
+                  aria-describedby={fieldErrors.places ? "places-error" : undefined}
+                >
+                  <legend className="px-1 text-sm font-medium text-foreground">
+                    Lieux de prestation (au moins un)
+                  </legend>
+                  {SERVICE_PLACES.map((place) => (
+                    <label
+                      key={place}
+                      className="flex min-h-11 items-center gap-2.5 text-sm text-foreground"
+                    >
+                      <input
+                        type="checkbox"
+                        className={CHECKBOX_CLASS}
+                        checked={form.places.includes(place)}
+                        onChange={() => togglePlace(place)}
+                      />
+                      {SERVICE_PLACE_LABELS[place]}
+                    </label>
+                  ))}
+                  {fieldErrors.places ? (
+                    <p id="places-error" className="text-sm text-danger">
+                      {fieldErrors.places}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-foreground-muted">
+                      Vos horaires et indisponibilités s'appliquent à tous les lieux.
+                    </p>
+                  )}
+                </fieldset>
+
+                <Field
+                  label="Adresse privée (facultative)"
+                  hint="Requise pour un lieu en salon ou chez le professionnel. Jamais publiée : seul le propriétaire la voit."
+                  error={fieldErrors.address}
+                >
+                  {(control) => (
+                    <Input
+                      {...control}
+                      maxLength={LIMITS.profileAddress}
+                      value={form.address}
+                      onChange={(e) => update("address", e.target.value)}
+                    />
+                  )}
+                </Field>
+
+                {form.places.includes("AT_CLIENT") && (
+                  <Field
+                    label="Rayon d'intervention chez le client (km)"
+                    error={fieldErrors.travelRadiusKm}
+                  >
+                    {(control) => (
+                      <Input
+                        {...control}
+                        type="number"
+                        min={LIMITS.travelRadiusKmMin}
+                        max={LIMITS.travelRadiusKmMax}
+                        value={form.travelRadiusKm}
+                        onChange={(e) => update("travelRadiusKm", e.target.value)}
+                      />
+                    )}
+                  </Field>
+                )}
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Ville" error={fieldErrors.city}>
+                    {(control) => (
+                      <Input
+                        {...control}
+                        required
+                        maxLength={LIMITS.profileCity}
+                        value={form.city}
+                        onChange={(e) => update("city", e.target.value)}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    label="Code postal (facultatif)"
+                    error={fieldErrors.postalCode}
+                  >
+                    {(control) => (
+                      <Input
+                        {...control}
+                        maxLength={LIMITS.profilePostalCode}
+                        value={form.postalCode}
+                        onChange={(e) => update("postalCode", e.target.value)}
+                      />
+                    )}
+                  </Field>
+                </div>
+                <Field label="Pays" error={fieldErrors.countryCode}>
+                  {(control) => (
+                    <select
+                      {...control}
+                      required
+                      value={form.countryCode}
+                      onChange={(e) => update("countryCode", e.target.value)}
+                      className={CONTROL_CLASS}
+                    >
+                      {COUNTRIES_SORTED.map((country) => (
+                        <option key={country.code} value={country.code}>
+                          {country.nameFr}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">Devise</p>
+                  <p className="text-sm text-foreground">
+                    {CURRENCY_LABELS[countryCurrency]}
+                  </p>
+                  <p className="text-xs text-foreground-muted">
+                    Déduite automatiquement du pays : vos prix sont affichés
+                    dans cette devise, sans conversion.
+                  </p>
+                </div>
+                {savedCurrency !== null && countryCurrency !== savedCurrency && (
+                  <Alert variant="warning">
+                    Ce pays utilise une autre devise que votre profil (
+                    {savedCurrency}) : le changement de pays sera refusé.
+                  </Alert>
+                )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Latitude" error={fieldErrors.latitude}>
+                    {(control) => (
+                      <Input
+                        {...control}
+                        required
+                        inputMode="decimal"
+                        value={form.latitude}
+                        placeholder="46.2044"
+                        onChange={(e) => update("latitude", e.target.value)}
+                      />
+                    )}
+                  </Field>
+                  <Field label="Longitude" error={fieldErrors.longitude}>
+                    {(control) => (
+                      <Input
+                        {...control}
+                        required
+                        inputMode="decimal"
+                        value={form.longitude}
+                        placeholder="6.1432"
+                        onChange={(e) => update("longitude", e.target.value)}
+                      />
+                    )}
+                  </Field>
+                </div>
+                <Alert variant="info">
+                  Votre nom, description, ville et lieux de prestation sont
+                  publics. Les coordonnées affichées publiquement sont
+                  approximatives (arrondies) ; votre adresse exacte reste
+                  privée.
+                </Alert>
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                <Field
+                  label="Fuseau horaire du salon"
+                  hint="Choisi explicitement : jamais déduit du pays ni du navigateur. Il servira à calculer vos créneaux de réservation."
+                  error={fieldErrors.timezone}
+                >
+                  {(control) =>
+                    hasIanaTimeZoneList() ? (
+                      <select
+                        {...control}
+                        value={form.timezone}
+                        onChange={(e) => update("timezone", e.target.value)}
+                        className={CONTROL_CLASS}
+                      >
+                        <option value="">— Non renseigné —</option>
+                        <optgroup label="Temps universel">
+                          <option value="UTC">UTC</option>
+                        </optgroup>
+                        {form.timezone !== "" &&
+                          !KNOWN_TIMEZONES.has(form.timezone) && (
+                            <optgroup label="Valeur enregistrée">
+                              <option value={form.timezone}>{form.timezone}</option>
+                            </optgroup>
+                          )}
+                        {TIMEZONE_GROUPS.map((group) => (
+                          <optgroup key={group.label} label={group.label}>
+                            {group.zones.map((zone) => (
+                              <option key={zone} value={zone}>
+                                {zone}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        {...control}
+                        maxLength={LIMITS.profileTimezone}
+                        value={form.timezone}
+                        placeholder="Europe/Zurich"
+                        onChange={(e) => update("timezone", e.target.value)}
+                        className={CONTROL_CLASS}
+                      />
+                    )
+                  }
+                </Field>
+
+                {form.timezone === "" && (
+                  <Alert variant="warning">
+                    Fuseau non renseigné : la réservation en ligne restera
+                    indisponible tant qu'il n'est pas défini.
+                  </Alert>
+                )}
+              </>
+            )}
+          </Card>
+
+          {/* Actions et résultat collés en bas de l'écran (issue #56). */}
+          <StickyActionBar error={error} success={success}>
+            <div className="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+              <Button
+                type="button"
+                variant="secondary"
+                className="min-h-[44px]"
+                disabled={step === 0 || saving}
+                onClick={() => {
+                  setError(null);
+                  setSuccess(null);
+                  goTo(step - 1);
+                }}
+              >
+                Précédent
+              </Button>
+              <Button
+                type="submit"
+                isLoading={saving}
+                className="min-h-[44px] sm:min-w-56"
+              >
+                {submitLabel}
+              </Button>
+            </div>
           </StickyActionBar>
         </form>
       </div>
