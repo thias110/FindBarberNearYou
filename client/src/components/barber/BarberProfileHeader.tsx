@@ -1,28 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { COUNTRY_NAME_BY_CODE } from "@findbarber/shared/countries";
 import type { PublicBarberProfile } from "@findbarber/shared/types";
-import { intlLocale } from "../../i18n";
+import { localizedCountryName } from "../../lib/countryName";
 import { resolveUploadUrl } from "../../lib/apiClient";
 import { label } from "../../lib/labels";
 import { Badge } from "../ui/Badge";
 import { CertifiedBadge } from "./CertifiedBadge";
 import { Card } from "../ui/Card";
-
-// Nom du pays dans la langue courante (Intl) ; référence française en
-// français ou si Intl ne connaît pas le code.
-function localizedCountryName(code: string, language: string): string {
-  const french =
-    COUNTRY_NAME_BY_CODE[code as keyof typeof COUNTRY_NAME_BY_CODE] ?? code;
-  if (language.startsWith("fr")) return french;
-  try {
-    return (
-      new Intl.DisplayNames([intlLocale()], { type: "region" }).of(code) ??
-      french
-    );
-  } catch {
-    return french;
-  }
-}
 
 function StarIcon() {
   return (
@@ -48,8 +31,8 @@ export function BarberProfileHeader({
   averageRating,
   totalReviews,
 }: BarberProfileHeaderProps) {
-  const { t, i18n } = useTranslation("barber");
-  const countryName = localizedCountryName(profile.countryCode, i18n.language);
+  const { t } = useTranslation("barber");
+  const countryName = localizedCountryName(profile.countryCode);
   // Note affichée uniquement s'il existe au moins un avis (jamais inventée).
   const hasRating = totalReviews > 0 && averageRating !== null;
 

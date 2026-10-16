@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { COUNTRY_NAME_BY_CODE } from "@findbarber/shared/countries";
+import { localizedCountryName } from "../../lib/countryName";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { audienceChips } from "../../lib/barberTags";
 import { cn } from "../../lib/cn";
@@ -29,7 +29,7 @@ export function BarberResultCard({
   onSelect,
 }: BarberResultCardProps) {
   const { t } = useTranslation("client");
-  const country = COUNTRY_NAME_BY_CODE[barber.countryCode] ?? barber.countryCode;
+  const country = localizedCountryName(barber.countryCode);
   const audiences = audienceChips(barber.audiences);
 
   return (
