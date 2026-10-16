@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ROLE_HOME } from "@findbarber/shared/constants";
 import { useAuth } from "../../app/auth-context";
 import { ApiError } from "../../lib/apiClient";
@@ -20,6 +21,7 @@ interface FieldErrors {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginPage() {
+  const { t } = useTranslation("auth");
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,31 +40,29 @@ export function LoginPage() {
     (location.state as { registered?: boolean } | null)?.registered === true;
 
   useEffect(() => {
-    document.title = "Connexion — FindBarber";
+    document.title = t("login.documentTitle");
     return () => {
       document.title = "FindBarber";
     };
-  }, []);
+  }, [t]);
 
   // Message de succès après inscription : affiché une seule fois, puis retiré
   // de l'historique pour ne pas réapparaître au rechargement.
   useEffect(() => {
     if (!registered) return;
-    setSuccessMessage(
-      "Compte créé avec succès. Vous pouvez maintenant vous connecter.",
-    );
+    setSuccessMessage(t("login.registered"));
     navigate(location.pathname, { replace: true, state: null });
-  }, [registered, location.pathname, navigate]);
+  }, [registered, location.pathname, navigate, t]);
 
   function validate(): FieldErrors {
     const errors: FieldErrors = {};
     if (!email.trim()) {
-      errors.email = "L'email est requis.";
+      errors.email = t("validation.emailRequired");
     } else if (!EMAIL_PATTERN.test(email.trim())) {
-      errors.email = "Format d'email invalide.";
+      errors.email = t("validation.emailInvalid");
     }
     if (!password) {
-      errors.password = "Le mot de passe est requis.";
+      errors.password = t("validation.passwordRequired");
     }
     return errors;
   }
@@ -99,10 +99,10 @@ export function LoginPage() {
   return (
     <AuthLayout>
       <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-        Content de vous revoir.
+        {t("login.title")}
       </h1>
       <p className="mt-2 text-sm text-foreground-muted">
-        Connectez-vous pour retrouver vos rendez-vous et vos barbers favoris.
+        {t("login.subtitle")}
       </p>
 
       {successMessage && (
@@ -116,18 +116,18 @@ export function LoginPage() {
 
       {notVerified && (
         <Alert variant="warning" role="alert" className="mt-4">
-          Votre adresse email n'est pas encore vérifiée.{" "}
+          {t("login.notVerified")}{" "}
           <Link
             to="/resend-verification"
             className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            Renvoyer le lien de vérification
+            {t("actions.resendVerificationLink")}
           </Link>
         </Alert>
       )}
 
       <form ref={formRef} onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-        <Field label="Email" error={fieldErrors.email}>
+        <Field label={t("fields.email")} error={fieldErrors.email}>
           {(control) => (
             <Input
               {...control}
@@ -141,7 +141,7 @@ export function LoginPage() {
           )}
         </Field>
 
-        <Field label="Mot de passe" error={fieldErrors.password}>
+        <Field label={t("fields.password")} error={fieldErrors.password}>
           {(control) => (
             <div className="relative">
               <Input
@@ -158,8 +158,8 @@ export function LoginPage() {
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={
                   showPassword
-                    ? "Masquer le mot de passe"
-                    : "Afficher le mot de passe"
+                    ? t("fields.hidePassword")
+                    : t("fields.showPassword")
                 }
                 aria-pressed={showPassword}
                 className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-r-xl text-foreground-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
@@ -175,7 +175,7 @@ export function LoginPage() {
             to="/forgot-password"
             className="inline-flex min-h-11 items-center rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            Mot de passe oublié ?
+            {t("login.forgotPassword")}
           </Link>
         </p>
 
@@ -194,17 +194,17 @@ export function LoginPage() {
           isLoading={submitting}
           className="min-h-[44px] w-full"
         >
-          Se connecter
+          {t("actions.login")}
         </Button>
       </form>
 
       <p className="mt-4 text-center text-sm text-foreground-muted">
-        Pas encore de compte ?{" "}
+        {t("login.noAccount")}{" "}
         <Link
           to="/register"
           className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          Créer un compte
+          {t("login.createAccount")}
         </Link>
       </p>
     </AuthLayout>

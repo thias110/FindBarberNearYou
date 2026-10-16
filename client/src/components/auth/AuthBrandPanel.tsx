@@ -1,10 +1,11 @@
+import { useTranslation } from "react-i18next";
 import { Logo } from "../Logo";
 
 const BENEFITS = [
-  "Réservez simplement, au salon ou à domicile.",
-  "Comparez services, disponibilités et avis.",
-  "Gardez vos rendez-vous au même endroit.",
-];
+  "brand.benefits.book",
+  "brand.benefits.compare",
+  "brand.benefits.keep",
+] as const;
 
 function CheckIcon() {
   return (
@@ -27,6 +28,7 @@ function CheckIcon() {
 // sur mobile : l'en-tête compact de AuthLayout porte alors le logo. Sans
 // boules décoratives (issue #60), comme l'accueil.
 export function AuthBrandPanel() {
+  const { t } = useTranslation("auth");
   return (
     <div className="flex h-full min-h-screen flex-col justify-between border-r border-border bg-surface p-10">
       <div>
@@ -35,11 +37,10 @@ export function AuthBrandPanel() {
 
       <div className="max-w-md">
         <p className="text-3xl font-semibold leading-tight text-foreground">
-          Le bon barber, au bon moment.
+          {t("brand.tagline")}
         </p>
         <p className="mt-4 text-base text-foreground-muted">
-          Trouvez un professionnel près de chez vous, consultez ses services et
-          réservez votre créneau en quelques instants.
+          {t("brand.description")}
         </p>
         <ul className="mt-8 space-y-3">
           {BENEFITS.map((benefit) => (
@@ -50,15 +51,13 @@ export function AuthBrandPanel() {
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-strong">
                 <CheckIcon />
               </span>
-              <span>{benefit}</span>
+              <span>{t(benefit)}</span>
             </li>
           ))}
         </ul>
       </div>
 
-      <p className="text-xs text-foreground-muted">
-        FindBarber — trouvez le bon professionnel près de chez vous.
-      </p>
+      <p className="text-xs text-foreground-muted">{t("brand.footer")}</p>
     </div>
   );
 }

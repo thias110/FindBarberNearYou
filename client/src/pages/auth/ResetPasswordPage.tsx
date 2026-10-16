@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { authApi } from "../../lib/apiClient";
 import { authErrorMessage } from "../../lib/authMessages";
 import { AuthLayout } from "../../components/auth/AuthLayout";
@@ -18,6 +19,7 @@ const LINK_CLASS =
 // Réinitialisation (issue #9) : le jeton arrive par le lien de l'email
 // (`?token=`). Après succès, toutes les sessions sont révoquées côté serveur.
 export function ResetPasswordPage() {
+  const { t } = useTranslation("auth");
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") ?? "";
 
@@ -34,11 +36,11 @@ export function ResetPasswordPage() {
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    document.title = "Nouveau mot de passe — FindBarber";
+    document.title = t("resetPassword.documentTitle");
     return () => {
       document.title = "FindBarber";
     };
-  }, []);
+  }, [t]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -47,10 +49,12 @@ export function ResetPasswordPage() {
 
     const errors: typeof fieldErrors = {};
     if (password.length < PASSWORD_MIN_LENGTH) {
-      errors.password = `Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caractères.`;
+      errors.password = t("validation.passwordMinLength", {
+        count: PASSWORD_MIN_LENGTH,
+      });
     }
     if (confirmation !== password) {
-      errors.confirmation = "Les deux mots de passe ne correspondent pas.";
+      errors.confirmation = t("validation.passwordMismatch");
     }
     setFieldErrors(errors);
     if (errors.password || errors.confirmation) {
@@ -73,15 +77,14 @@ export function ResetPasswordPage() {
     return (
       <AuthLayout>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-          Lien incomplet
+          {t("resetPassword.incomplete.title")}
         </h1>
         <Alert variant="danger" role="alert" className="mt-4">
-          Ce lien de réinitialisation est incomplet. Utilisez le lien reçu par
-          email ou demandez-en un nouveau.
+          {t("resetPassword.incomplete.body")}
         </Alert>
         <p className="mt-4 text-center text-sm">
           <Link to="/forgot-password" className={LINK_CLASS}>
-            Demander un nouveau lien
+            {t("actions.requestNewLink")}
           </Link>
         </p>
       </AuthLayout>
@@ -92,15 +95,14 @@ export function ResetPasswordPage() {
     return (
       <AuthLayout>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-          Mot de passe modifié
+          {t("resetPassword.done.title")}
         </h1>
         <Alert variant="success" role="status" className="mt-4">
-          Votre mot de passe a été changé. Par sécurité, vos autres sessions ont
-          été déconnectées.
+          {t("resetPassword.done.body")}
         </Alert>
         <p className="mt-6 text-center text-sm">
           <Link to="/login" className={LINK_CLASS}>
-            Se connecter
+            {t("actions.login")}
           </Link>
         </p>
       </AuthLayout>
@@ -110,7 +112,7 @@ export function ResetPasswordPage() {
   return (
     <AuthLayout>
       <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-        Choisir un nouveau mot de passe
+        {t("resetPassword.title")}
       </h1>
 
       <div aria-live="polite" className="mt-4">
@@ -118,7 +120,7 @@ export function ResetPasswordPage() {
           <Alert variant="danger" role="alert">
             {error}{" "}
             <Link to="/forgot-password" className="font-medium underline">
-              Demander un nouveau lien
+              {t("actions.requestNewLink")}
             </Link>
           </Alert>
         )}
@@ -126,9 +128,9 @@ export function ResetPasswordPage() {
 
       <form ref={formRef} onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
         <Field
-          label="Nouveau mot de passe"
+          label={t("resetPassword.newPassword")}
           error={fieldErrors.password}
-          hint={`Au moins ${PASSWORD_MIN_LENGTH} caractères.`}
+          hint={t("resetPassword.minLengthHint", { count: PASSWORD_MIN_LENGTH })}
         >
           {(control) => (
             <div className="relative">
@@ -147,8 +149,8 @@ export function ResetPasswordPage() {
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={
                   showPassword
-                    ? "Masquer le mot de passe"
-                    : "Afficher le mot de passe"
+                    ? t("fields.hidePassword")
+                    : t("fields.showPassword")
                 }
                 aria-pressed={showPassword}
                 className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-r-xl text-foreground-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
@@ -160,7 +162,7 @@ export function ResetPasswordPage() {
         </Field>
 
         <Field
-          label="Confirmer le mot de passe"
+          label={t("resetPassword.confirmPassword")}
           error={fieldErrors.confirmation}
         >
           {(control) => (
@@ -177,7 +179,7 @@ export function ResetPasswordPage() {
         </Field>
 
         <Button type="submit" isLoading={submitting} className="w-full">
-          Enregistrer le mot de passe
+          {t("resetPassword.submit")}
         </Button>
       </form>
     </AuthLayout>

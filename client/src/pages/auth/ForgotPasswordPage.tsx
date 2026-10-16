@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { authApi } from "../../lib/apiClient";
 import { authErrorMessage } from "../../lib/authMessages";
 import { AuthLayout } from "../../components/auth/AuthLayout";
@@ -16,6 +17,7 @@ const LINK_CLASS =
 
 // Mot de passe oublié (issue #9) : réponse toujours neutre, comme le serveur.
 export function ForgotPasswordPage() {
+  const { t } = useTranslation("auth");
   const [email, setEmail] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -24,11 +26,11 @@ export function ForgotPasswordPage() {
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    document.title = "Mot de passe oublié — FindBarber";
+    document.title = t("forgotPassword.documentTitle");
     return () => {
       document.title = "FindBarber";
     };
-  }, []);
+  }, [t]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -38,9 +40,9 @@ export function ForgotPasswordPage() {
 
     const trimmed = email.trim();
     const validationError = !trimmed
-      ? "L'email est requis."
+      ? t("validation.emailRequired")
       : !EMAIL_PATTERN.test(trimmed)
-        ? "Format d'email invalide."
+        ? t("validation.emailInvalid")
         : null;
     setFieldError(validationError);
     if (validationError) {
@@ -62,19 +64,16 @@ export function ForgotPasswordPage() {
   return (
     <AuthLayout>
       <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-        Mot de passe oublié
+        {t("forgotPassword.title")}
       </h1>
       <p className="mt-2 text-sm text-foreground-muted">
-        Saisissez l'adresse email de votre compte : nous vous enverrons un lien
-        pour choisir un nouveau mot de passe.
+        {t("forgotPassword.subtitle")}
       </p>
 
       <div aria-live="polite" className="mt-4">
         {success && (
           <Alert variant="success" role="status">
-            Si un compte existe avec cette adresse, un lien de réinitialisation
-            vient d'être envoyé. Il est valable 1 heure. Pensez à vérifier vos
-            courriers indésirables.
+            {t("forgotPassword.success")}
           </Alert>
         )}
         {error && (
@@ -85,7 +84,7 @@ export function ForgotPasswordPage() {
       </div>
 
       <form ref={formRef} onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-        <Field label="Email" error={fieldError}>
+        <Field label={t("fields.email")} error={fieldError}>
           {(control) => (
             <Input
               {...control}
@@ -100,13 +99,13 @@ export function ForgotPasswordPage() {
         </Field>
 
         <Button type="submit" isLoading={submitting} className="w-full">
-          Envoyer le lien
+          {t("forgotPassword.submit")}
         </Button>
       </form>
 
       <p className="mt-4 text-center text-sm text-foreground-muted">
         <Link to="/login" className={LINK_CLASS}>
-          Retour à la connexion
+          {t("actions.backToLogin")}
         </Link>
       </p>
     </AuthLayout>

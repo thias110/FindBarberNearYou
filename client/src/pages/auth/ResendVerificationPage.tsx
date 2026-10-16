@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { authApi } from "../../lib/apiClient";
 import { authErrorMessage } from "../../lib/authMessages";
 import { AuthLayout } from "../../components/auth/AuthLayout";
@@ -12,6 +13,7 @@ import { focusFirstInvalid } from "../../lib/formErrors";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function ResendVerificationPage() {
+  const { t } = useTranslation("auth");
   const [email, setEmail] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -20,16 +22,16 @@ export function ResendVerificationPage() {
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    document.title = "Renvoyer la vérification — FindBarber";
+    document.title = t("resendVerification.documentTitle");
     return () => {
       document.title = "FindBarber";
     };
-  }, []);
+  }, [t]);
 
   function validate(): string | null {
     const trimmed = email.trim();
-    if (!trimmed) return "L'email est requis.";
-    if (!EMAIL_PATTERN.test(trimmed)) return "Format d'email invalide.";
+    if (!trimmed) return t("validation.emailRequired");
+    if (!EMAIL_PATTERN.test(trimmed)) return t("validation.emailInvalid");
     return null;
   }
 
@@ -62,17 +64,16 @@ export function ResendVerificationPage() {
   return (
     <AuthLayout>
       <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-        Renvoyer le lien de vérification
+        {t("actions.resendVerificationLink")}
       </h1>
       <p className="mt-2 text-sm text-foreground-muted">
-        Saisissez l'adresse email utilisée lors de votre inscription.
+        {t("resendVerification.subtitle")}
       </p>
 
       <div aria-live="polite" className="mt-4">
         {success && (
           <Alert variant="success" role="status">
-            Si un compte existe avec cette adresse, un lien de vérification vient
-            d'être envoyé. Pensez à vérifier vos courriers indésirables.
+            {t("resendVerification.success")}
           </Alert>
         )}
         {error && (
@@ -83,7 +84,7 @@ export function ResendVerificationPage() {
       </div>
 
       <form ref={formRef} onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-        <Field label="Email" error={fieldError}>
+        <Field label={t("fields.email")} error={fieldError}>
           {(control) => (
             <Input
               {...control}
@@ -102,7 +103,7 @@ export function ResendVerificationPage() {
           isLoading={submitting}
           className="min-h-[44px] w-full"
         >
-          Renvoyer le lien
+          {t("resendVerification.submit")}
         </Button>
       </form>
 
@@ -111,7 +112,7 @@ export function ResendVerificationPage() {
           to="/login"
           className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          Retour à la connexion
+          {t("actions.backToLogin")}
         </Link>
       </p>
     </AuthLayout>

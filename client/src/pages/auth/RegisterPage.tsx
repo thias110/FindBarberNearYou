@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ApiError, authApi } from "../../lib/apiClient";
 import { useLocale } from "../../app/locale-context";
 import { LanguageSelect } from "../../components/LanguageSelect";
@@ -20,12 +21,16 @@ interface FieldErrors {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const ROLE_OPTIONS: { value: "CLIENT" | "BARBER"; label: string }[] = [
-  { value: "CLIENT", label: "Je cherche un barber" },
-  { value: "BARBER", label: "Je suis barber" },
+const ROLE_OPTIONS: {
+  value: "CLIENT" | "BARBER";
+  labelKey: "register.roleClient" | "register.roleBarber";
+}[] = [
+  { value: "CLIENT", labelKey: "register.roleClient" },
+  { value: "BARBER", labelKey: "register.roleBarber" },
 ];
 
 export function RegisterPage() {
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
@@ -46,23 +51,23 @@ export function RegisterPage() {
   const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
-    document.title = "Inscription — FindBarber";
+    document.title = t("register.documentTitle");
     return () => {
       document.title = "FindBarber";
     };
-  }, []);
+  }, [t]);
 
   function validate(): FieldErrors {
     const errors: FieldErrors = {};
     if (!email.trim()) {
-      errors.email = "L'email est requis.";
+      errors.email = t("validation.emailRequired");
     } else if (!EMAIL_PATTERN.test(email.trim())) {
-      errors.email = "Format d'email invalide.";
+      errors.email = t("validation.emailInvalid");
     }
     if (!password) {
-      errors.password = "Le mot de passe est requis.";
+      errors.password = t("validation.passwordRequired");
     } else if (password.length < 8) {
-      errors.password = "Le mot de passe doit contenir au moins 8 caractères.";
+      errors.password = t("validation.passwordMinLength", { count: 8 });
     }
     return errors;
   }
@@ -112,13 +117,11 @@ export function RegisterPage() {
     return (
       <AuthLayout>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-          Vérifiez votre adresse email.
+          {t("register.checkEmail.title")}
         </h1>
 
         <Alert variant="info" role="status" className="mt-4">
-          Un lien de vérification vient d'être envoyé à votre adresse email.
-          Cliquez dessus pour activer votre compte. Pensez à vérifier vos
-          courriers indésirables.
+          {t("register.checkEmail.body")}
         </Alert>
 
         <div className="mt-6 space-y-4">
@@ -126,15 +129,15 @@ export function RegisterPage() {
             onClick={() => navigate("/resend-verification", { replace: true })}
             className="min-h-[44px] w-full"
           >
-            Renvoyer le lien de vérification
+            {t("actions.resendVerificationLink")}
           </Button>
           <p className="text-center text-sm text-foreground-muted">
-            Vous avez déjà vérifié votre email ?{" "}
+            {t("register.checkEmail.alreadyVerified")}{" "}
             <Link
               to="/login"
               className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Se connecter
+              {t("actions.login")}
             </Link>
           </p>
         </div>
@@ -145,14 +148,14 @@ export function RegisterPage() {
   return (
     <AuthLayout>
       <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-        Créez votre compte.
+        {t("register.title")}
       </h1>
       <p className="mt-2 text-sm text-foreground-muted">
-        Réservez un barber ou développez votre activité, simplement.
+        {t("register.subtitle")}
       </p>
 
       <form ref={formRef} onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-        <Field label="Nom" hint="Optionnel">
+        <Field label={t("fields.name")} hint={t("fields.optional")}>
           {(control) => (
             <Input
               {...control}
@@ -164,7 +167,7 @@ export function RegisterPage() {
           )}
         </Field>
 
-        <Field label="Email" error={fieldErrors.email}>
+        <Field label={t("fields.email")} error={fieldErrors.email}>
           {(control) => (
             <Input
               {...control}
@@ -178,7 +181,7 @@ export function RegisterPage() {
           )}
         </Field>
 
-        <Field label="Mot de passe" error={fieldErrors.password}>
+        <Field label={t("fields.password")} error={fieldErrors.password}>
           {(control) => (
             <div className="relative">
               <Input
@@ -196,8 +199,8 @@ export function RegisterPage() {
                 onClick={() => setShowPassword((visible) => !visible)}
                 aria-label={
                   showPassword
-                    ? "Masquer le mot de passe"
-                    : "Afficher le mot de passe"
+                    ? t("fields.hidePassword")
+                    : t("fields.showPassword")
                 }
                 aria-pressed={showPassword}
                 className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-r-xl text-foreground-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
@@ -209,7 +212,9 @@ export function RegisterPage() {
         </Field>
 
         <fieldset>
-          <legend className="text-sm font-medium text-foreground">Je suis</legend>
+          <legend className="text-sm font-medium text-foreground">
+            {t("register.roleLegend")}
+          </legend>
           <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {ROLE_OPTIONS.map((option) => {
               const selected = role === option.value;
@@ -232,7 +237,7 @@ export function RegisterPage() {
                     onChange={() => setRole(option.value)}
                     className="sr-only"
                   />
-                  {option.label}
+                  {t(option.labelKey)}
                 </label>
               );
             })}
@@ -257,17 +262,17 @@ export function RegisterPage() {
           isLoading={submitting}
           className="min-h-[44px] w-full"
         >
-          Créer mon compte
+          {t("register.submit")}
         </Button>
       </form>
 
       <p className="mt-4 text-center text-sm text-foreground-muted">
-        Vous avez déjà un compte ?{" "}
+        {t("register.hasAccount")}{" "}
         <Link
           to="/login"
           className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          Se connecter
+          {t("actions.login")}
         </Link>
       </p>
     </AuthLayout>

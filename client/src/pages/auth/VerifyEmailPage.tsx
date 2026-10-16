@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { authApi } from "../../lib/apiClient";
-import { runEmailVerification } from "../../lib/emailVerification";
+import {
+  runEmailVerification,
+  type EmailVerificationMessage,
+} from "../../lib/emailVerification";
 import { AuthLayout } from "../../components/auth/AuthLayout";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
@@ -9,18 +13,21 @@ import { Button } from "../../components/ui/Button";
 type Phase = "verifying" | "success" | "error";
 
 export function VerifyEmailPage() {
+  const { t } = useTranslation("auth");
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("verifying");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<EmailVerificationMessage | null>(
+    null,
+  );
   const startedRef = useRef(false);
 
   useEffect(() => {
-    document.title = "Vérification de l'email — FindBarber";
+    document.title = t("verifyEmail.documentTitle");
     return () => {
       document.title = "FindBarber";
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     // Ne lire le jeton qu'une seule fois, même après le retrait de l'URL.
@@ -58,24 +65,23 @@ export function VerifyEmailPage() {
   return (
     <AuthLayout>
       <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-        Vérification de votre email
+        {t("verifyEmail.title")}
       </h1>
 
       <div aria-live="polite" className="mt-4">
         {phase === "verifying" && (
           <Alert variant="info" role="status">
-            Vérification en cours…
+            {t("verifyEmail.verifying")}
           </Alert>
         )}
         {phase === "success" && (
           <Alert variant="success" role="status">
-            Votre adresse email est vérifiée. Vous pouvez maintenant vous
-            connecter.
+            {t("verifyEmail.success")}
           </Alert>
         )}
         {phase === "error" && (
           <Alert variant="danger" role="alert">
-            {errorMessage}
+            {errorMessage && t(errorMessage)}
           </Alert>
         )}
       </div>
@@ -85,7 +91,7 @@ export function VerifyEmailPage() {
           onClick={() => navigate("/login", { replace: true })}
           className="mt-6 min-h-[44px] w-full"
         >
-          Se connecter
+          {t("actions.login")}
         </Button>
       )}
 
@@ -95,7 +101,7 @@ export function VerifyEmailPage() {
           onClick={() => navigate("/resend-verification", { replace: true })}
           className="mt-6 min-h-[44px] w-full"
         >
-          Renvoyer le lien de vérification
+          {t("actions.resendVerificationLink")}
         </Button>
       )}
 
@@ -104,7 +110,7 @@ export function VerifyEmailPage() {
           to="/login"
           className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          Retour à la connexion
+          {t("actions.backToLogin")}
         </Link>
       </p>
     </AuthLayout>
