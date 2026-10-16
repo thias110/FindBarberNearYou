@@ -32,6 +32,7 @@ import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { buttonClasses } from "../../components/ui/buttonStyles";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 const CHECKBOX_CLASS = "h-5 w-5 shrink-0 accent-accent";
 
@@ -379,7 +380,7 @@ export function BarberServicesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-3xl space-y-6">
+        <PageContainer width="reading">
           <div className="flex items-center justify-between gap-3">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-11 w-44" />
@@ -392,7 +393,7 @@ export function BarberServicesPage() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-24 w-full" />
           </Card>
-        </div>
+        </PageContainer>
       </div>
     );
   }
@@ -400,7 +401,7 @@ export function BarberServicesPage() {
   if (profileMissing) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-2xl space-y-6">
+        <PageContainer width="reading">
           <ProPageHeader title={t("services.title")} />
           <Card className="p-6 text-center">
             <p className="text-foreground">
@@ -410,7 +411,7 @@ export function BarberServicesPage() {
               {t("common.createProfile")}
             </Link>
           </Card>
-        </div>
+        </PageContainer>
       </div>
     );
   }
@@ -419,7 +420,7 @@ export function BarberServicesPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-3xl space-y-6">
+      <PageContainer width="reading">
         <ProPageHeader
           title={t("services.title")}
           description={t("services.description")}
@@ -524,7 +525,7 @@ export function BarberServicesPage() {
         {/* Résultat affiché en bas de l'écran, là où l'utilisateur a agi
             (issue #56). */}
         <StickyActionBar error={error} success={success} />
-      </div>
+      </PageContainer>
     </div>
   );
 }

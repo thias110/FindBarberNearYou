@@ -150,7 +150,7 @@ export function AdminDashboardPage() {
             <Link
               key={item.to}
               to={item.to}
-              className="block rounded-2xl border border-border bg-surface p-5 shadow-card transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="block rounded-2xl border border-border bg-surface p-5 shadow-card transition-colors hover:bg-surface-muted focus-ring"
             >
               <span className="font-semibold text-foreground">
                 {t(`dashboard.shortcuts.${item.key}.title`)}

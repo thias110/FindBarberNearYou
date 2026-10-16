@@ -83,7 +83,7 @@ export function AdminBarberStatsPage() {
           <p className="mt-1 text-sm text-foreground-muted">
             <Link
               to="/admin/users"
-              className="font-medium text-foreground underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="font-medium text-foreground underline underline-offset-4 focus-ring"
             >
               {t("barberStats.back")}
             </Link>

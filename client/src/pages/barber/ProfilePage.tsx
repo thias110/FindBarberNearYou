@@ -53,6 +53,7 @@ import { Skeleton } from "../../components/ui/Skeleton";
 import { StickyActionBar } from "../../components/ui/StickyActionBar";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { CONTROL_CLASS } from "../../components/ui/control";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 // Noms de pays dans la langue courante (Intl), le français de référence en
 // français ou si Intl ne connaît pas le code.
@@ -131,7 +132,7 @@ function StepIndicator({
                 onClick={() => onSelect(index)}
                 className={cn(
                   "flex min-h-11 w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                  "focus-ring",
                   isCurrent
                     ? "border-accent bg-accent-soft font-semibold text-accent-strong"
                     : "border-border text-foreground",
@@ -372,7 +373,7 @@ export function BarberProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-8">
-        <div className="mx-auto max-w-2xl space-y-6">
+        <PageContainer width="reading">
           <div className="flex items-center justify-between gap-3">
             <Skeleton className="h-8 w-56" />
             <Skeleton className="h-11 w-44" />
@@ -386,14 +387,14 @@ export function BarberProfilePage() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-2/3" />
           </Card>
-        </div>
+        </PageContainer>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <PageContainer width="reading">
         <ProPageHeader
           title={
             mode === "create"
@@ -710,7 +711,7 @@ export function BarberProfilePage() {
             </div>
           </StickyActionBar>
         </form>
-      </div>
+      </PageContainer>
     </div>
   );
 }

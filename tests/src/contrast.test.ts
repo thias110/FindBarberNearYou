@@ -80,6 +80,9 @@ describe.each(Object.entries(THEMES))("contrastes AA, thème %s", (_, t) => {
     ["texte blanc / nuit", [255, 255, 255], t.night, 4.5],
     ["texte secondaire / nuit", t["night-muted"], t.night, 4.5],
     ["anneau de focus / nuit", t["ring-on-night"], t.night, 3],
+    ["blanc / cobalt (survol inverse)", [255, 255, 255], t.cobalt, 4.5],
+    ["bouton danger plein", t["danger-foreground"], t.danger, 4.5],
+    ["badge certifié (laiton)", t["brass-strong"], t["brass-soft"], 4.5],
     ...STATUSES.flatMap((s): [string, Rgb, Rgb, number][] => [
       [`${s} / surface`, t[s], t.surface, 4.5],
       [`badge ${s} (/15)`, t[s], over(t[s], t.surface, 0.15), 4.5],

@@ -8,7 +8,7 @@ import { useSiteConfig } from "../lib/siteConfig";
 // mentions légales. Chaque lien n'apparaît que si sa cible est configurée
 // côté serveur : aucune URL écrite en dur, aucun lien vide ni « # ».
 const LINK_CLASS =
-  "inline-flex min-h-11 items-center rounded-lg px-1 text-sm text-foreground-muted underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  "inline-flex min-h-11 items-center rounded-lg px-1 text-sm text-foreground-muted underline-offset-4 hover:text-foreground hover:underline focus-ring";
 
 const NETWORK_LABEL: Record<SocialNetwork, string> = {
   instagram: "Instagram",

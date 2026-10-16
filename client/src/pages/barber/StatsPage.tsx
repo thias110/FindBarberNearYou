@@ -14,6 +14,7 @@ import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { buttonClasses } from "../../components/ui/buttonStyles";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 // Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
@@ -80,7 +81,7 @@ export function BarberStatsPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-4xl space-y-6">
+      <PageContainer width="wide">
         <ProPageHeader
           title={t("stats.page.title")}
           description={t("stats.page.description")}
@@ -146,7 +147,7 @@ export function BarberStatsPage() {
         ) : stats ? (
           <BarberStatsContent stats={stats} />
         ) : null}
-      </div>
+      </PageContainer>
     </div>
   );
 }

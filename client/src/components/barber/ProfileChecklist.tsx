@@ -86,7 +86,7 @@ export function ProfileChecklist({ completion }: { completion: ProfileCompletion
                 className={cn(
                   "flex min-h-11 items-center gap-3 rounded-xl border border-border p-3",
                   "transition-colors hover:border-accent/60",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                  "focus-ring",
                 )}
               >
                 <StepIcon done={done} />

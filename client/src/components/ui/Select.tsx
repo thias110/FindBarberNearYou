@@ -11,7 +11,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <select
         ref={ref}
-        className={cn(CONTROL_CLASS, "min-h-11", className)}
+        className={cn(CONTROL_CLASS, className)}
         {...props}
       />
     );

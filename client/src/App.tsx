@@ -60,7 +60,7 @@ function AppShell() {
           <Link
             to={user ? ROLE_HOME[user.role] : "/"}
             aria-label={t("app.homeLink")}
-            className="inline-flex min-h-11 min-w-11 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="inline-flex min-h-11 min-w-11 items-center rounded-lg focus-ring"
           >
             <Logo />
           </Link>

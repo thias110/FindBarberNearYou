@@ -14,6 +14,7 @@ import { ConfirmDialog } from "../components/ui/ConfirmDialog";
 import { Field } from "../components/ui/Field";
 import { Input } from "../components/ui/Input";
 import { focusFirstInvalid } from "../lib/formErrors";
+import { PageContainer } from "../components/ui/PageContainer";
 
 // Mon compte : photo de profil (issue #55) et suppression du compte
 // (issue #14 : nLPD / RGPD). L'export des
@@ -66,7 +67,7 @@ export function AccountPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <PageContainer width="reading">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">{t("account.title")}</h1>
@@ -132,7 +133,7 @@ export function AccountPage() {
             </Button>
           </form>
         </Card>
-      </div>
+      </PageContainer>
 
       <ConfirmDialog
         open={confirmOpen}

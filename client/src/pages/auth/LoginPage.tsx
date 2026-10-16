@@ -119,7 +119,7 @@ export function LoginPage() {
           {t("login.notVerified")}{" "}
           <Link
             to="/resend-verification"
-            className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="rounded text-accent-strong underline focus-ring"
           >
             {t("actions.resendVerificationLink")}
           </Link>
@@ -162,7 +162,7 @@ export function LoginPage() {
                     : t("fields.showPassword")
                 }
                 aria-pressed={showPassword}
-                className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-r-xl text-foreground-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                className="absolute inset-y-0 right-0 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-r-xl text-foreground-muted transition-colors hover:text-foreground focus-ring-inset"
               >
                 <PasswordVisibilityIcon visible={showPassword} />
               </button>
@@ -173,7 +173,7 @@ export function LoginPage() {
         <p className="-mt-2 text-right text-sm">
           <Link
             to="/forgot-password"
-            className="inline-flex min-h-11 items-center rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="inline-flex min-h-11 items-center rounded text-accent-strong underline focus-ring"
           >
             {t("login.forgotPassword")}
           </Link>
@@ -202,7 +202,7 @@ export function LoginPage() {
         {t("login.noAccount")}{" "}
         <Link
           to="/register"
-          className="rounded text-accent-strong underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="rounded text-accent-strong underline focus-ring"
         >
           {t("login.createAccount")}
         </Link>

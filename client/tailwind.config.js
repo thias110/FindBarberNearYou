@@ -1,6 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: "class",
+  // Survols uniquement sur les appareils qui en ont (plan §2.6) : sur mobile,
+  // un `hover:` ne reste plus « collé » après un tap.
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
@@ -44,7 +49,12 @@ export default {
         // Statuts : le vert (success) est réservé aux états positifs.
         success: "rgb(var(--fb-success) / <alpha-value>)",
         warning: "rgb(var(--fb-warning) / <alpha-value>)",
-        danger: "rgb(var(--fb-danger) / <alpha-value>)",
+        danger: {
+          DEFAULT: "rgb(var(--fb-danger) / <alpha-value>)",
+          foreground: "rgb(var(--fb-danger-foreground) / <alpha-value>)",
+        },
+        // Cobalt fixe des sections nuit (identique dans les deux thèmes).
+        cobalt: "rgb(var(--fb-cobalt) / <alpha-value>)",
         info: "rgb(var(--fb-info) / <alpha-value>)",
       },
       fontFamily: {

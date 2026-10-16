@@ -18,6 +18,7 @@ import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { Skeleton } from "../../components/ui/Skeleton";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 // Paiement en ligne (issue #10, Stripe Connect) : activation du compte Stripe
 // du barber puis choix de la politique (sur place, acompte, prix complet).
@@ -109,7 +110,7 @@ export function BarberPaymentsPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <PageContainer width="reading">
         <ProPageHeader
           title={t("payments.title")}
           description={t("payments.description")}
@@ -254,7 +255,7 @@ export function BarberPaymentsPage() {
             </Card>
           </>
         ) : null}
-      </div>
+      </PageContainer>
     </div>
   );
 }

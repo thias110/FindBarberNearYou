@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useSiteConfig } from "../lib/siteConfig";
 import { Card } from "../components/ui/Card";
+import { PageContainer } from "../components/ui/PageContainer";
 
 // Mentions légales (issue #59). L'éditeur et le contact viennent de la
 // configuration serveur (LEGAL_OPERATOR_*, SUPPORT_EMAIL) ; une information
@@ -13,7 +14,7 @@ export function LegalNoticePage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
+      <PageContainer width="reading">
         <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">
           {t("legal.title")}
         </h1>
@@ -78,7 +79,7 @@ export function LegalNoticePage() {
             <p>{t("legal.ipText")}</p>
           </section>
         </Card>
-      </div>
+      </PageContainer>
     </div>
   );
 }

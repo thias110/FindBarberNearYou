@@ -45,7 +45,7 @@ export function BarberResultCard({
         onClick={() => onSelect(barber.id)}
         aria-label={t("search.result.showOnMap", { name: barber.displayName })}
         aria-pressed={selected}
-        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="absolute inset-0 z-0 rounded-2xl focus-ring"
       />
       <div className="pointer-events-none relative z-10">
         <div className="flex items-start gap-4">
@@ -68,14 +68,9 @@ export function BarberResultCard({
         {(audiences.length > 0 || barber.techniques.length > 0) && (
           <div className="mt-2 flex flex-wrap gap-1">
             {audiences.map((label) => (
-              // Accent doux : la variante `Badge` n'en dispose pas (#16 non
-              // modifiable ici), on garde le même gabarit avec les tokens.
-              <span
-                key={label}
-                className="inline-flex items-center rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-foreground"
-              >
+              <Badge key={label} variant="accent" size="sm">
                 {label}
-              </span>
+              </Badge>
             ))}
             {barber.techniques.map((code) => (
               <Badge key={code} variant="neutral">

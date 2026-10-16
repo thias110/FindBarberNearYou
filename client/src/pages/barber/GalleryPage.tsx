@@ -19,6 +19,7 @@ import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { buttonClasses } from "../../components/ui/buttonStyles";
+import { PageContainer } from "../../components/ui/PageContainer";
 
 // Lien stylé comme le bouton primaire du design system (aucun `ButtonLink`).
 const PRIMARY_LINK_CLASS = buttonClasses("primary");
@@ -26,7 +27,7 @@ const PRIMARY_LINK_CLASS = buttonClasses("primary");
 // Champ fichier restylé via les variantes `file:` de Tailwind (même contrôle,
 // même comportement d'upload).
 const FILE_INPUT_CLASS =
-  "block w-full cursor-pointer rounded-xl border border-border-strong bg-surface text-sm text-foreground file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-semibold file:text-accent-foreground hover:file:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50";
+  "block w-full cursor-pointer rounded-xl border border-border-strong bg-surface text-sm text-foreground file:mr-3 file:cursor-pointer file:rounded-full file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-semibold file:text-accent-foreground hover:file:bg-accent-hover focus-ring disabled:cursor-not-allowed disabled:opacity-50";
 
 export function BarberGalleryPage() {
   const { t } = useTranslation("barber");
@@ -124,7 +125,7 @@ export function BarberGalleryPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-4xl space-y-6">
+      <PageContainer width="wide">
         <ProPageHeader
           title={t("gallery.title")}
           description={t("gallery.description")}
@@ -283,7 +284,7 @@ export function BarberGalleryPage() {
             )}
           </>
         )}
-      </div>
+      </PageContainer>
 
       <ConfirmDialog
         open={pendingDelete !== null}

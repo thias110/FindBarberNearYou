@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../app/auth-context";
 import { cn } from "../lib/cn";
 import { Button } from "./ui/Button";
+import { PageContainer } from "./ui/PageContainer";
 
 // `key` : clé de traduction `admin:layout.nav.<key>`.
 const NAV_ITEMS: { to: string; key: string; end?: boolean }[] = [
@@ -21,9 +22,7 @@ const NAV_ITEMS: { to: string; key: string; end?: boolean }[] = [
 // avec les filtres (contour, sélection en noir).
 const NAV_LINK_BASE =
   "inline-flex min-h-[44px] items-center justify-center rounded-full px-4 text-sm " +
-  "font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 " +
-  "focus-visible:ring-accent focus-visible:ring-offset-2 " +
-  "focus-visible:ring-offset-background";
+  "font-semibold transition-colors focus-ring";
 
 // Coque commune des pages d'administration : en-tête, navigation et logout.
 // L'autorisation reste portée par RequireRole + le serveur, pas par ce layout.
@@ -39,7 +38,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <div className="mx-auto max-w-5xl space-y-6">
+      <PageContainer width="wide">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
             {t("layout.title")}
@@ -82,7 +81,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {children}
-      </div>
+      </PageContainer>
     </div>
   );
 }
