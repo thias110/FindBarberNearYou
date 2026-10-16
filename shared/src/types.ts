@@ -69,6 +69,14 @@ export interface OwnBarberProfile extends PublicBarberProfile {
   updatedAt: string;
 }
 
+// Suggestion d'adresse pour positionner le profil (issue #45). Coordonnées
+// exactes : réservées au propriétaire, jamais publiées telles quelles.
+export interface AddressSuggestion {
+  label: string;
+  latitude: number;
+  longitude: number;
+}
+
 // Progression de finalisation du profil (issue #42), vue du propriétaire.
 export interface ProfileCompletion {
   steps: { step: ProfileCompletionStep; done: boolean }[];

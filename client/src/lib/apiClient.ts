@@ -18,6 +18,7 @@ import type {
   BookingSlotsResponse,
   OwnBarberPhoto,
   OwnBarberPhotosResponse,
+  AddressSuggestion,
   OwnBarberProfile,
   ProfileCompletion,
   OwnBarberService,
@@ -310,6 +311,11 @@ export interface BarberStatsParams {
 export interface BarberApi {
   getProfile(): Promise<{ profile: OwnBarberProfile }>;
   getProfileCompletion(): Promise<{ completion: ProfileCompletion }>;
+  suggestAddresses(
+    q: string,
+    countryCode?: string,
+    signal?: AbortSignal,
+  ): Promise<{ suggestions: AddressSuggestion[] }>;
   getStats(params?: BarberStatsParams): Promise<BarberStatsResponse>;
   getPhotos(): Promise<OwnBarberPhotosResponse>;
   addPhoto(file: File, caption?: string): Promise<{ photo: OwnBarberPhoto }>;
@@ -333,6 +339,11 @@ export const barberApi: BarberApi = {
     apiFetch<{ profile: OwnBarberProfile }>("/api/barber/profile"),
   getProfileCompletion: () =>
     apiFetch<{ completion: ProfileCompletion }>("/api/barber/profile/completion"),
+  suggestAddresses: (q, countryCode, signal) =>
+    apiFetch<{ suggestions: AddressSuggestion[] }>(
+      `/api/barber/address-suggestions${toQueryString({ q, countryCode })}`,
+      { signal },
+    ),
   getStats: (params) => {
     const sp = new URLSearchParams();
     if (params?.range !== undefined) sp.set("range", params.range);

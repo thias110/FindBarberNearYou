@@ -20,16 +20,18 @@ import {
 import { useAuth } from "../../app/auth-context";
 import { ApiError, barberApi } from "../../lib/apiClient";
 import { cn } from "../../lib/cn";
+import { fieldErrorsFrom } from "../../lib/formErrors";
 import { useScrollToHash } from "../../lib/useScrollToHash";
 import {
   EMPTY_PROFILE_FORM,
+  PROFILE_FIELDS,
   PROFILE_STEP_COUNT,
   PROFILE_STEPS,
   clearProfileDraft,
   firstStepWithError,
   fromProfile,
   loadProfileDraft,
-  parseServerFieldErrors,
+  positionOf,
   saveProfileDraft,
   stepFromHash,
   toProfileRequest,
@@ -39,6 +41,7 @@ import {
   type ProfileFormState,
 } from "../../lib/profileSteps";
 import { AvatarEditor } from "../../components/account/AvatarEditor";
+import { LocationPicker } from "../../components/barber/LocationPicker";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -276,7 +279,7 @@ export function BarberProfilePage() {
         return false;
       }
       if (err instanceof ApiError && err.code === "VALIDATION_ERROR") {
-        const errors = parseServerFieldErrors(err.message);
+        const errors: ProfileErrors = fieldErrorsFrom(err, PROFILE_FIELDS);
         if (Object.keys(errors).length > 0) {
           showErrors(errors);
           setError("Certaines informations sont à corriger.");
@@ -576,32 +579,19 @@ export function BarberProfilePage() {
                     {savedCurrency}) : le changement de pays sera refusé.
                   </Alert>
                 )}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Latitude" error={fieldErrors.latitude}>
-                    {(control) => (
-                      <Input
-                        {...control}
-                        required
-                        inputMode="decimal"
-                        value={form.latitude}
-                        placeholder="46.2044"
-                        onChange={(e) => update("latitude", e.target.value)}
-                      />
-                    )}
-                  </Field>
-                  <Field label="Longitude" error={fieldErrors.longitude}>
-                    {(control) => (
-                      <Input
-                        {...control}
-                        required
-                        inputMode="decimal"
-                        value={form.longitude}
-                        placeholder="6.1432"
-                        onChange={(e) => update("longitude", e.target.value)}
-                      />
-                    )}
-                  </Field>
-                </div>
+                <LocationPicker
+                  position={positionOf(form)}
+                  onChange={(next) => {
+                    update("latitude", String(next.latitude));
+                    update("longitude", String(next.longitude));
+                  }}
+                  countryCode={form.countryCode}
+                  initialQuery={[form.address, form.postalCode, form.city]
+                    .map((part) => part.trim())
+                    .filter(Boolean)
+                    .join(", ")}
+                  error={fieldErrors.latitude ?? fieldErrors.longitude}
+                />
                 <Alert variant="info">
                   Votre nom, description, ville et lieux de prestation sont
                   publics. Les coordonnées affichées publiquement sont

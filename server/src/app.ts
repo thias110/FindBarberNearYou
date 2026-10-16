@@ -34,6 +34,7 @@ export interface AppOptions {
     resendVerification?: RateLimitOverride;
     verifyEmail?: RateLimitOverride;
     passwordReset?: RateLimitOverride;
+    geocode?: RateLimitOverride;
   };
 }
 
@@ -128,6 +129,14 @@ export function createApp(options: AppOptions = {}): express.Express {
     skip: !options.rateLimits?.passwordReset && env.NODE_ENV === "test",
   });
 
+  // Autocomplétion d'adresse (issue #45) : chaque requête appelle le
+  // fournisseur de géocodage (quota payant), d'où un bucket dédié.
+  const geocodeLimiter = createRateLimiter({
+    windowMs: options.rateLimits?.geocode?.windowMs ?? 60_000,
+    limit: options.rateLimits?.geocode?.limit ?? 30,
+    skip: !options.rateLimits?.geocode && env.NODE_ENV === "test",
+  });
+
   // Emails de réservation (issue #9) : après toute mutation réussie, la file
   // `email_outbox` est traitée sans attendre l'intervalle du répartiteur.
   app.use("/api", (req, res, next) => {
@@ -149,6 +158,7 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api/auth/resend-verification", resendVerificationLimiter);
   app.use("/api/auth/verify-email", verifyEmailLimiter);
   app.use("/api/bookings", mutationLimiter);
+  app.use("/api/barber/address-suggestions", geocodeLimiter);
   app.use("/api/barber", mutationLimiter);
   // Modérations admin (suspend/reactivate/hide) : même bucket mutations que
   // les autres écritures sensibles ; les GET admin ne sont pas comptés.

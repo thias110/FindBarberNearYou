@@ -6,7 +6,8 @@ import {
   clearProfileDraft,
   firstStepWithError,
   loadProfileDraft,
-  parseServerFieldErrors,
+  PROFILE_FIELDS,
+  positionOf,
   saveProfileDraft,
   stepFromHash,
   toProfileRequest,
@@ -51,10 +52,10 @@ describe("validateProfileSteps", () => {
     expect(validateProfileSteps({ ...mobile, travelRadiusKm: "15" }, 1)).toEqual({});
   });
 
-  it("refuses empty or non-numeric coordinates with a French message", () => {
+  it("asks for a position (address or map) when coordinates are missing", () => {
     const errors = validateProfileSteps({ ...complete, latitude: "", longitude: "abc" }, 2);
-    expect(errors.latitude).toMatch(/latitude/);
-    expect(errors.longitude).toMatch(/longitude/);
+    expect(errors.latitude).toMatch(/choisissez une adresse suggérée ou cliquez sur la carte/);
+    expect(errors.longitude).toBe(errors.latitude);
     expect(validateProfileSteps({ ...complete, latitude: "46,2" }, 2)).toEqual({});
   });
 
@@ -83,13 +84,17 @@ describe("stepFromHash", () => {
   });
 });
 
-describe("parseServerFieldErrors", () => {
-  it("maps VALIDATION_ERROR details to form fields and ignores unknown paths", () => {
-    expect(
-      parseServerFieldErrors(
-        "city: La ville est requise.; places.0: Valeur invalide; currency: x; (root): y",
-      ),
-    ).toEqual({ city: "La ville est requise.", places: "Valeur invalide" });
+describe("positionOf / PROFILE_FIELDS (issue #45)", () => {
+  it("returns the chosen position only when both coordinates are numbers", () => {
+    expect(positionOf(complete)).toEqual({ latitude: 46.2, longitude: 6.14 });
+    expect(positionOf({ ...complete, latitude: "" })).toBeNull();
+    expect(positionOf({ ...complete, longitude: "x" })).toBeNull();
+  });
+
+  it("lists every form field for server error mapping", () => {
+    expect(PROFILE_FIELDS).toContain("latitude");
+    expect(PROFILE_FIELDS).toContain("displayName");
+    expect(PROFILE_FIELDS).toHaveLength(11);
   });
 });
 

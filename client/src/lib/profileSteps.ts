@@ -101,9 +101,14 @@ const FILLER: ProfileFormState = {
   travelRadiusKm: "10",
 };
 
+// Position (issue #45) : plus de champ latitude/longitude, le barber choisit
+// une adresse ou clique sur la carte. Message unique sous le sélecteur.
+const POSITION_MESSAGE =
+  "Indiquez votre position : choisissez une adresse suggérée ou cliquez sur la carte.";
+
 const NUMBER_MESSAGES: Partial<Record<ProfileField, string>> = {
-  latitude: "La latitude doit être un nombre entre -90 et 90.",
-  longitude: "La longitude doit être un nombre entre -180 et 180.",
+  latitude: POSITION_MESSAGE,
+  longitude: POSITION_MESSAGE,
   travelRadiusKm: "Le rayon d'intervention doit être un nombre entier de kilomètres.",
 };
 
@@ -196,22 +201,20 @@ export function firstStepWithError(errors: ProfileErrors): number {
   );
 }
 
-const ALL_FIELDS = new Set<string>(PROFILE_STEPS.flatMap((step) => step.fields));
+/** Champs du formulaire, pour rattacher les erreurs du serveur (issue #57). */
+export const PROFILE_FIELDS: readonly ProfileField[] = PROFILE_STEPS.flatMap(
+  (step) => step.fields,
+);
 
-/**
- * Rattache aux champs les erreurs d'un 400 VALIDATION_ERROR du serveur, dont le
- * message a la forme « champ: message; champ.0: message ». Les chemins
- * inconnus sont ignorés (l'erreur globale reste affichée).
- */
-export function parseServerFieldErrors(message: string): ProfileErrors {
-  const errors: ProfileErrors = {};
-  for (const part of message.split("; ")) {
-    const match = /^([A-Za-z]+)(?:\.[^:]*)?: (.+)$/.exec(part);
-    if (!match || !ALL_FIELDS.has(match[1])) continue;
-    const field = match[1] as ProfileField;
-    errors[field] ??= match[2];
-  }
-  return errors;
+/** Position choisie (adresse ou clic sur la carte), ou null si absente. */
+export function positionOf(
+  form: ProfileFormState,
+): { latitude: number; longitude: number } | null {
+  const latitude = parseNumber(form.latitude);
+  const longitude = parseNumber(form.longitude);
+  return Number.isFinite(latitude) && Number.isFinite(longitude)
+    ? { latitude, longitude }
+    : null;
 }
 
 // --- Brouillon local (création uniquement) ---

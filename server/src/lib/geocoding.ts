@@ -15,9 +15,22 @@ export interface GeocodingResult {
   longitude: number;
 }
 
+// Suggestion d'adresse (issue #45) : libellé du fournisseur + coordonnées.
+export interface AddressSuggestion extends GeocodingResult {
+  label: string;
+}
+
+export interface SuggestOptions {
+  /** Code pays ISO alpha-2 pour restreindre les résultats, facultatif. */
+  countryCode?: string;
+  limit: number;
+}
+
 /** Abstraction testable : les tests fournissent une implémentation factice. */
 export interface Geocoder {
   geocode(address: string): Promise<GeocodingResult>;
+  /** Autocomplétion d'adresse ; facultative pour les faux géocodeurs. */
+  suggest?(query: string, options: SuggestOptions): Promise<AddressSuggestion[]>;
 }
 
 /**
@@ -76,6 +89,52 @@ export class MapTilerGeocoder implements Geocoder {
     }
     return coordinates;
   }
+
+  async suggest(
+    query: string,
+    options: SuggestOptions,
+  ): Promise<AddressSuggestion[]> {
+    const params = new URLSearchParams({
+      key: this.apiKey,
+      autocomplete: "true",
+      language: "fr",
+      limit: String(options.limit),
+    });
+    if (options.countryCode) params.set("country", options.countryCode.toLowerCase());
+    const url = `${this.endpoint}/${encodeURIComponent(query)}.json?${params.toString()}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) throw new Error("bad status");
+      return extractSuggestions(await response.json(), options.limit);
+    } catch {
+      // Jamais la saisie en clair dans le message d'erreur.
+      throw new AppError(
+        503,
+        "GEOCODING_UNAVAILABLE",
+        "Service de géocodage indisponible.",
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+}
+
+/** Suggestions valides d'une réponse GeoJSON, sans confiance dans la forme. */
+function extractSuggestions(data: unknown, limit: number): AddressSuggestion[] {
+  if (typeof data !== "object" || data === null) return [];
+  const features = (data as { features?: unknown }).features;
+  if (!Array.isArray(features)) return [];
+  const result: AddressSuggestion[] = [];
+  for (const feature of features) {
+    if (result.length >= limit) break;
+    const coordinates = extractCoordinates({ features: [feature] });
+    const label = (feature as { place_name?: unknown } | null)?.place_name;
+    if (!coordinates || typeof label !== "string" || label.trim() === "") continue;
+    result.push({ label: label.trim().slice(0, 300), ...coordinates });
+  }
+  return result;
 }
 
 /** Extrait `[longitude, latitude]` du premier feature GeoJSON, sans confiance. */
@@ -126,4 +185,20 @@ export async function geocodeAddress(
   address: string,
 ): Promise<GeocodingResult> {
   return resolveGeocoder().geocode(address);
+}
+
+/** Autocomplétion d'adresse via le géocodeur actif (issue #45). */
+export async function suggestAddresses(
+  query: string,
+  options: SuggestOptions,
+): Promise<AddressSuggestion[]> {
+  const geocoder = resolveGeocoder();
+  if (!geocoder.suggest) {
+    throw new AppError(
+      503,
+      "GEOCODING_UNAVAILABLE",
+      "Recherche d'adresse indisponible.",
+    );
+  }
+  return geocoder.suggest(query, options);
 }

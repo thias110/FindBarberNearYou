@@ -77,6 +77,41 @@ describe("MapTilerGeocoder", () => {
   });
 });
 
+describe("MapTilerGeocoder.suggest (issue #45)", () => {
+  it("returns labelled suggestions, skipping invalid features, with country and limit", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        features: [
+          { place_name: "Rue du Rhône 1, Genève", geometry: { coordinates: [6.15, 46.2] } },
+          { place_name: "Sans coordonnées", geometry: {} },
+          { geometry: { coordinates: [6.1, 46.1] } },
+          { place_name: "Rue du Rhône 1, Sion", geometry: { coordinates: [7.36, 46.23] } },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const geocoder = new MapTilerGeocoder("test-key");
+    await expect(
+      geocoder.suggest("Rue du Rhône 1", { countryCode: "CH", limit: 5 }),
+    ).resolves.toEqual([
+      { label: "Rue du Rhône 1, Genève", latitude: 46.2, longitude: 6.15 },
+      { label: "Rue du Rhône 1, Sion", latitude: 46.23, longitude: 7.36 },
+    ]);
+    const url = String(fetchMock.mock.calls[0][0]);
+    expect(url).toContain("autocomplete=true");
+    expect(url).toContain("country=ch");
+    expect(url).toContain("limit=5");
+  });
+
+  it("throws GEOCODING_UNAVAILABLE without echoing the query", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({}, 500)));
+    const geocoder = new MapTilerGeocoder("test-key");
+    const error = await geocoder.suggest("Rue Secrète 9", { limit: 5 }).catch((e) => e);
+    expect(error).toMatchObject({ code: "GEOCODING_UNAVAILABLE", status: 503 });
+    expect(String(error.message)).not.toContain("Secrète");
+  });
+});
+
 describe("setGeocoder / resolveGeocoder", () => {
   it("returns the injected geocoder", () => {
     const fake = { geocode: async () => ({ latitude: 0, longitude: 0 }) };

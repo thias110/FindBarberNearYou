@@ -5,6 +5,8 @@ import { barberPhotos, type BarberPhotoRow } from "@findbarber/shared/schema";
 import { LIMITS } from "@findbarber/shared/constants";
 import type { OwnBarberPhoto } from "@findbarber/shared/types";
 import {
+  ADDRESS_SUGGESTION_LIMIT,
+  addressSuggestionQuerySchema,
   barberStatsQuerySchema,
   galleryPhotoCreateSchema,
   galleryPhotoParamsSchema,
@@ -19,6 +21,7 @@ import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
 import { uploadImage } from "../../middleware/upload.js";
 import { AppError } from "../../lib/errors.js";
+import { suggestAddresses } from "../../lib/geocoding.js";
 import { toGalleryWebp } from "../../lib/images.js";
 import { publicUploadPath, remove, save } from "../../lib/storage.js";
 import { validationError } from "../../lib/validation.js";
@@ -69,6 +72,26 @@ barberRouter.get("/profile", requireAuth, requireRole("BARBER"), async (req, res
   const profile = await getOwnProfile(req.user!.id);
   res.json({ profile });
 });
+
+// Autocomplétion d'adresse (issue #45) : positionne le profil sans saisir de
+// latitude/longitude. Le géocodage passe par le serveur : la clé MapTiler
+// n'est jamais exposée au navigateur. BARBER uniquement, limité en débit.
+barberRouter.get(
+  "/address-suggestions",
+  requireAuth,
+  requireRole("BARBER"),
+  async (req, res) => {
+    const parsed = addressSuggestionQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      throw validationError(parsed.error);
+    }
+    const suggestions = await suggestAddresses(parsed.data.q, {
+      countryCode: parsed.data.countryCode,
+      limit: ADDRESS_SUGGESTION_LIMIT,
+    });
+    res.json({ suggestions });
+  },
+);
 
 // Checklist de finalisation du profil (issue #42) : propriétaire uniquement.
 barberRouter.get(

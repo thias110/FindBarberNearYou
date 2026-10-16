@@ -92,9 +92,29 @@ test("barber : création du profil en étapes, brouillon conservé au rechargeme
   await page.getByRole("button", { name: "Continuer" }).click();
 
   await page.getByLabel("Ville").fill("Genève");
-  await page.getByLabel("Latitude").fill("46.2044");
-  await page.getByLabel("Longitude").fill("6.1432");
   await expect(page.getByText("Franc suisse (CHF)")).toBeVisible();
+  // Position (issue #45) : plus de champ latitude/longitude.
+  await expect(page.getByLabel("Latitude")).toHaveCount(0);
+  await expect(page.getByLabel("Longitude")).toHaveCount(0);
+  await page.getByRole("button", { name: "Continuer" }).click();
+  await expect(page.getByText(/choisissez une adresse suggérée ou cliquez sur la carte/)).toBeVisible();
+
+  // Autocomplétion simulée (le géocodage réel passe par le serveur).
+  await page.route(`${API}/api/barber/address-suggestions*`, (route) => {
+    const url = new URL(route.request().url());
+    expect(url.searchParams.get("countryCode")).toBe("CH");
+    return route.fulfill({
+      json: {
+        suggestions: [
+          { label: "Rue du Test 1, 1201 Genève", latitude: 46.2044, longitude: 6.1432 },
+        ],
+      },
+    });
+  });
+  await page.getByRole("combobox", { name: "Rechercher votre adresse" }).fill("Rue du Test 1");
+  await page.getByRole("button", { name: "Rue du Test 1, 1201 Genève" }).click();
+  await expect(page.getByText("Position enregistrée : Rue du Test 1, 1201 Genève.")).toBeVisible();
+  await expectNoA11yViolations(page);
   await page.getByRole("button", { name: "Continuer" }).click();
 
   await expect(page.getByText("Étape 4 sur 4")).toBeVisible();

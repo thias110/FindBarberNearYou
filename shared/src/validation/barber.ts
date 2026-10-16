@@ -396,6 +396,27 @@ export type BarberSearchQuery = z.infer<typeof barberSearchQuerySchema>;
 // tout paramètre est rejeté, comme pour la recherche.
 export const emptyQuerySchema = z.object({}).strict();
 
+// --- Autocomplétion d'adresse du profil (issue #45) ---
+// Requête du barber authentifié : saisie trimée (3..200 caractères), pays
+// facultatif pour restreindre les résultats. Paramètres uniques (pas de tableau).
+export const ADDRESS_SUGGESTION_LIMIT = 5;
+
+export const addressSuggestionQuerySchema = z
+  .object({
+    q: z
+      .string()
+      .trim()
+      .min(3, "Saisissez au moins 3 caractères.")
+      .max(200, "La recherche est trop longue."),
+    countryCode: z.preprocess(
+      normalizeFilter,
+      z.string().refine(isCountryCode, "Code pays invalide.").optional(),
+    ),
+  })
+  .strict();
+
+export type AddressSuggestionQuery = z.infer<typeof addressSuggestionQuerySchema>;
+
 // --- Horaires hebdomadaires (remplacement complet par PUT) ---
 // Les heures sont des minutes murales locales (0..1439 pour un départ,
 // 1..1440 pour une fin ; 1440 = 24:00). Refuse les doublons, les
