@@ -18,11 +18,23 @@
     accent-color: rgb(var(--fb-accent));
   }
 
-  /* Titres Figtree (issue #27) : approche resserrée, comme une enseigne. Les
-     classes `tracking-*` restent prioritaires (couche utilities). */
+  /* Titres en Bricolage Grotesque (design system « Dégradé », §2.2) :
+     approche resserrée pour les tailles d'affichage. Les classes `font-*` et
+     `tracking-*` restent prioritaires (couche utilities). */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--fb-font-display);
+  }
+
   h1,
   h2 {
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
+  }
+
+  h3,
+  h4 {
+    letter-spacing: -0.01em;
   }
 }
 
@@ -99,7 +111,7 @@
 }
 
 .fb-map-marker--selected .fb-map-marker__ring {
-  stroke: rgb(var(--fb-gold));
+  stroke: rgb(var(--fb-brass));
 }
 
 .fb-map-marker--selected .fb-map-marker__dot {
@@ -107,7 +119,7 @@
 }
 
 .fb-map-marker:focus-visible {
-  outline: 2px solid rgb(var(--fb-accent));
+  outline: 2px solid rgb(var(--fb-ring));
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -131,7 +143,7 @@
 .dark .maplibregl-ctrl-group {
   background-color: rgb(var(--fb-surface));
   border: 1px solid rgb(var(--fb-border));
-  box-shadow: var(--fb-shadow-md);
+  box-shadow: var(--fb-shadow-2);
 }
 
 .dark .maplibregl-ctrl-group button + button {

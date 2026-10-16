@@ -5,16 +5,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Palette de compatibilité alignée sur l'accent bleu (issue #27).
-        brand: {
-          50: "#F2F6FE",
-          100: "#E8F0FE",
-          300: "#8DB4FF",
-          500: "#1463F3",
-          700: "#0F4FC4",
-          800: "#0C3F9C",
-          900: "#0E1B3D",
-        },
         // Tokens sémantiques (pilotés par client/src/styles/tokens.css).
         // Format `rgb(var(--fb-x) / <alpha-value>)` : canaux RGB séparés par
         // des espaces, ce qui autorise aussi les modificateurs d'opacité
@@ -34,9 +24,22 @@ export default {
           // Texte d'accent lisible (liens, mentions) ; `accent` reste pour les fonds.
           strong: "rgb(var(--fb-accent-strong) / <alpha-value>)",
         },
-        gold: {
-          DEFAULT: "rgb(var(--fb-gold) / <alpha-value>)",
-          soft: "rgb(var(--fb-gold-soft) / <alpha-value>)",
+        // Laiton : confiance (étoiles, badge certifié). `brass-strong` est la
+        // seule version admise en texte.
+        brass: {
+          DEFAULT: "rgb(var(--fb-brass) / <alpha-value>)",
+          strong: "rgb(var(--fb-brass-strong) / <alpha-value>)",
+          soft: "rgb(var(--fb-brass-soft) / <alpha-value>)",
+        },
+        // Sections « nuit » : identiques dans les deux thèmes.
+        night: {
+          DEFAULT: "rgb(var(--fb-night) / <alpha-value>)",
+          2: "rgb(var(--fb-night-2) / <alpha-value>)",
+          muted: "rgb(var(--fb-night-muted) / <alpha-value>)",
+        },
+        ring: {
+          DEFAULT: "rgb(var(--fb-ring) / <alpha-value>)",
+          "on-night": "rgb(var(--fb-ring-on-night) / <alpha-value>)",
         },
         // Statuts : le vert (success) est réservé aux états positifs.
         success: "rgb(var(--fb-success) / <alpha-value>)",
@@ -46,18 +49,54 @@ export default {
       },
       fontFamily: {
         sans: ["var(--fb-font-sans)"],
+        display: ["var(--fb-font-display)"],
+      },
+      // Échelle typographique (§2.2) : tailles fluides pour l'affichage.
+      fontSize: {
+        display: ["var(--fb-text-display)", { lineHeight: "1.02" }],
+        h1: ["var(--fb-text-h1)", { lineHeight: "1.08" }],
+        h2: ["var(--fb-text-h2)", { lineHeight: "1.12" }],
+        h3: ["var(--fb-text-h3)", { lineHeight: "1.25" }],
+        h4: ["var(--fb-text-h4)", { lineHeight: "1.3" }],
+      },
+      spacing: {
+        section: "var(--fb-space-section)",
+        block: "var(--fb-space-block)",
+        stack: "var(--fb-space-stack)",
       },
       // Rayons pilotés par les tokens (`--fb-radius-*`) : les classes
       // existantes (`rounded-lg`, `rounded-2xl`…) suivent le design system.
       borderRadius: {
-        md: "var(--fb-radius-sm)",
-        lg: "var(--fb-radius-control)",
-        xl: "var(--fb-radius-panel)",
-        "2xl": "var(--fb-radius-card)",
+        md: "var(--fb-radius-xs)",
+        lg: "var(--fb-radius-sm)",
+        xl: "var(--fb-radius-md)",
+        "2xl": "var(--fb-radius-lg)",
+        "3xl": "var(--fb-radius-xl)",
+        "4xl": "var(--fb-radius-2xl)",
       },
+      // Ombres (§2.1). `card` et `card-sm` restent comme alias des niveaux 2
+      // et 1 tant que les composants n'ont pas été migrés (lots DS-2, DS-3).
       boxShadow: {
-        card: "var(--fb-shadow-md)",
-        "card-sm": "var(--fb-shadow-sm)",
+        1: "var(--fb-shadow-1)",
+        2: "var(--fb-shadow-2)",
+        3: "var(--fb-shadow-3)",
+        cta: "var(--fb-shadow-cta)",
+        card: "var(--fb-shadow-2)",
+        "card-sm": "var(--fb-shadow-1)",
+      },
+      // Mouvement (§2.5).
+      transitionDuration: {
+        instant: "var(--fb-motion-instant)",
+        fast: "var(--fb-motion-fast)",
+        base: "var(--fb-motion-base)",
+        slow: "var(--fb-motion-slow)",
+        exit: "var(--fb-motion-exit)",
+        signature: "var(--fb-motion-signature)",
+      },
+      transitionTimingFunction: {
+        press: "var(--fb-ease-press)",
+        out: "var(--fb-ease-out)",
+        exit: "var(--fb-ease-exit)",
       },
     },
   },

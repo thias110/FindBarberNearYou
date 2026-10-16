@@ -24,9 +24,10 @@ function parseTokens(block: string): Record<string, Rgb> {
 }
 
 const [lightBlock, darkBlock] = css.split(".dark");
+// Le thème sombre hérite des tokens de :root qu'il ne redéfinit pas (ex. `night`).
 const THEMES = {
   clair: parseTokens(lightBlock),
-  sombre: parseTokens(darkBlock),
+  sombre: { ...parseTokens(lightBlock), ...parseTokens(darkBlock) },
 };
 
 function luminance([r, g, b]: Rgb): number {
@@ -67,7 +68,18 @@ describe.each(Object.entries(THEMES))("contrastes AA, thème %s", (_, t) => {
     ["texte d'accent / fond", t["accent-strong"], t.background, 4.5],
     ["texte d'accent / accent-soft", t["accent-strong"], t["accent-soft"], 4.5],
     ["bordure de champ / surface", t["border-strong"], t.surface, 3],
-    ["anneau de focus / fond", t.accent, t.background, 3],
+    ["anneau de focus / fond", t.ring, t.background, 3],
+    ["anneau de focus / surface", t.ring, t.surface, 3],
+    // Laiton : élément d'interface (étoiles, bordure de badge) >= 3:1,
+    // texte en laiton uniquement en `brass-strong` >= 4.5:1.
+    ["laiton / fond", t.brass, t.background, 3],
+    ["laiton / surface", t.brass, t.surface, 3],
+    ["texte laiton / surface", t["brass-strong"], t.surface, 4.5],
+    ["texte / brass-soft (badge certifié)", t.foreground, t["brass-soft"], 4.5],
+    // Sections « nuit » (identiques dans les deux thèmes).
+    ["texte blanc / nuit", [255, 255, 255], t.night, 4.5],
+    ["texte secondaire / nuit", t["night-muted"], t.night, 4.5],
+    ["anneau de focus / nuit", t["ring-on-night"], t.night, 3],
     ...STATUSES.flatMap((s): [string, Rgb, Rgb, number][] => [
       [`${s} / surface`, t[s], t.surface, 4.5],
       [`badge ${s} (/15)`, t[s], over(t[s], t.surface, 0.15), 4.5],

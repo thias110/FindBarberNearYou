@@ -4,7 +4,7 @@ import { cn } from "../../lib/cn";
 export type BadgeVariant =
   | "neutral"
   | "accent"
-  | "gold"
+  | "brass"
   | "success"
   | "warning"
   | "danger"
@@ -14,8 +14,8 @@ const VARIANTS: Record<BadgeVariant, string> = {
   neutral: "border border-border bg-surface-muted text-foreground-muted",
   // Fond doux + texte d'accent (ex. « Certifié ») : >= 4.5:1, testé.
   accent: "bg-accent-soft text-accent-strong",
-  // L'or reste une touche (fond/bordure) : jamais du texte courant.
-  gold: "border border-gold bg-gold-soft text-foreground",
+  // Le laiton reste une touche (fond/bordure) : jamais du texte courant.
+  brass: "border border-brass bg-brass-soft text-foreground",
   // Variantes de statut additives (le vert est réservé au succès).
   success: "bg-success/15 text-success",
   warning: "bg-warning/15 text-warning",

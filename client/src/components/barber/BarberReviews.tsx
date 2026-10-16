@@ -14,7 +14,7 @@ function StarIcon() {
       aria-hidden="true"
       viewBox="0 0 24 24"
       fill="currentColor"
-      className="h-3.5 w-3.5 text-gold"
+      className="h-3.5 w-3.5 text-brass"
     >
       <path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z" />
     </svg>
