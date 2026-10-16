@@ -9,7 +9,6 @@ import {
 } from "@findbarber/shared/schema";
 import {
   LIMITS,
-  SERVICE_PLACE_LABELS,
   type EmailKind,
   type NotificationType,
 } from "@findbarber/shared/constants";
@@ -95,7 +94,12 @@ export async function enqueueBookingEmail(
   input: { kind: EmailKind; recipientUserId: string; bookingId: string },
 ): Promise<void> {
   const [recipient] = await runner
-    .select({ email: users.email, name: users.name, status: users.status })
+    .select({
+      email: users.email,
+      name: users.name,
+      status: users.status,
+      locale: users.locale,
+    })
     .from(users)
     .where(eq(users.id, input.recipientUserId))
     .limit(1);
@@ -123,12 +127,14 @@ export async function enqueueBookingEmail(
     input.kind,
     {
       to: recipient.email,
+      // Langue du DESTINATAIRE, jamais celle de l'auteur de l'action.
+      locale: recipient.locale,
       recipientName: recipient.name,
       barberName: row.booking.barberDisplayName,
       barberProfileId: row.booking.barberProfileId,
       clientName: client?.name ?? null,
       serviceName: row.booking.serviceName,
-      placeLabel: SERVICE_PLACE_LABELS[row.booking.servicePlace],
+      servicePlace: row.booking.servicePlace,
       startAt: row.booking.startAt,
       timeZone: row.timezone ?? DEFAULT_TIMEZONE,
       declineReason: row.booking.declineReason,

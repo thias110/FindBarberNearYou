@@ -17,16 +17,25 @@ async function sendSafely(message: MailMessage, label: string): Promise<void> {
   }
 }
 
+// `locale` : langue du destinataire (`users.locale`), repli français.
 export async function sendVerificationEmail(input: {
   to: string;
   token: string;
+  locale?: string | null;
 }): Promise<void> {
-  await sendSafely(verificationEmail(input.to, input.token), "vérification");
+  await sendSafely(
+    verificationEmail(input.to, input.token, input.locale),
+    "vérification",
+  );
 }
 
 export async function sendPasswordResetEmail(input: {
   to: string;
   token: string;
+  locale?: string | null;
 }): Promise<void> {
-  await sendSafely(passwordResetEmail(input.to, input.token), "mot de passe");
+  await sendSafely(
+    passwordResetEmail(input.to, input.token, input.locale),
+    "mot de passe",
+  );
 }

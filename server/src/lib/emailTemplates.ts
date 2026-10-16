@@ -1,11 +1,23 @@
-import { LIMITS } from "@findbarber/shared/constants";
+import {
+  LIMITS,
+  type Locale,
+  type ServicePlace,
+} from "@findbarber/shared/constants";
 import { env } from "../config/env.js";
+import {
+  EMAIL_DATE_TAGS,
+  emailStrings,
+  resolveEmailLocale,
+  type BookingTextParams,
+  type EmailStrings,
+} from "./emailI18n.js";
 import type { MailMessage } from "./mailer.js";
 
-// --- Gabarits d'emails (issue #9) ---
-// Texte brut + HTML, en français. Le HTML n'utilise que des styles en ligne et
-// des tableaux (compatibilité clients mail) ; toute donnée variable est
-// échappée. Couleurs alignées sur le design system (contrastes AA).
+// --- Gabarits d'emails (issues #9, #36) ---
+// Texte brut + HTML, dans la langue du DESTINATAIRE (`users.locale`, repli
+// français ; textes dans `emailI18n.ts`). Le HTML n'utilise que des styles en
+// ligne et des tableaux (compatibilité clients mail) ; toute donnée variable
+// est échappée. Couleurs alignées sur le design system (contrastes AA).
 
 const COLORS = {
   background: "#F2F5FA",
@@ -31,6 +43,8 @@ export function appUrl(path: string): string {
 }
 
 interface Layout {
+  locale: Locale;
+  strings: EmailStrings;
   title: string;
   /** Paragraphes en texte brut (échappés pour le HTML). */
   paragraphs: string[];
@@ -38,7 +52,14 @@ interface Layout {
   footer?: string;
 }
 
-function renderHtml({ title, paragraphs, action, footer }: Layout): string {
+function renderHtml({
+  locale,
+  strings,
+  title,
+  paragraphs,
+  action,
+  footer,
+}: Layout): string {
   const body = paragraphs
     .map(
       (p) =>
@@ -47,13 +68,11 @@ function renderHtml({ title, paragraphs, action, footer }: Layout): string {
     .join("");
   const button = action
     ? `<p style="margin:24px 0;"><a href="${escapeHtml(action.url)}" style="display:inline-block;background:${COLORS.accent};color:${COLORS.accentText};text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:8px;">${escapeHtml(action.label)}</a></p>
-<p style="margin:0 0 16px;font-size:13px;line-height:1.5;color:${COLORS.muted};">Si le bouton ne fonctionne pas, copiez ce lien : <a href="${escapeHtml(action.url)}" style="color:${COLORS.muted};">${escapeHtml(action.url)}</a></p>`
+<p style="margin:0 0 16px;font-size:13px;line-height:1.5;color:${COLORS.muted};">${escapeHtml(strings.buttonFallback)} <a href="${escapeHtml(action.url)}" style="color:${COLORS.muted};">${escapeHtml(action.url)}</a></p>`
     : "";
-  const foot = escapeHtml(
-    footer ?? "Vous recevez cet email car vous avez un compte FindBarber.",
-  );
+  const foot = escapeHtml(footer ?? strings.defaultFooter);
   return `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title></head>
+<html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title></head>
 <body style="margin:0;padding:0;background:${COLORS.background};font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${COLORS.background};padding:24px 12px;"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${COLORS.surface};border:1px solid ${COLORS.border};border-radius:16px;">
@@ -69,14 +88,20 @@ ${body}${button}
 </table></td></tr></table></body></html>`;
 }
 
-function renderText({ title, paragraphs, action, footer }: Layout): string {
+function renderText({
+  strings,
+  title,
+  paragraphs,
+  action,
+  footer,
+}: Layout): string {
   return [
     title,
     "",
     ...paragraphs.flatMap((p) => [p, ""]),
-    ...(action ? [`${action.label} : ${action.url}`, ""] : []),
+    ...(action ? [strings.actionLine(action.label, action.url), ""] : []),
     "—",
-    footer ?? "Vous recevez cet email car vous avez un compte FindBarber.",
+    footer ?? strings.defaultFooter,
   ].join("\n");
 }
 
@@ -86,33 +111,43 @@ function render(to: string, subject: string, layout: Layout): MailMessage {
 
 // --- Comptes ---
 
-export function verificationEmail(to: string, token: string): MailMessage {
+/** `locale` : langue du destinataire (inconnue ou absente → français). */
+export function verificationEmail(
+  to: string,
+  token: string,
+  locale?: string | null,
+): MailMessage {
+  const lang = resolveEmailLocale(locale);
+  const s = emailStrings(lang);
   const url = appUrl(`/verify-email?token=${encodeURIComponent(token)}`);
   const hours = Math.round(env.EMAIL_VERIFICATION_TOKEN_TTL_SECONDS / 3600);
-  return render(to, "Confirmez votre adresse email", {
-    title: "Bienvenue sur FindBarber",
-    paragraphs: [
-      "Confirmez votre adresse email pour activer votre compte et pouvoir vous connecter.",
-      `Ce lien est valable ${hours} h et ne peut être utilisé qu'une seule fois.`,
-    ],
-    action: { label: "Confirmer mon adresse", url },
-    footer:
-      "Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.",
+  return render(to, s.verificationSubject, {
+    locale: lang,
+    strings: s,
+    title: s.verificationTitle,
+    paragraphs: [s.verificationIntro, s.verificationValidity(hours)],
+    action: { label: s.verificationAction, url },
+    footer: s.verificationFooter,
   });
 }
 
-export function passwordResetEmail(to: string, token: string): MailMessage {
+/** `locale` : langue du destinataire (inconnue ou absente → français). */
+export function passwordResetEmail(
+  to: string,
+  token: string,
+  locale?: string | null,
+): MailMessage {
+  const lang = resolveEmailLocale(locale);
+  const s = emailStrings(lang);
   const url = appUrl(`/reset-password?token=${encodeURIComponent(token)}`);
   const minutes = Math.round(env.PASSWORD_RESET_TOKEN_TTL_SECONDS / 60);
-  return render(to, "Réinitialisation de votre mot de passe", {
-    title: "Réinitialiser votre mot de passe",
-    paragraphs: [
-      "Vous avez demandé à réinitialiser le mot de passe de votre compte FindBarber.",
-      `Ce lien est valable ${minutes} minutes et ne peut être utilisé qu'une seule fois. Après le changement, vos autres sessions seront déconnectées.`,
-    ],
-    action: { label: "Choisir un nouveau mot de passe", url },
-    footer:
-      "Si vous n'avez rien demandé, ignorez cet email : votre mot de passe reste inchangé.",
+  return render(to, s.resetSubject, {
+    locale: lang,
+    strings: s,
+    title: s.resetTitle,
+    paragraphs: [s.resetIntro, s.resetValidity(minutes)],
+    action: { label: s.resetAction, url },
+    footer: s.resetFooter,
   });
 }
 
@@ -120,20 +155,28 @@ export function passwordResetEmail(to: string, token: string): MailMessage {
 
 export interface BookingEmailContext {
   to: string;
+  /** Langue du destinataire (`users.locale`) ; inconnue ou absente → français. */
+  locale?: string | null;
   recipientName: string | null;
   barberName: string;
   barberProfileId: string;
   clientName: string | null;
   serviceName: string;
-  placeLabel: string;
+  /** Lieu de prestation, traduit dans la langue du destinataire. */
+  servicePlace: ServicePlace;
   startAt: Date;
+  /** Fuseau du salon : l'heure affichée est toujours celle du salon. */
   timeZone: string;
   declineReason?: string | null;
 }
 
-export function formatBookingDate(startAt: Date, timeZone: string): string {
-  // fr-FR : « mardi 20 octobre » (fr-CH insère une virgule après le jour).
-  return new Intl.DateTimeFormat("fr-FR", {
+/** Date et heure du rendez-vous, dans le fuseau du salon et la langue donnée. */
+export function formatBookingDate(
+  startAt: Date,
+  timeZone: string,
+  locale?: string | null,
+): string {
+  return new Intl.DateTimeFormat(EMAIL_DATE_TAGS[resolveEmailLocale(locale)], {
     timeZone,
     weekday: "long",
     day: "numeric",
@@ -144,12 +187,13 @@ export function formatBookingDate(startAt: Date, timeZone: string): string {
   }).format(startAt);
 }
 
-function greeting(name: string | null): string {
-  const first = name?.trim().split(/\s+/)[0];
-  return first ? `Bonjour ${first},` : "Bonjour,";
+function firstName(name: string | null): string | null {
+  return name?.trim().split(/\s+/)[0] || null;
 }
 
-const CANCEL_DELAY = `${Math.round(LIMITS.bookingClientCancelMinMinutes / 60)} heures`;
+const CANCEL_DELAY_HOURS = Math.round(
+  LIMITS.bookingClientCancelMinMinutes / 60,
+);
 
 export type BookingEmailKind =
   | "BOOKING_REQUESTED"
@@ -161,111 +205,53 @@ export type BookingEmailKind =
   | "BOOKING_EXPIRED"
   | "BOOKING_REMINDER";
 
+const BOOKING_TEXTS = {
+  BOOKING_REQUESTED: "bookingRequested",
+  BOOKING_CONFIRMED: "bookingConfirmed",
+  BOOKING_DECLINED: "bookingDeclined",
+  BOOKING_CANCELLED_BY_CLIENT: "bookingCancelledByClient",
+  BOOKING_CANCELLED_BY_BARBER: "bookingCancelledByBarber",
+  BOOKING_CANCELLED_BY_ADMIN: "bookingCancelledByAdmin",
+  BOOKING_EXPIRED: "bookingExpired",
+  BOOKING_REMINDER: "bookingReminder",
+} as const satisfies Record<BookingEmailKind, keyof EmailStrings>;
+
+// Lien du bouton : page du barber quand il faut choisir un autre créneau,
+// sinon les rendez-vous du destinataire.
+const LINKS_TO_BARBER_PAGE: ReadonlySet<BookingEmailKind> = new Set([
+  "BOOKING_DECLINED",
+  "BOOKING_CANCELLED_BY_BARBER",
+  "BOOKING_EXPIRED",
+]);
+
 export function bookingEmail(
   kind: BookingEmailKind,
   ctx: BookingEmailContext,
   recipientIsBarber: boolean,
 ): MailMessage {
-  const when = `${formatBookingDate(ctx.startAt, ctx.timeZone)} (heure du salon)`;
-  const what = `${ctx.serviceName} · ${ctx.placeLabel}`;
-  const hello = greeting(ctx.recipientName);
-  const client = ctx.clientName?.trim() || "Un client";
-  const appointments = {
-    label: "Voir mes rendez-vous",
-    url: appUrl(recipientIsBarber ? "/pro/bookings" : "/appointments"),
+  const lang = resolveEmailLocale(ctx.locale);
+  const s = emailStrings(lang);
+  const params: BookingTextParams = {
+    when: s.salonTime(formatBookingDate(ctx.startAt, ctx.timeZone, lang)),
+    what: `${ctx.serviceName} · ${s.servicePlace[ctx.servicePlace]}`,
+    client: ctx.clientName?.trim() || s.someClient,
+    barber: ctx.barberName,
+    cancelDelay: s.cancelDelay(CANCEL_DELAY_HOURS),
+    reason: ctx.declineReason?.trim() || null,
   };
+  const url = LINKS_TO_BARBER_PAGE.has(kind)
+    ? appUrl(`/barbers/${ctx.barberProfileId}`)
+    : appUrl(recipientIsBarber ? "/pro/bookings" : "/appointments");
 
-  switch (kind) {
-    case "BOOKING_REQUESTED":
-      return render(ctx.to, `Nouvelle demande de réservation — ${when}`, {
-        title: "Nouvelle demande de réservation",
-        paragraphs: [
-          hello,
-          `${client} souhaite réserver : ${what}, le ${when}.`,
-          "Confirmez ou refusez la demande dans les 24 heures ; sans réponse, elle expirera et le créneau sera libéré.",
-        ],
-        action: { label: "Répondre à la demande", url: appointments.url },
-      });
-    case "BOOKING_CONFIRMED":
-      return render(ctx.to, `Rendez-vous confirmé — ${when}`, {
-        title: "Votre rendez-vous est confirmé",
-        paragraphs: [
-          hello,
-          `${ctx.barberName} a confirmé votre rendez-vous : ${what}, le ${when}.`,
-          `Vous pouvez l'annuler depuis vos rendez-vous jusqu'à ${CANCEL_DELAY} avant.`,
-        ],
-        action: appointments,
-      });
-    case "BOOKING_DECLINED":
-      return render(ctx.to, "Votre demande de réservation a été refusée", {
-        title: "Demande refusée",
-        paragraphs: [
-          hello,
-          `${ctx.barberName} ne peut pas vous recevoir le ${when} (${what}).`,
-          ...(ctx.declineReason?.trim()
-            ? [`Motif indiqué : « ${ctx.declineReason.trim()} »`]
-            : []),
-          "Le créneau est libéré : vous pouvez choisir un autre horaire.",
-        ],
-        action: {
-          label: "Choisir un autre créneau",
-          url: appUrl(`/barbers/${ctx.barberProfileId}`),
-        },
-      });
-    case "BOOKING_CANCELLED_BY_CLIENT":
-      return render(ctx.to, `Rendez-vous annulé par le client — ${when}`, {
-        title: "Rendez-vous annulé",
-        paragraphs: [
-          hello,
-          `${client} a annulé son rendez-vous : ${what}, le ${when}.`,
-          "Le créneau est de nouveau disponible.",
-        ],
-        action: appointments,
-      });
-    case "BOOKING_CANCELLED_BY_BARBER":
-      return render(ctx.to, `Rendez-vous annulé — ${when}`, {
-        title: "Votre rendez-vous a été annulé",
-        paragraphs: [
-          hello,
-          `${ctx.barberName} a annulé votre rendez-vous : ${what}, le ${when}.`,
-          "Vous pouvez réserver un autre créneau.",
-        ],
-        action: {
-          label: "Réserver un autre créneau",
-          url: appUrl(`/barbers/${ctx.barberProfileId}`),
-        },
-      });
-    case "BOOKING_CANCELLED_BY_ADMIN":
-      return render(ctx.to, `Rendez-vous annulé — ${when}`, {
-        title: "Rendez-vous annulé par l'administration",
-        paragraphs: [
-          hello,
-          `Le rendez-vous ${what} du ${when} avec ${ctx.barberName} a été annulé par l'équipe FindBarber.`,
-        ],
-        action: appointments,
-      });
-    case "BOOKING_EXPIRED":
-      return render(ctx.to, "Votre demande de réservation a expiré", {
-        title: "Demande expirée",
-        paragraphs: [
-          hello,
-          `${ctx.barberName} n'a pas répondu à temps à votre demande : ${what}, le ${when}.`,
-          "La demande a expiré et le créneau est libéré. Vous pouvez en choisir un autre.",
-        ],
-        action: {
-          label: "Choisir un autre créneau",
-          url: appUrl(`/barbers/${ctx.barberProfileId}`),
-        },
-      });
-    case "BOOKING_REMINDER":
-      return render(ctx.to, `Rappel : rendez-vous le ${when}`, {
-        title: "Rappel de votre rendez-vous",
-        paragraphs: [
-          hello,
-          `Petit rappel : ${what} avec ${ctx.barberName}, le ${when}.`,
-          `Un empêchement ? Annulez depuis vos rendez-vous jusqu'à ${CANCEL_DELAY} avant pour libérer le créneau.`,
-        ],
-        action: appointments,
-      });
-  }
+  const texts = s[BOOKING_TEXTS[kind]];
+  return render(ctx.to, texts.subject(params), {
+    locale: lang,
+    strings: s,
+    title: texts.title,
+    paragraphs: [
+      s.greeting(firstName(ctx.recipientName)),
+      ...texts.paragraphs(params),
+    ],
+    action: { label: texts.action ?? s.viewAppointments, url },
+  });
 }

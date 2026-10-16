@@ -106,7 +106,11 @@ export async function registerUser(input: {
   // Compte créé NON vérifié : émission immédiate du lien de vérification. Un
   // échec d'envoi n'échoue pas l'inscription (lien redemandable).
   const token = await issueEmailVerificationToken(created.id);
-  await sendVerificationEmail({ to: created.email, token });
+  await sendVerificationEmail({
+    to: created.email,
+    token,
+    locale: created.locale,
+  });
 
   return toPublicUser(created);
 }
@@ -244,7 +248,7 @@ export async function resendVerification(email: string): Promise<void> {
   }
 
   const token = await issueEmailVerificationToken(user.id);
-  await sendVerificationEmail({ to: user.email, token });
+  await sendVerificationEmail({ to: user.email, token, locale: user.locale });
 }
 
 // --- Mot de passe oublié (issue #9) ---
@@ -278,7 +282,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
     tokenHash: hashEmailToken(token),
     expiresAt: new Date(Date.now() + env.PASSWORD_RESET_TOKEN_TTL_SECONDS * 1000),
   });
-  await sendPasswordResetEmail({ to: user.email, token });
+  await sendPasswordResetEmail({ to: user.email, token, locale: user.locale });
 }
 
 function invalidResetToken(): AppError {

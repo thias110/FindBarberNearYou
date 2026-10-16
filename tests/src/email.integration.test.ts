@@ -293,7 +293,7 @@ describe("gabarits", () => {
         barberProfileId: "p1",
         clientName: "<script>alert(1)</script>",
         serviceName: "Coupe",
-        placeLabel: "En salon",
+        servicePlace: "SALON",
         startAt: new Date("2026-11-03T09:00:00Z"),
         timeZone: "Europe/Zurich",
       },
