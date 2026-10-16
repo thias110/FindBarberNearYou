@@ -20,7 +20,7 @@ function RatingStars({ rating }: { rating: number }) {
   const full = Math.max(0, Math.min(5, rating));
   return (
     <span className="text-sm">
-      <span aria-hidden="true" className="text-gold">
+      <span aria-hidden="true" className="text-brass">
         {"★".repeat(full)}
         {"☆".repeat(5 - full)}
       </span>{" "}
