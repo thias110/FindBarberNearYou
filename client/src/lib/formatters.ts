@@ -1,4 +1,8 @@
 import { LIMITS, type Currency } from "@findbarber/shared/constants";
+import { intlLocale } from "../i18n";
+
+// Formats selon la langue courante (issue #32) : seule l'écriture change,
+// jamais la valeur ni le fuseau horaire.
 
 /**
  * Convertit une saisie prix ("25.50" ou "25,50") en unités mineures entières
@@ -35,7 +39,7 @@ export function minorToInputValue(priceMinor: number): string {
 
 /** Affiche un montant avec le code devise (CHF, EUR, USD) pour éviter tout symbole ambigu. */
 export function formatCurrency(priceMinor: number, currency: Currency): string {
-  return new Intl.NumberFormat("fr-CH", {
+  return new Intl.NumberFormat(intlLocale(), {
     style: "currency",
     currency,
     currencyDisplay: "code",
@@ -46,7 +50,7 @@ export function formatCurrency(priceMinor: number, currency: Currency): string {
 
 /** Note moyenne sur 5 avec une décimale (« 4,3 »). */
 export function formatRating(average: number): string {
-  return new Intl.NumberFormat("fr-CH", {
+  return new Intl.NumberFormat(intlLocale(), {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format(average);
@@ -56,7 +60,7 @@ export function formatRating(average: number): string {
 export function formatDateTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat("fr-CH", {
+  return new Intl.DateTimeFormat(intlLocale(), {
     dateStyle: "short",
     timeStyle: "short",
   }).format(date);

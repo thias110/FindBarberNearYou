@@ -10,6 +10,11 @@ import {
   type User,
 } from "@findbarber/shared/schema";
 import type { PublicUser, Role } from "@findbarber/shared/types";
+import {
+  DEFAULT_LOCALE,
+  LOCALES,
+  type Locale,
+} from "@findbarber/shared/constants";
 import { env } from "../../config/env.js";
 import { AppError, isUniqueViolation } from "../../lib/errors.js";
 import {
@@ -37,6 +42,13 @@ export function hashEmailToken(token: string): string {
 
 // Mapper public partagé (auth + module user). L'avatar est exposé sous forme
 // d'URL publique relative (`/uploads/...`), jamais comme chemin disque.
+// Valeur garantie par la contrainte `users_locale_valid` ; repli défensif.
+export function toLocale(value: string): Locale {
+  return (LOCALES as readonly string[]).includes(value)
+    ? (value as Locale)
+    : DEFAULT_LOCALE;
+}
+
 export function toPublicUser(user: User): PublicUser {
   return {
     id: user.id,
@@ -44,6 +56,7 @@ export function toPublicUser(user: User): PublicUser {
     role: user.role,
     status: user.status,
     name: user.name,
+    locale: toLocale(user.locale),
     avatarPath: user.avatarPath ? publicUploadPath(user.avatarPath) : null,
     createdAt: user.createdAt.toISOString(),
   };
@@ -54,6 +67,7 @@ export async function registerUser(input: {
   password: string;
   role: Role;
   name?: string;
+  locale?: Locale;
 }): Promise<PublicUser> {
   const email = normalizeEmail(input.email);
 
@@ -77,6 +91,7 @@ export async function registerUser(input: {
         passwordHash,
         role: input.role,
         name: input.name?.trim() || null,
+        locale: input.locale ?? DEFAULT_LOCALE,
       })
       .returning();
 

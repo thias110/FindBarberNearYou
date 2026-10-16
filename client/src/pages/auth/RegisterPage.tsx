@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, authApi } from "../../lib/apiClient";
+import { useLocale } from "../../app/locale-context";
+import { LanguageSelect } from "../../components/LanguageSelect";
 import { authErrorMessage } from "../../lib/authMessages";
 import { cn } from "../../lib/cn";
 import { AuthLayout } from "../../components/auth/AuthLayout";
@@ -39,6 +41,7 @@ export function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const { locale } = useLocale();
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
 
@@ -82,6 +85,8 @@ export function RegisterPage() {
         email,
         password,
         role,
+        // Langue choisie (issue #38) : interface et premier email.
+        locale,
       });
       // Pas d'auto-login : on affiche l'état « Vérifiez votre email ».
       setRegistered(true);
@@ -233,6 +238,9 @@ export function RegisterPage() {
             })}
           </div>
         </fieldset>
+
+        {/* Langue du compte (issue #38), présélectionnée sur la langue courante. */}
+        <LanguageSelect />
 
         {/* Erreur globale juste au-dessus du bouton (issue #57). */}
         {error && (

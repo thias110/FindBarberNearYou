@@ -3,11 +3,13 @@ import { Link, useLocation } from "react-router-dom";
 import { ROLE_HOME } from "@findbarber/shared/constants";
 import { useAuth } from "./app/auth-context";
 import { AuthProvider } from "./app/AuthProvider";
+import { LocaleProvider } from "./app/LocaleProvider";
 import { ThemeProvider } from "./app/ThemeProvider";
 import { AppRoutes } from "./app/router";
 import { Logo } from "./components/Logo";
 import { NotificationBell } from "./components/NotificationBell";
 import { SiteFooter } from "./components/SiteFooter";
+import { LanguageSelect } from "./components/LanguageSelect";
 import { buttonClasses } from "./components/ui/buttonStyles";
 import { AUTH_ROUTES, pageTitle } from "./lib/pageTitle";
 
@@ -58,7 +60,9 @@ function AppShell() {
           >
             <Logo />
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            {/* Langue accessible à tous, même sans compte (issue #37). */}
+            <LanguageSelect compact />
             {/* Le thème se choisit dans Paramètres (issue #30). */}
             {/* L'API des notifications est réservée aux CLIENT et BARBER. */}
             {user && user.role !== "ADMIN" && <NotificationBell />}
@@ -98,7 +102,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AppShell />
+        <LocaleProvider>
+          <AppShell />
+        </LocaleProvider>
       </AuthProvider>
     </ThemeProvider>
   );

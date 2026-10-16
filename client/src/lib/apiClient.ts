@@ -37,6 +37,7 @@ import {
   LIMITS,
   UPLOAD_IMAGE_MIME_TYPES,
   type AuditAction,
+  type Locale,
   type BookingStatus,
   type ServicePlace,
 } from "@findbarber/shared/constants";
@@ -50,6 +51,7 @@ import type {
   TimeOffCreateInput,
   WorkingHoursInput,
 } from "@findbarber/shared/validation";
+import i18n from "../i18n";
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:4000";
@@ -62,7 +64,8 @@ export class ApiError extends Error {
     /** Erreurs par champ d'un 400 VALIDATION_ERROR (issue #57). */
     public readonly fields: { path: string; message: string }[] = [],
   ) {
-    super(message);
+    // Message traduit selon le code (issue #33), sinon celui du serveur.
+    super(translateErrorCode(code, message));
     this.name = "ApiError";
   }
 }
@@ -99,14 +102,25 @@ export function resolveUploadUrl(
 
 // Message d'erreur prêt à afficher. Les statuts 400/403/404/409/413 portent un
 // message serveur explicite (français) ; 401 reçoit un message clair côté client.
+// Les messages serveur sont en français ; ils sont traduits côté client à
+// partir du code d'erreur (espace `errors`, issue #33). Sans traduction, le
+// message du serveur s'affiche tel quel.
 export function apiErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 401) {
-      return "Session expirée. Reconnectez-vous.";
+      return i18n.t("errors:SESSION_EXPIRED", {
+        defaultValue: "Session expirée. Reconnectez-vous.",
+      });
     }
     return err.message;
   }
-  return err instanceof Error ? err.message : "Une erreur est survenue.";
+  return err instanceof Error
+    ? err.message
+    : i18n.t("errors:UNKNOWN", { defaultValue: "Une erreur est survenue." });
+}
+
+export function translateErrorCode(code: string, fallback: string): string {
+  return i18n.t(`errors:${code}`, { defaultValue: fallback });
 }
 
 async function parseResponse<T>(res: Response): Promise<T> {
@@ -199,6 +213,7 @@ export interface AuthApi {
     password: string;
     role: "CLIENT" | "BARBER";
     name?: string;
+    locale?: Locale;
   }): Promise<{ user: PublicUser }>;
   login(input: {
     email: string;
@@ -260,6 +275,7 @@ export interface UserApi {
   deleteAvatar(): Promise<{ user: PublicUser }>;
   /** Export RGPD (issue #14) : objet JSON de toutes les données du compte. */
   exportData(): Promise<unknown>;
+  updateLocale(locale: Locale): Promise<{ user: PublicUser }>;
   /** Suppression définitive (anonymisation), confirmée par le mot de passe. */
   deleteAccount(password: string): Promise<void>;
 }
@@ -277,6 +293,11 @@ export const userApi: UserApi = {
   deleteAvatar: () =>
     apiFetch<{ user: PublicUser }>("/api/users/me/avatar", { method: "DELETE" }),
   exportData: () => apiFetch<unknown>("/api/users/me/export"),
+  updateLocale: (locale) =>
+    apiFetch<{ user: PublicUser }>("/api/users/me/locale", {
+      method: "PATCH",
+      body: { locale },
+    }),
   deleteAccount: (password) =>
     apiFetch<void>("/api/users/me", { method: "DELETE", body: { password } }),
 };

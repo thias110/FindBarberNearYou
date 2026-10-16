@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { users, type User } from "@findbarber/shared/schema";
+import type { Locale } from "@findbarber/shared/constants";
 import { AppError } from "../../lib/errors.js";
 import { toAvatarWebp } from "../../lib/images.js";
 import { remove, save } from "../../lib/storage.js";
@@ -65,4 +66,17 @@ export async function deleteAvatar(userId: string): Promise<User> {
     await remove(current.avatarPath);
   }
   return updated;
+}
+
+// Langue de l'interface et des emails (issue #32).
+export async function updateLocale(userId: string, locale: Locale): Promise<User> {
+  const [user] = await db
+    .update(users)
+    .set({ locale, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning();
+  if (!user) {
+    throw new AppError(404, "USER_NOT_FOUND", "Utilisateur introuvable.");
+  }
+  return user;
 }

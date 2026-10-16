@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { LOCALES } from "../constants";
 import { safeText } from "./safeText";
 
 export const PASSWORD_MIN_LENGTH = 8;
@@ -33,7 +34,14 @@ export const registerSchema = z.object({
   name: safeText(100, "Name is too long.")
     .min(1, "Name cannot be empty.")
     .optional(),
+  // Langue choisie à l'inscription (issue #38) ; français par défaut.
+  locale: z.enum(LOCALES).optional(),
 });
+
+// PATCH /api/users/me/locale (issue #32) : seules fr, en, it et es.
+export const localeUpdateSchema = z
+  .object({ locale: z.enum(LOCALES) })
+  .strict();
 
 export const loginSchema = z.object({
   email: emailSchema,

@@ -66,6 +66,8 @@ export const users = pgTable(
     role: userRoleEnum("role").notNull().default("CLIENT"),
     status: userStatusEnum("status").notNull().default("ACTIVE"),
     name: text("name"),
+    // Langue de l'interface et des emails (issue #32) : fr, en, it ou es.
+    locale: text("locale").notNull().default("fr"),
     // Avatar générique (issue #8) : chemin relatif sous UPLOAD_DIR
     // (`avatars/<uuid>.webp`), jamais exposé tel quel (URL publique
     // `/uploads/<path>`). Nullable : aucun avatar par défaut en base.
@@ -87,7 +89,13 @@ export const users = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [uniqueIndex("users_email_unique").on(table.email)],
+  (table) => [
+    uniqueIndex("users_email_unique").on(table.email),
+    check(
+      "users_locale_valid",
+      sql`${table.locale} IN ('fr', 'en', 'it', 'es')`,
+    ),
+  ],
 );
 
 export type User = typeof users.$inferSelect;

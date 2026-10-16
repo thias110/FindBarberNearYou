@@ -1,0 +1,11 @@
+{
+  "language": {
+    "label": "Language"
+  },
+  "settings": {
+    "language": {
+      "title": "Language",
+      "description": "Language of the interface and of the emails you receive."
+    }
+  }
+}

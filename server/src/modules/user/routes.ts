@@ -1,11 +1,14 @@
 import { Router } from "express";
-import { deleteAccountSchema } from "@findbarber/shared/validation";
+import {
+  deleteAccountSchema,
+  localeUpdateSchema,
+} from "@findbarber/shared/validation";
 import { requireAuth } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
 import { uploadImage } from "../../middleware/upload.js";
 import { AppError } from "../../lib/errors.js";
 import { toPublicUser } from "../auth/service.js";
-import { deleteAvatar, updateAvatar } from "./service.js";
+import { deleteAvatar, updateAvatar, updateLocale } from "./service.js";
 import { AUTH_COOKIE, CSRF_COOKIE } from "../../lib/cookies.js";
 import { validationError } from "../../lib/validation.js";
 import { deleteOwnAccount, exportPersonalData } from "../privacy/service.js";
@@ -38,6 +41,17 @@ userRouter.delete(
     res.json({ user: toPublicUser(user) });
   },
 );
+
+// Langue de l'interface et des emails (issue #32) : uniquement celle du
+// titulaire de la session, valeurs fr/en/it/es.
+userRouter.patch("/me/locale", requireAuth, csrfProtection, async (req, res) => {
+  const parsed = localeUpdateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw validationError(parsed.error);
+  }
+  const user = await updateLocale(req.user!.id, parsed.data.locale);
+  res.json({ user: toPublicUser(user) });
+});
 
 // --- Données personnelles (issue #14) ---
 

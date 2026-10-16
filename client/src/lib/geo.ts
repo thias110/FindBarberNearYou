@@ -1,3 +1,4 @@
+import { intlLocale } from "../i18n";
 // Géométrie de la recherche (issues #50, #52 et #54) : calculs purs, sans
 // dépendance au navigateur. La position du visiteur ne quitte jamais
 // l'appareil : seule une zone englobante (rectangle autour du rayon) est
@@ -91,7 +92,7 @@ export function normalizeBounds(bounds: GeoBounds): GeoBounds {
 export function formatDistance(km: number): string {
   if (km < 1) return "moins de 1 km";
   if (km < 10) {
-    return `${new Intl.NumberFormat("fr-CH", { maximumFractionDigits: 1 }).format(km)} km`;
+    return `${new Intl.NumberFormat(intlLocale(), { maximumFractionDigits: 1 }).format(km)} km`;
   }
   return `${Math.round(km)} km`;
 }

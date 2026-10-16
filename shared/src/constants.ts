@@ -1,5 +1,31 @@
 export const ROLES = ["CLIENT", "BARBER", "ADMIN"] as const;
 
+// Langues de l'interface et des emails (issue #32). Le français est la langue
+// par défaut et la langue de repli de toute traduction manquante.
+export const LOCALES = ["fr", "en", "it", "es"] as const;
+export type Locale = (typeof LOCALES)[number];
+export const DEFAULT_LOCALE: Locale = "fr";
+
+/** Nom de chaque langue dans cette langue (sélecteurs). */
+export const LOCALE_NAMES: Record<Locale, string> = {
+  fr: "Français",
+  en: "English",
+  it: "Italiano",
+  es: "Español",
+};
+
+/**
+ * Balise BCP 47 utilisée pour formater dates, heures et montants. Le
+ * formatage ne change jamais le fuseau horaire d'un créneau, seulement son
+ * écriture.
+ */
+export const LOCALE_INTL_TAGS: Record<Locale, string> = {
+  fr: "fr-CH",
+  en: "en-GB",
+  it: "it-CH",
+  es: "es-ES",
+};
+
 // DELETED (issue #14) : compte supprimé par son titulaire. La ligne est
 // conservée, anonymisée, pour garder l'historique et les statistiques.
 export const USER_STATUSES = ["ACTIVE", "SUSPENDED", "DELETED"] as const;

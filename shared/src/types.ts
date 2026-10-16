@@ -5,6 +5,7 @@ import type {
   AuditTargetType,
   BookingStatus,
   Currency,
+  Locale,
   ProfileCompletionStep,
   NotificationType,
   PaymentMode,
@@ -25,6 +26,8 @@ export interface PublicUser {
   role: Role;
   status: UserStatus;
   name: string | null;
+  // Langue de l'interface et des emails (issue #32).
+  locale: Locale;
   // URL publique relative de l'avatar (`/uploads/avatars/<uuid>.webp`) ou null.
   avatarPath: string | null;
   createdAt: string;

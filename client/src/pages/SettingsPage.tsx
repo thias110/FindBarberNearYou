@@ -6,6 +6,8 @@ import { useScrollToHash } from "../lib/useScrollToHash";
 import { THEME_OPTIONS, themeIcon } from "../components/themeOptions";
 import { buttonClasses } from "../components/ui/buttonStyles";
 import { Card } from "../components/ui/Card";
+import { LanguageSelect } from "../components/LanguageSelect";
+import { useTranslation } from "react-i18next";
 
 // Paramètres (issue #29) : préférences regroupées par section, dont l'export
 // des données (issue #31). Ouvert aux CLIENT et BARBER, comme Mon compte. Les sections portent un `id` pour y
@@ -13,6 +15,7 @@ import { Card } from "../components/ui/Card";
 export function SettingsPage() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
   useScrollToHash();
 
   if (!user) return null;
@@ -101,6 +104,24 @@ export function SettingsPage() {
                 })}
               </div>
             </fieldset>
+          </Card>
+        </section>
+
+        <section
+          id="langue"
+          aria-labelledby="langue-title"
+          className="scroll-mt-4 focus:outline-none"
+        >
+          <Card className="space-y-4 p-6">
+            <div>
+              <h2 id="langue-title" className="text-lg font-bold text-foreground">
+                {t("settings.language.title")}
+              </h2>
+              <p className="mt-1 text-sm text-foreground-muted">
+                {t("settings.language.description")}
+              </p>
+            </div>
+            <LanguageSelect className="max-w-xs" />
           </Card>
         </section>
 
