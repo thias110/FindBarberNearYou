@@ -17,7 +17,7 @@ export function LanguageSelect({
   compact?: boolean;
   className?: string;
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
   const { locale, setLocale } = useLocale();
   const id = useId();
 

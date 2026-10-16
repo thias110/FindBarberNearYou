@@ -6,6 +6,157 @@
     "language": {
       "title": "Langue",
       "description": "Langue de l'interface et des emails que vous recevez."
+    },
+    "title": "Paramètres",
+    "subtitle": "Vos préférences sur FindBarber.",
+    "accountLink": "Mon compte",
+    "appearance": {
+      "title": "Apparence",
+      "description": "Choisissez l'affichage de FindBarber sur cet appareil.",
+      "legend": "Thème"
+    },
+    "privacy": {
+      "title": "Confidentialité",
+      "dataTitle": "Mes données",
+      "deleteTextBefore": "Pour supprimer votre compte, rendez-vous dans",
+      "deleteLink": "Mon compte",
+      "deleteTextAfter": "."
     }
+  },
+  "app": {
+    "skipToContent": "Aller au contenu",
+    "homeLink": "FindBarber, retour à l'accueil",
+    "account": "Mon compte",
+    "login": "Se connecter"
+  },
+  "pageTitle": {
+    "home": "Accueil",
+    "barbers": "Rechercher un barber",
+    "appointments": "Mes rendez-vous",
+    "account": "Mon compte",
+    "settings": "Paramètres",
+    "legal": "Mentions légales",
+    "proDashboard": "Espace professionnel",
+    "proProfile": "Mon profil professionnel",
+    "proServices": "Mes prestations",
+    "proWorkingHours": "Mes horaires",
+    "proTimeOff": "Mes absences",
+    "proBookings": "Mes réservations",
+    "proStats": "Mes statistiques",
+    "proGallery": "Ma galerie",
+    "proPayments": "Paiements en ligne",
+    "admin": "Administration",
+    "adminUsers": "Utilisateurs — Administration",
+    "adminBookings": "Réservations — Administration",
+    "adminReviews": "Avis — Administration",
+    "adminAudit": "Journal d'audit — Administration",
+    "barberProfile": "Profil du barber",
+    "adminBarberStats": "Statistiques du barber — Administration"
+  },
+  "footer": {
+    "nav": "Pied de page",
+    "contact": "Contact",
+    "legal": "Mentions légales",
+    "social": "Réseaux sociaux",
+    "newTab": "{{network}} (nouvel onglet)"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread_one": "Notifications, {{count}} non lue",
+    "unread_other": "Notifications, {{count}} non lues",
+    "markAllRead": "Tout marquer comme lu",
+    "marking": "Marquage…",
+    "loadError": "Impossible de charger les notifications.",
+    "retry": "Réessayer",
+    "loading": "Chargement des notifications…",
+    "empty": "Aucune notification pour le moment.",
+    "readLabel": "Notification lue",
+    "read": "Lue",
+    "markRead": "Marquer comme lue",
+    "actionError": "Action impossible pour le moment.",
+    "type": {
+      "BOOKING_REQUESTED": "Nouvelle demande de réservation",
+      "BOOKING_CONFIRMED": "Réservation confirmée",
+      "BOOKING_COMPLETED": "Réservation terminée",
+      "BOOKING_CANCELLED_BY_CLIENT": "Réservation annulée par le client",
+      "BOOKING_CANCELLED_BY_BARBER": "Réservation annulée par le professionnel",
+      "BOOKING_CANCELLED_BY_ADMIN": "Réservation annulée par l'administration",
+      "BOOKING_DECLINED": "Demande de réservation refusée",
+      "BOOKING_EXPIRED": "Demande de réservation expirée (sans réponse)"
+    }
+  },
+  "theme": {
+    "system": {
+      "label": "Thème système",
+      "short": "Système",
+      "description": "Suit le réglage clair ou sombre de votre appareil."
+    },
+    "light": {
+      "label": "Thème clair",
+      "short": "Clair",
+      "description": "Fond blanc, en toutes circonstances."
+    },
+    "dark": {
+      "label": "Thème sombre",
+      "short": "Sombre",
+      "description": "Fond bleu nuit, plus doux le soir."
+    }
+  },
+  "dialog": {
+    "cancel": "Annuler"
+  },
+  "avatar": {
+    "alt": "Votre photo de profil",
+    "choose": "Choisir une photo",
+    "change": "Changer la photo",
+    "delete": "Supprimer la photo",
+    "hint": "Facultative. JPEG, PNG ou WebP, {{size}} Mo max.",
+    "updated": "Photo de profil mise à jour.",
+    "deleted": "Photo de profil supprimée.",
+    "confirmText": "Supprimer votre photo de profil ? Cette action est définitive.",
+    "cancel": "Annuler",
+    "confirmDelete": "Confirmer la suppression"
+  },
+  "dataExport": {
+    "description": "Téléchargez une copie de toutes les données liées à votre compte (profil, rendez-vous, avis, notifications) au format JSON.",
+    "descriptionBarber": "Téléchargez une copie de toutes les données liées à votre compte (profil, rendez-vous, avis, notifications, vitrine et activité) au format JSON.",
+    "download": "Télécharger mes données"
+  },
+  "account": {
+    "title": "Mon compte",
+    "settingsLink": "Paramètres",
+    "photoTitle": "Photo de profil",
+    "dataTitle": "Mes données",
+    "dataTextBefore": "Pour télécharger une copie de vos données, rendez-vous dans",
+    "dataLink": "Paramètres > Confidentialité",
+    "dataTextAfter": ".",
+    "deleteTitle": "Supprimer mon compte",
+    "deleteInfo": {
+      "definitive": "La suppression est définitive.",
+      "bookings": "Vos rendez-vous à venir sont annulés et l'autre partie est prévenue.",
+      "personal": "Votre nom, votre email, votre adresse et vos commentaires sont effacés. L'historique des rendez-vous et les notes restent, sous forme anonyme.",
+      "showcase": "Votre vitrine (profil, photos, horaires) est retirée de la recherche."
+    },
+    "passwordLabel": "Mot de passe actuel",
+    "passwordRequired": "Saisissez votre mot de passe pour confirmer.",
+    "deleteButton": "Supprimer mon compte",
+    "confirmTitle": "Supprimer définitivement votre compte ?",
+    "confirmLabel": "Supprimer définitivement",
+    "confirmCancel": "Garder mon compte",
+    "confirmText": "Cette action est irréversible."
+  },
+  "legal": {
+    "title": "Mentions légales",
+    "publisherTitle": "Éditeur du site",
+    "contactTitle": "Contact",
+    "contactText": "Pour toute question :",
+    "roleTitle": "Rôle de la plateforme",
+    "roleText": "FindBarber met en relation des clients et des barbers indépendants. Chaque barber fixe ses prestations, ses prix et ses disponibilités et reste seul responsable des services qu'il fournit.",
+    "dataTitle": "Données personnelles",
+    "dataTextBefore": "Vos données sont traitées conformément à la loi fédérale sur la protection des données (LPD). Depuis votre compte, vous pouvez exporter vos données (",
+    "dataLink": "Paramètres > Confidentialité",
+    "dataTextAfter": ") ou supprimer votre compte.",
+    "ipTitle": "Propriété intellectuelle",
+    "ipText": "Les contenus du site (textes, logo, interface) sont protégés. Les photos publiées par les barbers restent leur propriété. Les fonds de carte sont fournis par © MapTiler et © les contributeurs OpenStreetMap."
   }
 }

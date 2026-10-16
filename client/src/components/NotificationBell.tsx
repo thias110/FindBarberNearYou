@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import type { NotificationType } from "@findbarber/shared/constants";
 import type { Notification } from "@findbarber/shared/types";
 import { notificationApi } from "../lib/apiClient";
@@ -15,20 +16,15 @@ import { Skeleton } from "./ui/Skeleton";
 
 const PANEL_ID = "notifications-panel";
 
-// Libellés statiques : la réponse du serveur ne contient aucune donnée
-// personnelle (ni nom de client, ni service) — on n'en invente aucune.
-const NOTIFICATION_LABELS: Record<NotificationType, string> = {
-  BOOKING_REQUESTED: "Nouvelle demande de réservation",
-  BOOKING_CONFIRMED: "Réservation confirmée",
-  BOOKING_COMPLETED: "Réservation terminée",
-  BOOKING_CANCELLED_BY_CLIENT: "Réservation annulée par le client",
-  BOOKING_CANCELLED_BY_BARBER: "Réservation annulée par le professionnel",
-  BOOKING_CANCELLED_BY_ADMIN: "Réservation annulée par l'administration",
-  BOOKING_DECLINED: "Demande de réservation refusée",
-  BOOKING_EXPIRED: "Demande de réservation expirée (sans réponse)",
-};
+// Libellés statiques (`common:notifications.type.*`) : la réponse du serveur
+// ne contient aucune donnée personnelle (ni nom de client, ni service) — on
+// n'en invente aucune.
+function notificationKey(type: NotificationType): string {
+  return `notifications.type.${type}`;
+}
 
 export function NotificationBell() {
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
   const [notifications, setNotifications] = useState<Notification[] | null>(
@@ -129,7 +125,7 @@ export function NotificationBell() {
       await Promise.all([loadList(), loadCount()]);
     } catch (err) {
       setActionError(
-        err instanceof Error ? err.message : "Action impossible pour le moment.",
+        err instanceof Error ? err.message : t("notifications.actionError"),
       );
     } finally {
       setActionId(null);
@@ -144,7 +140,7 @@ export function NotificationBell() {
       await Promise.all([loadList(), loadCount()]);
     } catch (err) {
       setActionError(
-        err instanceof Error ? err.message : "Action impossible pour le moment.",
+        err instanceof Error ? err.message : t("notifications.actionError"),
       );
     } finally {
       setMarkAllBusy(false);
@@ -162,8 +158,8 @@ export function NotificationBell() {
 
   const ariaLabel =
     unreadCount !== null && unreadCount > 0
-      ? `Notifications, ${unreadCount} non lue${unreadCount > 1 ? "s" : ""}`
-      : "Notifications";
+      ? t("notifications.unread", { count: unreadCount })
+      : t("notifications.title");
 
   return (
     <div ref={containerRef} className="relative">
@@ -210,7 +206,7 @@ export function NotificationBell() {
         >
           <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2">
             <h2 className="text-sm font-bold text-foreground">
-              Notifications
+              {t("notifications.title")}
             </h2>
             {hasUnread && (
               <button
@@ -224,7 +220,9 @@ export function NotificationBell() {
                   "disabled:pointer-events-none disabled:opacity-50",
                 )}
               >
-                {markAllBusy ? "Marquage…" : "Tout marquer comme lu"}
+                {markAllBusy
+                  ? t("notifications.marking")
+                  : t("notifications.markAllRead")}
               </button>
             )}
           </div>
@@ -233,7 +231,7 @@ export function NotificationBell() {
             {listError && !listLoading ? (
               <div className="p-4">
                 <Alert variant="danger">
-                  Impossible de charger les notifications.
+                  {t("notifications.loadError")}
                 </Alert>
                 <Button
                   variant="secondary"
@@ -243,13 +241,13 @@ export function NotificationBell() {
                     void loadList();
                   }}
                 >
-                  Réessayer
+                  {t("notifications.retry")}
                 </Button>
               </div>
             ) : listLoading ? (
               <div aria-busy="true" className="space-y-3 p-4">
                 <span className="sr-only" role="status">
-                  Chargement des notifications…
+                  {t("notifications.loading")}
                 </span>
                 {[0, 1, 2].map((index) => (
                   <Skeleton key={index} className="h-14 w-full rounded-lg" />
@@ -257,7 +255,7 @@ export function NotificationBell() {
               </div>
             ) : notifications && notifications.length === 0 ? (
               <p className="p-4 text-sm text-foreground-muted">
-                Aucune notification pour le moment.
+                {t("notifications.empty")}
               </p>
             ) : notifications ? (
               <ul className="divide-y divide-border">
@@ -275,7 +273,7 @@ export function NotificationBell() {
                             : "font-medium text-foreground",
                         )}
                       >
-                        {NOTIFICATION_LABELS[notification.type]}
+                        {t(notificationKey(notification.type))}
                       </p>
                       <p className="mt-0.5 text-xs text-foreground-muted">
                         {formatDateTime(notification.createdAt)}
@@ -284,10 +282,10 @@ export function NotificationBell() {
 
                     {notification.readAt ? (
                       <span
-                        aria-label="Notification lue"
+                        aria-label={t("notifications.readLabel")}
                         className="shrink-0 text-xs font-medium text-foreground-muted"
                       >
-                        Lue
+                        {t("notifications.read")}
                       </span>
                     ) : (
                       <button
@@ -302,8 +300,8 @@ export function NotificationBell() {
                         )}
                       >
                         {actionId === notification.id
-                          ? "Marquage…"
-                          : "Marquer comme lue"}
+                          ? t("notifications.marking")
+                          : t("notifications.markRead")}
                       </button>
                     )}
                   </li>

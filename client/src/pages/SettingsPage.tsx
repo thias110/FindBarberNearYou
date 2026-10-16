@@ -3,7 +3,7 @@ import { useAuth } from "../app/auth-context";
 import { useTheme } from "../app/theme-context";
 import { DataExport } from "../components/account/DataExport";
 import { useScrollToHash } from "../lib/useScrollToHash";
-import { THEME_OPTIONS, themeIcon } from "../components/themeOptions";
+import { themeIcon, themeOptions } from "../components/themeOptions";
 import { buttonClasses } from "../components/ui/buttonStyles";
 import { Card } from "../components/ui/Card";
 import { LanguageSelect } from "../components/LanguageSelect";
@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 export function SettingsPage() {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
   useScrollToHash();
 
   if (!user) return null;
@@ -26,14 +26,14 @@ export function SettingsPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">
-              Paramètres
+              {t("settings.title")}
             </h1>
             <p className="mt-1 text-sm text-foreground-muted">
-              Vos préférences sur FindBarber.
+              {t("settings.subtitle")}
             </p>
           </div>
           <Link to="/account" className={buttonClasses("ghost", "md", "shrink-0")}>
-            Mon compte
+            {t("settings.accountLink")}
           </Link>
         </div>
 
@@ -48,16 +48,16 @@ export function SettingsPage() {
                 id="apparence-title"
                 className="text-lg font-bold text-foreground"
               >
-                Apparence
+                {t("settings.appearance.title")}
               </h2>
               <p className="mt-1 text-sm text-foreground-muted">
-                Choisissez l'affichage de FindBarber sur cet appareil.
+                {t("settings.appearance.description")}
               </p>
             </div>
             <fieldset>
-              <legend className="sr-only">Thème</legend>
+              <legend className="sr-only">{t("settings.appearance.legend")}</legend>
               <div className="grid gap-3 sm:grid-cols-3">
-                {THEME_OPTIONS.map((option) => {
+                {themeOptions().map((option) => {
                   const nameId = `theme-${option.value}-name`;
                   const descriptionId = `theme-${option.value}-description`;
                   return (
@@ -135,21 +135,23 @@ export function SettingsPage() {
               id="confidentialite-title"
               className="text-lg font-bold text-foreground"
             >
-              Confidentialité
+              {t("settings.privacy.title")}
             </h2>
             <div className="space-y-2">
-              <h3 className="font-semibold text-foreground">Mes données</h3>
+              <h3 className="font-semibold text-foreground">
+                {t("settings.privacy.dataTitle")}
+              </h3>
               <DataExport role={user.role} />
             </div>
             <p className="border-t border-border pt-4 text-sm text-foreground-muted">
-              Pour supprimer votre compte, rendez-vous dans{" "}
+              {t("settings.privacy.deleteTextBefore")}{" "}
               <Link
                 to="/account"
                 className="font-medium text-accent-strong underline underline-offset-2"
               >
-                Mon compte
+                {t("settings.privacy.deleteLink")}
               </Link>
-              .
+              {t("settings.privacy.deleteTextAfter")}
             </p>
           </Card>
         </section>

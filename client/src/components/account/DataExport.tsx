@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Role } from "@findbarber/shared/types";
 import { userApi } from "../../lib/apiClient";
 import { authErrorMessage } from "../../lib/authMessages";
@@ -9,6 +10,7 @@ import { Button } from "../ui/Button";
 // Affiché dans Paramètres > Confidentialité (issues #29 et #31) : la page
 // appelante fournit le titre et la carte.
 export function DataExport({ role }: { role: Role }) {
+  const { t } = useTranslation("common");
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,9 +40,9 @@ export function DataExport({ role }: { role: Role }) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-foreground-muted">
-        Téléchargez une copie de toutes les données liées à votre compte
-        (profil, rendez-vous, avis, notifications
-        {role === "BARBER" ? ", vitrine et activité" : ""}) au format JSON.
+        {role === "BARBER"
+          ? t("dataExport.descriptionBarber")
+          : t("dataExport.description")}
       </p>
       {error && <Alert variant="danger">{error}</Alert>}
       <Button
@@ -48,7 +50,7 @@ export function DataExport({ role }: { role: Role }) {
         isLoading={exporting}
         onClick={() => void handleExport()}
       >
-        Télécharger mes données
+        {t("dataExport.download")}
       </Button>
     </div>
   );

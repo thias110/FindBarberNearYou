@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useSiteConfig } from "../lib/siteConfig";
 import { Card } from "../components/ui/Card";
@@ -7,20 +8,21 @@ import { Card } from "../components/ui/Card";
 // absente n'est pas affichée.
 export function LegalNoticePage() {
   const { supportEmail, legal } = useSiteConfig();
+  const { t } = useTranslation("common");
   const hasOperator = Boolean(legal.operatorName || legal.operatorAddress);
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <div className="mx-auto max-w-2xl space-y-6">
         <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">
-          Mentions légales
+          {t("legal.title")}
         </h1>
 
         <Card className="space-y-6 p-6 text-sm leading-relaxed text-foreground">
           {hasOperator && (
             <section aria-labelledby="editeur">
               <h2 id="editeur" className="mb-2 text-base font-bold">
-                Éditeur du site
+                {t("legal.publisherTitle")}
               </h2>
               {legal.operatorName && <p>{legal.operatorName}</p>}
               {legal.operatorAddress && (
@@ -32,10 +34,10 @@ export function LegalNoticePage() {
           {supportEmail && (
             <section aria-labelledby="contact">
               <h2 id="contact" className="mb-2 text-base font-bold">
-                Contact
+                {t("legal.contactTitle")}
               </h2>
               <p>
-                Pour toute question :{" "}
+                {t("legal.contactText")}{" "}
                 <a
                   href={`mailto:${supportEmail}`}
                   className="font-medium text-accent underline underline-offset-4"
@@ -48,44 +50,32 @@ export function LegalNoticePage() {
 
           <section aria-labelledby="role">
             <h2 id="role" className="mb-2 text-base font-bold">
-              Rôle de la plateforme
+              {t("legal.roleTitle")}
             </h2>
-            <p>
-              FindBarber met en relation des clients et des barbers
-              indépendants. Chaque barber fixe ses prestations, ses prix et ses
-              disponibilités et reste seul responsable des services qu'il
-              fournit.
-            </p>
+            <p>{t("legal.roleText")}</p>
           </section>
 
           <section aria-labelledby="donnees">
             <h2 id="donnees" className="mb-2 text-base font-bold">
-              Données personnelles
+              {t("legal.dataTitle")}
             </h2>
             <p>
-              Vos données sont traitées conformément à la loi fédérale sur la
-              protection des données (LPD). Depuis votre compte, vous pouvez
-              exporter vos données (
+              {t("legal.dataTextBefore")}
               <Link
                 to="/settings#confidentialite"
                 className="font-medium text-accent underline underline-offset-4"
               >
-                Paramètres &gt; Confidentialité
+                {t("legal.dataLink")}
               </Link>
-              ) ou supprimer votre compte.
+              {t("legal.dataTextAfter")}
             </p>
           </section>
 
           <section aria-labelledby="propriete">
             <h2 id="propriete" className="mb-2 text-base font-bold">
-              Propriété intellectuelle
+              {t("legal.ipTitle")}
             </h2>
-            <p>
-              Les contenus du site (textes, logo, interface) sont protégés.
-              Les photos publiées par les barbers restent leur propriété. Les
-              fonds de carte sont fournis par © MapTiler et © les contributeurs
-              OpenStreetMap.
-            </p>
+            <p>{t("legal.ipText")}</p>
           </section>
         </Card>
       </div>

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { SocialNetwork } from "@findbarber/shared/types";
 import { useSiteConfig } from "../lib/siteConfig";
@@ -54,32 +55,35 @@ function SocialIcon({ network }: { network: SocialNetwork }) {
 
 export function SiteFooter() {
   const { supportEmail, socialLinks } = useSiteConfig();
+  const { t } = useTranslation("common");
 
   return (
     <footer className="border-t border-border bg-surface">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between">
-        <nav aria-label="Pied de page" className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <nav aria-label={t("footer.nav")} className="flex flex-wrap items-center gap-x-4 gap-y-1">
           {supportEmail && (
             <a href={`mailto:${supportEmail}`} className={LINK_CLASS}>
-              Contact
+              {t("footer.contact")}
             </a>
           )}
           <Link to="/mentions-legales" className={LINK_CLASS}>
-            Mentions légales
+            {t("footer.legal")}
           </Link>
           <span className="text-sm text-foreground-muted">
             © {new Date().getFullYear()} FindBarber
           </span>
         </nav>
         {socialLinks.length > 0 && (
-          <ul aria-label="Réseaux sociaux" className="flex items-center gap-1">
+          <ul aria-label={t("footer.social")} className="flex items-center gap-1">
             {socialLinks.map((link) => (
               <li key={link.network}>
                 <a
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`${NETWORK_LABEL[link.network]} (nouvel onglet)`}
+                  aria-label={t("footer.newTab", {
+                    network: NETWORK_LABEL[link.network],
+                  })}
                   className={`${LINK_CLASS} min-w-11 justify-center`}
                 >
                   <SocialIcon network={link.network} />

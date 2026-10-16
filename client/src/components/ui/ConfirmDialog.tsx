@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "./Button";
 
 export interface ConfirmDialogProps {
@@ -23,12 +24,13 @@ export function ConfirmDialog({
   title,
   children,
   confirmLabel,
-  cancelLabel = "Annuler",
+  cancelLabel,
   tone = "primary",
   isLoading = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation("common");
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -76,7 +78,7 @@ export function ConfirmDialog({
           disabled={isLoading}
           onClick={onCancel}
         >
-          {cancelLabel}
+          {cancelLabel ?? t("dialog.cancel")}
         </Button>
         <Button
           variant={tone === "danger" ? "danger" : "primary"}
