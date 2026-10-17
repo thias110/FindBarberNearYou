@@ -22,7 +22,8 @@
     },
     "preview": {
       "atHome": "A domicilio",
-      "placesAndServices": "Lugares y servicios"
+      "placesAndServices": "Lugares y servicios",
+      "book": "Reservar"
     },
     "barbers": {
       "title": "Barberos por descubrir",
@@ -125,7 +126,7 @@
       "name": "Nombre: {{value}}"
     },
     "highlights": {
-      "noReviews": "Aún no hay reseñas",
+      "noReviews": "Nuevo en FindBarber",
       "ratingAria_one": "Valoración {{rating}} sobre 5, {{count}} reseña",
       "ratingAria_other": "Valoración {{rating}} sobre 5, {{count}} reseñas",
       "reviewCount_one": "({{count}} reseña)",

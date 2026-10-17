@@ -103,6 +103,32 @@ export default {
         exit: "var(--fb-motion-exit)",
         signature: "var(--fb-motion-signature)",
       },
+      // Entrées des surfaces modales (§2.6.7). Toujours utilisées sous
+      // `motion-safe:` : rien ne bouge si l'utilisateur réduit les animations.
+      keyframes: {
+        "dialog-in": {
+          from: { opacity: "0", transform: "scale(.96)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        "sheet-up": {
+          from: { transform: "translateY(100%)" },
+          to: { transform: "translateY(0)" },
+        },
+        "panel-in": {
+          from: { transform: "translateX(100%)" },
+          to: { transform: "translateX(0)" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+      },
+      animation: {
+        "dialog-in": "dialog-in var(--fb-motion-base) var(--fb-ease-out)",
+        "sheet-up": "sheet-up var(--fb-motion-slow) var(--fb-ease-out)",
+        "panel-in": "panel-in var(--fb-motion-slow) var(--fb-ease-out)",
+        "fade-in": "fade-in var(--fb-motion-base) var(--fb-ease-out)",
+      },
       transitionTimingFunction: {
         press: "var(--fb-ease-press)",
         out: "var(--fb-ease-out)",

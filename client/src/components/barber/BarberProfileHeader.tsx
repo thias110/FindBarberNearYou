@@ -2,23 +2,12 @@ import { useTranslation } from "react-i18next";
 import type { PublicBarberProfile } from "@findbarber/shared/types";
 import { localizedCountryName } from "../../lib/countryName";
 import { resolveUploadUrl } from "../../lib/apiClient";
+import { formatRating } from "../../lib/formatters";
 import { label } from "../../lib/labels";
+import { StarIcon } from "../search/BarberHighlights";
 import { Badge } from "../ui/Badge";
 import { CertifiedBadge } from "./CertifiedBadge";
 import { Card } from "../ui/Card";
-
-function StarIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="h-4 w-4 text-brass"
-    >
-      <path d="M12 2.5l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z" />
-    </svg>
-  );
-}
 
 interface BarberProfileHeaderProps {
   profile: PublicBarberProfile;
@@ -63,13 +52,18 @@ export function BarberProfileHeader({
             {profile.city}, {countryName}
           </p>
           {hasRating && (
-            <p className="mt-1 flex items-center gap-1 text-sm text-foreground">
-              <StarIcon />
-              <span className="font-medium">{averageRating.toFixed(1)}</span>
-              <span className="text-foreground-muted">
+            // Bloc de note (plan §2.6.5) : 56 × 56 px, note en Bricolage 800.
+            <div className="mt-3 flex items-center gap-3">
+              <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl bg-brass-soft text-foreground">
+                <span className="font-display text-2xl font-extrabold leading-none tabular-nums">
+                  {formatRating(averageRating)}
+                </span>
+                <StarIcon className="mt-0.5 h-3.5 w-3.5" />
+              </span>
+              <span className="text-sm text-foreground-muted">
                 {t("common.reviewCount", { count: totalReviews })}
               </span>
-            </p>
+            </div>
           )}
         </div>
       </div>

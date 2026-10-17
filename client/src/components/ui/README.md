@@ -174,11 +174,34 @@ toujours accompagné d'un libellé (jamais la couleur seule).
   `Select` fait au moins 44 px de haut.
 - `Alert` — `info | success | warning | danger` avec une icône par variante ;
   `role="alert"` pour `danger`, `status` sinon.
-- `EmptyState` — état vide d'une liste (titre, description, action optionnelle).
-- `ConfirmDialog` — confirmation modale basée sur `<dialog>` + `showModal()`
-  (piège de focus, `Escape` et fond inerte natifs ; focus initial sur
-  « Annuler », retour du focus au déclencheur). Remplace `window.confirm`.
-  `tone="danger"` pour les actions destructives.
+- États de page (plan §2.7) :
+  - `EmptyState` — motif « dégradé », titre (`h3` par défaut, `headingLevel`),
+    une phrase qui dit quoi faire, une action `primary` ;
+  - `ErrorState` — icône, titre factuel, cause, « Réessayer » en `secondary`
+    (`role="alert"`) ;
+  - `useLoadingTimeout(loading)` (`lib/`) — vrai après 10 s de chargement :
+    aucun squelette ne tourne sans fin, on bascule sur `ErrorState`
+    (`common:state.timeout`). `AdminListState` l'applique déjà.
+- `FadeMotif` — le motif « dégradé » en SVG (`currentColor`), géométrie dans
+  `fadeMotifGeometry.ts` (testée). Une seule occurrence décorative par écran.
+- `Dialog` — boîte modale sur `<dialog>` + `showModal()` (piège de focus,
+  `Escape` et fond inerte natifs ; clic sur le fond pour fermer si
+  `dismissible`), 440 px max, `shadow-3`, fond nuit flouté, entrée en
+  `scale(.96)` sous `motion-safe`. `initialFocus` pour le focus de départ ;
+  le focus revient au déclencheur (`useModalDialog`).
+- `ConfirmDialog` — confirmation construite sur `Dialog` ; focus initial sur
+  « Annuler ». Remplace `window.confirm`. `tone="danger"` confirme avec
+  `danger-solid`.
+- `Sheet` — feuille modale : monte du bas sur mobile (poignée, glissement vers
+  le bas ou Échap pour fermer), panneau latéral de 440 px dès `sm:`. Pied
+  collant optionnel (`footer`). Usages : filtres, ville, détail.
+- `Accordion` — titres `button` avec `aria-expanded` / `aria-controls`,
+  panneaux `region` (FAQ, lot N7).
+- Cartes barber (plan §2.6.4), toutes avec lien étendu et levée au survol :
+  `BarberPreviewCard` (vitrine, accueil : photo 4/5 voilée de nuit, bouton
+  « Réserver » qui se déplie au survol, toujours visible sur mobile),
+  `BarberResultCard` (liste de recherche), `BarberCompactCard` (popup,
+  favoris). Sans avis : « Nouveau sur FindBarber », jamais « 0,0 ».
 - `Button` transmet sa `ref` (`forwardRef`).
 
 ## Logo

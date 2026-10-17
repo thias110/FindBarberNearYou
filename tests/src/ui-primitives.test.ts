@@ -16,6 +16,11 @@ import {
   segmentRailClasses,
 } from "../../client/src/components/ui/chipStyles";
 import { CONTROL_CLASS } from "../../client/src/components/ui/control";
+import {
+  FADE_GAPS,
+  FADE_LINE,
+  fadeMotifLines,
+} from "../../client/src/components/ui/fadeMotifGeometry";
 
 const VARIANTS: ButtonVariant[] = [
   "primary",
@@ -121,5 +126,14 @@ describe("anneau de focus partagé", () => {
       readFileSync(f, "utf8").includes("focus-visible:ring-2"),
     );
     expect(offenders).toEqual([]);
+  });
+});
+
+describe("motif « dégradé »", () => {
+  it("espace ses lignes de 2, 3, 5, 8, 12 puis 18 px (plan §2.4)", () => {
+    const ys = fadeMotifLines();
+    expect(ys).toHaveLength(FADE_GAPS.length + 1);
+    const gaps = ys.slice(1).map((y, i) => y - ys[i] - FADE_LINE);
+    expect(gaps).toEqual([2, 3, 5, 8, 12, 18]);
   });
 });

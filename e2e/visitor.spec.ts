@@ -179,7 +179,7 @@ test("fiche barber sur la carte : note, prix et « Réserver » (issue #53)", as
   const card = page.getByRole("region", { name: "Fiche de Marco — Atelier Eaux-Vives" });
   await expect(card).toBeVisible();
   // Sans avis : mention explicite, jamais de note inventée.
-  await expect(card.getByText("Pas encore d'avis")).toBeVisible();
+  await expect(card.getByText("Nouveau sur FindBarber")).toBeVisible();
   await expect(card.getByText(/À partir de/)).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(card).toBeHidden();
@@ -199,17 +199,25 @@ test("cartes « Barbers à découvrir » de l'accueil (issue #54)", async ({
 }) => {
   await page.goto("/");
   const list = page.getByRole("list", { name: "Barbers à découvrir" });
-  const card = list.getByRole("link", { name: /Karim — Barber Plainpalais/ });
-  await expect(card).toBeVisible();
+  const card = list
+    .getByRole("listitem")
+    .filter({ hasText: "Karim — Barber Plainpalais" });
+  const profileLink = card.getByRole("link", { name: "Karim — Barber Plainpalais" });
+  await expect(profileLink).toBeVisible();
   await expect(card.getByText(/\(\d+ avis\)/)).toBeVisible();
   await expect(card.getByText(/À partir de/)).toBeVisible();
+  // « Réserver » mène directement au formulaire, focalisable à part.
+  await expect(card.getByRole("link", { name: "Réserver" })).toHaveAttribute(
+    "href",
+    /#reserver$/,
+  );
   // Ni nombre de services ni pays ; pas de distance sans position partagée.
   await expect(list.getByText(/services? actifs?/)).toHaveCount(0);
   await expect(list.getByText(/Suisse/)).toHaveCount(0);
   await expect(list.getByText(/\d km/)).toHaveCount(0);
 
-  // Toute la carte est un lien vers le profil, atteignable au clavier.
-  await tabTo(page, card);
+  // Toute la carte mène au profil (lien étendu), atteignable au clavier.
+  await tabTo(page, profileLink);
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/barbers\/[^/#]+$/);
 });

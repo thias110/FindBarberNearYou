@@ -204,7 +204,6 @@ export function ClientHomePage() {
                 >
                   <BarberPreviewCard
                     barber={barber}
-                    popularRanking={popularTechniques}
                     distanceKm={position ? distanceKm(position, barber) : null}
                   />
                 </li>

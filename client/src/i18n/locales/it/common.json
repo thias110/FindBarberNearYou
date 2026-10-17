@@ -103,7 +103,8 @@
     }
   },
   "dialog": {
-    "cancel": "Annulla"
+    "cancel": "Annulla",
+    "close": "Chiudi"
   },
   "avatar": {
     "alt": "La tua foto profilo",
@@ -162,5 +163,9 @@
   "upload": {
     "badFormat": "Formati accettati: JPEG, PNG o WebP.",
     "tooLarge": "Immagine troppo grande (massimo {{max}} MB)."
+  },
+  "state": {
+    "timeout": "Il caricamento richiede troppo tempo. Controlla la connessione e riprova.",
+    "retry": "Riprova"
   }
 }
