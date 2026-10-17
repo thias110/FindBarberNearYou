@@ -144,6 +144,14 @@
     "result": {
       "showOnMap": "Afficher {{name}} sur la carte",
       "viewProfile": "Voir le profil"
+    },
+    "availability": {
+      "today": "Libre aujourd'hui",
+      "next": "Prochain créneau : {{when}}",
+      "todayAt": "aujourd'hui à {{time}}",
+      "tomorrowAt": "demain à {{time}}",
+      "dayAt": "{{day}} à {{time}}",
+      "none": "Aucun créneau libre cette semaine"
     }
   },
   "map": {

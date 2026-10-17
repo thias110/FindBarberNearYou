@@ -9,6 +9,7 @@ import { Badge } from "./ui/Badge";
 import { buttonClasses } from "./ui/buttonStyles";
 import {
   BarberPhoto,
+  NextSlot,
   RatingSummary,
   StartingPrice,
 } from "./search/BarberHighlights";
@@ -81,6 +82,7 @@ export function BarbersMapCard({
           </p>
           <RatingSummary barber={barber} className="mt-1" />
           <StartingPrice barber={barber} className="mt-0.5" />
+          <NextSlot barber={barber} className="mt-1" />
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { resolveUploadUrl } from "../../lib/apiClient";
 import { cn } from "../../lib/cn";
 import { formatCurrency, formatRating } from "../../lib/formatters";
+import { describeNextSlot } from "../../lib/nextSlot";
 import { FadeMotif } from "../ui/FadeMotif";
 
 // Éléments communs aux cartes de barber (résultat, fiche carte, accueil) :
@@ -148,6 +149,40 @@ export function StartingPrice({
       <span className="font-semibold">
         {formatCurrency(barber.startingPriceMinor, barber.currency)}
       </span>
+    </p>
+  );
+}
+
+/**
+ * Prochain créneau libre (lot N1) : « Prochain créneau : aujourd'hui à 14:30 ».
+ * Indicatif (calcul serveur mis en cache 60 s) : la réservation recalcule
+ * toujours le créneau. Sans créneau dans les 7 jours, mention explicite.
+ */
+export function NextSlot({
+  barber,
+  className,
+}: {
+  barber: Pick<PublicBarberSearchItem, "nextAvailableAt">;
+  className?: string;
+}) {
+  const { t } = useTranslation("client");
+  if (!barber.nextAvailableAt) {
+    return (
+      <p className={cn("text-sm text-foreground-muted", className)}>
+        {t("search.availability.none")}
+      </p>
+    );
+  }
+  const slot = describeNextSlot(barber.nextAvailableAt);
+  const when =
+    slot.day === "today"
+      ? t("search.availability.todayAt", { time: slot.time })
+      : slot.day === "tomorrow"
+        ? t("search.availability.tomorrowAt", { time: slot.time })
+        : t("search.availability.dayAt", { day: slot.weekday, time: slot.time });
+  return (
+    <p className={cn("text-sm font-semibold text-accent-strong", className)}>
+      {t("search.availability.next", { when })}
     </p>
   );
 }

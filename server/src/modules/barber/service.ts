@@ -64,6 +64,10 @@ import { AppError, isUniqueViolation } from "../../lib/errors.js";
 import { escapeLikePattern } from "../../lib/like.js";
 import { approximateCoordinates } from "../../lib/location.js";
 import { publicUploadPath } from "../../lib/storage.js";
+import {
+  getAvailabilitySummaries,
+  invalidateAvailability,
+} from "../booking/availability.js";
 
 function toOwnProfile(
   profile: BarberProfile,
@@ -413,6 +417,8 @@ export async function upsertProfile(
       .where(eq(users.id, userId))
       .limit(1);
 
+    // Fuseau ou lieux modifiés : la disponibilité affichée est recalculée.
+    invalidateAvailability(profile.id);
     return toOwnProfile(profile, input.places, owner?.avatarPath ?? null);
   });
 }
@@ -474,6 +480,7 @@ export async function createService(
     return created;
   });
 
+  invalidateAvailability(profile.id);
   return toOwnService(service, input.audiences, input.techniques);
 }
 
@@ -550,6 +557,7 @@ export async function updateService(
     loadAudiences([service.id]),
     loadTechniques([service.id]),
   ]);
+  invalidateAvailability(profile.id);
   return toOwnService(
     service,
     audiences.get(service.id) ?? [],
@@ -634,6 +642,7 @@ export async function replaceWorkingHours(
         asc(barberWorkingHours.startMinute),
       );
 
+    invalidateAvailability(profile.id);
     return rows.map(toWorkingHoursInterval);
   });
 }
@@ -741,6 +750,7 @@ export async function createTimeOff(
           updatedAt: now,
         })
         .returning();
+      invalidateAvailability(profile.id);
       return toTimeOff(created);
     } catch (err) {
       // Une violation d'unicité ici ne doit jamais devenir EMAIL_TAKEN :
@@ -782,6 +792,7 @@ export async function deleteTimeOff(
       "Indisponibilité introuvable.",
     );
   }
+  invalidateAvailability(profile.id);
 }
 
 // Horaires publics (lot N3) : uniquement les plages hebdomadaires, triées.
@@ -1036,6 +1047,7 @@ export async function searchBarbers(
       ), ARRAY[]::text[])`,
       currency: barberProfiles.currency,
       certifiedAt: barberProfiles.certifiedAt,
+      timezone: barberProfiles.timezone,
       avatarPath: users.avatarPath,
       // Agrégats (issue #48) : sous-requêtes corrélées dans la MÊME requête SQL,
       // donc aucun N+1 quel que soit le nombre de résultats.
@@ -1053,7 +1065,13 @@ export async function searchBarbers(
     .limit(input.pageSize)
     .offset((input.page - 1) * input.pageSize);
 
+  // Disponibilité (lot N1) : uniquement pour la page affichée, en lot.
+  const availability = await getAvailabilitySummaries(
+    rows.map((row) => ({ id: row.id, timezone: row.timezone })),
+  );
+
   const barbers: PublicBarberSearchItem[] = rows.map((row) => {
+    const slot = availability.get(row.id);
     const { latitude, longitude } = approximateCoordinates(
       row.latitude,
       row.longitude,
@@ -1075,6 +1093,8 @@ export async function searchBarbers(
       startingPriceMinor: row.startingPriceMinor,
       currency: row.currency as Currency,
       certified: row.certifiedAt !== null,
+      nextAvailableAt: slot?.nextAvailableAt ?? null,
+      availableToday: slot?.availableToday ?? false,
     };
   });
 

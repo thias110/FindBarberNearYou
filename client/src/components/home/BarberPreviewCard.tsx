@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import { formatDistance } from "../../lib/geo";
 import { CertifiedBadge } from "../barber/CertifiedBadge";
+import { Badge } from "../ui/Badge";
 import { buttonClasses } from "../ui/buttonStyles";
 import {
   BarberPhoto,
@@ -53,9 +54,19 @@ export function BarberPreviewCard({
       />
 
       <div className="flex items-start justify-between gap-2 p-3">
-        <span className="rounded-full bg-night/70 px-2.5 py-1 backdrop-blur-sm">
-          <RatingSummary barber={barber} tone="onNight" />
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-night/70 px-2.5 py-1 backdrop-blur-sm">
+            <RatingSummary barber={barber} tone="onNight" />
+          </span>
+          {/* Lot N1 : badge « Libre aujourd'hui » (point qui pulse). */}
+          {barber.availableToday && (
+            // Fond opaque sous le badge : même contraste que sur une carte
+            // (testé), quelle que soit la photo.
+            <span className="rounded-full bg-surface shadow-1">
+              <Badge variant="live">{t("search.availability.today")}</Badge>
+            </span>
+          )}
+        </div>
         {barber.certified && <CertifiedBadge />}
       </div>
 
