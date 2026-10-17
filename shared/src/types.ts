@@ -106,9 +106,19 @@ export interface OwnBarberService extends PublicBarberService {
   updatedAt: string;
 }
 
+// Horaires publics (lot N3) : plages de travail par jour, en heures locales du
+// salon. Ni identifiant interne, ni absences, ni leur motif (privés).
+export interface PublicWeeklyHours {
+  intervals: { weekday: Weekday; startMinute: number; endMinute: number }[];
+  // Jour courant dans le fuseau du salon, pour le mettre en avant ; null si le
+  // barber n'a pas renseigné son fuseau.
+  today: Weekday | null;
+}
+
 export interface PublicBarberProfileWithServices {
   profile: PublicBarberProfile;
   services: PublicBarberService[];
+  weeklyHours: PublicWeeklyHours;
 }
 
 // --- Recherche publique (lot 3, coordonnées lot 4, agrégats issue #48) ---

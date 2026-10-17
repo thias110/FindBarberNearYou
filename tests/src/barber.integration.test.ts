@@ -700,6 +700,63 @@ describe("public profile", () => {
     expect(res.body.services[0]).not.toHaveProperty("isActive");
   });
 
+  // Lot N3 (docs/redesign/03-plan-refonte.md) : horaires publics.
+  it("exposes the weekly hours without time-off or private data", async () => {
+    const email = "hours@example.com";
+    const { profileId } = await setupPublicBarber(email);
+    const { agent, csrf } = await login(email);
+    await agent
+      .put("/api/barber/working-hours")
+      .set("X-CSRF-Token", csrf)
+      .send({
+        intervals: [
+          { weekday: 2, startMinute: 14 * 60, endMinute: 18 * 60 },
+          { weekday: 1, startMinute: 9 * 60, endMinute: 12 * 60 },
+          { weekday: 2, startMinute: 9 * 60, endMinute: 12 * 60 },
+        ],
+      })
+      .expect(200);
+    await agent
+      .post("/api/barber/time-off")
+      .set("X-CSRF-Token", csrf)
+      .send({ startDate: "2030-01-01", endDate: "2030-01-05", reason: "Motif privé" })
+      .expect(201);
+
+    const res = await request(app).get(`/api/barbers/${profileId}`);
+    expect(res.status).toBe(200);
+    // Tri par jour puis heure de début ; pas d'identifiant interne.
+    expect(res.body.weeklyHours.intervals).toEqual([
+      { weekday: 1, startMinute: 540, endMinute: 720 },
+      { weekday: 2, startMinute: 540, endMinute: 720 },
+      { weekday: 2, startMinute: 840, endMinute: 1080 },
+    ]);
+    // Sans fuseau renseigné, le jour courant du salon est inconnu.
+    expect(res.body.weeklyHours.today).toBeNull();
+    // Les absences et leur motif restent privés.
+    expect(JSON.stringify(res.body)).not.toContain("Motif privé");
+    expect(JSON.stringify(res.body)).not.toContain("2030-01-01");
+  });
+
+  it("gives the current weekday in the salon's time zone", async () => {
+    const email = "hours-tz@example.com";
+    const user = await registerBarber(email);
+    const { agent, csrf } = await login(email);
+    const profile = await createProfile(agent, csrf, { timezone: "Pacific/Kiritimati" });
+    await approveProfile(profile.body.profile.id as string);
+
+    const res = await request(app).get(`/api/barbers/${profile.body.profile.id}`);
+    expect(res.status).toBe(200);
+    expect(user.id).toBeTruthy();
+    expect(res.body.weeklyHours.intervals).toEqual([]);
+    // UTC+14 : le jour du salon peut différer du jour UTC du serveur.
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Pacific/Kiritimati",
+      weekday: "short",
+    }).format(new Date());
+    const expected = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(parts) + 1;
+    expect(res.body.weeklyHours.today).toBe(expected);
+  });
+
   it("returns 404 for a suspended account", async () => {
     const { user, profileId } = await setupPublicBarber("suspended@example.com");
     await db.update(users).set({ status: "SUSPENDED" }).where(eq(users.id, user.id));

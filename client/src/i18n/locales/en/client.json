@@ -176,7 +176,14 @@
     "reviewsError": "Unable to load reviews.",
     "booking": "Booking",
     "noServices": "This professional doesn't offer any bookable services yet.",
-    "noPlaces": "This professional hasn't specified where they provide services yet."
+    "noPlaces": "This professional hasn't specified where they provide services yet.",
+    "hours": {
+      "title": "Opening hours",
+      "closed": "Closed",
+      "today": "Today",
+      "empty": "This professional hasn't published their hours yet.",
+      "localTime": "Local time at the salon."
+    }
   },
   "booking": {
     "form": {

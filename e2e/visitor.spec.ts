@@ -1,7 +1,7 @@
 // Parcours visiteur (issue #17) : accueil public, recherche, inscription au
 // clavier seul (issue #18).
 import { expect, test } from "@playwright/test";
-import { tabTo } from "./helpers";
+import { expectNoA11yViolations, tabTo } from "./helpers";
 
 test("l'accueil est public et propose inscription et espace barber", async ({
   page,
@@ -231,4 +231,23 @@ test("distance sur les cartes de l'accueil si la position est partagée (issue #
   await page.goto("/");
   const list = page.getByRole("list", { name: "Barbers à découvrir" });
   await expect(list.getByText(/Genève · .*km/).first()).toBeVisible();
+});
+
+test("horaires publics sur la fiche barber, jour courant mis en avant (lot N3)", async ({
+  page,
+}) => {
+  await page.goto("/barbers");
+  await page.getByRole("link", { name: "Voir le profil" }).first().click();
+  const hours = page.getByRole("region", { name: "Horaires" });
+  await expect(hours).toBeVisible();
+  // Sept jours, du lundi au dimanche ; un jour sans plage affiche « Fermé ».
+  for (const day of ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]) {
+    // Le jour courant porte aussi le badge « Aujourd'hui » dans son libellé.
+    await expect(hours.locator("dt").filter({ hasText: day })).toHaveCount(1);
+  }
+  await expect(hours.getByText("Fermé").first()).toBeVisible();
+  // Le jour courant du salon est signalé (fuseau du profil de démo).
+  await expect(hours.locator('[aria-current="date"]')).toHaveCount(1);
+  await expect(hours.getByText("Aujourd'hui")).toBeVisible();
+  await expectNoA11yViolations(page);
 });
