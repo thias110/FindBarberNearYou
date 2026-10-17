@@ -20,8 +20,10 @@ interface BarberResultCardProps {
   onSelect: (id: string) => void;
 }
 
-// Contenu strictement limité à la whitelist publique `PublicBarberSearchItem` :
-// photo, note, prix « à partir de » (#48) ; aucune disponibilité ni donnée privée.
+// Carte « résultat » (gabarit du lot DS-3 : plan §2.6.4). Contenu strictement
+// limité à la whitelist publique `PublicBarberSearchItem` : photo, note, prix
+// « à partir de » (#48) ; aucune disponibilité ni donnée privée. Le prochain
+// créneau (lot N1) et le favori (lot N5) viendront avec leurs données.
 export function BarberResultCard({
   barber,
   distanceKm = null,
@@ -35,8 +37,10 @@ export function BarberResultCard({
   return (
     <Card
       className={cn(
-        "relative p-5 transition",
-        selected ? "ring-2 ring-accent" : "hover:shadow-md",
+        "relative p-4 transition-[transform,box-shadow] duration-base ease-out",
+        selected
+          ? "ring-2 ring-accent"
+          : "hover:shadow-2 motion-safe:hover:-translate-y-1",
       )}
     >
       {/* Zone d'action pleine carte : sélectionne le marqueur. */}
@@ -49,9 +53,10 @@ export function BarberResultCard({
       />
       <div className="pointer-events-none relative z-10">
         <div className="flex items-start gap-4">
-          <BarberPhoto barber={barber} className="h-16 w-16 rounded-2xl text-xl" />
+          <BarberPhoto barber={barber} className="h-20 w-20 rounded-xl text-2xl" />
           <div className="min-w-0">
-            <h2 className="text-lg font-bold text-foreground">
+            {/* h2 pour la hiérarchie de la page, style « h3 » du système. */}
+            <h2 className="text-h3 font-bold text-foreground">
               {barber.displayName}
             </h2>
             {barber.certified && <CertifiedBadge className="mt-0.5" />}
@@ -92,7 +97,7 @@ export function BarberResultCard({
 
         <Link
           to={`/barbers/${barber.id}`}
-          className={buttonClasses("secondary", "md", "pointer-events-auto mt-3")}
+          className={buttonClasses("secondary", "sm", "pointer-events-auto mt-3")}
         >
           {t("search.result.viewProfile")}
         </Link>

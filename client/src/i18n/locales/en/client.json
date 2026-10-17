@@ -22,7 +22,8 @@
     },
     "preview": {
       "atHome": "At home",
-      "placesAndServices": "Locations and services"
+      "placesAndServices": "Locations and services",
+      "book": "Book"
     },
     "barbers": {
       "title": "Barbers to discover",
@@ -125,7 +126,7 @@
       "name": "Name: {{value}}"
     },
     "highlights": {
-      "noReviews": "No reviews yet",
+      "noReviews": "New on FindBarber",
       "ratingAria_one": "Rated {{rating}} out of 5, {{count}} review",
       "ratingAria_other": "Rated {{rating}} out of 5, {{count}} reviews",
       "reviewCount_one": "({{count}} review)",

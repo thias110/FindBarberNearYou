@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "./Button";
+import { Dialog } from "./Dialog";
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -15,10 +16,10 @@ export interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
-// Boîte de confirmation modale (remplace `window.confirm`). S'appuie sur
-// `<dialog>` + `showModal()` : piège de focus, `Escape` et fond inerte sont
-// gérés nativement par le navigateur. Le focus initial va sur « Annuler »
-// (choix sûr) et revient sur l'élément déclencheur à la fermeture.
+// Boîte de confirmation modale (remplace `window.confirm`), construite sur
+// `Dialog`. Le focus initial va sur « Annuler » (choix sûr) et revient sur
+// l'élément déclencheur à la fermeture. Une action destructive se confirme
+// avec le bouton `danger-solid` (plan §2.6.1).
 export function ConfirmDialog({
   open,
   title,
@@ -31,64 +32,35 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const { t } = useTranslation("common");
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
-  const returnFocusRef = useRef<HTMLElement | null>(null);
-  const titleId = useId();
-  const descriptionId = useId();
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      returnFocusRef.current = document.activeElement as HTMLElement | null;
-      dialog.showModal();
-      cancelRef.current?.focus();
-    } else if (!open && dialog.open) {
-      dialog.close();
-      returnFocusRef.current?.focus();
-    }
-  }, [open]);
 
   return (
-    <dialog
-      ref={dialogRef}
-      aria-labelledby={titleId}
-      aria-describedby={children ? descriptionId : undefined}
-      // Escape : le navigateur ferme le dialog ; on garde l'état React maître.
-      onCancel={(event) => {
-        event.preventDefault();
-        if (!isLoading) onCancel();
-      }}
-      className="w-[calc(100%-2rem)] max-w-md rounded-2xl border border-border bg-surface p-6 text-foreground shadow-card backdrop:bg-black/50"
-    >
-      <h2 id={titleId} className="text-lg font-bold text-foreground">
-        {title}
-      </h2>
-      {children && (
-        <div id={descriptionId} className="mt-2 text-sm text-foreground-muted">
-          {children}
-        </div>
-      )}
-      <div className="mt-6 flex flex-wrap justify-end gap-2">
-        <Button
-          ref={cancelRef}
-          variant="secondary"
-          className="min-h-11"
-          disabled={isLoading}
-          onClick={onCancel}
-        >
-          {cancelLabel ?? t("dialog.cancel")}
-        </Button>
-        <Button
-          variant={tone === "danger" ? "danger" : "primary"}
-          className="min-h-11"
-          isLoading={isLoading}
-          onClick={onConfirm}
-        >
-          {confirmLabel}
-        </Button>
-      </div>
-    </dialog>
+    <Dialog
+      open={open}
+      title={title}
+      description={children}
+      initialFocus={cancelRef}
+      dismissible={!isLoading}
+      onClose={onCancel}
+      actions={
+        <>
+          <Button
+            ref={cancelRef}
+            variant="secondary"
+            disabled={isLoading}
+            onClick={onCancel}
+          >
+            {cancelLabel ?? t("dialog.cancel")}
+          </Button>
+          <Button
+            variant={tone === "danger" ? "danger-solid" : "primary"}
+            isLoading={isLoading}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </Button>
+        </>
+      }
+    />
   );
 }

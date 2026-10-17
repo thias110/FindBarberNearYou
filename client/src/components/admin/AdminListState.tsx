@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert } from "../ui/Alert";
-import { Button } from "../ui/Button";
+import { useLoadingTimeout } from "../../lib/useLoadingTimeout";
 import { Card } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
+import { ErrorState } from "../ui/ErrorState";
 import { Skeleton } from "../ui/Skeleton";
 
-// États communs des listes d'administration : chargement (skeletons annoncés),
-// erreur avec « Réessayer », vide, puis contenu.
+// États communs des listes d'administration : chargement (skeletons annoncés,
+// erreur au bout de 10 s), erreur avec « Réessayer », vide, puis contenu.
 export function AdminListState({
   loading,
   error,
@@ -26,6 +26,18 @@ export function AdminListState({
   children: ReactNode;
 }) {
   const { t } = useTranslation("admin");
+  const { t: tCommon } = useTranslation("common");
+  const timedOut = useLoadingTimeout(loading);
+
+  if (loading && timedOut) {
+    return (
+      <ErrorState
+        title={tCommon("state.timeout")}
+        onRetry={onRetry}
+        retryLabel={t("common.retry")}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -46,12 +58,7 @@ export function AdminListState({
 
   if (error) {
     return (
-      <Alert variant="danger">
-        <p>{error}</p>
-        <Button variant="secondary" className="mt-3 min-h-11" onClick={onRetry}>
-          {t("common.retry")}
-        </Button>
-      </Alert>
+      <ErrorState title={error} onRetry={onRetry} retryLabel={t("common.retry")} />
     );
   }
 
