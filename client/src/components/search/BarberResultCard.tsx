@@ -10,7 +10,7 @@ import { Badge } from "../ui/Badge";
 import { CertifiedBadge } from "../barber/CertifiedBadge";
 import { Card } from "../ui/Card";
 import { buttonClasses } from "../ui/buttonStyles";
-import { BarberPhoto, RatingSummary, StartingPrice } from "./BarberHighlights";
+import { BarberPhoto, NextSlot, RatingSummary, StartingPrice } from "./BarberHighlights";
 
 interface BarberResultCardProps {
   barber: PublicBarberSearchItem;
@@ -22,8 +22,8 @@ interface BarberResultCardProps {
 
 // Carte « résultat » (gabarit du lot DS-3 : plan §2.6.4). Contenu strictement
 // limité à la whitelist publique `PublicBarberSearchItem` : photo, note, prix
-// « à partir de » (#48) ; aucune disponibilité ni donnée privée. Le prochain
-// créneau (lot N1) et le favori (lot N5) viendront avec leurs données.
+// « à partir de » (#48), prochain créneau libre (lot N1) ; aucune donnée
+// privée. Le favori (lot N5) viendra avec ses données.
 export function BarberResultCard({
   barber,
   distanceKm = null,
@@ -67,6 +67,7 @@ export function BarberResultCard({
             </p>
             <RatingSummary barber={barber} className="mt-1" />
             <StartingPrice barber={barber} className="mt-0.5" />
+            <NextSlot barber={barber} className="mt-1.5" />
           </div>
         </div>
 

@@ -18,7 +18,11 @@ import {
   type PaymentMode,
   type Weekday,
 } from "./constants";
-import { isValidCalendarDate, weekdayFromCalendarDate } from "./dates";
+import {
+  calendarDateToUtcMillis,
+  isValidCalendarDate,
+  weekdayFromCalendarDate,
+} from "./dates";
 import { utcToZonedParts, zonedTimeToUtc } from "./timezones";
 
 export interface SlotWorkingInterval {
@@ -264,4 +268,68 @@ export function amountDueOnline(
   // Montant minimal accepté par Stripe : un acompte trop faible est arrondi
   // au minimum, sans jamais dépasser le prix.
   return Math.min(priceMinor, Math.max(due, LIMITS.paymentMinAmountMinor));
+}
+
+// --- Disponibilité affichée dans la recherche (lot N1) ---
+
+/** Nombre de jours civils du salon examinés (aujourd'hui compris). */
+export const AVAILABILITY_DAYS = 7;
+
+export interface AvailabilitySummary {
+  /** Premier créneau libre (ISO UTC) dans les 7 jours du salon, sinon null. */
+  nextAvailableAt: string | null;
+  /** Un créneau libre existe aujourd'hui, dans le fuseau du salon. */
+  availableToday: boolean;
+}
+
+export interface SummarizeAvailabilityInput {
+  timezone: string;
+  /** Durées des prestations actives (distinctes ou non). */
+  durations: number[];
+  workingHours: SlotWorkingInterval[];
+  timeOff: SlotTimeOffRange[];
+  busy: SlotBusyInterval[];
+  now: Date;
+}
+
+/**
+ * Premier créneau libre du barber, jour par jour à partir d'aujourd'hui (fuseau
+ * du salon), toutes prestations actives confondues. Mêmes règles que la
+ * réservation : `computeBookingSlots`, délai minimal et horizon de `LIMITS`.
+ */
+export function summarizeAvailability(
+  input: SummarizeAvailabilityInput,
+): AvailabilitySummary {
+  const { timezone, durations, workingHours, timeOff, busy, now } = input;
+  const none = { nextAvailableAt: null, availableToday: false };
+  if (durations.length === 0 || workingHours.length === 0) return none;
+  const today = utcToZonedParts(now, timezone).date;
+  const distinct = [...new Set(durations)];
+
+  for (let offset = 0; offset < AVAILABILITY_DAYS; offset += 1) {
+    const date = new Date(calendarDateToUtcMillis(today) + offset * MS_PER_DAY)
+      .toISOString()
+      .slice(0, 10);
+    let earliest: string | null = null;
+    for (const durationMinutes of distinct) {
+      const [first] = computeBookingSlots({
+        date,
+        timezone,
+        durationMinutes,
+        workingHours,
+        timeOff,
+        busy,
+        now,
+        leadTimeMinutes: LIMITS.bookingLeadTimeMinutes,
+        horizonDays: LIMITS.bookingHorizonDays,
+      });
+      if (first && (earliest === null || first.startAt < earliest)) {
+        earliest = first.startAt;
+      }
+    }
+    if (earliest !== null) {
+      return { nextAvailableAt: earliest, availableToday: offset === 0 };
+    }
+  }
+  return none;
 }

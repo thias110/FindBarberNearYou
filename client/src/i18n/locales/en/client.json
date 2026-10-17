@@ -144,6 +144,14 @@
     "result": {
       "showOnMap": "Show {{name}} on the map",
       "viewProfile": "View profile"
+    },
+    "availability": {
+      "today": "Free today",
+      "next": "Next slot: {{when}}",
+      "todayAt": "today at {{time}}",
+      "tomorrowAt": "tomorrow at {{time}}",
+      "dayAt": "{{day}} at {{time}}",
+      "none": "No free slot this week"
     }
   },
   "map": {

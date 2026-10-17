@@ -172,6 +172,9 @@ describe("GET /api/barbers", () => {
         "reviewCount",
         "startingPriceMinor",
         "techniques",
+        // Lot N1 : disponibilité indicative.
+        "nextAvailableAt",
+        "availableToday",
       ].sort(),
     );
     // Photo de profil obligatoire à la création (issue #44) : avatar de test.

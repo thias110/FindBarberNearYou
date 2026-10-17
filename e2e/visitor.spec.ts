@@ -251,3 +251,11 @@ test("horaires publics sur la fiche barber, jour courant mis en avant (lot N3)",
   await expect(hours.getByText("Aujourd'hui")).toBeVisible();
   await expectNoA11yViolations(page);
 });
+
+test("prochain créneau libre sur les cartes de résultat (lot N1)", async ({ page }) => {
+  await page.goto("/barbers");
+  // Les barbers de démo ont des horaires et un fuseau : un créneau existe
+  // dans les 7 jours, affiché en clair sur leur carte.
+  await expect(page.getByText(/^Prochain créneau : /).first()).toBeVisible();
+  await expectNoA11yViolations(page);
+});

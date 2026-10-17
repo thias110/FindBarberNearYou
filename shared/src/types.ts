@@ -149,6 +149,12 @@ export interface PublicBarberSearchItem {
   currency: Currency;
   // Badge « Certifié » attribué par un ADMIN (issue #41).
   certified: boolean;
+  // Disponibilité (lot N1) : premier créneau libre des 7 prochains jours du
+  // salon (ISO UTC), toutes prestations actives confondues, sinon null ; et
+  // créneau libre aujourd'hui (fuseau du salon). Indicatif : la réservation
+  // recalcule toujours le créneau.
+  nextAvailableAt: string | null;
+  availableToday: boolean;
 }
 
 // Prestations populaires (issue #47) : uniquement l'ordre des techniques,

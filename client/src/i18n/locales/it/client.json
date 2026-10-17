@@ -144,6 +144,14 @@
     "result": {
       "showOnMap": "Mostra {{name}} sulla mappa",
       "viewProfile": "Vedi il profilo"
+    },
+    "availability": {
+      "today": "Libero oggi",
+      "next": "Prossimo orario: {{when}}",
+      "todayAt": "oggi alle {{time}}",
+      "tomorrowAt": "domani alle {{time}}",
+      "dayAt": "{{day}} alle {{time}}",
+      "none": "Nessun orario libero questa settimana"
     }
   },
   "map": {

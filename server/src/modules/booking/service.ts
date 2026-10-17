@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, gt, gte, inArray, isNull, lt, lte, or } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lt, lte } from "drizzle-orm";
 import type { PgUpdateSetSource } from "drizzle-orm/pg-core";
 import { db } from "../../db/client.js";
 import {
@@ -14,10 +14,7 @@ import {
   type BarberProfile,
   type BookingRow,
 } from "@findbarber/shared/schema";
-import {
-  ACTIVE_BOOKING_STATUSES,
-  LIMITS,
-} from "@findbarber/shared/constants";
+import { LIMITS } from "@findbarber/shared/constants";
 import type {
   AuditAction,
   BookingStatus,
@@ -65,6 +62,8 @@ import { notifyBookingEvent } from "../notification/service.js";
 import { openCheckout, PAYMENT_HOLD_MS, paymentRequirementFor } from "../payments/service.js";
 import { paymentStatusOnCancel, visibleToBarber } from "../payments/rules.js";
 import { expireStalePendingBookings } from "./expiry.js";
+import { invalidateAvailability } from "./availability.js";
+import { occupiesSlotCondition } from "./occupancy.js";
 
 const MS_PER_HOUR = 3_600_000;
 
@@ -202,6 +201,7 @@ async function assertActiveBarber(
 // Réservations qui occupent un créneau : CONFIRMED, et PENDING non échues.
 // Une demande échue (24 h ou début atteint) libère le créneau dès la lecture,
 // avant même que le balayage ne persiste son statut EXPIRED.
+// Réservations qui occupent un créneau : voir `occupiesSlotCondition`.
 async function loadBusy(
   runner: typeof db,
   barberProfileId: string,
@@ -209,26 +209,13 @@ async function loadBusy(
   now: Date,
 ): Promise<{ startAt: Date; endAt: Date }[]> {
   const window = busyWindow(date);
-  const ttlStart = new Date(
-    now.getTime() - LIMITS.bookingPendingTtlHours * MS_PER_HOUR,
-  );
   return runner
     .select({ startAt: bookings.startAt, endAt: bookings.endAt })
     .from(bookings)
     .where(
       and(
         eq(bookings.barberProfileId, barberProfileId),
-        inArray(bookings.status, [...ACTIVE_BOOKING_STATUSES]),
-        or(
-          eq(bookings.status, "CONFIRMED"),
-          and(
-            gt(bookings.createdAt, ttlStart),
-            gt(bookings.startAt, now),
-            // Demande non payée (issue #10) : bloque seulement jusqu'à
-            // l'échéance du paiement.
-            or(isNull(bookings.paymentExpiresAt), gt(bookings.paymentExpiresAt, now)),
-          ),
-        ),
+        occupiesSlotCondition(now),
         lt(bookings.startAt, window.end),
         gt(bookings.endAt, window.start),
       ),
@@ -560,6 +547,8 @@ async function createBookingInTransaction(
       .from(users)
       .where(eq(users.id, clientUserId))
       .limit(1);
+    // Nouveau créneau occupé : disponibilité de la recherche à recalculer.
+    invalidateAvailability(row.barberProfileId);
     return toBooking(row, client?.name ?? null);
   });
 }
@@ -911,6 +900,8 @@ async function transitionBooking(request: TransitionRequest): Promise<Booking> {
     .from(reviews)
     .where(eq(reviews.bookingId, updated.id))
     .limit(1);
+  // Le créneau est libéré ou occupé autrement : disponibilité à recalculer.
+  invalidateAvailability(updated.barberProfileId);
   return toBooking(updated, client?.name ?? null, review !== undefined);
 }
 

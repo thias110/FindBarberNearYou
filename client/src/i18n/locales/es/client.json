@@ -144,6 +144,14 @@
     "result": {
       "showOnMap": "Mostrar a {{name}} en el mapa",
       "viewProfile": "Ver el perfil"
+    },
+    "availability": {
+      "today": "Libre hoy",
+      "next": "Próxima cita libre: {{when}}",
+      "todayAt": "hoy a las {{time}}",
+      "tomorrowAt": "mañana a las {{time}}",
+      "dayAt": "{{day}} a las {{time}}",
+      "none": "Sin horas libres esta semana"
     }
   },
   "map": {
