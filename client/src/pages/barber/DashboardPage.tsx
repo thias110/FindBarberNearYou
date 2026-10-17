@@ -169,9 +169,11 @@ export function BarberDashboardPage() {
           <AvatarEditor />
         </Card>
 
+        {/* Sur mobile, accès aux sections que la barre d'onglets ne porte pas ;
+            à partir de `lg:`, la barre latérale les remplace (plan §2.6.6). */}
         <nav
           aria-label={t("dashboard.navLabel")}
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid gap-3 sm:grid-cols-2 lg:hidden"
         >
           {PRO_NAV.map((item) => (
             <ProNavCard

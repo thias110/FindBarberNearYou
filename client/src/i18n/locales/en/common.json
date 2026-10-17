@@ -58,7 +58,12 @@
     "contact": "Contact",
     "legal": "Legal notice",
     "social": "Social media",
-    "newTab": "{{network}} (new tab)"
+    "newTab": "{{network}} (new tab)",
+    "searchTitle": "Search",
+    "findBarber": "Find a barber",
+    "prosTitle": "For pros",
+    "helpTitle": "Help",
+    "legalTitle": "Legal"
   },
   "notifications": {
     "title": "Notifications",
@@ -167,5 +172,28 @@
   "state": {
     "timeout": "Loading is taking too long. Check your connection, then try again.",
     "retry": "Try again"
+  },
+  "nav": {
+    "main": "Main navigation",
+    "search": "Search",
+    "forPros": "For pros",
+    "prosTileTitle": "Your schedule, your clients, your showcase.",
+    "prosTileBody": "Create your profile, publish your services and receive bookings.",
+    "becomePartner": "Become a partner",
+    "proLogin": "Go to the pro area",
+    "book": "Book",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "menu": "Menu",
+    "appNav": "Area navigation",
+    "tabs": "Shortcuts",
+    "home": "Home",
+    "appointments": "Appointments",
+    "account": "My account",
+    "accountShort": "Account",
+    "today": "Today",
+    "bookings": "Bookings",
+    "agenda": "Schedule",
+    "showcase": "Showcase"
   }
 }
