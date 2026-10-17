@@ -265,7 +265,12 @@
       "cancelNo": "No",
       "cancelConfirm": "Confirmar la cancelación",
       "cancel": "Cancelar",
-      "cancelTerms": "La cancelación está sujeta a las condiciones aplicables."
+      "cancelTerms": "La cancelación está sujeta a las condiciones aplicables.",
+      "barberAddress": "Dirección de la cita",
+      "barberAddressMissing": "El profesional no ha indicado una dirección exacta. Contáctalo para llegar.",
+      "showDirections": "Dirección y ruta",
+      "directions": "Cómo llegar",
+      "directionsAria": "Cómo llegar a {{address}} en Google Maps (nueva pestaña)"
     }
   },
   "review": {

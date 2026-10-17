@@ -1,7 +1,14 @@
 // Parcours de réservation complet (issues #17 et #18) : le CLIENT réserve au
 // clavier seul, le BARBER confirme, le CLIENT voit le rendez-vous confirmé.
 import { expect, test, type Page } from "@playwright/test";
-import { ACCOUNTS, API, DEMO_PASSWORD, loginByApi, tabTo } from "./helpers";
+import {
+  ACCOUNTS,
+  API,
+  DEMO_PASSWORD,
+  expectNoA11yViolations,
+  loginByApi,
+  tabTo,
+} from "./helpers";
 
 /** Premier jour (J+1 à J+21) où Karim a des créneaux en salon. */
 async function findBookableDate(
@@ -104,4 +111,16 @@ test("réserver au clavier, puis confirmation par le barber", async ({
   await expect(
     page.getByText("En attente de confirmation", { exact: true }),
   ).toHaveCount(0);
+
+  // Lot N3 : une fois confirmé, le client obtient l'adresse exacte et
+  // l'itinéraire (jamais avant, jamais sur la fiche publique).
+  await page.getByRole("button", { name: "Adresse et itinéraire" }).click();
+  await expect(page.getByText("Adresse du rendez-vous")).toBeVisible();
+  const directions = page.getByRole("link", { name: /^Itinéraire vers / });
+  await expect(directions).toHaveAttribute(
+    "href",
+    /^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=/,
+  );
+  await expect(directions).toHaveAttribute("target", "_blank");
+  await expectNoA11yViolations(page);
 });

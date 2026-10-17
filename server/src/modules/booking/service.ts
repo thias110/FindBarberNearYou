@@ -116,9 +116,11 @@ function toBookingDetails(
   row: BookingRow,
   clientName: string | null,
   hasReview = false,
+  barberAddress: string | null = null,
 ): BookingDetails {
   return {
     ...toBooking(row, clientName, hasReview),
+    barberAddress,
     // Chiffrée au repos (issue #14) : déchiffrée pour les seuls ayants droit.
     clientAddress: decryptField(row.clientAddress),
     clientLatitude: row.clientLatitude,
@@ -658,7 +660,36 @@ export async function getBookingDetails(
     .from(reviews)
     .where(eq(reviews.bookingId, bookingId))
     .limit(1);
-  return toBookingDetails(row, client?.name ?? null, review !== undefined);
+  return toBookingDetails(
+    row,
+    client?.name ?? null,
+    review !== undefined,
+    await barberAddressForClient(user, row),
+  );
+}
+
+// Itinéraire (lot N3, décision du propriétaire) : l'adresse exacte du barber
+// n'est révélée qu'au client propriétaire, une fois le rendez-vous CONFIRMED,
+// et seulement si le client se déplace (salon ou chez le professionnel).
+async function barberAddressForClient(
+  user: AuthUser,
+  row: BookingRow,
+): Promise<string | null> {
+  if (
+    user.role !== "CLIENT" ||
+    row.clientUserId !== user.id ||
+    row.status !== "CONFIRMED" ||
+    (row.servicePlace !== "SALON" && row.servicePlace !== "AT_PROVIDER")
+  ) {
+    return null;
+  }
+  const [profile] = await db
+    .select({ address: barberProfiles.address })
+    .from(barberProfiles)
+    .where(eq(barberProfiles.id, row.barberProfileId))
+    .limit(1);
+  const address = profile?.address?.trim();
+  return address ? address : null;
 }
 
 // --- Transitions de statut (lot 4 rouvert) ---
