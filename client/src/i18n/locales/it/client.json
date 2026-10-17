@@ -176,7 +176,14 @@
     "reviewsError": "Impossibile caricare le recensioni.",
     "booking": "Prenotazione",
     "noServices": "Questo professionista non offre ancora servizi prenotabili.",
-    "noPlaces": "Questo professionista non ha ancora indicato dove svolge le sue prestazioni."
+    "noPlaces": "Questo professionista non ha ancora indicato dove svolge le sue prestazioni.",
+    "hours": {
+      "title": "Orari",
+      "closed": "Chiuso",
+      "today": "Oggi",
+      "empty": "Questo professionista non ha ancora pubblicato i suoi orari.",
+      "localTime": "Ora locale del salone."
+    }
   },
   "booking": {
     "form": {

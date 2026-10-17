@@ -176,7 +176,14 @@
     "reviewsError": "No se pudieron cargar las reseñas.",
     "booking": "Reserva",
     "noServices": "Este profesional todavía no ofrece servicios para reservar.",
-    "noPlaces": "Este profesional todavía no ha indicado dónde presta sus servicios."
+    "noPlaces": "Este profesional todavía no ha indicado dónde presta sus servicios.",
+    "hours": {
+      "title": "Horario",
+      "closed": "Cerrado",
+      "today": "Hoy",
+      "empty": "Este profesional aún no ha publicado su horario.",
+      "localTime": "Hora local del salón."
+    }
   },
   "booking": {
     "form": {

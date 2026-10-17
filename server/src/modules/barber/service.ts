@@ -45,9 +45,12 @@ import type {
   PublicBarberSearchItem,
   ProfileCompletion,
   PublicBarberService,
+  PublicWeeklyHours,
   TimeOff,
   WorkingHoursInterval,
 } from "@findbarber/shared/types";
+import { weekdayFromCalendarDate } from "@findbarber/shared/dates";
+import { utcToZonedParts } from "@findbarber/shared/timezones";
 import type {
   ProfileInput,
   ServiceCreateInput,
@@ -781,6 +784,34 @@ export async function deleteTimeOff(
   }
 }
 
+// Horaires publics (lot N3) : uniquement les plages hebdomadaires, triées.
+// Les absences (et leur motif) ne sont jamais lues ici.
+async function loadPublicWeeklyHours(
+  barberProfileId: string,
+  timezone: string | null,
+): Promise<PublicWeeklyHours> {
+  const rows = await db
+    .select({
+      weekday: barberWorkingHours.weekday,
+      startMinute: barberWorkingHours.startMinute,
+      endMinute: barberWorkingHours.endMinute,
+    })
+    .from(barberWorkingHours)
+    .where(eq(barberWorkingHours.barberProfileId, barberProfileId))
+    .orderBy(asc(barberWorkingHours.weekday), asc(barberWorkingHours.startMinute));
+
+  return {
+    intervals: rows.map((row) => ({
+      weekday: row.weekday as Weekday,
+      startMinute: row.startMinute,
+      endMinute: row.endMinute,
+    })),
+    today: timezone
+      ? weekdayFromCalendarDate(utcToZonedParts(new Date(), timezone).date)
+      : null,
+  };
+}
+
 export async function getPublicProfile(
   barberId: string,
 ): Promise<PublicBarberProfileWithServices> {
@@ -831,10 +862,15 @@ export async function getPublicProfile(
     loadAudiences(ids),
     loadTechniques(ids),
   ]);
-  const places = (await loadPlaces([barberId])).get(barberId) ?? [];
+  const [placesByProfile, weeklyHours] = await Promise.all([
+    loadPlaces([barberId]),
+    loadPublicWeeklyHours(barberId, profile.timezone),
+  ]);
+  const places = placesByProfile.get(barberId) ?? [];
 
   return {
     profile: toPublicProfile(profile, places, owner.avatarPath),
+    weeklyHours,
     services: services.map((service) =>
       toPublicService(
         service,

@@ -14,6 +14,7 @@ import { BarberProfileHeader } from "../../components/barber/BarberProfileHeader
 import { BarberServices } from "../../components/barber/BarberServices";
 import { BarberGallery } from "../../components/barber/BarberGallery";
 import { BarberReviews } from "../../components/barber/BarberReviews";
+import { BarberWeeklyHours } from "../../components/barber/BarberWeeklyHours";
 import { Card } from "../../components/ui/Card";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { PageContainer } from "../../components/ui/PageContainer";
@@ -202,13 +203,14 @@ export function PublicBarberProfilePage() {
           <aside
             id="reserver"
             aria-label={t("profile.booking")}
-            className="min-w-0 focus:outline-none lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-6"
+            className="min-w-0 focus:outline-none lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-24"
           >
             {bookingPanel}
           </aside>
 
           <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-2">
             <BarberServices profile={profile} services={services} />
+            <BarberWeeklyHours hours={data.weeklyHours} />
             <BarberGallery
               photos={photos}
               loading={photosLoading}

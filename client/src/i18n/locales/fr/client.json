@@ -176,7 +176,14 @@
     "reviewsError": "Impossible de charger les avis.",
     "booking": "Réservation",
     "noServices": "Ce professionnel ne propose pas encore de service à réserver.",
-    "noPlaces": "Ce professionnel n'a pas encore renseigné ses lieux de prestation."
+    "noPlaces": "Ce professionnel n'a pas encore renseigné ses lieux de prestation.",
+    "hours": {
+      "title": "Horaires",
+      "closed": "Fermé",
+      "today": "Aujourd'hui",
+      "empty": "Ce professionnel n'a pas encore publié ses horaires.",
+      "localTime": "Heures locales du salon."
+    }
   },
   "booking": {
     "form": {
