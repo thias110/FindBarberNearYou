@@ -108,6 +108,26 @@ toujours accompagné d'un libellé (jamais la couleur seule).
 - Rayons : voir la section Tokens (hiérarchie 6 → 40 px). Boutons, pastilles
   et badges en pilule, champs en `rounded-lg` (10 px).
 
+## Navigation (lot DS-4, plan §2.6.6)
+
+- `App.tsx` choisit la coque : visiteur → `PublicHeader` ; CLIENT ou BARBER
+  connecté → `AppHeader` + `AppSidebar` (desktop, 248 px, dès `lg:`) +
+  `BottomTabBar` (mobile, 64 px + zone de sécurité) ; ADMIN → `AppHeader` et
+  la navigation propre d'`AdminLayout`. Les deux barres font 4,5 rem.
+- `PublicHeader` : pilule flottante en verre, opaque avec `shadow-2` après
+  80 px de défilement. Menu « Pour les pros » (`ProsMenu`, clic ou clavier,
+  Échap rend le focus) ; sur mobile, burger et menu plein écran nuit
+  (`MobileMenu`, `<dialog>` modal : focus piégé).
+- Entrées des espaces connectés : `components/nav/navItems.ts` (une seule
+  source pour la barre latérale et les onglets, routes existantes
+  uniquement). Les libellés pro de la barre latérale sont ceux des cartes du
+  tableau de bord ; ces cartes ne s'affichent plus qu'en mobile.
+- Élément actif : `aria-current="page"` (NavLink) ; icône pleine
+  (`NavIcon active`).
+- `SiteFooter` : section nuit annoncée par le motif « dégradé », colonnes
+  Rechercher, Pour les pros, Aide (si un email de support est configuré) et
+  Légal ; liens `night-muted` → blanc, focus `focus-ring-on-night`.
+
 ## Thème
 
 - `ThemeProvider` (`client/src/app/ThemeProvider.tsx`) gère la préférence

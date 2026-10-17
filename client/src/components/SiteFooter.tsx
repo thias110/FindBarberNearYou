@@ -2,13 +2,17 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { SocialNetwork } from "@findbarber/shared/types";
+import { useAuth } from "../app/auth-context";
 import { useSiteConfig } from "../lib/siteConfig";
+import { FadeMotif } from "./ui/FadeMotif";
 
-// Pied de page global (issue #59) : réseaux sociaux, contact (issue #58) et
-// mentions légales. Chaque lien n'apparaît que si sa cible est configurée
-// côté serveur : aucune URL écrite en dur, aucun lien vide ni « # ».
+// Pied de page global (issue #59, design system « Dégradé » : plan §2.6.10) :
+// section nuit annoncée par le motif « dégradé », colonnes Rechercher, Pour
+// les pros, Aide et Légal, puis réseaux sociaux et ©. Chaque lien n'apparaît
+// que si sa cible existe ou est configurée côté serveur : aucune URL écrite en
+// dur, aucun lien vide ni « # ».
 const LINK_CLASS =
-  "inline-flex min-h-11 items-center rounded-lg px-1 text-sm text-foreground-muted underline-offset-4 hover:text-foreground hover:underline focus-ring";
+  "focus-ring-on-night inline-flex min-h-11 items-center rounded-md text-sm text-night-muted transition-colors duration-fast hover:text-white";
 
 const NETWORK_LABEL: Record<SocialNetwork, string> = {
   instagram: "Instagram",
@@ -53,45 +57,94 @@ function SocialIcon({ network }: { network: SocialNetwork }) {
   );
 }
 
+function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <h2 className="font-sans text-h4 font-bold text-white">{title}</h2>
+      <ul className="mt-2">{children}</ul>
+    </div>
+  );
+}
+
 export function SiteFooter() {
   const { supportEmail, socialLinks } = useSiteConfig();
+  const { user } = useAuth();
   const { t } = useTranslation("common");
+  const proArea = !user ? "/login" : user.role === "BARBER" ? "/pro/dashboard" : null;
 
   return (
-    <footer className="border-t border-border bg-surface">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between">
-        <nav aria-label={t("footer.nav")} className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          {supportEmail && (
-            <a href={`mailto:${supportEmail}`} className={LINK_CLASS}>
-              {t("footer.contact")}
-            </a>
+    <footer>
+      {/* Raccord avec la section précédente : les lignes se resserrent vers la nuit. */}
+      <FadeMotif className="h-10 w-full rotate-180 text-night" />
+      <div className="bg-night text-white">
+        <nav
+          aria-label={t("footer.nav")}
+          className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-x-6 gap-y-8 px-4 pb-8 pt-10 sm:px-8 lg:grid-cols-4"
+        >
+          <FooterColumn title={t("footer.searchTitle")}>
+            <li>
+              <Link to="/barbers" className={LINK_CLASS}>
+                {t("footer.findBarber")}
+              </Link>
+            </li>
+          </FooterColumn>
+          {(!user || proArea) && (
+            <FooterColumn title={t("footer.prosTitle")}>
+              {!user && (
+                <li>
+                  <Link to="/register?role=BARBER" className={LINK_CLASS}>
+                    {t("nav.becomePartner")}
+                  </Link>
+                </li>
+              )}
+              {proArea && (
+                <li>
+                  <Link to={proArea} className={LINK_CLASS}>
+                    {t("nav.proLogin")}
+                  </Link>
+                </li>
+              )}
+            </FooterColumn>
           )}
-          <Link to="/mentions-legales" className={LINK_CLASS}>
-            {t("footer.legal")}
-          </Link>
-          <span className="text-sm text-foreground-muted">
-            © {new Date().getFullYear()} FindBarber
-          </span>
-        </nav>
-        {socialLinks.length > 0 && (
-          <ul aria-label={t("footer.social")} className="flex items-center gap-1">
-            {socialLinks.map((link) => (
-              <li key={link.network}>
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={t("footer.newTab", {
-                    network: NETWORK_LABEL[link.network],
-                  })}
-                  className={`${LINK_CLASS} min-w-11 justify-center`}
-                >
-                  <SocialIcon network={link.network} />
+          {supportEmail && (
+            <FooterColumn title={t("footer.helpTitle")}>
+              <li>
+                <a href={`mailto:${supportEmail}`} className={LINK_CLASS}>
+                  {t("footer.contact")}
                 </a>
               </li>
-            ))}
-          </ul>
-        )}
+            </FooterColumn>
+          )}
+          <FooterColumn title={t("footer.legalTitle")}>
+            <li>
+              <Link to="/mentions-legales" className={LINK_CLASS}>
+                {t("footer.legal")}
+              </Link>
+            </li>
+          </FooterColumn>
+        </nav>
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-white/10 px-4 py-5 sm:px-8">
+          <p className="text-sm text-night-muted">© {new Date().getFullYear()} FindBarber</p>
+          {socialLinks.length > 0 && (
+            <ul aria-label={t("footer.social")} className="flex items-center gap-1">
+              {socialLinks.map((link) => (
+                <li key={link.network}>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t("footer.newTab", {
+                      network: NETWORK_LABEL[link.network],
+                    })}
+                    className={`${LINK_CLASS} min-w-11 justify-center rounded-full`}
+                  >
+                    <SocialIcon network={link.network} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </footer>
   );

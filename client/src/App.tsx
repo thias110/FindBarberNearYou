@@ -1,17 +1,17 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation } from "react-router-dom";
-import { ROLE_HOME } from "@findbarber/shared/constants";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "./app/auth-context";
 import { AuthProvider } from "./app/AuthProvider";
 import { LocaleProvider } from "./app/LocaleProvider";
 import { ThemeProvider } from "./app/ThemeProvider";
 import { AppRoutes } from "./app/router";
-import { Logo } from "./components/Logo";
-import { NotificationBell } from "./components/NotificationBell";
+import { AppHeader } from "./components/nav/AppHeader";
+import { AppSidebar } from "./components/nav/AppSidebar";
+import { BottomTabBar, TAB_BAR_PADDING } from "./components/nav/BottomTabBar";
+import { PublicHeader } from "./components/nav/PublicHeader";
 import { SiteFooter } from "./components/SiteFooter";
-import { LanguageSelect } from "./components/LanguageSelect";
-import { buttonClasses } from "./components/ui/buttonStyles";
+import { cn } from "./lib/cn";
 import { AUTH_ROUTES, pageTitle } from "./lib/pageTitle";
 
 function AppShell() {
@@ -47,57 +47,32 @@ function AppShell() {
     );
   }
 
+  // Espaces connectés CLIENT et BARBER : barre latérale (desktop) et barre
+  // d'onglets (mobile). L'ADMIN garde sa propre navigation (AdminLayout).
+  const appRole = user && user.role !== "ADMIN" ? user.role : null;
+
   return (
-    <div className="bg-background text-foreground">
+    <div className={cn("bg-background text-foreground", appRole && TAB_BAR_PADDING)}>
       <a
         href="#contenu"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-4 focus:py-3 focus:text-sm focus:font-medium focus:text-accent-foreground focus:shadow-card"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-4 focus:py-3 focus:text-sm focus:font-medium focus:text-accent-foreground focus:shadow-2"
       >
         {t("app.skipToContent")}
       </a>
-      <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
-          <Link
-            to={user ? ROLE_HOME[user.role] : "/"}
-            aria-label={t("app.homeLink")}
-            className="inline-flex min-h-11 min-w-11 items-center rounded-lg focus-ring"
-          >
-            <Logo />
-          </Link>
-          <div className="flex min-w-0 items-center gap-2">
-            {/* Langue accessible à tous, même sans compte (issue #37). */}
-            <LanguageSelect compact />
-            {/* Le thème se choisit dans Paramètres (issue #30). */}
-            {/* L'API des notifications est réservée aux CLIENT et BARBER. */}
-            {user && user.role !== "ADMIN" && <NotificationBell />}
-            {user && user.role !== "ADMIN" && (
-              <Link
-                to="/account"
-                className={buttonClasses("ghost", "sm", "whitespace-nowrap")}
-              >
-                {t("app.account")}
-              </Link>
-            )}
-            {!user && (
-              <Link
-                to="/login"
-                className={buttonClasses("ghost", "sm", "whitespace-nowrap")}
-              >
-                {t("app.login")}
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
-      <main
-        id="contenu"
-        ref={mainRef}
-        tabIndex={-1}
-        className="focus:outline-none"
-      >
-        <AppRoutes />
-      </main>
+      {user ? <AppHeader /> : <PublicHeader />}
+      <div className={appRole ? "lg:flex" : undefined}>
+        {appRole && <AppSidebar role={appRole} />}
+        <main
+          id="contenu"
+          ref={mainRef}
+          tabIndex={-1}
+          className="min-w-0 flex-1 focus:outline-none"
+        >
+          <AppRoutes />
+        </main>
+      </div>
       <SiteFooter />
+      {appRole && <BottomTabBar role={appRole} />}
     </div>
   );
 }
