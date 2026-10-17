@@ -4,6 +4,8 @@ export interface LogoProps {
   className?: string;
   /** Affiche le nom visible « FindBarber » à côté de la marque. */
   showWordmark?: boolean;
+  /** `onNight` : nom en blanc, sur une section nuit (barre sur le hero). */
+  tone?: "default" | "onNight";
 }
 
 // Logo provisoire : marque carrée accent + « F », accompagnée du nom visible
@@ -14,7 +16,11 @@ export interface LogoProps {
 // `client/public/favicon.svg` (même dessin, couleurs en dur car un favicon ne
 // lit pas les tokens CSS), puis régénérer `client/public/email-logo.png`
 // (voir components/ui/README.md).
-export function Logo({ className, showWordmark = true }: LogoProps) {
+export function Logo({
+  className,
+  showWordmark = true,
+  tone = "default",
+}: LogoProps) {
   return (
     <span
       role="img"
@@ -36,7 +42,10 @@ export function Logo({ className, showWordmark = true }: LogoProps) {
       {showWordmark && (
         <span
           aria-hidden="true"
-          className="text-lg font-semibold tracking-tight text-foreground"
+          className={cn(
+            "text-lg font-semibold tracking-tight transition-colors duration-base",
+            tone === "onNight" ? "text-white" : "text-foreground",
+          )}
         >
           FindBarber
         </span>

@@ -14,6 +14,8 @@ interface BarberPreviewCardProps {
   barber: PublicBarberSearchItem;
   /** Distance depuis la position partagée du visiteur, sinon null. */
   distanceKm: number | null;
+  /** Grande carte de la grille bento (desktop) : nom plus grand. */
+  featured?: boolean;
 }
 
 // Carte « vitrine » (issue #54, gabarit du lot DS-3 : plan §2.6.4) : photo
@@ -22,14 +24,20 @@ interface BarberPreviewCardProps {
 // « Réserver » reste focalisable à part. Il se replie en icône sur les
 // appareils qui survolent et se déplie au survol ou au focus de la carte ; il
 // reste déplié sur mobile. Données de la recherche publique uniquement.
-export function BarberPreviewCard({ barber, distanceKm }: BarberPreviewCardProps) {
+export function BarberPreviewCard({
+  barber,
+  distanceKm,
+  featured = false,
+}: BarberPreviewCardProps) {
   const { t } = useTranslation("client");
   const profileUrl = `/barbers/${barber.id}`;
 
   return (
     <article
       className={
-        "group relative isolate flex aspect-[4/5] w-full flex-col justify-between overflow-hidden rounded-3xl bg-night shadow-1 " +
+        // 4/5 dans le carrousel ; dans la grille bento (`lg:`), la carte prend
+        // la hauteur de sa case.
+        "group relative isolate flex aspect-[4/5] w-full flex-col justify-between overflow-hidden rounded-3xl bg-night shadow-1 lg:aspect-auto lg:h-full " +
         "transition-[transform,box-shadow] duration-base ease-out hover:shadow-2 motion-safe:hover:-translate-y-1 " +
         "has-[.fb-card-link:focus-visible]:ring-2 has-[.fb-card-link:focus-visible]:ring-ring has-[.fb-card-link:focus-visible]:ring-offset-2 has-[.fb-card-link:focus-visible]:ring-offset-background"
       }
@@ -52,7 +60,13 @@ export function BarberPreviewCard({ barber, distanceKm }: BarberPreviewCardProps
       </div>
 
       <div className="p-4">
-        <h3 className="text-xl font-bold leading-tight text-white">
+        <h3
+          className={
+            featured
+              ? "font-display text-xl font-bold leading-tight text-white lg:text-h2"
+              : "font-display text-xl font-bold leading-tight text-white"
+          }
+        >
           {/* Lien étendu : toute la carte mène au profil. */}
           <Link
             to={profileUrl}

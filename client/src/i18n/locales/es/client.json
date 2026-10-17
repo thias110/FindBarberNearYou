@@ -15,7 +15,15 @@
       "subtitle": "Reserva en un momento, en el salón o a domicilio.",
       "cityLabel": "Ciudad",
       "cityPlaceholder": "¿En qué ciudad buscas?",
-      "submit": "Buscar"
+      "submit": "Buscar",
+      "placeLabel": "Lugar de la cita",
+      "place": {
+        "any": "Donde sea",
+        "SALON": "En el salón",
+        "AT_PROVIDER": "Con el profesional",
+        "AT_CLIENT": "A domicilio"
+      },
+      "searchLabel": "Buscar un barbero"
     },
     "categories": {
       "title": "Servicios populares"
@@ -53,15 +61,15 @@
     "steps": {
       "title": "Cómo funciona",
       "search": {
-        "title": "1. Busca",
+        "title": "Busca",
         "description": "Encuentra un barbero según lo que necesites."
       },
       "compare": {
-        "title": "2. Compara",
+        "title": "Compara",
         "description": "Consulta los servicios y perfiles disponibles."
       },
       "book": {
-        "title": "3. Reserva",
+        "title": "Reserva",
         "description": "Elige un horario y confirma tu cita."
       }
     },

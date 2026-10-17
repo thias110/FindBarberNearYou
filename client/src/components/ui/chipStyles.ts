@@ -50,7 +50,7 @@ export function segmentRailClasses(className?: string): string {
 
 export function segmentClasses(selected: boolean, className?: string): string {
   return cn(
-    "focus-ring inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-semibold sm:min-h-10",
+    "focus-ring inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-sm font-semibold sm:min-h-10",
     "transition-[color,background-color,box-shadow] duration-base ease-out",
     "disabled:cursor-not-allowed disabled:opacity-50",
     selected

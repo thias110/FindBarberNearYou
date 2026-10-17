@@ -15,7 +15,15 @@
       "subtitle": "Réservez en quelques instants, au salon ou à domicile.",
       "cityLabel": "Ville",
       "cityPlaceholder": "Dans quelle ville cherchez-vous ?",
-      "submit": "Rechercher"
+      "submit": "Rechercher",
+      "placeLabel": "Lieu du rendez-vous",
+      "place": {
+        "any": "Partout",
+        "SALON": "En salon",
+        "AT_PROVIDER": "Chez le pro",
+        "AT_CLIENT": "À domicile"
+      },
+      "searchLabel": "Rechercher un barber"
     },
     "categories": {
       "title": "Prestations populaires"
@@ -53,15 +61,15 @@
     "steps": {
       "title": "Comment ça marche",
       "search": {
-        "title": "1. Cherchez",
+        "title": "Cherchez",
         "description": "Trouvez un barber selon vos besoins."
       },
       "compare": {
-        "title": "2. Comparez",
+        "title": "Comparez",
         "description": "Consultez les services et profils disponibles."
       },
       "book": {
-        "title": "3. Réservez",
+        "title": "Réservez",
         "description": "Choisissez un créneau et confirmez votre rendez-vous."
       }
     },

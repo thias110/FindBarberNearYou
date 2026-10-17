@@ -15,7 +15,15 @@
       "subtitle": "Prenota in pochi istanti, in salone o a domicilio.",
       "cityLabel": "Città",
       "cityPlaceholder": "In quale città stai cercando?",
-      "submit": "Cerca"
+      "submit": "Cerca",
+      "placeLabel": "Luogo dell'appuntamento",
+      "place": {
+        "any": "Ovunque",
+        "SALON": "In salone",
+        "AT_PROVIDER": "Dal professionista",
+        "AT_CLIENT": "A domicilio"
+      },
+      "searchLabel": "Cerca un barbiere"
     },
     "categories": {
       "title": "Prestazioni più richieste"
@@ -53,15 +61,15 @@
     "steps": {
       "title": "Come funziona",
       "search": {
-        "title": "1. Cerca",
+        "title": "Cerca",
         "description": "Trova un barbiere in base alle tue esigenze."
       },
       "compare": {
-        "title": "2. Confronta",
+        "title": "Confronta",
         "description": "Consulta i servizi e i profili disponibili."
       },
       "book": {
-        "title": "3. Prenota",
+        "title": "Prenota",
         "description": "Scegli una fascia oraria e conferma il tuo appuntamento."
       }
     },

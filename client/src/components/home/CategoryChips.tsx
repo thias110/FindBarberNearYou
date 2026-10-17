@@ -13,11 +13,11 @@ export function CategoryChips({ techniques }: { techniques: readonly Technique[]
     <section aria-labelledby="home-categories-title">
       <h2
         id="home-categories-title"
-        className="text-xl font-bold text-foreground"
+        className="font-display text-h2 font-bold text-foreground"
       >
         {t("home.categories.title")}
       </h2>
-      <ul className="mt-3 flex flex-wrap gap-2">
+      <ul className="mt-4 flex flex-wrap gap-2">
         {techniques.map((technique) => (
           <li key={technique}>
             <Link

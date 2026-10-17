@@ -10,3 +10,12 @@ export function fadeMotifLines(): number[] {
     [0],
   );
 }
+
+/**
+ * Position de départ de la « mise en paliers » (plan §2.5) : les lignes
+ * partent collées en un bloc plein, en haut. Renvoie, pour chaque ligne, le
+ * décalage vertical (négatif) entre ce bloc et sa place finale.
+ */
+export function fadeMotifStartOffsets(): number[] {
+  return fadeMotifLines().map((y, i) => i * FADE_LINE - y);
+}

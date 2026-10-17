@@ -122,12 +122,25 @@ export default {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
+        // Moment signature (§2.5) : chaque ligne du motif part de sa place
+        // dans le bloc serré (`--fb-from`) et descend à sa place finale.
+        paliers: {
+          from: { transform: "translateY(var(--fb-from, 0))" },
+          to: { transform: "translateY(0)" },
+        },
+        "hero-in": {
+          from: { opacity: "0", transform: "translateY(12px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "dialog-in": "dialog-in var(--fb-motion-base) var(--fb-ease-out)",
         "sheet-up": "sheet-up var(--fb-motion-slow) var(--fb-ease-out)",
         "panel-in": "panel-in var(--fb-motion-slow) var(--fb-ease-out)",
         "fade-in": "fade-in var(--fb-motion-base) var(--fb-ease-out)",
+        // 6 décalages de 40 ms + 660 ms = 900 ms (`motion-signature`).
+        paliers: "paliers 660ms var(--fb-ease-out) both",
+        "hero-in": "hero-in var(--fb-motion-slow) var(--fb-ease-out) 300ms both",
       },
       transitionTimingFunction: {
         press: "var(--fb-ease-press)",
