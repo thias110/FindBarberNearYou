@@ -265,6 +265,10 @@ export interface BookingDetails extends Booking {
   clientAddress: string | null;
   clientLatitude: number | null;
   clientLongitude: number | null;
+  // Itinéraire (lot N3) : adresse exacte du barber, donnée au SEUL client
+  // propriétaire d'une réservation CONFIRMED au salon ou chez le professionnel.
+  // null dans tous les autres cas (barber, admin, autre statut, à domicile).
+  barberAddress: string | null;
 }
 
 export interface BookingSlotDto {

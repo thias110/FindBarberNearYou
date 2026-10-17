@@ -265,7 +265,12 @@
       "cancelNo": "No",
       "cancelConfirm": "Confirm cancellation",
       "cancel": "Cancel",
-      "cancelTerms": "Cancellation is subject to the applicable terms."
+      "cancelTerms": "Cancellation is subject to the applicable terms.",
+      "barberAddress": "Appointment address",
+      "barberAddressMissing": "The professional hasn't provided an exact address. Contact them to find your way.",
+      "showDirections": "Address and directions",
+      "directions": "Directions",
+      "directionsAria": "Directions to {{address}} in Google Maps (new tab)"
     }
   },
   "review": {

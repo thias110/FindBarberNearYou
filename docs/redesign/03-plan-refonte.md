@@ -583,7 +583,8 @@ On ne retient ici que ce qui manque chez nous, ou ce qui y est moins bien, **et*
 - **Fonctionnement proposé**
   - `PublicBarberProfile.weeklyHours` : les plages par jour, sans le motif des absences (privé).
   - Mise en avant du jour en cours, et « Fermé » pour les jours sans plage.
-  - Le lien itinéraire **n'apparaît qu'après confirmation**, dans le détail de la réservation. Il utilise l'adresse exacte, déjà réservée au client concerné (`GET /api/bookings/:id`).
+  - Le lien itinéraire **n'apparaît qu'après confirmation**, dans le détail de la réservation (`GET /api/bookings/:id`).
+  - **Correction (implémentation).** Contrairement à ce qu'indiquait ce plan, l'adresse exacte du barber n'était communiquée à aucun client : le détail ne contenait que l'adresse du client. Le propriétaire a décidé (17/10/2026) de la révéler via `BookingDetails.barberAddress`, au **seul client propriétaire**, pour une réservation **CONFIRMED** au salon ou chez le professionnel ; `null` dans tous les autres cas (barber, admin, autre statut, à domicile). Elle n'apparaît ni dans les listes ni sur la fiche publique (tests `booking-directions.integration.test.ts`).
 - **Compatibilité métier**
   - Sur la fiche publique, l'adresse exacte reste **privée** (règle `01-métier` §4, coordonnées arrondies). On n'y met donc pas d'itinéraire précis.
   - La référence montre l'adresse complète publiquement : **ce n'est pas adopté**.
@@ -796,5 +797,7 @@ Ce qui reste ouvert, faute de recommandation tranchée. Chacun de ces points ne 
 - **N9**, les pages ville ;
 - **l'auteur de la FAQ** (N7) ;
 - **la retenue de l'acompte** en cas d'absence (N8).
+
+Décision ajoutée le 17/10/2026 : **adresse exacte du barber révélée au client après confirmation** (lot N3, voir la correction dans N3).
 
 L'implémentation commence au lot 1 (**DS-1 Tokens**), dans une mission séparée.

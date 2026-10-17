@@ -265,7 +265,12 @@
       "cancelNo": "No",
       "cancelConfirm": "Conferma l'annullamento",
       "cancel": "Annulla",
-      "cancelTerms": "L'annullamento è soggetto alle condizioni applicabili."
+      "cancelTerms": "L'annullamento è soggetto alle condizioni applicabili.",
+      "barberAddress": "Indirizzo dell'appuntamento",
+      "barberAddressMissing": "Il professionista non ha indicato un indirizzo esatto. Contattalo per raggiungerlo.",
+      "showDirections": "Indirizzo e itinerario",
+      "directions": "Itinerario",
+      "directionsAria": "Itinerario verso {{address}} in Google Maps (nuova scheda)"
     }
   },
   "review": {

@@ -46,6 +46,11 @@ export interface BookingCardProps {
 
 // Composant présentational : aucun appel API ici, tout l'état et les handlers
 // restent dans BookingsPage.
+// Lien d'itinéraire universel : ouvre l'application de cartes sur mobile.
+function directionsUrl(address: string): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+}
+
 export function BookingCard({
   booking,
   detail,
@@ -170,6 +175,50 @@ export function BookingCard({
           )}
         </div>
       )}
+
+      {/* Itinéraire (lot N3) : seulement une fois le rendez-vous confirmé et
+          si le client se déplace. L'adresse exacte du barber n'est fournie
+          que par le détail de la réservation, à son seul client. */}
+      {booking.status === "CONFIRMED" &&
+        (booking.servicePlace === "SALON" ||
+          booking.servicePlace === "AT_PROVIDER") && (
+          <div className="mt-3 border-t border-border pt-3">
+            {detail ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-muted p-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {t("bookings.card.barberAddress")}
+                  </p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {detail.barberAddress ?? t("bookings.card.barberAddressMissing")}
+                  </p>
+                </div>
+                {detail.barberAddress && (
+                  <a
+                    href={directionsUrl(detail.barberAddress)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t("bookings.card.directionsAria", {
+                      address: detail.barberAddress,
+                    })}
+                    className={buttonClasses("primary", "sm", "shrink-0")}
+                  >
+                    {t("bookings.card.directions")}
+                  </a>
+                )}
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="secondary"
+                isLoading={detailLoading}
+                onClick={onShowAddress}
+              >
+                {t("bookings.card.showDirections")}
+              </Button>
+            )}
+          </div>
+        )}
 
       {booking.status === "COMPLETED" && (
         <div className="mt-3 border-t border-border pt-3">
