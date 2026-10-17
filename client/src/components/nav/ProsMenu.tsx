@@ -8,7 +8,7 @@ import { FadeMotif } from "../ui/FadeMotif";
 // ouvert au clic ou au clavier (pas au survol seul), tuile illustrée et liens
 // vers des routes existantes. Échap ou un clic à l'extérieur le ferme ; Échap
 // rend le focus au bouton.
-export function ProsMenu() {
+export function ProsMenu({ onNight = false }: { onNight?: boolean }) {
   const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -51,7 +51,12 @@ export function ProsMenu() {
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
-        className="focus-ring inline-flex min-h-11 items-center gap-1 rounded-full px-3.5 text-sm font-semibold text-foreground transition-colors duration-fast hover:bg-surface-muted"
+        className={cn(
+          "inline-flex min-h-11 items-center gap-1 rounded-full px-3.5 text-sm font-semibold transition-colors duration-fast",
+          onNight
+            ? "focus-ring-on-night text-white hover:bg-white/10"
+            : "focus-ring text-foreground hover:bg-surface-muted",
+        )}
       >
         {t("nav.forPros")}
         <svg

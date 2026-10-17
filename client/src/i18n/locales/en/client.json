@@ -15,7 +15,15 @@
       "subtitle": "Book in moments, at the salon or at home.",
       "cityLabel": "City",
       "cityPlaceholder": "Which city are you looking in?",
-      "submit": "Search"
+      "submit": "Search",
+      "placeLabel": "Appointment location",
+      "place": {
+        "any": "Anywhere",
+        "SALON": "In a salon",
+        "AT_PROVIDER": "At the pro's",
+        "AT_CLIENT": "At home"
+      },
+      "searchLabel": "Search for a barber"
     },
     "categories": {
       "title": "Popular services"
@@ -53,15 +61,15 @@
     "steps": {
       "title": "How it works",
       "search": {
-        "title": "1. Search",
+        "title": "Search",
         "description": "Find a barber that suits your needs."
       },
       "compare": {
-        "title": "2. Compare",
+        "title": "Compare",
         "description": "Browse the available services and profiles."
       },
       "book": {
-        "title": "3. Book",
+        "title": "Book",
         "description": "Choose a time slot and confirm your appointment."
       }
     },

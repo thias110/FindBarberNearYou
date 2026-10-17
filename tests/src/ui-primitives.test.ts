@@ -20,6 +20,7 @@ import {
   FADE_GAPS,
   FADE_LINE,
   fadeMotifLines,
+  fadeMotifStartOffsets,
 } from "../../client/src/components/ui/fadeMotifGeometry";
 
 const VARIANTS: ButtonVariant[] = [
@@ -135,5 +136,12 @@ describe("motif « dégradé »", () => {
     expect(ys).toHaveLength(FADE_GAPS.length + 1);
     const gaps = ys.slice(1).map((y, i) => y - ys[i] - FADE_LINE);
     expect(gaps).toEqual([2, 3, 5, 8, 12, 18]);
+  });
+
+  it("part d'un bloc plein pour la mise en paliers (plan §2.5)", () => {
+    const start = fadeMotifLines().map((y, i) => y + fadeMotifStartOffsets()[i]);
+    // Lignes collées : chaque ligne commence où finit la précédente.
+    expect(start).toEqual(start.map((_, i) => i * FADE_LINE));
+    expect(fadeMotifStartOffsets()[0]).toBe(0);
   });
 });

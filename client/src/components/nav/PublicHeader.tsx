@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { cn } from "../../lib/cn";
 import { LanguageSelect } from "../LanguageSelect";
 import { Logo } from "../Logo";
@@ -15,12 +15,15 @@ const SCROLL_OPAQUE_PX = 80;
 // en verre en haut de page, opaque avec `shadow-2` après 80 px de défilement.
 // Desktop : logo, Rechercher, menu « Pour les pros », langue, Connexion, CTA
 // « Réserver ». Mobile : logo, langue et burger (menu plein écran).
-// Hauteur totale 4,5 rem, comme la barre des espaces connectés.
+// Sur le hero de nuit de l'accueil, tant qu'on n'a pas défilé : verre nuit et
+// texte blanc. Hauteur totale 4,5 rem, comme la barre des espaces connectés.
 export function PublicHeader() {
   const { t } = useTranslation("common");
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const { pathname } = useLocation();
+  const onNight = pathname === "/" && !scrolled;
 
   useEffect(() => {
     function onScroll() {
@@ -33,8 +36,13 @@ export function PublicHeader() {
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     cn(
-      "focus-ring inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-semibold transition-colors duration-fast hover:bg-surface-muted",
-      isActive ? "text-accent-strong" : "text-foreground",
+      "inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-semibold transition-colors duration-fast",
+      onNight
+        ? "focus-ring-on-night text-white hover:bg-white/10"
+        : cn(
+            "focus-ring hover:bg-surface-muted",
+            isActive ? "text-accent-strong" : "text-foreground",
+          ),
     );
 
   return (
@@ -45,28 +53,40 @@ export function PublicHeader() {
           "transition-[background-color,box-shadow,border-color] duration-base ease-out",
           scrolled
             ? "border-border bg-surface shadow-2"
-            : "border-border/70 bg-surface/80 shadow-1 backdrop-blur-md backdrop-saturate-150",
+            : onNight
+              ? "border-white/10 bg-night/70 backdrop-blur-md backdrop-saturate-150"
+              : "border-border/70 bg-surface/80 shadow-1 backdrop-blur-md backdrop-saturate-150",
         )}
       >
         <Link
           to="/"
           aria-label={t("app.homeLink")}
-          className="focus-ring inline-flex min-h-11 min-w-11 items-center rounded-full"
+          className={cn(
+            "inline-flex min-h-11 min-w-11 items-center rounded-full",
+            onNight ? "focus-ring-on-night" : "focus-ring",
+          )}
         >
-          <Logo />
+          <Logo tone={onNight ? "onNight" : "default"} />
         </Link>
         <nav aria-label={t("nav.main")} className="ml-3 hidden items-center gap-1 md:flex">
           <NavLink to="/barbers" className={navLinkClass}>
             {t("nav.search")}
           </NavLink>
-          <ProsMenu />
+          <ProsMenu onNight={onNight} />
         </nav>
         <div className="ml-auto flex min-w-0 items-center gap-2">
           {/* Langue accessible à tous, même sans compte (issue #37). */}
           <LanguageSelect compact />
           <Link
             to="/login"
-            className={buttonClasses("ghost", "sm", "hidden whitespace-nowrap md:inline-flex")}
+            className={buttonClasses(
+              "ghost",
+              "sm",
+              cn(
+                "hidden whitespace-nowrap md:inline-flex",
+                onNight && "focus-ring-on-night text-white hover:bg-white/10",
+              ),
+            )}
           >
             {t("app.login")}
           </Link>
@@ -82,7 +102,11 @@ export function PublicHeader() {
             aria-expanded={menuOpen}
             aria-haspopup="dialog"
             onClick={() => setMenuOpen(true)}
-            className={buttonClasses("ghost", "icon", "md:hidden")}
+            className={buttonClasses(
+              "ghost",
+              "icon",
+              cn("md:hidden", onNight && "focus-ring-on-night text-white hover:bg-white/10"),
+            )}
           >
             <svg
               aria-hidden="true"
