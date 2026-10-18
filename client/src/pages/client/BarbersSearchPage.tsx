@@ -65,6 +65,10 @@ export function BarbersSearchPage() {
   const [listOpen, setListOpen] = useState(() =>
     typeof window === "undefined" ? true : window.matchMedia("(min-width: 1024px)").matches,
   );
+  // Mobile (plan §2.6.9) : liste repliée (poignée), à mi-hauteur (55 %) ou
+  // agrandie (90 %). `listOpen` couvre les deux dernières positions.
+  const [listExpanded, setListExpanded] = useState(false);
+  const listTouchY = useRef<number | null>(null);
   const [mapRetryToken, setMapRetryToken] = useState(0);
   // Zone visible de la carte après un geste du visiteur (issue #50). Hors URL :
   // c'est un état de navigation, et elle se déduirait sinon de la position du
@@ -213,7 +217,10 @@ export function BarbersSearchPage() {
   // replie pour laisser voir la fiche du barber sur la carte.
   function selectBarber(id: string) {
     setSelectedId(id);
-    if (!isDesktop) setListOpen(false);
+    if (!isDesktop) {
+      setListOpen(false);
+      setListExpanded(false);
+    }
   }
 
   // Geste du visiteur sur la carte : les résultats suivent la zone visible
@@ -297,7 +304,7 @@ export function BarbersSearchPage() {
   // panneau latéral (desktop) ou sous la barre de recherche et le panneau du
   // bas (mobile).
   const mapPadding = isDesktop
-    ? { top: 56, bottom: 56, left: listOpen ? 470 : 56, right: 56 }
+    ? { top: 56, bottom: 56, left: listOpen ? 440 : 56, right: 56 }
     : { top: 150, bottom: 110, left: 32, right: 32 };
   const areaActive = area !== null && !radiusActive;
   const resultCountLabel = radiusActive
@@ -330,6 +337,7 @@ export function BarbersSearchPage() {
       filtersOpen={filtersOpen}
       onToggleFilters={() => setFiltersOpen((open) => !open)}
       advancedVisible={isDesktop}
+      resultCount={radiusActive ? barbers.length : (pagination?.total ?? null)}
     />
   );
 
@@ -442,10 +450,12 @@ export function BarbersSearchPage() {
 
       {isDesktop ? (
         listOpen ? (
+          // Panneau en verre (plan §2.4 et §2.6.9) : 400 px, `radius-xl`,
+          // fond opaque si le navigateur ne gère pas `backdrop-filter`.
           <section
             id="search-results"
             aria-label={t("search.page.results")}
-            className="absolute bottom-4 left-4 top-4 z-20 flex w-[27rem] flex-col overflow-hidden rounded-3xl border border-border bg-background/95 shadow-card backdrop-blur"
+            className="absolute bottom-4 left-4 top-4 z-20 flex w-[25rem] flex-col overflow-hidden rounded-3xl border border-border bg-surface/80 shadow-3 backdrop-blur-[16px] backdrop-saturate-150 supports-[not(backdrop-filter:blur(1px))]:bg-surface"
           >
             <div className="space-y-3 overflow-y-auto p-4">
               {filtersPanel}
@@ -482,17 +492,67 @@ export function BarbersSearchPage() {
           <section
             id="search-results"
             aria-label={t("search.page.results")}
+            // Feuille du bas à trois positions : poignée seule, 55 %, 90 %.
+            // Glisser la poignée vers le haut ou le bas change de position.
+            onTouchStart={(event) => {
+              listTouchY.current = event.touches[0]?.clientY ?? null;
+            }}
+            onTouchEnd={(event) => {
+              const start = listTouchY.current;
+              const end = event.changedTouches[0]?.clientY;
+              listTouchY.current = null;
+              if (start === null || end === undefined) return;
+              const delta = end - start;
+              if (delta < -60) {
+                if (!listOpen) setListOpen(true);
+                else setListExpanded(true);
+              } else if (delta > 60) {
+                if (listExpanded) setListExpanded(false);
+                else setListOpen(false);
+              }
+            }}
             className={cn(
-              "absolute inset-x-0 bottom-0 z-20 flex flex-col rounded-t-3xl border-t border-border bg-background shadow-card transition-[max-height] duration-300 motion-reduce:transition-none",
-              listOpen ? "max-h-[75%]" : "max-h-20",
+              "absolute inset-x-0 bottom-0 z-20 flex flex-col rounded-t-3xl border-t border-border bg-surface shadow-3 transition-[max-height] duration-slow ease-out",
+              !listOpen ? "max-h-20" : listExpanded ? "max-h-[90%]" : "max-h-[55%]",
             )}
           >
+            {listOpen && (
+              <button
+                type="button"
+                aria-pressed={listExpanded}
+                aria-controls="search-results"
+                onClick={() => setListExpanded((value) => !value)}
+                aria-label={
+                  listExpanded ? t("search.page.shrinkList") : t("search.page.expandList")
+                }
+                className="focus-ring absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full text-foreground-muted transition-colors duration-fast hover:bg-surface-muted hover:text-foreground"
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 20 20"
+                  className={cn(
+                    "h-5 w-5 transition-transform duration-base ease-out",
+                    listExpanded && "rotate-180",
+                  )}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12.5l5-5 5 5" />
+                </svg>
+              </button>
+            )}
             <button
               type="button"
               aria-expanded={listOpen}
               aria-controls="search-results-list"
-              onClick={() => setListOpen((open) => !open)}
-              className="flex min-h-[64px] w-full shrink-0 flex-col items-center justify-center gap-1 px-4 focus-ring-inset"
+              onClick={() => {
+                setListOpen((open) => !open);
+                setListExpanded(false);
+              }}
+              className="flex min-h-[64px] w-full shrink-0 flex-col items-center justify-center gap-1 px-14 focus-ring-inset"
             >
               <span aria-hidden="true" className="h-1.5 w-10 rounded-full bg-border-strong" />
               <span className="text-sm font-semibold text-foreground">

@@ -103,7 +103,9 @@
       "showList": "Mostra l'elenco",
       "mapRegion": "Mappa dei barbieri (risultati di questa pagina)",
       "mapAlternative": "L'elenco dei risultati è l'alternativa testuale a questa mappa.",
-      "mapCrashed": "Non è stato possibile visualizzare la mappa. L'elenco dei risultati resta utilizzabile."
+      "mapCrashed": "Non è stato possibile visualizzare la mappa. L'elenco dei risultati resta utilizzabile.",
+      "expandList": "Ingrandisci l'elenco",
+      "shrinkList": "Riduci l'elenco"
     },
     "filters": {
       "cityLabel": "Città",
@@ -125,7 +127,13 @@
       "minRating": "Valutazione minima",
       "ratingMaxAria": "Valutazione di 5 su 5",
       "ratingAria": "Valutazione di {{rating}} su 5 o più",
-      "ratingChip": "{{rating}} ★ e +"
+      "ratingChip": "{{rating}} ★ e +",
+      "sheet": {
+        "title": "Filtri",
+        "showResults_one": "Mostra {{count}} barbiere",
+        "showResults_other": "Mostra {{count}} barbieri",
+        "close": "Vedi i risultati"
+      }
     },
     "tags": {
       "technique": "Prestazione: {{value}}",
@@ -174,7 +182,12 @@
       "close": "Chiudi la scheda del barbiere",
       "book": "Prenota",
       "viewProfile": "Vedi il profilo"
-    }
+    },
+    "pin": {
+      "from": "da {{price}}",
+      "aria": "{{name}}, da {{price}}"
+    },
+    "cluster": "{{count}} barbieri qui: ingrandisci"
   },
   "profile": {
     "loading": "Caricamento del profilo…",

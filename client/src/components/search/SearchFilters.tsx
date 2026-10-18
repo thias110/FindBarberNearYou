@@ -4,12 +4,12 @@ import {
   SUPPORTED_CURRENCIES,
   type Currency,
 } from "@findbarber/shared/constants";
-import { cn } from "../../lib/cn";
 import type { VisitorPositionStatus } from "../../lib/visitorPosition";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Field } from "../ui/Field";
 import { Input } from "../ui/Input";
+import { Sheet } from "../ui/Sheet";
 import { chipClasses } from "../ui/chipStyles";
 import { CONTROL_CLASS } from "../ui/control";
 
@@ -47,6 +47,8 @@ interface SearchFiltersProps {
   onToggleFilters: () => void;
   /** `true` à partir de lg : le panneau de filtres est toujours visible. */
   advancedVisible: boolean;
+  /** Nombre de résultats, pour le bouton « Afficher 24 barbers » (mobile). */
+  resultCount?: number | null;
 }
 
 function ChipGroup({ legend, children }: { legend: string; children: ReactNode }) {
@@ -71,6 +73,7 @@ export function SearchFilters({
   filtersOpen,
   onToggleFilters,
   advancedVisible,
+  resultCount = null,
 }: SearchFiltersProps) {
   const { t } = useTranslation("client");
   function update<K extends keyof SmartFilters>(key: K, value: SmartFilters[K]) {
@@ -88,79 +91,8 @@ export function SearchFilters({
   const distanceBlocked =
     positionStatus === "denied" || positionStatus === "unavailable";
 
-  return (
-    <Card className="p-4 sm:p-5">
-      <form onSubmit={onSubmit} className="space-y-3" role="search">
-        {/* Ligne toujours visible : ville + recherche + accès aux filtres. */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <Field label={t("search.filters.cityLabel")} className="min-w-0 flex-1">
-            {(control) => (
-              <Input
-                {...control}
-                value={city}
-                onChange={(event) => onCityChange(event.target.value)}
-                placeholder={t("search.filters.cityLabel")}
-                autoComplete="address-level2"
-              />
-            )}
-          </Field>
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" className="min-h-[44px]">
-              {t("search.filters.submit")}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              className="min-h-[44px] lg:hidden"
-              aria-expanded={filtersOpen}
-              aria-controls="search-filters"
-              data-active-filters={activeCount}
-              onClick={onToggleFilters}
-            >
-              {t("search.filters.toggle")}
-              {activeCount > 0 && (
-                <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1.5 text-xs font-medium text-accent-foreground">
-                  {activeCount}
-                </span>
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              className="min-h-[44px]"
-              onClick={onReset}
-            >
-              {t("search.filters.reset")}
-            </Button>
-          </div>
-        </div>
-
-        {activeTags.length > 0 && (
-          <ul className="flex flex-wrap gap-2" aria-label={t("search.filters.activeTags")}>
-            {activeTags.map((tag) => (
-              <li key={tag.key}>
-                <button
-                  type="button"
-                  onClick={() => onRemoveTag(tag.key)}
-                  className={chipClasses(true, { className: "gap-2" })}
-                  aria-label={t("search.filters.removeTag", { label: tag.label })}
-                >
-                  {tag.label}
-                  <span aria-hidden="true">×</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {/* Panneau : dépliable sur mobile, toujours visible en desktop. */}
-        <div
-          id="search-filters"
-          className={cn(
-            "grid-cols-1 gap-4",
-            advancedVisible || filtersOpen ? "grid" : "hidden",
-          )}
-        >
+  const advancedFilters = (
+    <>
           <ChipGroup legend={t("search.filters.maxPrice")}>
             <label className="w-24">
               <span className="sr-only">{t("search.filters.maxPriceCurrency")}</span>
@@ -236,8 +168,106 @@ export function SearchFilters({
               </button>
             ))}
           </ChipGroup>
+    </>
+  );
+
+  return (
+    <Card className="p-4 sm:p-5">
+      <form onSubmit={onSubmit} className="space-y-3" role="search">
+        {/* Ligne toujours visible : ville + recherche + accès aux filtres. */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <Field label={t("search.filters.cityLabel")} className="min-w-0 flex-1">
+            {(control) => (
+              <Input
+                {...control}
+                value={city}
+                onChange={(event) => onCityChange(event.target.value)}
+                placeholder={t("search.filters.cityLabel")}
+                autoComplete="address-level2"
+              />
+            )}
+          </Field>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" className="min-h-[44px]">
+              {t("search.filters.submit")}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className="min-h-[44px] lg:hidden"
+              aria-expanded={filtersOpen}
+              aria-controls="search-filters"
+              data-active-filters={activeCount}
+              onClick={onToggleFilters}
+            >
+              {t("search.filters.toggle")}
+              {activeCount > 0 && (
+                <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1.5 text-xs font-medium text-accent-foreground">
+                  {activeCount}
+                </span>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className="min-h-[44px]"
+              onClick={onReset}
+            >
+              {t("search.filters.reset")}
+            </Button>
+          </div>
         </div>
+
+        {activeTags.length > 0 && (
+          <ul className="flex flex-wrap gap-2" aria-label={t("search.filters.activeTags")}>
+            {activeTags.map((tag) => (
+              <li key={tag.key}>
+                <button
+                  type="button"
+                  onClick={() => onRemoveTag(tag.key)}
+                  className={chipClasses(true, { className: "gap-2" })}
+                  aria-label={t("search.filters.removeTag", { label: tag.label })}
+                >
+                  {tag.label}
+                  <span aria-hidden="true">×</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Desktop : filtres toujours visibles dans le panneau. */}
+        {advancedVisible && (
+          <div id="search-filters" className="grid grid-cols-1 gap-4">
+            {advancedFilters}
+          </div>
+        )}
       </form>
+      {/* Mobile (plan §2.6.3) : feuille de filtres, appliqués en direct, et
+          bouton qui annonce le nombre de résultats. */}
+      {!advancedVisible && (
+        <Sheet
+          open={filtersOpen}
+          title={t("search.filters.sheet.title")}
+          onClose={onToggleFilters}
+          footer={
+            <>
+              <Button variant="link" onClick={onReset}>
+                {t("search.filters.reset")}
+              </Button>
+              <Button onClick={onToggleFilters}>
+                {resultCount === null
+                  ? t("search.filters.sheet.close")
+                  : t("search.filters.sheet.showResults", { count: resultCount })}
+              </Button>
+            </>
+          }
+        >
+          <div id="search-filters" className="grid grid-cols-1 gap-5 pt-1">
+            {advancedFilters}
+          </div>
+        </Sheet>
+      )}
     </Card>
   );
 }

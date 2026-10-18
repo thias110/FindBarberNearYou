@@ -12,6 +12,8 @@ import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
 import type { GeoBounds } from "../lib/geo";
 import { getMapSettings, MAP_ATTRIBUTION } from "../lib/mapConfig";
+import { groupPins } from "../lib/mapClusters";
+import { intlLocale } from "../i18n";
 
 type MapStatus = "loading" | "ready" | "error" | "unconfigured";
 
@@ -54,7 +56,6 @@ const DEFAULT_PADDING: MapPadding = { top: 56, bottom: 56, left: 56, right: 56 }
 
 maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
-const SVG_NS = "http://www.w3.org/2000/svg";
 // Une erreur ponctuelle de tuile ne doit pas déclarer la carte en panne. Tant que
 // le style n'a pas chargé, une première erreur ouvre une courte marge : si `load`
 // survient dans ce délai (tuile isolée), la carte reste utilisable ; sinon on
@@ -62,6 +63,23 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const ERROR_GRACE_MS = 4000;
 const LOAD_TIMEOUT_MS = 12000;
 
+// Prix compact de l'épingle : « dès 35 CHF » (sans décimales si entier).
+function pinPrice(barber: PublicBarberSearchItem): string | null {
+  if (barber.startingPriceMinor === null) return null;
+  const amount = barber.startingPriceMinor / 100;
+  return new Intl.NumberFormat(intlLocale(), {
+    style: "currency",
+    currency: barber.currency,
+    currencyDisplay: "code",
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+// Épingle de prix (lot P-2, plan §2.6.9) : pilule focalisable, `aria-label`
+// « Nom, dès 35 CHF ». Le corps visuel est un enfant : MapLibre positionne
+// l'élément racine par `transform`, l'agrandissement se fait donc sur l'enfant.
+// Construit via DOM (jamais innerHTML) : les données passent par textContent.
 function createMarkerElement(
   barber: PublicBarberSearchItem,
   selected: boolean,
@@ -69,46 +87,51 @@ function createMarkerElement(
 ): HTMLButtonElement {
   const element = document.createElement("button");
   element.type = "button";
-  element.className = `fb-map-marker${
-    selected ? " fb-map-marker--selected" : ""
-  }`;
+  element.className = `fb-price-pin${selected ? " fb-price-pin--selected" : ""}`;
   element.dataset.barberId = barber.id;
-  element.setAttribute("aria-label", markerLabel(barber, t));
-  element.setAttribute("aria-pressed", selected ? "true" : "false");
-
-  // SVG construit via DOM (jamais innerHTML) : aucune donnée utilisateur n'entre
-  // dans le balisage. Le nom/la ville passent uniquement par textContent.
-  const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("viewBox", "0 0 32 44");
-  svg.setAttribute("aria-hidden", "true");
-  svg.setAttribute("focusable", "false");
-
-  const pin = document.createElementNS(SVG_NS, "path");
-  pin.setAttribute("class", "fb-map-marker__pin");
-  pin.setAttribute(
-    "d",
-    "M16 0C7.2 0 0 7.2 0 16c0 11 16 28 16 28s16-17 16-28C32 7.2 24.8 0 16 0z",
-  );
-
-  const ring = document.createElementNS(SVG_NS, "circle");
-  ring.setAttribute("class", "fb-map-marker__ring");
-  ring.setAttribute("cx", "16");
-  ring.setAttribute("cy", "16");
-  ring.setAttribute("r", "10");
-
-  const dot = document.createElementNS(SVG_NS, "circle");
-  dot.setAttribute("class", "fb-map-marker__dot");
-  dot.setAttribute("cx", "16");
-  dot.setAttribute("cy", "16");
-  dot.setAttribute("r", "5");
-
-  svg.append(pin, ring, dot);
-  element.appendChild(svg);
+  const body = document.createElement("span");
+  body.className = "fb-price-pin__body";
+  body.setAttribute("aria-hidden", "true");
+  element.appendChild(body);
+  updateMarkerElement(element, barber, selected, t);
   return element;
 }
 
-function markerLabel(barber: PublicBarberSearchItem, t: TFunction<"client">): string {
-  return t("map.marker", { name: barber.displayName, city: barber.city });
+function updateMarkerElement(
+  element: HTMLButtonElement,
+  barber: PublicBarberSearchItem,
+  selected: boolean,
+  t: TFunction<"client">,
+) {
+  const price = pinPrice(barber);
+  element.classList.toggle("fb-price-pin--selected", selected);
+  element.setAttribute("aria-pressed", selected ? "true" : "false");
+  element.setAttribute("aria-label", markerLabel(barber, price, t));
+  const body = element.firstElementChild as HTMLSpanElement;
+  // Sans prestation active : l'initiale du nom, jamais un prix inventé.
+  body.textContent = price
+    ? t("map.pin.from", { price })
+    : barber.displayName.charAt(0).toUpperCase();
+}
+
+function markerLabel(
+  barber: PublicBarberSearchItem,
+  price: string | null,
+  t: TFunction<"client">,
+): string {
+  return price
+    ? t("map.pin.aria", { name: barber.displayName, price })
+    : t("map.marker", { name: barber.displayName, city: barber.city });
+}
+
+// Cercle de regroupement : nombre de barbers ; un clic zoome sur eux.
+function createClusterElement(count: number, t: TFunction<"client">): HTMLButtonElement {
+  const element = document.createElement("button");
+  element.type = "button";
+  element.className = "fb-map-cluster";
+  element.textContent = String(count);
+  element.setAttribute("aria-label", t("map.cluster", { count }));
+  return element;
 }
 
 // Signature des résultats : sert à ne recadrer QUE lors d'un changement réel
@@ -176,6 +199,7 @@ export default function BarbersMap({
   const markersRef = useRef<
     Map<string, { marker: maplibregl.Marker; element: HTMLButtonElement }>
   >(new Map());
+  const clustersRef = useRef<maplibregl.Marker[]>([]);
   const loadedRef = useRef(false);
   const signatureRef = useRef("");
   const [status, setStatus] = useState<MapStatus>("loading");
@@ -196,6 +220,56 @@ export default function BarbersMap({
   paddingRef.current = padding;
   const onViewportChangeRef = useRef(onViewportChange);
   onViewportChangeRef.current = onViewportChange;
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
+  const tRef = useRef(t);
+  tRef.current = t;
+
+  // Regroupement (plan §2.6.9) : recalculé après chaque déplacement et chaque
+  // mise à jour des épingles. Les épingles réunies sont masquées (donc hors de
+  // l'ordre de tabulation) ; le cercle les remplace.
+  const reclusterRef = useRef<() => void>(() => {});
+  reclusterRef.current = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    for (const cluster of clustersRef.current) cluster.remove();
+    clustersRef.current = [];
+    const bounds = map.getBounds();
+    const visible = barbersRef.current.filter((b) =>
+      bounds.contains([b.longitude, b.latitude]),
+    );
+    const groups = groupPins(
+      visible.map((b) => {
+        const point = map.project([b.longitude, b.latitude]);
+        return { id: b.id, x: point.x, y: point.y };
+      }),
+      { keepAlone: selectedIdRef.current },
+    );
+    const hidden = new Set<string>();
+    for (const group of groups) {
+      if (group.kind !== "cluster") continue;
+      group.ids.forEach((id) => hidden.add(id));
+      const members = barbersRef.current.filter((b) => group.ids.includes(b.id));
+      const element = createClusterElement(group.ids.length, tRef.current);
+      element.addEventListener("click", () => {
+        const area = new maplibregl.LngLatBounds();
+        for (const b of members) area.extend([b.longitude, b.latitude]);
+        map.fitBounds(area, {
+          padding: safePadding(map, paddingRef.current),
+          duration: reducedMotionRef.current ? 0 : 500,
+          maxZoom: 16,
+        });
+      });
+      clustersRef.current.push(
+        new maplibregl.Marker({ element })
+          .setLngLat(map.unproject([group.x, group.y]))
+          .addTo(map),
+      );
+    }
+    for (const [id, entry] of markersRef.current) {
+      entry.element.style.display = hidden.has(id) ? "none" : "";
+    }
+  };
   const appliedStyleRef = useRef<string | null>(null);
 
   // --- Initialisation unique de la carte ---
@@ -257,6 +331,7 @@ export default function BarbersMap({
       clearTimers();
       setStatus("ready");
     });
+    map.on("moveend", () => reclusterRef.current());
 
     // Erreurs asynchrones du moteur : l'ErrorBoundary React ne les voit pas.
     map.on("error", (event) => {
@@ -303,6 +378,7 @@ export default function BarbersMap({
       if (viewportTimer !== undefined) window.clearTimeout(viewportTimer);
       observer.disconnect();
       markers.clear();
+      clustersRef.current = [];
       map.remove();
       mapRef.current = null;
       appliedStyleRef.current = null;
@@ -362,14 +438,10 @@ export default function BarbersMap({
         markersRef.current.set(barber.id, entry);
       } else {
         entry.marker.setLngLat([barber.longitude, barber.latitude]);
-        entry.element.classList.toggle("fb-map-marker--selected", selected);
-        entry.element.setAttribute(
-          "aria-pressed",
-          selected ? "true" : "false",
-        );
-        entry.element.setAttribute("aria-label", markerLabel(barber, t));
+        updateMarkerElement(entry.element, barber, selected, t);
       }
     }
+    if (status === "ready") reclusterRef.current();
 
     if (status === "ready") {
       const signature = resultsSignature(barbers);
