@@ -103,7 +103,9 @@
       "showList": "Show list",
       "mapRegion": "Map of barbers (results on this page)",
       "mapAlternative": "The list of results is the text alternative to this map.",
-      "mapCrashed": "The map could not be displayed. The list of results is still available."
+      "mapCrashed": "The map could not be displayed. The list of results is still available.",
+      "expandList": "Expand the list",
+      "shrinkList": "Shrink the list"
     },
     "filters": {
       "cityLabel": "City",
@@ -125,7 +127,13 @@
       "minRating": "Minimum rating",
       "ratingMaxAria": "Rating of 5 out of 5",
       "ratingAria": "Rating of {{rating}} out of 5 and above",
-      "ratingChip": "{{rating}} ★ & up"
+      "ratingChip": "{{rating}} ★ & up",
+      "sheet": {
+        "title": "Filters",
+        "showResults_one": "Show {{count}} barber",
+        "showResults_other": "Show {{count}} barbers",
+        "close": "See results"
+      }
     },
     "tags": {
       "technique": "Service: {{value}}",
@@ -174,7 +182,12 @@
       "close": "Close the barber's details",
       "book": "Book",
       "viewProfile": "View profile"
-    }
+    },
+    "pin": {
+      "from": "from {{price}}",
+      "aria": "{{name}}, from {{price}}"
+    },
+    "cluster": "{{count}} barbers here: zoom in"
   },
   "profile": {
     "loading": "Loading profile…",

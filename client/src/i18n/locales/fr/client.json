@@ -103,7 +103,9 @@
       "showList": "Afficher la liste",
       "mapRegion": "Carte des barbiers (résultats de cette page)",
       "mapAlternative": "La liste des résultats est l'alternative textuelle de cette carte.",
-      "mapCrashed": "La carte n'a pas pu être affichée. La liste des résultats reste utilisable."
+      "mapCrashed": "La carte n'a pas pu être affichée. La liste des résultats reste utilisable.",
+      "expandList": "Agrandir la liste",
+      "shrinkList": "Réduire la liste"
     },
     "filters": {
       "cityLabel": "Ville",
@@ -125,7 +127,13 @@
       "minRating": "Note minimale",
       "ratingMaxAria": "Note de 5 sur 5",
       "ratingAria": "Note de {{rating}} sur 5 et plus",
-      "ratingChip": "{{rating}} ★ et +"
+      "ratingChip": "{{rating}} ★ et +",
+      "sheet": {
+        "title": "Filtres",
+        "showResults_one": "Afficher {{count}} barber",
+        "showResults_other": "Afficher {{count}} barbers",
+        "close": "Voir les résultats"
+      }
     },
     "tags": {
       "technique": "Prestation : {{value}}",
@@ -174,7 +182,12 @@
       "close": "Fermer la fiche du barbier",
       "book": "Réserver",
       "viewProfile": "Voir le profil"
-    }
+    },
+    "pin": {
+      "from": "dès {{price}}",
+      "aria": "{{name}}, dès {{price}}"
+    },
+    "cluster": "{{count}} barbers ici : zoomer"
   },
   "profile": {
     "loading": "Chargement du profil…",

@@ -160,6 +160,110 @@
   }
 }
 
+/* --- Épingles de prix de la recherche (lot P-2, plan §2.6.9) ---
+   MapLibre positionne l'élément racine par `transform` : l'agrandissement
+   (survol, sélection) se fait sur le corps `__body`. */
+.fb-price-pin {
+  padding: 0 0 7px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.fb-price-pin__body {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgb(var(--fb-border));
+  border-radius: 9999px;
+  background: rgb(var(--fb-surface));
+  color: rgb(var(--fb-foreground));
+  box-shadow: var(--fb-shadow-1), var(--fb-shadow-2);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transform-origin: 50% 100%;
+  transition:
+    transform var(--fb-motion-fast) var(--fb-ease-out),
+    background-color var(--fb-motion-fast) var(--fb-ease-out),
+    color var(--fb-motion-fast) var(--fb-ease-out);
+}
+
+/* Petite pointe vers la position du barber. */
+.fb-price-pin__body::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 8px;
+  height: 8px;
+  transform: translateX(-50%) rotate(45deg);
+  background: inherit;
+  border-right: 1px solid rgb(var(--fb-border));
+  border-bottom: 1px solid rgb(var(--fb-border));
+}
+
+.fb-price-pin--selected {
+  z-index: 2;
+}
+
+.fb-price-pin--selected .fb-price-pin__body {
+  border-color: rgb(var(--fb-accent));
+  background: rgb(var(--fb-accent));
+  color: rgb(var(--fb-accent-foreground));
+}
+
+.fb-price-pin--selected .fb-price-pin__body::after {
+  border-color: rgb(var(--fb-accent));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fb-price-pin:hover .fb-price-pin__body {
+    transform: scale(1.06);
+  }
+  .fb-price-pin--selected .fb-price-pin__body {
+    transform: scale(1.08);
+  }
+}
+
+.fb-price-pin:focus-visible {
+  outline: none;
+}
+
+.fb-price-pin:focus-visible .fb-price-pin__body {
+  box-shadow:
+    0 0 0 2px rgb(var(--fb-background)),
+    0 0 0 4px rgb(var(--fb-ring));
+}
+
+/* Cercle de regroupement : nuit, nombre de barbers. */
+.fb-map-cluster {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 8px;
+  border: 2px solid rgb(255 255 255);
+  border-radius: 9999px;
+  background: rgb(var(--fb-night));
+  color: rgb(255 255 255);
+  box-shadow: var(--fb-shadow-2);
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.fb-map-cluster:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgb(var(--fb-background)),
+    0 0 0 4px rgb(var(--fb-ring));
+}
+
 /* --- Contrôles MapLibre en thème sombre (issue #17.3) ---
    Les boutons et l'attribution MapLibre sont blancs par défaut. On les aligne
    sur les tokens. Les marqueurs `.fb-map-marker*` ne sont pas touchés.
