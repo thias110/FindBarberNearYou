@@ -58,37 +58,66 @@ test("réserver au clavier, puis confirmation par le barber", async ({
     await page.request.get(`${API}/api/barbers/${barberId}`)
   ).json();
   const service = services.services[0];
-  const date = await findBookableDate(page, barberId, service.id);
+  // Garde-fou : la démo doit offrir au moins un jour réservable en salon.
+  await findBookableDate(page, barberId, service.id);
 
-  // Formulaire : uniquement le clavier.
-  const serviceSelect = page.getByRole("combobox", { name: "Service" });
+  // Étape 1 — prestation et lieu, uniquement au clavier.
+  const serviceSelect = page.getByRole("combobox", { name: "Prestation" });
   await tabTo(page, serviceSelect);
   await serviceSelect.press("ArrowDown");
   await expect(serviceSelect).toHaveValue(service.id);
 
-  const placeSelect = page.getByRole("combobox", { name: "Lieu" });
-  await tabTo(page, placeSelect);
-  await placeSelect.press("ArrowDown");
-  await expect(placeSelect).not.toHaveValue("");
+  const places = page.getByRole("radiogroup", { name: "Lieu" });
+  const salon = places.getByRole("radio", { name: "En salon" });
+  await tabTo(page, places.getByRole("radio").first());
+  for (let i = 0; i < 3; i += 1) {
+    if ((await salon.getAttribute("aria-checked")) === "true") break;
+    await page.keyboard.press("ArrowRight");
+  }
+  await expect(salon).toHaveAttribute("aria-checked", "true");
 
-  // Le champ date est un widget natif : on vérifie qu'il est atteignable au
-  // clavier, puis on fixe la valeur (la saisie clavier segmentée du sélecteur
-  // natif n'est pas fiable en Chromium headless ; elle relève du navigateur).
-  const dateInput = page.getByLabel("Date");
-  await tabTo(page, dateInput);
-  await dateInput.fill(date);
-  await expect(dateInput).toHaveValue(date);
+  const next = page.getByRole("button", { name: "Continuer" });
+  await tabTo(page, next);
+  await page.keyboard.press("Enter");
 
-  const firstSlot = page.getByRole("button", { name: /^\d{2}:\d{2}$/ }).first();
-  const slotLabel = (await firstSlot.textContent())!.trim();
-  const slot = page.getByRole("button", { name: slotLabel, exact: true });
+  // Étape 2 — grille de la semaine : le titre de l'étape reçoit le focus.
+  await expect(page.getByText("Étape 2 sur 3")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Créneau" })).toBeFocused();
+  const grid = page.getByRole("group", { name: "Créneaux de la semaine" });
+  const slots = grid.getByRole("button");
+  const emptyWeek = page.getByText("Aucun créneau cette semaine");
+  for (let week = 0; week < 4; week += 1) {
+    await expect(slots.first().or(emptyWeek)).toBeVisible();
+    if (await slots.first().isVisible()) break;
+    await page.getByRole("button", { name: "Voir la semaine suivante" }).click();
+  }
+  await expectNoA11yViolations(page);
+
+  const slot = slots.first();
   await tabTo(page, slot);
   await page.keyboard.press("Space");
   await expect(slot).toHaveAttribute("aria-pressed", "true");
 
-  await tabTo(page, page.getByRole("button", { name: "Réserver" }));
+  await tabTo(page, next);
   await page.keyboard.press("Enter");
-  await expect(page.getByText("Réservation envoyée.")).toBeVisible();
+
+  // Étape 3 — confirmation : récapitulatif puis réservation.
+  await expect(page.getByText("Étape 3 sur 3")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Confirmation" })).toBeFocused();
+  const submit = page.getByRole("button", { name: "Réserver", exact: true });
+  await tabTo(page, submit);
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Réservation envoyée" }),
+  ).toBeVisible();
+
+  // Lot N2 : le rendez-vous s'ajoute au calendrier (fichier .ics).
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Ajouter au calendrier" }).click();
+  expect((await download).suggestedFilename()).toMatch(/\.ics$/);
+  await expect(
+    page.getByRole("link", { name: "Voir mes rendez-vous" }),
+  ).toBeVisible();
 
   // Côté barber : confirmation.
   const barberContext = await browser.newContext();

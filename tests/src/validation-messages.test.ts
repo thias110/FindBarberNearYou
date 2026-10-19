@@ -8,6 +8,7 @@ import { LIMITS, STATS_LIMITS } from "@findbarber/shared/constants";
 import {
   PASSWORD_MAX_BYTES,
   PASSWORD_MIN_LENGTH,
+  SLOTS_RANGE_MAX_DAYS,
 } from "@findbarber/shared/validation";
 import i18n from "../../client/src/i18n";
 import {
@@ -24,6 +25,7 @@ const SCOPE: Record<string, unknown> = {
   STATS_LIMITS,
   PASSWORD_MIN_LENGTH,
   PASSWORD_MAX_BYTES,
+  SLOTS_RANGE_MAX_DAYS,
   weekday: 3,
 };
 

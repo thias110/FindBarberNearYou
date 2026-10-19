@@ -91,7 +91,10 @@
     "startMinuteMax": "La minute de début ne peut pas dépasser 23:59.",
     "clientAddressRequired": "Une adresse est requise pour une prestation chez le client.",
     "clientAddressNotAllowed": "L'adresse client n'est autorisée que pour une prestation chez le client (AT_CLIENT).",
-    "declineReasonTooLong": "Le motif est trop long."
+    "declineReasonTooLong": "Le motif est trop long.",
+    "daysInteger": "Le nombre de jours doit être un entier.",
+    "daysMin": "Au moins un jour.",
+    "daysMax": "Au plus {{max}} jours."
   },
   "gallery": {
     "captionTooLong": "La légende est trop longue."

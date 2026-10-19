@@ -207,25 +207,59 @@
     }
   },
   "booking": {
-    "form": {
+    "flow": {
       "title": "Prenota",
-      "success": "Prenotazione inviata. Il professionista deve ancora confermarla.",
-      "viewAppointments": "Vedi i miei appuntamenti",
-      "service": "Servizio",
-      "servicePlaceholder": "Scegli un servizio",
-      "place": "Luogo",
-      "placePlaceholder": "Scegli un luogo",
-      "date": "Data",
-      "address": "Il tuo indirizzo",
-      "addressPlaceholder": "Via e numero, CAP, città",
-      "addressHelp": "Usato solo per questa prestazione a domicilio, nella zona di intervento del professionista.",
-      "slot": "Fascia oraria",
-      "slotHint": "Seleziona un servizio, un luogo e una data per vedere le fasce orarie.",
-      "slotsLoading": "Caricamento delle fasce orarie…",
-      "slotsUnavailable": "Fasce orarie non disponibili.",
-      "retry": "Riprova",
-      "noSlots": "Nessuna fascia oraria disponibile in questa data.",
-      "slotsGroup": "Fasce orarie disponibili",
+      "progress": "Passo {{current}} di {{total}}",
+      "steps": {
+        "service": "Prestazione",
+        "slot": "Fascia oraria",
+        "confirm": "Conferma"
+      },
+      "service": {
+        "label": "Prestazione",
+        "placeholder": "Scegli una prestazione"
+      },
+      "place": {
+        "label": "Luogo"
+      },
+      "address": {
+        "label": "Il tuo indirizzo",
+        "placeholder": "Via e numero, CAP, città",
+        "help": "Usato solo per questa prestazione a domicilio, nella zona di intervento del professionista."
+      },
+      "next": "Continua",
+      "back": "Indietro",
+      "slots": {
+        "loading": "Caricamento delle fasce orarie…",
+        "errorTitle": "Impossibile caricare le fasce orarie",
+        "retry": "Riprova",
+        "unavailable": "Fasce orarie non disponibili.",
+        "group": "Fasce orarie della settimana",
+        "today": "oggi",
+        "dayEmpty": "nessuna fascia oraria",
+        "emptyTitle": "Nessuna fascia oraria questa settimana",
+        "emptyHint": "Prova la settimana successiva.",
+        "emptyHintLast": "È l'ultima settimana aperta alla prenotazione.",
+        "nextWeek": "Settimana successiva",
+        "nextWeekAria": "Mostra la settimana successiva",
+        "previousWeek": "Mostra la settimana precedente"
+      },
+      "summary": {
+        "title": "Riepilogo",
+        "barber": "Professionista",
+        "service": "Prestazione",
+        "when": "Data e ora",
+        "salonTime": "ora del salone",
+        "place": "Luogo",
+        "payment": "Pagamento",
+        "paymentOnSite": "Sul posto",
+        "paymentFull": "Totale pagato online",
+        "paymentDeposit": "Acconto di {{amount}} online",
+        "total": "Totale",
+        "pending": "Da scegliere",
+        "show": "Mostra il riepilogo",
+        "hide": "Nascondi il riepilogo"
+      },
       "onlineFull": "Pagamento online dell'importo totale",
       "onlineDeposit": "Acconto di {{amount}} pagato online, il resto sul posto",
       "onlineDetails": "(carta o Twint). Rimborsato automaticamente se il professionista rifiuta o se annulli in tempo.",
@@ -234,7 +268,13 @@
       "bookingFailed": "Prenotazione non riuscita.",
       "submitting": "Invio…",
       "submitAndPay": "Prenota e paga",
-      "submit": "Prenota"
+      "submit": "Prenota",
+      "confirmation": {
+        "title": "Prenotazione inviata",
+        "body": "Il professionista deve ancora confermarla. La trovi tra i tuoi appuntamenti.",
+        "addToCalendar": "Aggiungi al calendario",
+        "viewAppointments": "Vedi i miei appuntamenti"
+      }
     },
     "validation": {
       "serviceId": "Scegli un servizio.",

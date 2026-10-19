@@ -9,7 +9,7 @@ import type {
 import i18n from "../../i18n";
 import { apiErrorMessage, barbersApi } from "../../lib/apiClient";
 import { useScrollToHash } from "../../lib/useScrollToHash";
-import { BookingForm } from "../../components/BookingForm";
+import { BookingFlow } from "../../components/booking/BookingFlow";
 import { BarberProfileHeader } from "../../components/barber/BarberProfileHeader";
 import { BarberServices } from "../../components/barber/BarberServices";
 import { BarberGallery } from "../../components/barber/BarberGallery";
@@ -170,7 +170,7 @@ export function PublicBarberProfilePage() {
 
   const bookingPanel =
     services.length > 0 && profile.places.length > 0 ? (
-      <BookingForm
+      <BookingFlow
         barberId={profile.id}
         profile={profile}
         services={services}
@@ -188,43 +188,40 @@ export function PublicBarberProfilePage() {
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
-      <PageContainer width="wide" stack="none">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start">
-          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-            <BarberProfileHeader
-              profile={profile}
-              averageRating={reviews?.summary.averageRating ?? null}
-              totalReviews={reviews?.summary.totalReviews ?? 0}
-            />
-          </div>
+      <PageContainer width="wide" stack="md">
+        <BarberProfileHeader
+          profile={profile}
+          averageRating={reviews?.summary.averageRating ?? null}
+          totalReviews={reviews?.summary.totalReviews ?? 0}
+        />
 
-          {/* Mobile : la réservation vient juste après l'en-tête.
-              Desktop : colonne droite sticky (≈ un tiers de la largeur). */}
-          <aside
-            id="reserver"
-            aria-label={t("profile.booking")}
-            className="min-w-0 focus:outline-none lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-24"
-          >
-            {bookingPanel}
-          </aside>
+        {/* Le tunnel de réservation (grille de la semaine + récapitulatif de
+            320 px) a besoin de toute la largeur de la fiche : il passe sous
+            l'en-tête, avant le détail du profil. */}
+        <aside
+          id="reserver"
+          aria-label={t("profile.booking")}
+          className="min-w-0 scroll-mt-24 focus:outline-none"
+        >
+          {bookingPanel}
+        </aside>
 
-          <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-2">
-            <BarberServices profile={profile} services={services} />
-            <BarberWeeklyHours hours={data.weeklyHours} />
-            <BarberGallery
-              photos={photos}
-              loading={photosLoading}
-              error={photosError}
-              onRetry={() => setPhotosReload((n) => n + 1)}
-            />
-            <BarberReviews
-              summary={reviews?.summary ?? null}
-              reviews={reviews?.reviews ?? []}
-              loading={reviewsLoading}
-              error={reviewsError}
-              onRetry={() => setReviewsReload((n) => n + 1)}
-            />
-          </div>
+        <div className="min-w-0 space-y-6">
+          <BarberServices profile={profile} services={services} />
+          <BarberWeeklyHours hours={data.weeklyHours} />
+          <BarberGallery
+            photos={photos}
+            loading={photosLoading}
+            error={photosError}
+            onRetry={() => setPhotosReload((n) => n + 1)}
+          />
+          <BarberReviews
+            summary={reviews?.summary ?? null}
+            reviews={reviews?.reviews ?? []}
+            loading={reviewsLoading}
+            error={reviewsError}
+            onRetry={() => setReviewsReload((n) => n + 1)}
+          />
         </div>
       </PageContainer>
     </div>
