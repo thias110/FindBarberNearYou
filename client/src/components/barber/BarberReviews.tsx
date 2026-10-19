@@ -42,7 +42,7 @@ export function BarberReviews({
 
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-bold text-foreground">{t("public.reviews.title")}</h2>
+      <h2 className="text-h3 font-bold text-foreground">{t("public.reviews.title")}</h2>
 
       {loading ? (
         <p className="mt-2 text-foreground-muted">{t("public.reviews.loading")}</p>

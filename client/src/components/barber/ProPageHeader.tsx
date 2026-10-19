@@ -1,7 +1,4 @@
-import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 import { cn } from "../../lib/cn";
-import { buttonClasses } from "../ui/buttonStyles";
 
 export interface ProPageHeaderProps {
   /** Titre de la page. */
@@ -12,16 +9,15 @@ export interface ProPageHeaderProps {
 }
 
 /**
- * En-tête commun aux pages de l'espace professionnel : titre, sous-titre et
- * lien de retour vers le tableau de bord. Présentation pure (aucune logique
- * métier).
+ * En-tête commun aux pages de l'espace professionnel : titre et sous-titre.
+ * Le retour au tableau de bord passe par la barre latérale et la barre
+ * d'onglets. Présentation pure (aucune logique métier).
  */
 export function ProPageHeader({
   title,
   description,
   className,
 }: ProPageHeaderProps) {
-  const { t } = useTranslation("barber");
   return (
     <header
       className={cn(
@@ -30,19 +26,13 @@ export function ProPageHeader({
       )}
     >
       <div className="min-w-0">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">{title}</h1>
+        <h1 className="text-h2 font-extrabold text-foreground">{title}</h1>
         {description && (
           <p className="mt-1 break-words text-sm text-foreground-muted">
             {description}
           </p>
         )}
       </div>
-      <Link
-        to="/pro/dashboard"
-        className={buttonClasses("ghost", "md", "shrink-0")}
-      >
-        {t("common.backToDashboard")}
-      </Link>
     </header>
   );
 }

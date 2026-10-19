@@ -27,6 +27,7 @@ import {
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { EmptyState } from "../../components/ui/EmptyState";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
@@ -403,14 +404,14 @@ export function BarberServicesPage() {
       <div className="min-h-screen bg-background p-4 sm:p-8">
         <PageContainer width="reading">
           <ProPageHeader title={t("services.title")} />
-          <Card className="p-6 text-center">
-            <p className="text-foreground">
-              {t("services.profileMissing")}
-            </p>
-            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              {t("common.createProfile")}
-            </Link>
-          </Card>
+          <EmptyState
+            title={t("services.profileMissing")}
+            action={
+              <Link to="/pro/profile" className={PRIMARY_LINK_CLASS}>
+                {t("common.createProfile")}
+              </Link>
+            }
+          />
         </PageContainer>
       </div>
     );
@@ -427,7 +428,7 @@ export function BarberServicesPage() {
         />
 
         <Card className="p-6">
-          <h2 className="text-lg font-bold text-foreground">
+          <h2 className="text-h3 font-bold text-foreground">
             {t("services.addTitle")}
           </h2>
           <div className="mt-4">
@@ -448,15 +449,11 @@ export function BarberServicesPage() {
         </Card>
 
         <section className="space-y-3">
-          <h2 className="text-lg font-bold text-foreground">
+          <h2 className="text-h3 font-bold text-foreground">
             {t("services.listTitle", { count: services.length })}
           </h2>
           {services.length === 0 ? (
-            <Card className="p-6 text-center">
-              <p className="text-foreground-muted">
-                {t("services.empty")}
-              </p>
-            </Card>
+            <EmptyState title={t("services.empty")} />
           ) : (
             services.map((service) =>
               editingService?.id === service.id ? (

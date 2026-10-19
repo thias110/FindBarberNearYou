@@ -159,7 +159,7 @@ export function BookingCard({
         <div className="mt-3 border-t border-border pt-3">
           {detail ? (
             <div className="rounded-lg bg-surface-muted p-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
+              <p className="text-xs font-semibold text-foreground-muted">
                 {t("bookings.card.address")}
               </p>
               <p className="mt-1 text-sm text-foreground">

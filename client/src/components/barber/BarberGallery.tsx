@@ -23,7 +23,7 @@ export function BarberGallery({
   const { t } = useTranslation("barber");
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-bold text-foreground">{t("public.gallery.title")}</h2>
+      <h2 className="text-h3 font-bold text-foreground">{t("public.gallery.title")}</h2>
 
       {loading ? (
         <div

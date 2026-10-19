@@ -10,9 +10,9 @@ import {
   StatsRangeSelector,
   type StatsRange,
 } from "../../components/BarberStatsContent";
-import { Alert } from "../../components/ui/Alert";
-import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { ErrorState } from "../../components/ui/ErrorState";
 import { Skeleton } from "../../components/ui/Skeleton";
 
 export function AdminBarberStatsPage() {
@@ -115,22 +115,13 @@ export function AdminBarberStatsPage() {
             </div>
           </Card>
         ) : error ? (
-          <Alert variant="danger">
-            <p>{error}</p>
-            <Button
-              variant="secondary"
-              className="mt-3 min-h-[44px]"
-              onClick={() => setRetryKey((key) => key + 1)}
-            >
-              {t("common.retry")}
-            </Button>
-          </Alert>
+          <ErrorState
+            title={error}
+            retryLabel={t("common.retry")}
+            onRetry={() => setRetryKey((key) => key + 1)}
+          />
         ) : !canFetch ? (
-          <Card className="p-6 text-center">
-            <p className="text-foreground-muted">
-              {t("barberStats.chooseRange")}
-            </p>
-          </Card>
+          <EmptyState title={t("barberStats.chooseRange")} />
         ) : stats ? (
           <BarberStatsContent stats={stats} />
         ) : null}

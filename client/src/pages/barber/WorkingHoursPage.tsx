@@ -24,6 +24,7 @@ import { Alert } from "../../components/ui/Alert";
 import { StickyActionBar } from "../../components/ui/StickyActionBar";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { EmptyState } from "../../components/ui/EmptyState";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
@@ -380,14 +381,14 @@ export function BarberWorkingHoursPage() {
       <div className="min-h-screen bg-background p-4 sm:p-8">
         <PageContainer width="reading">
           <ProPageHeader title={t("workingHours.title")} />
-          <Card className="p-6 text-center">
-            <p className="text-foreground">
-              {t("workingHours.profileMissing")}
-            </p>
-            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              {t("common.createProfile")}
-            </Link>
-          </Card>
+          <EmptyState
+            title={t("workingHours.profileMissing")}
+            action={
+              <Link to="/pro/profile" className={PRIMARY_LINK_CLASS}>
+                {t("common.createProfile")}
+              </Link>
+            }
+          />
         </PageContainer>
       </div>
     );

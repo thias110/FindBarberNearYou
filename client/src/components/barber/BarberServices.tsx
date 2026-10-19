@@ -19,7 +19,7 @@ export function BarberServices({ profile, services }: BarberServicesProps) {
   const { t } = useTranslation("barber");
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-bold text-foreground">{t("public.services.title")}</h2>
+      <h2 className="text-h3 font-bold text-foreground">{t("public.services.title")}</h2>
       {services.length === 0 ? (
         <p className="mt-2 text-foreground-muted">
           {t("public.services.empty")}

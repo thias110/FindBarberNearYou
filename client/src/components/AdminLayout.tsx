@@ -40,7 +40,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <PageContainer width="wide">
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+          <h1 className="text-h2 font-extrabold text-foreground">
             {t("layout.title")}
           </h1>
           <div className="flex flex-wrap items-center gap-3">

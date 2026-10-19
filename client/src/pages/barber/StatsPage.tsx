@@ -8,9 +8,9 @@ import {
   StatsRangeSelector,
   type StatsRange,
 } from "../../components/BarberStatsContent";
-import { Alert } from "../../components/ui/Alert";
-import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { ErrorState } from "../../components/ui/ErrorState";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
 import { buttonClasses } from "../../components/ui/buttonStyles";
@@ -112,38 +112,31 @@ export function BarberStatsPage() {
             </div>
           </Card>
         ) : profileMissing ? (
-          <Card className="p-6 text-center">
-            <p className="text-foreground">
-              {t("stats.page.profileMissing")}
-            </p>
-            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              {t("common.createProfile")}
-            </Link>
-          </Card>
+          <EmptyState
+            title={t("stats.page.profileMissing")}
+            action={
+              <Link to="/pro/profile" className={PRIMARY_LINK_CLASS}>
+                {t("common.createProfile")}
+              </Link>
+            }
+          />
         ) : timezoneMissing ? (
-          <Card className="p-6 text-center">
-            <p className="text-foreground">
-              {t("stats.page.timezoneMissing")}
-            </p>
-            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              {t("common.completeProfile")}
-            </Link>
-          </Card>
+          <EmptyState
+            title={t("stats.page.timezoneMissing")}
+            action={
+              <Link to="/pro/profile" className={PRIMARY_LINK_CLASS}>
+                {t("common.completeProfile")}
+              </Link>
+            }
+          />
         ) : error ? (
-          <Alert variant="danger">
-            <p>{error}</p>
-            <Button
-              variant="secondary"
-              className="mt-3 min-h-[44px]"
-              onClick={() => setRetryKey((key) => key + 1)}
-            >
-              {t("common.retry")}
-            </Button>
-          </Alert>
+          <ErrorState
+            title={error}
+            retryLabel={t("common.retry")}
+            onRetry={() => setRetryKey((key) => key + 1)}
+          />
         ) : !canFetch ? (
-          <Card className="p-6 text-center">
-            <p className="text-foreground-muted">{t("stats.page.chooseRange")}</p>
-          </Card>
+          <EmptyState title={t("stats.page.chooseRange")} />
         ) : stats ? (
           <BarberStatsContent stats={stats} />
         ) : null}
