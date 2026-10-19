@@ -7,9 +7,9 @@ import i18n from "../../i18n";
 import { ApiError, bookingApi } from "../../lib/apiClient";
 import { BookingCard } from "../../components/client/BookingCard";
 import { Alert } from "../../components/ui/Alert";
-import { Button } from "../../components/ui/Button";
 import { buttonClasses } from "../../components/ui/buttonStyles";
-import { Card } from "../../components/ui/Card";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { ErrorState } from "../../components/ui/ErrorState";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { PageContainer } from "../../components/ui/PageContainer";
 
@@ -183,14 +183,9 @@ export function ClientBookingsPage() {
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <PageContainer width="reading">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+          <h1 className="text-h2 font-extrabold text-foreground">
             {t("bookings.title")}
           </h1>
-          <p className="mt-1 text-sm text-foreground-muted">
-            <Link to="/barbers" className="text-accent-strong underline">
-              {t("bookings.searchBarber")}
-            </Link>
-          </p>
         </div>
 
         {/* Retour de Stripe Checkout (issue #10). Le statut réel arrive par
@@ -217,29 +212,21 @@ export function ClientBookingsPage() {
             ))}
           </div>
         ) : error ? (
-          <Alert variant="danger">
-            <p>{error}</p>
-            <Button
-              type="button"
-              variant="secondary"
-              className="mt-2 min-h-[44px]"
-              onClick={() => void loadBookings()}
-            >
-              {t("bookings.retry")}
-            </Button>
-          </Alert>
+          <ErrorState
+            title={error}
+            retryLabel={t("bookings.retry")}
+            onRetry={() => void loadBookings()}
+          />
         ) : bookings.length === 0 ? (
-          <Card className="p-6 text-center">
-            <p className="text-foreground-muted">
-              {t("bookings.empty")}
-            </p>
-            <Link
-              to="/barbers"
-              className={buttonClasses("primary", "md", "mt-3")}
-            >
-              {t("bookings.searchBarber")}
-            </Link>
-          </Card>
+          <EmptyState
+            headingLevel={2}
+            title={t("bookings.empty")}
+            action={
+              <Link to="/barbers" className={buttonClasses("primary", "md")}>
+                {t("bookings.searchBarber")}
+              </Link>
+            }
+          />
         ) : (
           <div className="space-y-8">
             {detailError && <Alert variant="danger">{detailError}</Alert>}
@@ -248,7 +235,7 @@ export function ClientBookingsPage() {
               <section aria-labelledby="bookings-upcoming-title">
                 <h2
                   id="bookings-upcoming-title"
-                  className="text-lg font-bold text-foreground"
+                  className="text-h3 font-bold text-foreground"
                 >
                   {t("bookings.upcoming", { count: upcoming.length })}
                 </h2>
@@ -260,7 +247,7 @@ export function ClientBookingsPage() {
               <section aria-labelledby="bookings-past-title">
                 <h2
                   id="bookings-past-title"
-                  className="text-lg font-bold text-foreground"
+                  className="text-h3 font-bold text-foreground"
                 >
                   {t("bookings.past", { count: past.length })}
                 </h2>

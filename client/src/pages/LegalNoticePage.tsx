@@ -15,7 +15,7 @@ export function LegalNoticePage() {
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <PageContainer width="reading">
-        <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">
+        <h1 className="text-h2 font-extrabold text-foreground">
           {t("legal.title")}
         </h1>
 

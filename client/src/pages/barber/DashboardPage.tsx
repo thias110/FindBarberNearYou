@@ -136,7 +136,7 @@ export function BarberDashboardPage() {
       <PageContainer width="wide">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+            <h1 className="text-h2 font-extrabold text-foreground">
               {t("dashboard.title")}
             </h1>
             <p className="mt-1 break-words text-sm text-foreground-muted">
@@ -163,7 +163,7 @@ export function BarberDashboardPage() {
         {completion && <ProfileChecklist completion={completion} />}
 
         <Card id="photo-profil" className="scroll-mt-4 p-6">
-          <h2 className="mb-4 text-lg font-bold text-foreground">
+          <h2 className="mb-4 text-h3 font-bold text-foreground">
             {t("dashboard.avatarTitle")}
           </h2>
           <AvatarEditor />
@@ -186,7 +186,7 @@ export function BarberDashboardPage() {
         </nav>
 
         <Card className="p-6">
-          <h2 className="text-lg font-bold text-foreground">
+          <h2 className="text-h3 font-bold text-foreground">
             {t("dashboard.publicLink.title")}
           </h2>
 

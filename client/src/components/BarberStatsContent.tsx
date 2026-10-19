@@ -148,7 +148,7 @@ function Bars({ data }: { data: BarDatum[] }) {
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <Card className="min-w-0 p-4">
-      <p className="break-words text-xs font-medium uppercase tracking-wide text-foreground-muted">
+      <p className="break-words text-xs font-medium text-foreground-muted">
         {label}
       </p>
       <p className="mt-1 break-words text-xl font-semibold tabular-nums text-foreground">

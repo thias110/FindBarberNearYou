@@ -423,7 +423,7 @@ export function BarberProfilePage() {
             id={PROFILE_STEPS[step].anchor}
             className="scroll-mt-4 space-y-4 p-6"
           >
-            <h2 className="text-lg font-bold text-foreground">
+            <h2 className="text-h3 font-bold text-foreground">
               {profileStepTitle(step)}
             </h2>
 

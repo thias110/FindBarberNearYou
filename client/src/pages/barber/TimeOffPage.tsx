@@ -10,6 +10,7 @@ import { Alert } from "../../components/ui/Alert";
 import { StickyActionBar } from "../../components/ui/StickyActionBar";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { EmptyState } from "../../components/ui/EmptyState";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
@@ -200,14 +201,14 @@ export function BarberTimeOffPage() {
       <div className="min-h-screen bg-background p-4 sm:p-8">
         <PageContainer width="reading">
           <ProPageHeader title={t("timeOff.title")} />
-          <Card className="p-6 text-center">
-            <p className="text-foreground">
-              {t("timeOff.profileMissing")}
-            </p>
-            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              {t("common.createProfile")}
-            </Link>
-          </Card>
+          <EmptyState
+            title={t("timeOff.profileMissing")}
+            action={
+              <Link to="/pro/profile" className={PRIMARY_LINK_CLASS}>
+                {t("common.createProfile")}
+              </Link>
+            }
+          />
         </PageContainer>
       </div>
     );
@@ -253,7 +254,7 @@ export function BarberTimeOffPage() {
         ) : null}
 
         <Card className="space-y-4 p-6">
-          <h2 className="text-lg font-bold text-foreground">
+          <h2 className="text-h3 font-bold text-foreground">
             {t("timeOff.form.title")}
           </h2>
           <div className="flex flex-wrap items-end gap-3">
@@ -319,15 +320,11 @@ export function BarberTimeOffPage() {
         </Card>
 
         <section className="space-y-3">
-          <h2 className="text-lg font-bold text-foreground">
+          <h2 className="text-h3 font-bold text-foreground">
             {t("timeOff.list.title")}
           </h2>
           {timeOff.length === 0 ? (
-            <Card className="p-6 text-center">
-              <p className="text-foreground-muted">
-                {t("timeOff.list.empty")}
-              </p>
-            </Card>
+            <EmptyState title={t("timeOff.list.empty")} />
           ) : (
             <ul className="space-y-2">
               {timeOff.map((item) => (

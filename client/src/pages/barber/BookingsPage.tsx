@@ -14,6 +14,8 @@ import { BookingStatusBadge } from "../../components/BookingStatusBadge";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { ErrorState } from "../../components/ui/ErrorState";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
@@ -208,14 +210,14 @@ export function BarberBookingsPage() {
       <div className="min-h-screen bg-background p-4 sm:p-8">
         <PageContainer width="reading">
           <ProPageHeader title={t("bookings.title")} />
-          <Card className="p-6 text-center">
-            <p className="text-foreground">
-              {t("bookings.profileMissing")}
-            </p>
-            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              {t("common.createProfile")}
-            </Link>
-          </Card>
+          <EmptyState
+            title={t("bookings.profileMissing")}
+            action={
+              <Link to="/pro/profile" className={PRIMARY_LINK_CLASS}>
+                {t("common.createProfile")}
+              </Link>
+            }
+          />
         </PageContainer>
       </div>
     );
@@ -233,25 +235,16 @@ export function BarberBookingsPage() {
         />
 
         {error && (
-          <Alert variant="danger">
-            <p>{error}</p>
-            <Button
-              variant="secondary"
-              className="mt-3 min-h-[44px]"
-              onClick={() => void loadBookings()}
-            >
-              {t("common.retry")}
-            </Button>
-          </Alert>
+          <ErrorState
+            title={error}
+            retryLabel={t("common.retry")}
+            onRetry={() => void loadBookings()}
+          />
         )}
         {detailError && <Alert variant="danger">{detailError}</Alert>}
 
         {bookings.length === 0 && !error ? (
-          <Card className="p-6 text-center">
-            <p className="text-foreground-muted">
-              {t("bookings.empty")}
-            </p>
-          </Card>
+          <EmptyState title={t("bookings.empty")} />
         ) : (
           <ul className="space-y-3">
             {bookings.map((booking) => {
@@ -333,7 +326,7 @@ export function BarberBookingsPage() {
                       <div className="mt-3 border-t border-border pt-3">
                         {detail ? (
                           <div>
-                            <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
+                            <p className="text-xs font-medium text-foreground-muted">
                               {t("bookings.clientAddress")}
                             </p>
                             <p className="mt-1 text-sm text-foreground">

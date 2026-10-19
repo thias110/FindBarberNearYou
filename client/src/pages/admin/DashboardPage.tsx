@@ -7,14 +7,14 @@ import i18n from "../../i18n";
 import { adminApi } from "../../lib/apiClient";
 import { AdminLayout } from "../../components/AdminLayout";
 import { Alert } from "../../components/ui/Alert";
-import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { ErrorState } from "../../components/ui/ErrorState";
 import { Skeleton } from "../../components/ui/Skeleton";
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
     <Card className="p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
+      <p className="text-xs font-semibold text-foreground-muted">
         {label}
       </p>
       <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
@@ -83,16 +83,11 @@ export function AdminDashboardPage() {
             ))}
           </div>
         ) : error ? (
-          <Alert variant="danger">
-            <p>{error}</p>
-            <Button
-              variant="secondary"
-              className="mt-3 min-h-11"
-              onClick={() => setRetryKey((key) => key + 1)}
-            >
-              {t("common.retry")}
-            </Button>
-          </Alert>
+          <ErrorState
+            title={error}
+            retryLabel={t("common.retry")}
+            onRetry={() => setRetryKey((key) => key + 1)}
+          />
         ) : metrics ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard

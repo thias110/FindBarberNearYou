@@ -70,7 +70,7 @@ export function AccountPage() {
       <PageContainer width="reading">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">{t("account.title")}</h1>
+            <h1 className="text-h2 font-extrabold text-foreground">{t("account.title")}</h1>
             <p className="mt-1 break-all text-sm text-foreground-muted">
               {user.email} · {label("role", user.role)}
             </p>
@@ -84,12 +84,12 @@ export function AccountPage() {
         </div>
 
         <Card className="space-y-4 p-6">
-          <h2 className="text-lg font-bold text-foreground">{t("account.photoTitle")}</h2>
+          <h2 className="text-h3 font-bold text-foreground">{t("account.photoTitle")}</h2>
           <AvatarEditor />
         </Card>
 
         <Card className="space-y-2 p-6">
-          <h2 className="text-lg font-bold text-foreground">{t("account.dataTitle")}</h2>
+          <h2 className="text-h3 font-bold text-foreground">{t("account.dataTitle")}</h2>
           <p className="text-sm text-foreground-muted">
             {t("account.dataTextBefore")}{" "}
             <Link
@@ -103,7 +103,7 @@ export function AccountPage() {
         </Card>
 
         <Card className="space-y-3 border-danger/40 p-6">
-          <h2 className="text-lg font-bold text-foreground">
+          <h2 className="text-h3 font-bold text-foreground">
             {t("account.deleteTitle")}
           </h2>
           <ul className="list-disc space-y-1 pl-5 text-sm text-foreground-muted">

@@ -13,6 +13,8 @@ import {
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { ErrorState } from "../../components/ui/ErrorState";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
@@ -145,25 +147,20 @@ export function BarberGalleryPage() {
             </div>
           </Card>
         ) : profileMissing ? (
-          <Card className="p-6 text-center">
-            <p className="text-foreground">
-              {t("gallery.profileMissing")}
-            </p>
-            <Link to="/pro/profile" className={`${PRIMARY_LINK_CLASS} mt-4`}>
-              {t("common.createProfile")}
-            </Link>
-          </Card>
+          <EmptyState
+            title={t("gallery.profileMissing")}
+            action={
+              <Link to="/pro/profile" className={PRIMARY_LINK_CLASS}>
+                {t("common.createProfile")}
+              </Link>
+            }
+          />
         ) : error ? (
-          <Alert variant="danger">
-            <p>{error}</p>
-            <Button
-              variant="secondary"
-              className="mt-3 min-h-[44px]"
-              onClick={() => setReloadKey((key) => key + 1)}
-            >
-              {t("common.retry")}
-            </Button>
-          </Alert>
+          <ErrorState
+            title={error}
+            retryLabel={t("common.retry")}
+            onRetry={() => setReloadKey((key) => key + 1)}
+          />
         ) : (
           <>
             <Card className="p-6">
@@ -171,7 +168,7 @@ export function BarberGalleryPage() {
                 onSubmit={(event) => void handleSubmit(event)}
                 className="space-y-4"
               >
-                <h2 className="text-lg font-bold text-foreground">
+                <h2 className="text-h3 font-bold text-foreground">
                   {t("gallery.form.title")}
                 </h2>
                 <p className="text-sm text-foreground-muted">
@@ -242,11 +239,7 @@ export function BarberGalleryPage() {
             )}
 
             {photos.length === 0 ? (
-              <Card className="p-6 text-center">
-                <p className="text-foreground-muted">
-                  {t("gallery.empty")}
-                </p>
-              </Card>
+              <EmptyState title={t("gallery.empty")} />
             ) : (
               // Grille responsive, sans carrousel.
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">

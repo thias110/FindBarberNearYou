@@ -26,7 +26,7 @@ export function SettingsPage() {
       <PageContainer width="reading">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">
+            <h1 className="text-h2 font-extrabold text-foreground">
               {t("settings.title")}
             </h1>
             <p className="mt-1 text-sm text-foreground-muted">
@@ -47,7 +47,7 @@ export function SettingsPage() {
             <div>
               <h2
                 id="apparence-title"
-                className="text-lg font-bold text-foreground"
+                className="text-h3 font-bold text-foreground"
               >
                 {t("settings.appearance.title")}
               </h2>
@@ -115,7 +115,7 @@ export function SettingsPage() {
         >
           <Card className="space-y-4 p-6">
             <div>
-              <h2 id="langue-title" className="text-lg font-bold text-foreground">
+              <h2 id="langue-title" className="text-h3 font-bold text-foreground">
                 {t("settings.language.title")}
               </h2>
               <p className="mt-1 text-sm text-foreground-muted">
@@ -134,7 +134,7 @@ export function SettingsPage() {
           <Card className="space-y-5 p-6">
             <h2
               id="confidentialite-title"
-              className="text-lg font-bold text-foreground"
+              className="text-h3 font-bold text-foreground"
             >
               {t("settings.privacy.title")}
             </h2>

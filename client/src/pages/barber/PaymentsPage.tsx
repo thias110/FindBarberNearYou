@@ -14,6 +14,7 @@ import { Alert } from "../../components/ui/Alert";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { ErrorState } from "../../components/ui/ErrorState";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
@@ -125,16 +126,11 @@ export function BarberPaymentsPage() {
             <Skeleton className="h-10 w-full" />
           </Card>
         ) : loadError ? (
-          <Alert variant="danger">
-            <p>{loadError}</p>
-            <Button
-              variant="secondary"
-              className="mt-3"
-              onClick={() => void load()}
-            >
-              {t("common.retry")}
-            </Button>
-          </Alert>
+          <ErrorState
+            title={loadError}
+            retryLabel={t("common.retry")}
+            onRetry={() => void load()}
+          />
         ) : settings && !settings.available ? (
           <Alert variant="info">
             {t("payments.unavailable")}
@@ -151,7 +147,7 @@ export function BarberPaymentsPage() {
 
             <Card className="space-y-3 p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg font-bold text-foreground">
+                <h2 className="text-h3 font-bold text-foreground">
                   {t("payments.stripe.title")}
                 </h2>
                 <Badge
@@ -190,7 +186,7 @@ export function BarberPaymentsPage() {
 
             <Card className="p-6">
               <form onSubmit={handleSave} noValidate className="space-y-4">
-                <h2 className="text-lg font-bold text-foreground">
+                <h2 className="text-h3 font-bold text-foreground">
                   {t("payments.policy.title")}
                 </h2>
                 {!settings.chargesEnabled && (
