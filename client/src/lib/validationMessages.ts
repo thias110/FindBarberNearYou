@@ -2,6 +2,7 @@ import { LIMITS, STATS_LIMITS, type Weekday } from "@findbarber/shared/constants
 import {
   PASSWORD_MAX_BYTES,
   PASSWORD_MIN_LENGTH,
+  SLOTS_RANGE_MAX_DAYS,
 } from "@findbarber/shared/validation";
 import i18n from "../i18n";
 import { label } from "./labels";
@@ -180,6 +181,14 @@ const EXACT: ReadonlyArray<readonly [source: string, key: string, params?: Param
     "booking.clientAddressNotAllowed",
   ],
   ["Le motif est trop long.", "booking.declineReasonTooLong"],
+  // Créneaux sur une plage de jours (lot N2)
+  ["Le nombre de jours doit être un entier.", "booking.daysInteger"],
+  ["Au moins un jour.", "booking.daysMin"],
+  [
+    `Au plus ${SLOTS_RANGE_MAX_DAYS} jours.`,
+    "booking.daysMax",
+    { max: SLOTS_RANGE_MAX_DAYS },
+  ],
 
   // Galerie
   ["La légende est trop longue.", "gallery.captionTooLong"],

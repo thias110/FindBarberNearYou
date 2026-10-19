@@ -207,25 +207,59 @@
     }
   },
   "booking": {
-    "form": {
+    "flow": {
       "title": "Book",
-      "success": "Booking sent. The professional still needs to confirm it.",
-      "viewAppointments": "View my appointments",
-      "service": "Service",
-      "servicePlaceholder": "Choose a service",
-      "place": "Location",
-      "placePlaceholder": "Choose a location",
-      "date": "Date",
-      "address": "Your address",
-      "addressPlaceholder": "Street and number, postcode, city",
-      "addressHelp": "Used only for this home service, within the professional's service area.",
-      "slot": "Time slot",
-      "slotHint": "Select a service, a location and a date to see the available time slots.",
-      "slotsLoading": "Loading time slots…",
-      "slotsUnavailable": "Time slots unavailable.",
-      "retry": "Try again",
-      "noSlots": "No time slots available on this date.",
-      "slotsGroup": "Available time slots",
+      "progress": "Step {{current}} of {{total}}",
+      "steps": {
+        "service": "Service",
+        "slot": "Time slot",
+        "confirm": "Confirmation"
+      },
+      "service": {
+        "label": "Service",
+        "placeholder": "Choose a service"
+      },
+      "place": {
+        "label": "Location"
+      },
+      "address": {
+        "label": "Your address",
+        "placeholder": "Street and number, postcode, city",
+        "help": "Used only for this home service, within the professional's service area."
+      },
+      "next": "Continue",
+      "back": "Back",
+      "slots": {
+        "loading": "Loading time slots…",
+        "errorTitle": "Couldn't load the time slots",
+        "retry": "Try again",
+        "unavailable": "Time slots unavailable.",
+        "group": "Time slots this week",
+        "today": "today",
+        "dayEmpty": "no time slots",
+        "emptyTitle": "No time slots this week",
+        "emptyHint": "Try the following week.",
+        "emptyHintLast": "This is the last week open for booking.",
+        "nextWeek": "Next week",
+        "nextWeekAria": "Show next week",
+        "previousWeek": "Show previous week"
+      },
+      "summary": {
+        "title": "Summary",
+        "barber": "Professional",
+        "service": "Service",
+        "when": "Date and time",
+        "salonTime": "salon time",
+        "place": "Location",
+        "payment": "Payment",
+        "paymentOnSite": "On site",
+        "paymentFull": "Total paid online",
+        "paymentDeposit": "{{amount}} deposit online",
+        "total": "Total",
+        "pending": "To choose",
+        "show": "Show summary",
+        "hide": "Hide summary"
+      },
       "onlineFull": "Full amount paid online",
       "onlineDeposit": "{{amount}} deposit paid online, the rest on the day",
       "onlineDetails": "(card or Twint). Refunded automatically if the professional declines or if you cancel in time.",
@@ -234,7 +268,13 @@
       "bookingFailed": "Booking failed.",
       "submitting": "Sending…",
       "submitAndPay": "Book and pay",
-      "submit": "Book"
+      "submit": "Book",
+      "confirmation": {
+        "title": "Booking sent",
+        "body": "The professional still needs to confirm it. You'll find it in your appointments.",
+        "addToCalendar": "Add to calendar",
+        "viewAppointments": "View my appointments"
+      }
     },
     "validation": {
       "serviceId": "Choose a service.",

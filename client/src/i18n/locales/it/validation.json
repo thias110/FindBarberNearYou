@@ -91,7 +91,10 @@
     "startMinuteMax": "L'ora di inizio non può superare le 23:59.",
     "clientAddressRequired": "È richiesto un indirizzo per una prestazione a domicilio del cliente.",
     "clientAddressNotAllowed": "L'indirizzo del cliente è consentito solo per una prestazione a domicilio.",
-    "declineReasonTooLong": "Il motivo è troppo lungo."
+    "declineReasonTooLong": "Il motivo è troppo lungo.",
+    "daysInteger": "Il numero di giorni deve essere un numero intero.",
+    "daysMin": "Almeno un giorno.",
+    "daysMax": "Al massimo {{max}} giorni."
   },
   "gallery": {
     "captionTooLong": "La didascalia è troppo lunga."

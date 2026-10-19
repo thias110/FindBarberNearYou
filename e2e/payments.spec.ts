@@ -104,28 +104,31 @@ test("client : acompte annoncé, redirection vers le paiement, retour confirmé"
   });
   await page.reload();
 
-  const service = page.getByRole("combobox", { name: "Service" });
+  // Étape 1 : prestation et lieu.
+  const service = page.getByRole("combobox", { name: "Prestation" });
   await service.selectOption({ index: 1 });
+  await page
+    .getByRole("radiogroup", { name: "Lieu" })
+    .getByRole("radio", { name: "En salon" })
+    .click();
+  await page.getByRole("button", { name: "Continuer" }).click();
+
+  // Étape 2 : première semaine qui offre un créneau.
+  const grid = page.getByRole("group", { name: "Créneaux de la semaine" });
+  const slot = grid.getByRole("button").first();
+  const emptyWeek = page.getByText("Aucun créneau cette semaine");
+  for (let week = 0; week < 4; week += 1) {
+    await expect(slot.or(emptyWeek)).toBeVisible();
+    if (await slot.isVisible()) break;
+    await page.getByRole("button", { name: "Voir la semaine suivante" }).click();
+  }
+  await slot.click();
+  await page.getByRole("button", { name: "Continuer" }).click();
+
+  // Étape 3 : l'acompte est annoncé avant l'envoi.
   await expect(
     page.getByText(/Acompte de .* payé en ligne, le reste sur place/),
   ).toBeVisible();
-  await page.getByRole("combobox", { name: "Lieu" }).selectOption({ index: 1 });
-  const dates = Array.from({ length: 14 }, (_, i) =>
-    new Date(Date.now() + (i + 1) * 86_400_000).toISOString().slice(0, 10),
-  );
-  for (const date of dates) {
-    await page.getByLabel("Date").fill(date);
-    const slot = page.getByRole("button", { name: /^\d{2}:\d{2}$/ }).first();
-    // `isVisible` n'attend pas : on attend vraiment les créneaux (chargés par l'API).
-    const found = await slot
-      .waitFor({ state: "visible", timeout: 2000 })
-      .then(() => true)
-      .catch(() => false);
-    if (found) {
-      await slot.click();
-      break;
-    }
-  }
   await page.getByRole("button", { name: "Réserver et payer" }).click();
 
   await expect(page).toHaveURL(/\/appointments\?payment=success/);

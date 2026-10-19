@@ -91,7 +91,10 @@
     "startMinuteMax": "The start time cannot be later than 23:59.",
     "clientAddressRequired": "An address is required for a home visit.",
     "clientAddressNotAllowed": "A client address is only allowed for a home visit.",
-    "declineReasonTooLong": "The reason is too long."
+    "declineReasonTooLong": "The reason is too long.",
+    "daysInteger": "The number of days must be a whole number.",
+    "daysMin": "At least one day.",
+    "daysMax": "At most {{max}} days."
   },
   "gallery": {
     "captionTooLong": "The caption is too long."

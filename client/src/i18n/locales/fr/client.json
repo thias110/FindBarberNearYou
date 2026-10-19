@@ -207,25 +207,59 @@
     }
   },
   "booking": {
-    "form": {
+    "flow": {
       "title": "Réserver",
-      "success": "Réservation envoyée. Le professionnel doit encore la confirmer.",
-      "viewAppointments": "Voir mes rendez-vous",
-      "service": "Service",
-      "servicePlaceholder": "Choisir un service",
-      "place": "Lieu",
-      "placePlaceholder": "Choisir un lieu",
-      "date": "Date",
-      "address": "Votre adresse",
-      "addressPlaceholder": "Rue et numéro, code postal, ville",
-      "addressHelp": "Utilisée uniquement pour cette prestation à domicile, dans la zone d'intervention du professionnel.",
-      "slot": "Créneau",
-      "slotHint": "Sélectionnez un service, un lieu et une date pour afficher les créneaux.",
-      "slotsLoading": "Chargement des créneaux…",
-      "slotsUnavailable": "Créneaux indisponibles.",
-      "retry": "Réessayer",
-      "noSlots": "Aucun créneau disponible pour cette date.",
-      "slotsGroup": "Créneaux disponibles",
+      "progress": "Étape {{current}} sur {{total}}",
+      "steps": {
+        "service": "Prestation",
+        "slot": "Créneau",
+        "confirm": "Confirmation"
+      },
+      "service": {
+        "label": "Prestation",
+        "placeholder": "Choisir une prestation"
+      },
+      "place": {
+        "label": "Lieu"
+      },
+      "address": {
+        "label": "Votre adresse",
+        "placeholder": "Rue et numéro, code postal, ville",
+        "help": "Utilisée uniquement pour cette prestation à domicile, dans la zone d'intervention du professionnel."
+      },
+      "next": "Continuer",
+      "back": "Retour",
+      "slots": {
+        "loading": "Chargement des créneaux…",
+        "errorTitle": "Impossible de charger les créneaux",
+        "retry": "Réessayer",
+        "unavailable": "Créneaux indisponibles.",
+        "group": "Créneaux de la semaine",
+        "today": "aujourd'hui",
+        "dayEmpty": "aucun créneau",
+        "emptyTitle": "Aucun créneau cette semaine",
+        "emptyHint": "Essayez la semaine suivante.",
+        "emptyHintLast": "C'est la dernière semaine ouverte à la réservation.",
+        "nextWeek": "Semaine suivante",
+        "nextWeekAria": "Voir la semaine suivante",
+        "previousWeek": "Voir la semaine précédente"
+      },
+      "summary": {
+        "title": "Récapitulatif",
+        "barber": "Professionnel",
+        "service": "Prestation",
+        "when": "Date et heure",
+        "salonTime": "heure du salon",
+        "place": "Lieu",
+        "payment": "Paiement",
+        "paymentOnSite": "Sur place",
+        "paymentFull": "Total payé en ligne",
+        "paymentDeposit": "Acompte de {{amount}} en ligne",
+        "total": "Total",
+        "pending": "À choisir",
+        "show": "Voir le récapitulatif",
+        "hide": "Masquer le récapitulatif"
+      },
       "onlineFull": "Paiement en ligne du montant total",
       "onlineDeposit": "Acompte de {{amount}} payé en ligne, le reste sur place",
       "onlineDetails": "(carte ou Twint). Remboursé automatiquement si le professionnel refuse ou si vous annulez à temps.",
@@ -234,7 +268,13 @@
       "bookingFailed": "Réservation impossible.",
       "submitting": "Envoi…",
       "submitAndPay": "Réserver et payer",
-      "submit": "Réserver"
+      "submit": "Réserver",
+      "confirmation": {
+        "title": "Réservation envoyée",
+        "body": "Le professionnel doit encore la confirmer. Vous la retrouvez dans vos rendez-vous.",
+        "addToCalendar": "Ajouter au calendrier",
+        "viewAppointments": "Voir mes rendez-vous"
+      }
     },
     "validation": {
       "serviceId": "Choisissez un service.",

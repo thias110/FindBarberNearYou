@@ -91,7 +91,10 @@
     "startMinuteMax": "La hora de inicio no puede ser posterior a las 23:59.",
     "clientAddressRequired": "Se requiere una dirección para un servicio a domicilio.",
     "clientAddressNotAllowed": "La dirección del cliente solo se permite para un servicio a domicilio.",
-    "declineReasonTooLong": "El motivo es demasiado largo."
+    "declineReasonTooLong": "El motivo es demasiado largo.",
+    "daysInteger": "El número de días debe ser un entero.",
+    "daysMin": "Al menos un día.",
+    "daysMax": "Como máximo {{max}} días."
   },
   "gallery": {
     "captionTooLong": "El pie de foto es demasiado largo."
