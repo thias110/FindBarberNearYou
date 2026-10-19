@@ -4,8 +4,11 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 // Traductions (issue #32) : initialisées avant le premier rendu.
 import "./i18n";
-// Police auto-hébergée (issue #27) : servie depuis notre origine (CSP font-src 'self').
+// Polices auto-hébergées (issue #27) : servies depuis notre origine (CSP
+// font-src 'self'). Figtree pour le texte, Bricolage Grotesque pour les titres
+// (design system « Dégradé », --fb-font-display).
 import "@fontsource-variable/figtree";
+import "@fontsource-variable/bricolage-grotesque";
 import "./styles/tokens.css";
 import "./styles/index.css";
 
