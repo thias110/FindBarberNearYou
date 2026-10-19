@@ -77,6 +77,27 @@ export const bookingSlotsQuerySchema = z
 
 export type BookingSlotsQuery = z.infer<typeof bookingSlotsQuerySchema>;
 
+// Créneaux publics sur une plage de jours (lot N2, grille de la semaine) :
+// `from` (date civile du salon) et `days` (1 à 7, 7 par défaut). Mêmes règles
+// que la lecture d'un seul jour ; la réponse groupe les créneaux par date.
+export const SLOTS_RANGE_MAX_DAYS = 7;
+
+export const bookingSlotsRangeQuerySchema = z
+  .object({
+    serviceId: objectIdSchema,
+    place: servicePlaceSchema,
+    from: calendarDateSchema,
+    days: z.coerce
+      .number()
+      .int("Le nombre de jours doit être un entier.")
+      .min(1, "Au moins un jour.")
+      .max(SLOTS_RANGE_MAX_DAYS, `Au plus ${SLOTS_RANGE_MAX_DAYS} jours.`)
+      .default(SLOTS_RANGE_MAX_DAYS),
+  })
+  .strict();
+
+export type BookingSlotsRangeQuery = z.infer<typeof bookingSlotsRangeQuerySchema>;
+
 // --- Refus d'une demande par le barber (lot 4 rouvert) ---
 // Motif facultatif, visible par le client. Chaîne vide ou absente = sans motif.
 export const bookingDeclineSchema = z

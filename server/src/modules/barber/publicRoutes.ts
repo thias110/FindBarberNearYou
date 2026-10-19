@@ -6,6 +6,7 @@ import {
   barberSearchQuerySchema,
   emptyQuerySchema,
   bookingSlotsQuerySchema,
+  bookingSlotsRangeQuerySchema,
   publicBarberPhotosParamsSchema,
   reviewListQuerySchema,
 } from "@findbarber/shared/validation";
@@ -17,7 +18,7 @@ import {
   getPublicProfile,
   searchBarbers,
 } from "./service.js";
-import { getBookingSlots } from "../booking/service.js";
+import { getBookingSlots, getBookingSlotsRange } from "../booking/service.js";
 import { listBarberReviews } from "../review/service.js";
 
 export const barbersRouter = Router();
@@ -53,6 +54,20 @@ barbersRouter.get("/popular-techniques", async (req, res) => {
 
 // Créneaux publics d'un professionnel (date civile dans SON fuseau).
 barbersRouter.get("/:barberId/slots", async (req, res) => {
+  // Plage de jours (lot N2) : `from` bascule sur le schéma de plage ; mêler
+  // `date` et `from` est refusé (schémas stricts).
+  if (typeof req.query.from !== "undefined") {
+    const range = bookingSlotsRangeQuerySchema.safeParse(req.query);
+    if (!range.success) {
+      throw validationError(range.error);
+    }
+    const days = await getBookingSlotsRange(
+      req.params.barberId as string,
+      range.data,
+    );
+    res.json({ days });
+    return;
+  }
   const parsed = bookingSlotsQuerySchema.safeParse(req.query);
   if (!parsed.success) {
     throw validationError(parsed.error);

@@ -16,6 +16,7 @@ import type {
   BookingDetails,
   BookingsResponse,
   BookingSlotsResponse,
+  BookingSlotsRangeResponse,
   OwnBarberPhoto,
   OwnBarberPhotosResponse,
   AddressSuggestion,
@@ -570,6 +571,11 @@ export interface PublicBarbersApi {
     params: { serviceId: string; date: string; place: ServicePlace },
     signal?: AbortSignal,
   ): Promise<BookingSlotsResponse>;
+  getSlotsRange(
+    barberId: string,
+    params: { serviceId: string; place: ServicePlace; from: string; days?: number },
+    signal?: AbortSignal,
+  ): Promise<BookingSlotsRangeResponse>;
   getReviews(
     barberId: string,
     params?: { page?: number; pageSize?: number },
@@ -597,6 +603,18 @@ export const barbersApi: PublicBarbersApi = {
       place: params.place,
     });
     return apiFetch<BookingSlotsResponse>(
+      `/api/barbers/${encodeURIComponent(barberId)}/slots?${sp.toString()}`,
+      { signal },
+    );
+  },
+  getSlotsRange: (barberId, params, signal) => {
+    const sp = new URLSearchParams({
+      serviceId: params.serviceId,
+      place: params.place,
+      from: params.from,
+    });
+    if (params.days !== undefined) sp.set("days", String(params.days));
+    return apiFetch<BookingSlotsRangeResponse>(
       `/api/barbers/${encodeURIComponent(barberId)}/slots?${sp.toString()}`,
       { signal },
     );

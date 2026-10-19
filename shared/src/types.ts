@@ -287,6 +287,18 @@ export interface BookingSlotsResponse {
   slots: BookingSlotDto[];
 }
 
+// Créneaux sur une plage de jours (lot N2) : un jour par entrée, dans l'ordre,
+// y compris les jours sans créneau (`slots` vide) pour que la grille de la
+// semaine affiche tous les jours demandés. `date` : jour civil du salon.
+export interface BookingSlotsDay {
+  date: string;
+  slots: BookingSlotDto[];
+}
+
+export interface BookingSlotsRangeResponse {
+  days: BookingSlotsDay[];
+}
+
 // --- Avis post-rendez-vous (lot 11) ---
 // Whitelist publique stricte : note, commentaire, date et nom public du client
 // (users.name, nullable). Aucun email, hash, userId interne, adresse, identifiant
