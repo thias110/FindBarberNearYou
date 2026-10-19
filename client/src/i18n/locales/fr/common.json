@@ -90,7 +90,8 @@
       "BOOKING_CANCELLED_BY_BARBER": "Réservation annulée par le professionnel",
       "BOOKING_CANCELLED_BY_ADMIN": "Réservation annulée par l'administration",
       "BOOKING_DECLINED": "Demande de réservation refusée",
-      "BOOKING_EXPIRED": "Demande de réservation expirée (sans réponse)"
+      "BOOKING_EXPIRED": "Demande de réservation expirée (sans réponse)",
+      "BOOKING_NO_SHOW": "Absence signalée : vous ne vous êtes pas présenté au rendez-vous"
     }
   },
   "theme": {

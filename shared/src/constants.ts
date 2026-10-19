@@ -169,6 +169,7 @@ export const NOTIFICATION_TYPES = [
   "BOOKING_CANCELLED_BY_ADMIN",
   "BOOKING_DECLINED",
   "BOOKING_EXPIRED",
+  "BOOKING_NO_SHOW",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -249,6 +250,7 @@ export const AUDIT_ACTIONS = [
   "BARBER_CERTIFIED",
   "BARBER_UNCERTIFIED",
   "BARBER_APPROVED",
+  "BOOKING_NO_SHOW",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -266,6 +268,7 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   BARBER_CERTIFIED: "Badge « Certifié » attribué",
   BARBER_UNCERTIFIED: "Badge « Certifié » retiré",
   BARBER_APPROVED: "Profil barber approuvé",
+  BOOKING_NO_SHOW: "Absence du client",
 };
 
 export const AUDIT_TARGET_TYPES = [

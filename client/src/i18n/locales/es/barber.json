@@ -30,14 +30,21 @@
       "complete": "No se ha podido marcar como completada.",
       "confirm": "No se ha podido confirmar.",
       "decline": "No se ha podido rechazar.",
-      "details": "No se han podido cargar los detalles."
+      "details": "No se han podido cargar los detalles.",
+      "noShow": "No se pudo registrar la ausencia."
     },
     "expiresAt": "Si no respondes, la solicitud caduca el {{date}}.",
     "loading": "Cargando las reservas…",
     "loadingShort": "Cargando…",
     "markCompleted": "Marcar como completada",
+    "markNoShow": "Marcar ausente",
     "no": "No",
     "noAddress": "Dirección no indicada.",
+    "noShowDialog": {
+      "body": "Se avisará al cliente y no podrá dejar una reseña de esta cita.",
+      "confirm": "Marcar ausente",
+      "title": "¿Marcar a este cliente como ausente?"
+    },
     "profileMissing": "Crea primero tu perfil profesional para gestionar tus reservas.",
     "showAddress": "Ver la dirección",
     "title": "Mis reservas"
@@ -351,7 +358,9 @@
       "refused": "Rechazadas",
       "returningClients": "Clientes habituales",
       "revenue": "Ingresos (completadas)",
-      "reviews": "Reseñas"
+      "reviews": "Reseñas",
+      "noShows": "Ausencias",
+      "noShowRate": "Tasa de ausencia"
     },
     "charts": {
       "busiestHours": "Horas con más actividad",

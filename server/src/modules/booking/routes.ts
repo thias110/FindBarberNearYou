@@ -16,6 +16,7 @@ import {
   declineBooking,
   getBookingDetails,
   listBookings,
+  markBookingNoShow,
 } from "./service.js";
 
 export const bookingRouter = Router();
@@ -105,6 +106,22 @@ bookingRouter.post(
   csrfProtection,
   async (req, res) => {
     const booking = await completeBooking(
+      req.user!,
+      req.params.bookingId as string,
+    );
+    res.json({ booking });
+  },
+);
+
+// Absence du client (lot N8) : BARBER propriétaire, CONFIRMED → NO_SHOW,
+// après le début du rendez-vous et dans les 48 h (sinon 409 NO_SHOW_WINDOW).
+bookingRouter.post(
+  "/:bookingId/no-show",
+  requireAuth,
+  requireRole("BARBER"),
+  csrfProtection,
+  async (req, res) => {
+    const booking = await markBookingNoShow(
       req.user!,
       req.params.bookingId as string,
     );

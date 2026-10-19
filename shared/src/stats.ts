@@ -143,6 +143,7 @@ export function computeBarberStats(
     cancelled: 0,
     refused: 0,
     revenueMinor: 0,
+    noShows: 0,
   };
   const periodClients = new Set<string>();
 
@@ -183,6 +184,7 @@ export function computeBarberStats(
       totals.cancelled += 1;
       if (booking.cancelledBy === "BARBER") totals.refused += 1;
     }
+    if (booking.status === "NO_SHOW") totals.noShows += 1;
     // Refus explicite d'une demande (lot 4 rouvert).
     if (booking.status === "DECLINED") totals.refused += 1;
 
@@ -218,6 +220,9 @@ export function computeBarberStats(
     totals.bookings === 0 ? 0 : round4(totals.cancelled / totals.bookings);
   const refusalRate =
     totals.bookings === 0 ? 0 : round4(totals.refused / totals.bookings);
+
+  const attended = totals.completed + totals.noShows;
+  const noShowRate = attended === 0 ? null : round4(totals.noShows / attended);
 
   const toBuckets = (
     keys: string[],
@@ -267,7 +272,7 @@ export function computeBarberStats(
     currency,
     period: { from: fromDate, to: toDate, timezone },
     totals,
-    rates: { cancellationRate, refusalRate },
+    rates: { cancellationRate, refusalRate, noShowRate },
     appointmentsByWeek,
     appointmentsByMonth,
     revenueByMonth: revenueByMonthBuckets,

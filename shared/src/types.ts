@@ -365,11 +365,14 @@ export interface BarberStatsTotals {
   cancelled: number;
   refused: number; // CANCELLED + cancelledBy === "BARBER"
   revenueMinor: number; // COMPLETED uniquement
+  noShows: number; // NO_SHOW (absence du client, lot N8)
 }
 
 export interface BarberStatsRates {
   cancellationRate: number; // 0..1
   refusalRate: number; // 0..1
+  // Absences / (terminés + absences) ; null sans terminé ni absent (lot N8).
+  noShowRate: number | null;
 }
 
 export interface BarberStatsBucket {

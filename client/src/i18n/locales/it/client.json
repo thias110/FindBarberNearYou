@@ -311,6 +311,7 @@
       "declinedWithReason": "Rifiutato dal professionista: {{reason}} La fascia oraria è stata liberata.",
       "expiredUnpaid": "Il pagamento non è stato effettuato in tempo: la richiesta è scaduta.",
       "expiredNoAnswer": "Il professionista non ha risposto in tempo: la richiesta è scaduta.",
+      "noShowReported": "Il professionista ha segnalato la tua assenza.",
       "pendingUntil": "In attesa di risposta fino al {{date}}.",
       "deposit": "(acconto)",
       "paymentPending": "Pagamento in sospeso: la richiesta verrà inviata al professionista solo dopo il pagamento.",

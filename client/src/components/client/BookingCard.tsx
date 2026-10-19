@@ -102,6 +102,11 @@ export function BookingCard({
                 : t("bookings.card.declined")}
             </p>
           )}
+          {booking.status === "NO_SHOW" && (
+            <p className="mt-1 text-xs text-foreground-muted">
+              {t("bookings.card.noShowReported")}
+            </p>
+          )}
           {booking.status === "EXPIRED" && (
             <p className="mt-1 text-xs text-foreground-muted">
               {booking.paymentStatus === "CANCELLED"

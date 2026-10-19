@@ -311,6 +311,7 @@
       "declinedWithReason": "Refusée par le professionnel : {{reason}} Le créneau est libéré.",
       "expiredUnpaid": "Le paiement n'a pas été effectué à temps : la demande a expiré.",
       "expiredNoAnswer": "Le professionnel n'a pas répondu à temps : la demande a expiré.",
+      "noShowReported": "Le professionnel a signalé votre absence.",
       "pendingUntil": "En attente de réponse jusqu'au {{date}}.",
       "deposit": "(acompte)",
       "paymentPending": "Paiement en attente : la demande ne sera envoyée au professionnel qu'une fois payée.",

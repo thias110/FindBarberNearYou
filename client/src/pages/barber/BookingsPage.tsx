@@ -5,7 +5,7 @@ import {
   LIMITS,
   type BookingStatus,
 } from "@findbarber/shared/constants";
-import { isBookingEnded } from "@findbarber/shared/booking";
+import { canMarkNoShow, isBookingEnded } from "@findbarber/shared/booking";
 import type { Booking, BookingDetails } from "@findbarber/shared/types";
 import { ApiError, bookingApi } from "../../lib/apiClient";
 import { formatCurrency, formatDateTime } from "../../lib/formatters";
@@ -14,6 +14,7 @@ import { BookingStatusBadge } from "../../components/BookingStatusBadge";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { Input } from "../../components/ui/Input";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { ProPageHeader } from "../../components/barber/ProPageHeader";
@@ -35,6 +36,14 @@ export function BarberBookingsPage() {
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [decliningId, setDecliningId] = useState<string | null>(null);
   const [declineReason, setDeclineReason] = useState("");
+  // Absence du client (lot N8) : réservation dont le dialogue est ouvert,
+  // et erreur affichée près de l'action de cette réservation.
+  const [noShowId, setNoShowId] = useState<string | null>(null);
+  const [noShowSubmitting, setNoShowSubmitting] = useState(false);
+  const [noShowError, setNoShowError] = useState<{
+    id: string;
+    message: string;
+  } | null>(null);
 
   const [details, setDetails] = useState<Record<string, BookingDetails>>({});
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
@@ -115,6 +124,28 @@ export function BarberBookingsPage() {
     } finally {
       setActionId(null);
       setCompletingId(null);
+    }
+  }
+
+  async function handleNoShow(bookingId: string) {
+    setNoShowError(null);
+    setNoShowSubmitting(true);
+    try {
+      const res = await bookingApi.markNoShow(bookingId);
+      setBookings((current) =>
+        current.map((booking) =>
+          booking.id === bookingId ? res.booking : booking,
+        ),
+      );
+    } catch (err) {
+      setNoShowError({
+        id: bookingId,
+        message:
+          err instanceof Error ? err.message : t("bookings.errors.noShow"),
+      });
+    } finally {
+      setNoShowSubmitting(false);
+      setNoShowId(null);
     }
   }
 
@@ -401,6 +432,17 @@ export function BarberBookingsPage() {
                               {t("bookings.completeLater")}
                             </span>
                           ))}
+                        {booking.status === "CONFIRMED" &&
+                          canMarkNoShow(booking.startAt, new Date()) && (
+                            <Button
+                              variant="secondary"
+                              className="min-h-[44px]"
+                              disabled={busy}
+                              onClick={() => setNoShowId(booking.id)}
+                            >
+                              {t("bookings.markNoShow")}
+                            </Button>
+                          )}
                         {cancellable(booking.status) &&
                           (confirmingId === booking.id ? (
                             <>
@@ -436,6 +478,14 @@ export function BarberBookingsPage() {
                               {t("bookings.cancel")}
                             </Button>
                           ))}
+                        {noShowError?.id === booking.id && (
+                          <p
+                            role="alert"
+                            className="w-full text-sm text-danger"
+                          >
+                            {noShowError.message}
+                          </p>
+                        )}
                       </div>
                     )}
                   </Card>
@@ -445,6 +495,17 @@ export function BarberBookingsPage() {
           </ul>
         )}
       </PageContainer>
+      <ConfirmDialog
+        open={noShowId !== null}
+        title={t("bookings.noShowDialog.title")}
+        confirmLabel={t("bookings.noShowDialog.confirm")}
+        tone="danger"
+        isLoading={noShowSubmitting}
+        onConfirm={() => noShowId && void handleNoShow(noShowId)}
+        onCancel={() => setNoShowId(null)}
+      >
+        {t("bookings.noShowDialog.body")}
+      </ConfirmDialog>
     </div>
   );
 }

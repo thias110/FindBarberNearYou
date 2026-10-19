@@ -184,6 +184,9 @@ export const BOOKING_TRANSITIONS: Record<
   },
   CONFIRMED: {
     COMPLETED: ["BARBER"],
+    // Absence du client (lot N8) : seulement après le début du rendez-vous
+    // (voir `canMarkNoShow`).
+    NO_SHOW: ["BARBER"],
     CANCELLED: ["CLIENT", "BARBER", "ADMIN"],
   },
   CANCELLED: {},
@@ -206,6 +209,21 @@ export function isTerminalBookingStatus(status: BookingStatus): boolean {
 }
 
 const MS_PER_HOUR_BOOKING = 3_600_000;
+
+/** Fenêtre (heures) pendant laquelle le barber peut marquer une absence. */
+export const NO_SHOW_WINDOW_HOURS = 48;
+
+/**
+ * Le barber peut-il marquer le client absent à l'instant `now` ? Seulement
+ * après le début du rendez-vous et dans les `NO_SHOW_WINDOW_HOURS` qui suivent
+ * (lot N8). Ne dit rien du statut : à combiner avec `canTransitionBooking`.
+ */
+export function canMarkNoShow(startAt: Date | string, now: Date): boolean {
+  const startMs = new Date(startAt).getTime();
+  if (!Number.isFinite(startMs)) return false;
+  const nowMs = now.getTime();
+  return nowMs >= startMs && nowMs <= startMs + NO_SHOW_WINDOW_HOURS * MS_PER_HOUR_BOOKING;
+}
 
 /**
  * Échéance d'une demande PENDING : 24 h après sa création, ou le début du

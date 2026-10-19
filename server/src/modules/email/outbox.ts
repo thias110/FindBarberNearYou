@@ -58,6 +58,8 @@ function emailKindFor(
       // notification dans l'application).
       return recipientIsClient ? "BOOKING_EXPIRED" : null;
     case "BOOKING_COMPLETED":
+    case "BOOKING_NO_SHOW":
+      // Notification dans l'application seulement, pas d'email.
       return null;
   }
 }

@@ -3,6 +3,8 @@
 import { describe, expect, it } from "vitest";
 import {
   BOOKING_TRANSITIONS,
+  NO_SHOW_WINDOW_HOURS,
+  canMarkNoShow,
   canTransitionBooking,
   computeBookingSlots,
   effectiveBookingStatus,
@@ -27,6 +29,7 @@ const ALLOWED = new Set([
   "PENDING>CANCELLED:ADMIN",
   "PENDING>EXPIRED:SYSTEM",
   "CONFIRMED>COMPLETED:BARBER",
+  "CONFIRMED>NO_SHOW:BARBER",
   "CONFIRMED>CANCELLED:CLIENT",
   "CONFIRMED>CANCELLED:BARBER",
   "CONFIRMED>CANCELLED:ADMIN",
@@ -66,6 +69,34 @@ describe("machine à états des réservations", () => {
     for (const actor of ACTORS) {
       expect(canTransitionBooking("CANCELLED", "CONFIRMED", actor)).toBe(false);
     }
+  });
+});
+
+describe("fenêtre de marquage d'absence (lot N8)", () => {
+  const start = new Date("2026-10-14T10:00:00.000Z");
+
+  it("fixe la fenêtre à 48 h", () => {
+    expect(NO_SHOW_WINDOW_HOURS).toBe(48);
+  });
+
+  it("refuse avant le début, accepte dès l'instant du début", () => {
+    expect(canMarkNoShow(start, new Date("2026-10-14T09:59:59.999Z"))).toBe(false);
+    expect(canMarkNoShow(start, new Date("2026-10-14T10:00:00.000Z"))).toBe(true);
+  });
+
+  it("accepte jusqu'à 48 h incluses, refuse ensuite", () => {
+    expect(canMarkNoShow(start, new Date("2026-10-16T10:00:00.000Z"))).toBe(true);
+    expect(canMarkNoShow(start, new Date("2026-10-16T10:00:00.001Z"))).toBe(false);
+  });
+
+  it("accepte une date de début en chaîne ISO", () => {
+    expect(
+      canMarkNoShow("2026-10-14T10:00:00.000Z", new Date("2026-10-14T12:00:00.000Z")),
+    ).toBe(true);
+  });
+
+  it("refuse une date de début illisible", () => {
+    expect(canMarkNoShow("pas-une-date", new Date("2026-10-14T12:00:00.000Z"))).toBe(false);
   });
 });
 

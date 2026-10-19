@@ -18,7 +18,8 @@
     "USER_DELETED": "Cuenta eliminada (anonimizada)",
     "BARBER_CERTIFIED": "Insignia «Certificado» otorgada",
     "BARBER_UNCERTIFIED": "Insignia «Certificado» retirada",
-    "BARBER_APPROVED": "Perfil de barbero aprobado"
+    "BARBER_APPROVED": "Perfil de barbero aprobado",
+    "BOOKING_NO_SHOW": "Cliente ausente"
   },
   "bookingPaymentStatus": {
     "NOT_REQUIRED": "Pago en el local",
