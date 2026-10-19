@@ -26,10 +26,12 @@ import type {
   Booking,
   BookingDetails,
   BookingSlotDto,
+  BookingSlotsDay,
 } from "@findbarber/shared/types";
 import type {
   BookingCreateInput,
   BookingSlotsQuery,
+  BookingSlotsRangeQuery,
 } from "@findbarber/shared/validation";
 import {
   canTransitionBooking,
@@ -275,10 +277,12 @@ function toSlotInputs(
   };
 }
 
-export async function getBookingSlots(
+// Profil réservable + service actif + lieu proposé : mêmes contrôles pour la
+// lecture d'un jour et d'une plage.
+async function loadBookableContext(
   barberId: string,
-  query: BookingSlotsQuery,
-): Promise<BookingSlotDto[]> {
+  query: { serviceId: string; place: ServicePlace },
+) {
   const [profile] = await db
     .select()
     .from(barberProfiles)
@@ -312,6 +316,88 @@ export async function getBookingSlots(
   }
 
   await assertPlaceOffered(profile.id, query.place);
+  return { profile, timezone: profile.timezone, service };
+}
+
+// Plage de jours (lot N2) : horaires, absences et réservations chargés UNE
+// fois pour toute la plage ; le calcul de chaque jour réutilise le moteur
+// partagé. Jours hors horizon : `slots: []` (le moteur les écarte).
+export async function getBookingSlotsRange(
+  barberId: string,
+  query: BookingSlotsRangeQuery,
+): Promise<BookingSlotsDay[]> {
+  const { profile, timezone, service } = await loadBookableContext(
+    barberId,
+    query,
+  );
+  const dates = Array.from({ length: query.days }, (_, i) =>
+    addCalendarDays(query.from, i),
+  );
+  const firstDate = dates[0];
+  const lastDate = dates[dates.length - 1];
+  const now = new Date();
+
+  const [hours, timeOff, busy] = await Promise.all([
+    db
+      .select()
+      .from(barberWorkingHours)
+      .where(eq(barberWorkingHours.barberProfileId, profile.id)),
+    db
+      .select()
+      .from(barberTimeOff)
+      .where(
+        and(
+          eq(barberTimeOff.barberProfileId, profile.id),
+          lte(barberTimeOff.startDate, lastDate),
+          gte(barberTimeOff.endDate, firstDate),
+        ),
+      ),
+    db
+      .select({ startAt: bookings.startAt, endAt: bookings.endAt })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.barberProfileId, profile.id),
+          occupiesSlotCondition(now),
+          lt(bookings.startAt, busyWindow(lastDate).end),
+          gt(bookings.endAt, busyWindow(firstDate).start),
+        ),
+      ),
+  ]);
+  const context = toSlotInputs(hours, timeOff, busy);
+
+  return dates.map((date) => ({
+    date,
+    slots: computeBookingSlots({
+      date,
+      timezone,
+      durationMinutes: service.durationMinutes,
+      ...context,
+      now,
+      leadTimeMinutes: LIMITS.bookingLeadTimeMinutes,
+      horizonDays: LIMITS.bookingHorizonDays,
+    }).map((slot) => ({
+      startAt: slot.startAt,
+      endAt: slot.endAt,
+      startMinute: slot.startMinute,
+    })),
+  }));
+}
+
+function addCalendarDays(date: string, days: number): string {
+  return new Date(calendarDateToUtcMillis(date) + days * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+export async function getBookingSlots(
+  barberId: string,
+  query: BookingSlotsQuery,
+): Promise<BookingSlotDto[]> {
+  const { profile, timezone, service } = await loadBookableContext(
+    barberId,
+    query,
+  );
 
   const now = new Date();
   const [hours, timeOff, busy] = await Promise.all([
@@ -323,7 +409,7 @@ export async function getBookingSlots(
 
   return computeBookingSlots({
     date: query.date,
-    timezone: profile.timezone,
+    timezone,
     durationMinutes: service.durationMinutes,
     ...context,
     now,
