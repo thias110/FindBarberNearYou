@@ -30,14 +30,21 @@
       "complete": "Impossibile segnare come completato.",
       "confirm": "Conferma non riuscita.",
       "decline": "Rifiuto non riuscito.",
-      "details": "Impossibile caricare i dettagli."
+      "details": "Impossibile caricare i dettagli.",
+      "noShow": "Impossibile registrare l'assenza."
     },
     "expiresAt": "Senza risposta, la richiesta scade il {{date}}.",
     "loading": "Caricamento delle prenotazioni…",
     "loadingShort": "Caricamento…",
     "markCompleted": "Segna come completato",
+    "markNoShow": "Segna come assente",
     "no": "No",
     "noAddress": "Indirizzo non indicato.",
+    "noShowDialog": {
+      "body": "Il cliente verrà avvisato e non potrà lasciare una recensione per questo appuntamento.",
+      "confirm": "Segna come assente",
+      "title": "Segnare questo cliente come assente?"
+    },
     "profileMissing": "Crea prima il tuo profilo professionale per gestire le tue prenotazioni.",
     "showAddress": "Vedi l'indirizzo",
     "title": "Le mie prenotazioni"
@@ -351,7 +358,9 @@
       "refused": "Rifiutati",
       "returningClients": "Clienti abituali",
       "revenue": "Ricavi (completati)",
-      "reviews": "Recensioni"
+      "reviews": "Recensioni",
+      "noShows": "Assenze",
+      "noShowRate": "Tasso di assenza"
     },
     "charts": {
       "busiestHours": "Orari più impegnativi",

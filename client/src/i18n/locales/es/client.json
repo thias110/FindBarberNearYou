@@ -311,6 +311,7 @@
       "declinedWithReason": "Rechazada por el profesional: {{reason}} El horario ha quedado libre.",
       "expiredUnpaid": "El pago no se realizó a tiempo: la solicitud ha caducado.",
       "expiredNoAnswer": "El profesional no respondió a tiempo: la solicitud ha caducado.",
+      "noShowReported": "El profesional ha indicado que no te presentaste.",
       "pendingUntil": "Esperando respuesta hasta el {{date}}.",
       "deposit": "(anticipo)",
       "paymentPending": "Pago pendiente: la solicitud solo se enviará al profesional una vez pagada.",

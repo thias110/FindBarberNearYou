@@ -193,6 +193,13 @@ export function BarberStatsContent({ stats }: { stats: BarberStatsResponse }) {
           label={t("stats.cards.refusalRate")}
           value={rate(stats.rates.refusalRate)}
         />
+        <StatCard label={t("stats.cards.noShows")} value={String(stats.totals.noShows)} />
+        <StatCard
+          label={t("stats.cards.noShowRate")}
+          value={
+            stats.rates.noShowRate === null ? "—" : rate(stats.rates.noShowRate)
+          }
+        />
         <StatCard
           label={t("stats.cards.averageRating")}
           value={

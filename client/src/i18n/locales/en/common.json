@@ -90,7 +90,8 @@
       "BOOKING_CANCELLED_BY_BARBER": "Booking cancelled by the professional",
       "BOOKING_CANCELLED_BY_ADMIN": "Booking cancelled by the administrators",
       "BOOKING_DECLINED": "Booking request declined",
-      "BOOKING_EXPIRED": "Booking request expired (no reply)"
+      "BOOKING_EXPIRED": "Booking request expired (no reply)",
+      "BOOKING_NO_SHOW": "No-show recorded: you did not attend the appointment"
     }
   },
   "theme": {

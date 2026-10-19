@@ -30,14 +30,21 @@
       "complete": "Terminaison échouée.",
       "confirm": "Confirmation échouée.",
       "decline": "Refus échoué.",
-      "details": "Impossible de charger le détail."
+      "details": "Impossible de charger le détail.",
+      "noShow": "Absence non enregistrée."
     },
     "expiresAt": "Sans réponse, la demande expire le {{date}}.",
     "loading": "Chargement des réservations…",
     "loadingShort": "Chargement…",
     "markCompleted": "Marquer comme terminé",
+    "markNoShow": "Marquer absent",
     "no": "Non",
     "noAddress": "Adresse non renseignée.",
+    "noShowDialog": {
+      "body": "Le client sera prévenu et ne pourra pas laisser d'avis sur ce rendez-vous.",
+      "confirm": "Marquer absent",
+      "title": "Marquer ce client absent ?"
+    },
     "profileMissing": "Créez d'abord votre profil professionnel pour gérer vos réservations.",
     "showAddress": "Voir l'adresse",
     "title": "Mes réservations"
@@ -351,7 +358,9 @@
       "refused": "Refusés",
       "returningClients": "Clients réguliers",
       "revenue": "Revenus (terminés)",
-      "reviews": "Avis"
+      "reviews": "Avis",
+      "noShows": "Absences",
+      "noShowRate": "Taux d'absence"
     },
     "charts": {
       "busiestHours": "Heures les plus chargées",

@@ -30,14 +30,21 @@
       "complete": "Could not mark as completed.",
       "confirm": "Confirmation failed.",
       "decline": "Decline failed.",
-      "details": "Unable to load the details."
+      "details": "Unable to load the details.",
+      "noShow": "Couldn't record the no-show."
     },
     "expiresAt": "Without a reply, the request expires on {{date}}.",
     "loading": "Loading bookings…",
     "loadingShort": "Loading…",
     "markCompleted": "Mark as completed",
+    "markNoShow": "Mark as no-show",
     "no": "No",
     "noAddress": "No address provided.",
+    "noShowDialog": {
+      "body": "The client will be notified and won't be able to leave a review for this appointment.",
+      "confirm": "Mark as no-show",
+      "title": "Mark this client as a no-show?"
+    },
     "profileMissing": "Create your professional profile first to manage your bookings.",
     "showAddress": "View address",
     "title": "My bookings"
@@ -351,7 +358,9 @@
       "refused": "Declined",
       "returningClients": "Returning clients",
       "revenue": "Revenue (completed)",
-      "reviews": "Reviews"
+      "reviews": "Reviews",
+      "noShows": "No-shows",
+      "noShowRate": "No-show rate"
     },
     "charts": {
       "busiestHours": "Busiest hours",

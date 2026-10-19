@@ -34,6 +34,8 @@ import type {
   BookingSlotsRangeQuery,
 } from "@findbarber/shared/validation";
 import {
+  NO_SHOW_WINDOW_HOURS,
+  canMarkNoShow,
   canTransitionBooking,
   computeBookingSlots,
   effectiveBookingStatus,
@@ -775,13 +777,20 @@ async function barberAddressForClient(
 // Une transition concurrente ne peut donc jamais être écrasée : c'était le bug
 // « annulée → confirmée » (contrôle hors transaction + UPDATE non gardé).
 
-type UserTransitionTarget = "CONFIRMED" | "DECLINED" | "COMPLETED" | "CANCELLED";
+type UserTransitionTarget =
+  | "CONFIRMED"
+  | "DECLINED"
+  | "COMPLETED"
+  | "NO_SHOW"
+  | "CANCELLED";
 
 const INVALID_TRANSITION_MESSAGES: Record<UserTransitionTarget, string> = {
   CONFIRMED: "Seule une réservation en attente peut être confirmée.",
   DECLINED: "Seule une réservation en attente peut être refusée.",
   COMPLETED:
     "Seule une réservation confirmée peut être marquée comme terminée.",
+  NO_SHOW:
+    "Seule une réservation confirmée peut être marquée comme absence du client.",
   CANCELLED: "Cette réservation ne peut plus être annulée.",
 };
 
@@ -797,6 +806,7 @@ const AUDIT_ACTION_BY_TARGET: Record<UserTransitionTarget, AuditAction> = {
   CONFIRMED: "BOOKING_CONFIRMED",
   DECLINED: "BOOKING_DECLINED",
   COMPLETED: "BOOKING_COMPLETED",
+  NO_SHOW: "BOOKING_NO_SHOW",
   CANCELLED: "BOOKING_CANCELLED",
 };
 
@@ -823,6 +833,8 @@ function notificationsFor(
       return toClient("BOOKING_DECLINED");
     case "COMPLETED":
       return toClient("BOOKING_COMPLETED");
+    case "NO_SHOW":
+      return toClient("BOOKING_NO_SHOW");
     case "CANCELLED":
       if (actor === "CLIENT") {
         return barberUserId
@@ -933,6 +945,16 @@ async function transitionBooking(request: TransitionRequest): Promise<Booking> {
       );
     }
 
+    // Absence (lot N8) : seulement après le début et dans les 48 h qui suivent.
+    // Aucun effet sur le paiement (décision de retenue non prise).
+    if (to === "NO_SHOW" && !canMarkNoShow(existing.startAt, now)) {
+      throw new AppError(
+        409,
+        "NO_SHOW_WINDOW",
+        `Une absence ne peut être marquée qu'après le début du rendez-vous et au plus tard ${NO_SHOW_WINDOW_HOURS} heures après.`,
+      );
+    }
+
     // 6. UPDATE gardé par le statut lu (défense en profondeur).
     const [row] = await runner
       .update(bookings)
@@ -1014,6 +1036,12 @@ export function declineBooking(
 // seulement après la fin réelle de la prestation.
 export function completeBooking(user: AuthUser, bookingId: string) {
   return transitionBooking({ user, bookingId, to: "COMPLETED" });
+}
+
+// Absence du client (lot N8) : BARBER propriétaire, CONFIRMED → NO_SHOW, dans
+// la fenêtre de 48 h après le début. Le paiement n'est pas modifié.
+export function markBookingNoShow(user: AuthUser, bookingId: string) {
+  return transitionBooking({ user, bookingId, to: "NO_SHOW" });
 }
 
 // Annulation : CLIENT (délai 2 h), BARBER propriétaire ou ADMIN (sans délai).

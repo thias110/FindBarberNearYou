@@ -66,6 +66,26 @@ describe("computeBarberStats — totaux et taux", () => {
     expect(empty.rates.refusalRate).toBe(0);
   });
 
+  it("compte les absences et le taux d'absence (absences / (terminés + absences))", () => {
+    const stats = run([
+      booking({ status: "COMPLETED" }),
+      booking({ status: "COMPLETED" }),
+      booking({ status: "COMPLETED" }),
+      booking({ status: "NO_SHOW" }),
+      booking({ status: "CONFIRMED" }),
+      booking({ status: "CANCELLED", cancelledBy: "CLIENT" }),
+    ]);
+    expect(stats.totals.noShows).toBe(1);
+    expect(stats.rates.noShowRate).toBe(0.25);
+  });
+
+  it("renvoie un taux d'absence nul (null) sans rendez-vous terminé ni absent", () => {
+    expect(run([]).totals.noShows).toBe(0);
+    expect(run([]).rates.noShowRate).toBeNull();
+    expect(run([booking({ status: "CONFIRMED" })]).rates.noShowRate).toBeNull();
+    expect(run([booking({ status: "NO_SHOW" })]).rates.noShowRate).toBe(1);
+  });
+
   it("exclut les annulées des jours et heures chargés, pas du total", () => {
     const stats = run([
       booking({ status: "COMPLETED" }),

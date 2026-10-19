@@ -311,6 +311,7 @@
       "declinedWithReason": "Declined by the professional: {{reason}} The time slot has been released.",
       "expiredUnpaid": "Payment wasn't made in time: the request has expired.",
       "expiredNoAnswer": "The professional didn't reply in time: the request has expired.",
+      "noShowReported": "The professional reported that you didn't show up.",
       "pendingUntil": "Awaiting a reply until {{date}}.",
       "deposit": "(deposit)",
       "paymentPending": "Payment pending: the request will only be sent to the professional once it has been paid.",

@@ -656,6 +656,7 @@ export interface BookingApi {
   confirm(bookingId: string): Promise<{ booking: Booking }>;
   decline(bookingId: string, reason: string): Promise<{ booking: Booking }>;
   complete(bookingId: string): Promise<{ booking: Booking }>;
+  markNoShow(bookingId: string): Promise<{ booking: Booking }>;
   cancel(bookingId: string): Promise<{ booking: Booking }>;
   createReview(
     bookingId: string,
@@ -687,6 +688,11 @@ export const bookingApi: BookingApi = {
   complete: (bookingId) =>
     apiFetch<{ booking: Booking }>(
       `/api/bookings/${encodeURIComponent(bookingId)}/complete`,
+      { method: "POST" },
+    ),
+  markNoShow: (bookingId) =>
+    apiFetch<{ booking: Booking }>(
+      `/api/bookings/${encodeURIComponent(bookingId)}/no-show`,
       { method: "POST" },
     ),
   cancel: (bookingId) =>

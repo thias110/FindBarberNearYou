@@ -18,7 +18,8 @@
     "USER_DELETED": "Account deleted (anonymised)",
     "BARBER_CERTIFIED": "“Certified” badge granted",
     "BARBER_UNCERTIFIED": "“Certified” badge removed",
-    "BARBER_APPROVED": "Barber profile approved"
+    "BARBER_APPROVED": "Barber profile approved",
+    "BOOKING_NO_SHOW": "Client no-show"
   },
   "bookingPaymentStatus": {
     "NOT_REQUIRED": "Pay on site",
