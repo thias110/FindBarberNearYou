@@ -1,0 +1,54 @@
+{
+  "title": "Preguntas frecuentes",
+  "intro": "Respuestas breves sobre la reserva y sobre la presencia de un barbero en FindBarber.",
+  "clients": {
+    "title": "Para clientes",
+    "items": {
+      "book": {
+        "q": "¿Cómo reservo una cita?",
+        "a": "Abre el perfil de un barbero desde la búsqueda, elige un servicio, el lugar y una franja horaria, revisa el resumen y envía tu reserva. Tienes que haber iniciado sesión con una cuenta de cliente."
+      },
+      "pending": {
+        "q": "¿Qué significa «Pendiente de confirmación»?",
+        "a": "Tu reserva se ha enviado, pero el barbero aún tiene que confirmarla. La encuentras en «Mis citas». Si la rechaza o no responde a tiempo, la solicitud no prospera y la franja se libera."
+      },
+      "cancel": {
+        "q": "¿Cómo cancelo una cita?",
+        "a": "En «Mis citas», abre la cita, elige «Cancelar» y confirma. La cancelación está sujeta a las condiciones aplicables."
+      },
+      "payment": {
+        "q": "¿Tengo que pagar en línea?",
+        "a": "Depende del barbero: algunos piden el pago en el local, otros un anticipo o el precio completo en línea (tarjeta o Twint). El resumen de la reserva indica lo que se paga en línea. El pago se reembolsa automáticamente si el barbero rechaza o si cancelas a tiempo."
+      },
+      "address": {
+        "q": "¿Por qué la dirección exacta solo aparece tras la confirmación?",
+        "a": "La dirección exacta de un barbero nunca se publica: su perfil solo muestra una ubicación aproximada. Una vez confirmada tu cita, la dirección y la ruta aparecen en «Mis citas»."
+      }
+    }
+  },
+  "barbers": {
+    "title": "Para barberos",
+    "items": {
+      "visible": {
+        "q": "¿Cuándo es visible mi perfil para los clientes?",
+        "a": "El equipo de FindBarber revisa cada perfil nuevo antes de publicarlo. Mientras no esté validado, no aparece en la búsqueda y no puede recibir reservas. Ya puedes completar tus servicios y tus horarios."
+      },
+      "certified": {
+        "q": "¿Para qué sirve la insignia «Certificado»?",
+        "a": "La insignia «Certificado» indica un profesional verificado por FindBarber. La concede la administración."
+      },
+      "payments": {
+        "q": "¿Cómo ofrezco un anticipo o un pago en línea?",
+        "a": "En «Pagos en línea», activa tu cuenta de Stripe y elige: pago en el local, anticipo (del 10 al 90 % del precio) o precio completo. El dinero se ingresa directamente en tu cuenta."
+      },
+      "requests": {
+        "q": "¿Cómo gestiono una solicitud de reserva?",
+        "a": "En «Mis reservas», confirmas o rechazas cada solicitud. Si no respondes a tiempo, la solicitud caduca y la franja se libera."
+      },
+      "hours": {
+        "q": "¿Cómo defino mi disponibilidad?",
+        "a": "Indica tus franjas en «Mis horarios» y tus días libres en «Mis ausencias». Los clientes solo pueden reservar las franjas libres que resulten."
+      }
+    }
+  }
+}

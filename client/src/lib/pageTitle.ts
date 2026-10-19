@@ -13,6 +13,7 @@ const EXACT: Record<string, string> = {
   "/account": "account",
   "/settings": "settings",
   "/mentions-legales": "legal",
+  "/aide": "faq",
   "/pro/dashboard": "proDashboard",
   "/pro/profile": "proProfile",
   "/pro/services": "proServices",
@@ -53,5 +54,6 @@ export function pageTitle(pathname: string): string | null {
   if (/^\/admin\/barbers\/[^/]+\/stats$/.test(path)) {
     return titled("adminBarberStats");
   }
-  return "FindBarber";
+  // Route inconnue : NotFoundPage.
+  return titled("notFound");
 }

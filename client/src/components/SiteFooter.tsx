@@ -106,15 +106,20 @@ export function SiteFooter() {
               )}
             </FooterColumn>
           )}
-          {supportEmail && (
-            <FooterColumn title={t("footer.helpTitle")}>
+          <FooterColumn title={t("footer.helpTitle")}>
+            <li>
+              <Link to="/aide" className={LINK_CLASS}>
+                {t("footer.faq")}
+              </Link>
+            </li>
+            {supportEmail && (
               <li>
                 <a href={`mailto:${supportEmail}`} className={LINK_CLASS}>
                   {t("footer.contact")}
                 </a>
               </li>
-            </FooterColumn>
-          )}
+            )}
+          </FooterColumn>
           <FooterColumn title={t("footer.legalTitle")}>
             <li>
               <Link to="/mentions-legales" className={LINK_CLASS}>

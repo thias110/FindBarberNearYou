@@ -1,0 +1,54 @@
+{
+  "title": "Questions fréquentes",
+  "intro": "Des réponses courtes sur la réservation et sur la présence d'un barber sur FindBarber.",
+  "clients": {
+    "title": "Pour les clients",
+    "items": {
+      "book": {
+        "q": "Comment réserver un rendez-vous ?",
+        "a": "Ouvrez le profil d'un barber depuis la recherche, choisissez une prestation, le lieu et un créneau, vérifiez le récapitulatif puis envoyez votre réservation. Il faut être connecté avec un compte client."
+      },
+      "pending": {
+        "q": "Que veut dire « En attente de confirmation » ?",
+        "a": "Votre réservation est envoyée, mais le barber doit encore la confirmer. Vous la retrouvez dans « Mes rendez-vous ». S'il la refuse ou ne répond pas à temps, la demande n'aboutit pas et le créneau est libéré."
+      },
+      "cancel": {
+        "q": "Comment annuler un rendez-vous ?",
+        "a": "Dans « Mes rendez-vous », ouvrez le rendez-vous concerné, choisissez « Annuler » puis confirmez. L'annulation est soumise aux conditions applicables."
+      },
+      "payment": {
+        "q": "Dois-je payer en ligne ?",
+        "a": "Cela dépend du barber : certains demandent un paiement sur place, d'autres un acompte ou le prix complet en ligne (carte ou Twint). Le récapitulatif de la réservation indique ce qui est à payer en ligne. Le paiement est remboursé automatiquement si le barber refuse ou si vous annulez à temps."
+      },
+      "address": {
+        "q": "Pourquoi l'adresse exacte n'apparaît-elle qu'après confirmation ?",
+        "a": "L'adresse exacte d'un barber n'est jamais publiée : son profil n'affiche qu'une position approximative. Une fois votre rendez-vous confirmé, l'adresse et l'itinéraire apparaissent dans « Mes rendez-vous »."
+      }
+    }
+  },
+  "barbers": {
+    "title": "Pour les barbers",
+    "items": {
+      "visible": {
+        "q": "Quand mon profil est-il visible des clients ?",
+        "a": "L'équipe FindBarber vérifie chaque nouveau profil avant sa mise en ligne. Tant qu'il n'est pas validé, il n'apparaît pas dans la recherche et ne peut pas recevoir de réservations. Vous pouvez déjà compléter vos prestations et vos horaires."
+      },
+      "certified": {
+        "q": "À quoi sert le badge « Certifié » ?",
+        "a": "Le badge « Certifié » indique un professionnel vérifié par FindBarber. Il est attribué par l'administration."
+      },
+      "payments": {
+        "q": "Comment proposer un acompte ou un paiement en ligne ?",
+        "a": "Dans « Paiements en ligne », activez votre compte Stripe, puis choisissez : paiement sur place, acompte (de 10 à 90 % du prix) ou prix complet. L'argent est versé directement sur votre compte."
+      },
+      "requests": {
+        "q": "Comment traiter une demande de réservation ?",
+        "a": "Dans « Mes réservations », vous confirmez ou refusez chaque demande. Sans réponse à temps, la demande expire et le créneau est libéré."
+      },
+      "hours": {
+        "q": "Comment définir mes disponibilités ?",
+        "a": "Renseignez vos plages dans « Mes horaires » et vos jours de fermeture dans « Mes absences ». Les clients ne peuvent réserver que sur les créneaux libres qui en découlent."
+      }
+    }
+  }
+}
