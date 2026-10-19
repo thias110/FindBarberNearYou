@@ -125,8 +125,13 @@ toujours accompagné d'un libellé (jamais la couleur seule).
 - Élément actif : `aria-current="page"` (NavLink) ; icône pleine
   (`NavIcon active`).
 - `SiteFooter` : section nuit annoncée par le motif « dégradé », colonnes
-  Rechercher, Pour les pros, Aide (si un email de support est configuré) et
-  Légal ; liens `night-muted` → blanc, focus `focus-ring-on-night`.
+  Rechercher, Pour les pros, Aide (toujours affichée : « Questions
+  fréquentes » vers `/aide`, plus « Contact » si un email de support est
+  configuré) et Légal ; liens `night-muted` → blanc, focus
+  `focus-ring-on-night`.
+- Pages d'état : la route inconnue affiche `NotFoundPage` (état vide, titre
+  « Page introuvable », `noindex` le temps de l'affichage) ; `/aide` affiche la
+  FAQ (`FaqPage`, `Accordion`, textes dans l'espace i18n `faq`).
 
 ## Thème
 

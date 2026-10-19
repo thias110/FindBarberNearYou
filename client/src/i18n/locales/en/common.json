@@ -51,7 +51,9 @@
     "adminReviews": "Reviews — Administration",
     "adminAudit": "Audit log — Administration",
     "barberProfile": "Barber profile",
-    "adminBarberStats": "Barber statistics — Administration"
+    "adminBarberStats": "Barber statistics — Administration",
+    "faq": "Frequently asked questions",
+    "notFound": "Page not found"
   },
   "footer": {
     "nav": "Footer",
@@ -63,7 +65,8 @@
     "findBarber": "Find a barber",
     "prosTitle": "For pros",
     "helpTitle": "Help",
-    "legalTitle": "Legal"
+    "legalTitle": "Legal",
+    "faq": "Frequently asked questions"
   },
   "notifications": {
     "title": "Notifications",
@@ -195,5 +198,11 @@
     "bookings": "Bookings",
     "agenda": "Schedule",
     "showcase": "Showcase"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This address does not exist or the page has moved. Search for a barber or go back to the home page.",
+    "search": "Search for a barber",
+    "home": "Home"
   }
 }

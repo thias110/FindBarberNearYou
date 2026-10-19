@@ -1,0 +1,54 @@
+{
+  "title": "Frequently asked questions",
+  "intro": "Short answers about booking and about being listed on FindBarber.",
+  "clients": {
+    "title": "For customers",
+    "items": {
+      "book": {
+        "q": "How do I book an appointment?",
+        "a": "Open a barber's profile from the search, pick a service, a place and a time slot, check the summary, then send your booking. You need to be signed in with a customer account."
+      },
+      "pending": {
+        "q": "What does “Awaiting confirmation” mean?",
+        "a": "Your booking has been sent, but the barber still has to confirm it. You can find it in “My appointments”. If they decline it or do not answer in time, the request does not go through and the slot is released."
+      },
+      "cancel": {
+        "q": "How do I cancel an appointment?",
+        "a": "In “My appointments”, open the appointment, choose “Cancel” and confirm. Cancellation is subject to the applicable conditions."
+      },
+      "payment": {
+        "q": "Do I have to pay online?",
+        "a": "It depends on the barber: some ask for payment on site, others for a deposit or the full price online (card or Twint). The booking summary shows what is to be paid online. The payment is refunded automatically if the barber declines or if you cancel in time."
+      },
+      "address": {
+        "q": "Why does the exact address only appear after confirmation?",
+        "a": "A barber's exact address is never published: their profile only shows an approximate location. Once your appointment is confirmed, the address and directions appear in “My appointments”."
+      }
+    }
+  },
+  "barbers": {
+    "title": "For barbers",
+    "items": {
+      "visible": {
+        "q": "When is my profile visible to customers?",
+        "a": "The FindBarber team checks every new profile before it goes live. Until it is approved, it does not appear in search and cannot receive bookings. You can already complete your services and opening hours."
+      },
+      "certified": {
+        "q": "What is the “Certified” badge for?",
+        "a": "The “Certified” badge shows a professional verified by FindBarber. It is awarded by the administration."
+      },
+      "payments": {
+        "q": "How do I offer a deposit or online payment?",
+        "a": "In “Online payments”, activate your Stripe account, then choose: pay on site, a deposit (10 to 90% of the price) or the full price. The money goes directly to your account."
+      },
+      "requests": {
+        "q": "How do I handle a booking request?",
+        "a": "In “My bookings”, you confirm or decline each request. If you do not answer in time, the request expires and the slot is released."
+      },
+      "hours": {
+        "q": "How do I set my availability?",
+        "a": "Enter your time ranges in “My opening hours” and your days off in “My time off”. Customers can only book the free slots that result."
+      }
+    }
+  }
+}

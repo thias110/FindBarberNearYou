@@ -51,7 +51,9 @@
     "adminReviews": "Recensioni — Amministrazione",
     "adminAudit": "Registro di audit — Amministrazione",
     "barberProfile": "Profilo del barbiere",
-    "adminBarberStats": "Statistiche del barbiere — Amministrazione"
+    "adminBarberStats": "Statistiche del barbiere — Amministrazione",
+    "faq": "Domande frequenti",
+    "notFound": "Pagina non trovata"
   },
   "footer": {
     "nav": "Piè di pagina",
@@ -63,7 +65,8 @@
     "findBarber": "Trova un barbiere",
     "prosTitle": "Per i professionisti",
     "helpTitle": "Aiuto",
-    "legalTitle": "Note legali"
+    "legalTitle": "Note legali",
+    "faq": "Domande frequenti"
   },
   "notifications": {
     "title": "Notifiche",
@@ -195,5 +198,11 @@
     "bookings": "Prenotazioni",
     "agenda": "Agenda",
     "showcase": "Vetrina"
+  },
+  "notFound": {
+    "title": "Pagina non trovata",
+    "description": "Questo indirizzo non esiste o la pagina è stata spostata. Cerca un barbiere o torna alla home.",
+    "search": "Cerca un barbiere",
+    "home": "Home"
   }
 }

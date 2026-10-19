@@ -51,7 +51,9 @@
     "adminReviews": "Avis — Administration",
     "adminAudit": "Journal d'audit — Administration",
     "barberProfile": "Profil du barber",
-    "adminBarberStats": "Statistiques du barber — Administration"
+    "adminBarberStats": "Statistiques du barber — Administration",
+    "faq": "Questions fréquentes",
+    "notFound": "Page introuvable"
   },
   "footer": {
     "nav": "Pied de page",
@@ -63,7 +65,8 @@
     "findBarber": "Trouver un barber",
     "prosTitle": "Pour les pros",
     "helpTitle": "Aide",
-    "legalTitle": "Légal"
+    "legalTitle": "Légal",
+    "faq": "Questions fréquentes"
   },
   "notifications": {
     "title": "Notifications",
@@ -195,5 +198,11 @@
     "bookings": "Réservations",
     "agenda": "Agenda",
     "showcase": "Vitrine"
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "description": "L'adresse saisie n'existe pas ou la page a été déplacée. Lancez une recherche ou revenez à l'accueil.",
+    "search": "Rechercher un barber",
+    "home": "Accueil"
   }
 }

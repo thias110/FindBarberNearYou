@@ -51,7 +51,9 @@
     "adminReviews": "Reseñas — Administración",
     "adminAudit": "Registro de auditoría — Administración",
     "barberProfile": "Perfil del barbero",
-    "adminBarberStats": "Estadísticas del barbero — Administración"
+    "adminBarberStats": "Estadísticas del barbero — Administración",
+    "faq": "Preguntas frecuentes",
+    "notFound": "Página no encontrada"
   },
   "footer": {
     "nav": "Pie de página",
@@ -63,7 +65,8 @@
     "findBarber": "Encontrar un barbero",
     "prosTitle": "Para profesionales",
     "helpTitle": "Ayuda",
-    "legalTitle": "Legal"
+    "legalTitle": "Legal",
+    "faq": "Preguntas frecuentes"
   },
   "notifications": {
     "title": "Notificaciones",
@@ -195,5 +198,11 @@
     "bookings": "Reservas",
     "agenda": "Agenda",
     "showcase": "Escaparate"
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "description": "Esta dirección no existe o la página se ha movido. Busca un barbero o vuelve al inicio.",
+    "search": "Buscar un barbero",
+    "home": "Inicio"
   }
 }

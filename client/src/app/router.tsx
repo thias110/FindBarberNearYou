@@ -30,6 +30,8 @@ import { AdminAuditLogPage } from "../pages/admin/AuditLogPage";
 import { AccountPage } from "../pages/AccountPage";
 import { SettingsPage } from "../pages/SettingsPage";
 import { LegalNoticePage } from "../pages/LegalNoticePage";
+import { FaqPage } from "../pages/FaqPage";
+import { NotFoundPage } from "../pages/NotFoundPage";
 
 function HomeRoute() {
   const { user, loading } = useAuth();
@@ -64,6 +66,7 @@ export function AppRoutes() {
       <Route path="/barbers/:barberId" element={<PublicBarberProfilePage />} />
 
       <Route path="/mentions-legales" element={<LegalNoticePage />} />
+      <Route path="/aide" element={<FaqPage />} />
 
       {/* Accueil : public (visiteurs) et CLIENT ; BARBER/ADMIN redirigés. */}
       <Route path="/" element={<HomeRoute />} />
@@ -212,7 +215,7 @@ export function AppRoutes() {
         }
       />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

@@ -3,6 +3,7 @@ import { pageTitle } from "../../client/src/lib/pageTitle";
 
 describe("pageTitle", () => {
   it("donne un titre explicite aux routes connues", () => {
+    expect(pageTitle("/aide")).toBe("Questions fréquentes — FindBarber");
     expect(pageTitle("/barbers")).toBe("Rechercher un barber — FindBarber");
     expect(pageTitle("/pro/stats")).toBe("Mes statistiques — FindBarber");
     expect(pageTitle("/settings")).toBe("Paramètres — FindBarber");
@@ -23,7 +24,7 @@ describe("pageTitle", () => {
     expect(pageTitle("/verify-email")).toBeNull();
   });
 
-  it("retombe sur le nom du site pour une route inconnue", () => {
-    expect(pageTitle("/inconnue")).toBe("FindBarber");
+  it("donne le titre « Page introuvable » à une route inconnue", () => {
+    expect(pageTitle("/inconnue")).toBe("Page introuvable — FindBarber");
   });
 });

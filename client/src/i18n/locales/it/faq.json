@@ -1,0 +1,54 @@
+{
+  "title": "Domande frequenti",
+  "intro": "Risposte brevi sulla prenotazione e sulla presenza di un barbiere su FindBarber.",
+  "clients": {
+    "title": "Per i clienti",
+    "items": {
+      "book": {
+        "q": "Come prenoto un appuntamento?",
+        "a": "Apri il profilo di un barbiere dalla ricerca, scegli un servizio, il luogo e una fascia oraria, controlla il riepilogo e invia la prenotazione. Devi aver effettuato l'accesso con un account cliente."
+      },
+      "pending": {
+        "q": "Cosa significa «In attesa di conferma»?",
+        "a": "La prenotazione è stata inviata, ma il barbiere deve ancora confermarla. La trovi in «I miei appuntamenti». Se la rifiuta o non risponde in tempo, la richiesta non va a buon fine e la fascia oraria viene liberata."
+      },
+      "cancel": {
+        "q": "Come annullo un appuntamento?",
+        "a": "In «I miei appuntamenti», apri l'appuntamento, scegli «Annulla» e conferma. L'annullamento è soggetto alle condizioni applicabili."
+      },
+      "payment": {
+        "q": "Devo pagare online?",
+        "a": "Dipende dal barbiere: alcuni chiedono il pagamento sul posto, altri un acconto o l'intero prezzo online (carta o Twint). Il riepilogo della prenotazione indica cosa va pagato online. Il pagamento viene rimborsato automaticamente se il barbiere rifiuta o se annulli in tempo."
+      },
+      "address": {
+        "q": "Perché l'indirizzo esatto compare solo dopo la conferma?",
+        "a": "L'indirizzo esatto di un barbiere non viene mai pubblicato: il profilo mostra solo una posizione approssimativa. Una volta confermato l'appuntamento, l'indirizzo e l'itinerario compaiono in «I miei appuntamenti»."
+      }
+    }
+  },
+  "barbers": {
+    "title": "Per i barbieri",
+    "items": {
+      "visible": {
+        "q": "Quando il mio profilo è visibile ai clienti?",
+        "a": "Il team FindBarber controlla ogni nuovo profilo prima della pubblicazione. Finché non è convalidato, non compare nella ricerca e non può ricevere prenotazioni. Puoi già completare servizi e orari."
+      },
+      "certified": {
+        "q": "A cosa serve il badge «Certificato»?",
+        "a": "Il badge «Certificato» indica un professionista verificato da FindBarber. Viene assegnato dall'amministrazione."
+      },
+      "payments": {
+        "q": "Come propongo un acconto o un pagamento online?",
+        "a": "In «Pagamenti online», attiva il tuo account Stripe, poi scegli: pagamento sul posto, acconto (dal 10 al 90 % del prezzo) o prezzo intero. Il denaro viene accreditato direttamente sul tuo conto."
+      },
+      "requests": {
+        "q": "Come gestisco una richiesta di prenotazione?",
+        "a": "In «Le mie prenotazioni», confermi o rifiuti ogni richiesta. Senza risposta in tempo, la richiesta scade e la fascia oraria viene liberata."
+      },
+      "hours": {
+        "q": "Come definisco la mia disponibilità?",
+        "a": "Inserisci le fasce orarie in «I miei orari» e i giorni di chiusura in «Le mie assenze». I clienti possono prenotare solo le fasce libere che ne derivano."
+      }
+    }
+  }
+}
