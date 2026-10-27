@@ -80,6 +80,9 @@ const envSchema = z.object({
   // vérification (jamais un secret), expéditeur affiché, TTL du jeton et
   // cooldown de renvoi par compte.
   FRONTEND_URL: z.string().min(1).default("http://localhost:5173"),
+  // Pages ville pour le référencement (lot N9) : nombre minimal de barbers
+  // visibles pour qu'une ville ait sa page (et figure au plan du site).
+  CITY_PAGE_MIN_BARBERS: z.coerce.number().int().min(1).default(3),
   EMAIL_FROM: z
     .string()
     .min(1)

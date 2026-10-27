@@ -1009,10 +1009,12 @@ function buildSearchWhere(input: BarberSearchQuery): SQL {
 }
 
 // Cartes publiques des barbers qui satisfont `where` : une seule requête SQL
-// (sous-requêtes corrélées), puis les disponibilités en lot.
+// (sous-requêtes corrélées), puis les disponibilités en lot (sauf
+// `availability: false`, pour les pages qui ne les affichent pas).
 export async function loadSearchItems(
   where: SQL,
   page?: { limit: number; offset: number },
+  options: { availability?: boolean } = {},
 ): Promise<PublicBarberSearchItem[]> {
   const rows = await db
     .select({
@@ -1065,9 +1067,12 @@ export async function loadSearchItems(
     .offset(page?.offset ?? 0);
 
   // Disponibilité (lot N1) : uniquement pour la page affichée, en lot.
-  const availability = await getAvailabilitySummaries(
-    rows.map((row) => ({ id: row.id, timezone: row.timezone })),
-  );
+  const availability =
+    options.availability === false
+      ? new Map<string, { nextAvailableAt: string | null; availableToday: boolean }>()
+      : await getAvailabilitySummaries(
+          rows.map((row) => ({ id: row.id, timezone: row.timezone })),
+        );
 
   return rows.map((row) => {
     const slot = availability.get(row.id);
