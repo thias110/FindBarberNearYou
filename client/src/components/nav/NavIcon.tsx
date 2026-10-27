@@ -8,6 +8,7 @@ export type NavIconName =
   | "home"
   | "search"
   | "calendar"
+  | "heart"
   | "user"
   | "today"
   | "clock"
@@ -27,6 +28,7 @@ const SHAPES: Record<NavIconName, { fill: string; detail?: string; outer?: strin
   home: { fill: "M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z" },
   search: { fill: "M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13z", outer: "M15.5 15.5 20 20" },
   calendar: { fill: "M4 6.5A1.5 1.5 0 0 1 5.5 5h13A1.5 1.5 0 0 1 20 6.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z", detail: "M4 10h16", outer: "M8 3v4M16 3v4" },
+  heart: { fill: "M12 20.5s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.5 2.6c0 5.7-7.5 10.3-7.5 10.3z" },
   user: { fill: "M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM4.5 20a7.5 6 0 0 1 15 0z" },
   today: { fill: "M4 6.5A1.5 1.5 0 0 1 5.5 5h13A1.5 1.5 0 0 1 20 6.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z", detail: "M9 14l2 2 4-4", outer: "M8 3v4M16 3v4" },
   clock: { fill: "M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z", detail: "M12 7.5V12l3 2" },

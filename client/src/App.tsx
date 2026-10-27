@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "./app/auth-context";
 import { AuthProvider } from "./app/AuthProvider";
+import { FavoritesProvider } from "./app/FavoritesProvider";
 import { LocaleProvider } from "./app/LocaleProvider";
 import { ThemeProvider } from "./app/ThemeProvider";
 import { AppRoutes } from "./app/router";
@@ -82,7 +83,9 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <LocaleProvider>
-          <AppShell />
+          <FavoritesProvider>
+            <AppShell />
+          </FavoritesProvider>
         </LocaleProvider>
       </AuthProvider>
     </ThemeProvider>

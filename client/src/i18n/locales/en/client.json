@@ -2,6 +2,20 @@
   "audience": {
     "mixed": "Unisex"
   },
+  "favorites": {
+    "title": "My favorites",
+    "intro": "Find your barbers again and book in two clicks.",
+    "add": "Add {{name}} to favorites",
+    "remove": "Remove {{name}} from favorites",
+    "loginToAdd": "Sign in to add {{name}} to favorites",
+    "error": "Could not update your favorites. Please try again.",
+    "limitReached": "You have reached the limit of {{count}} favorites. Remove one to add another.",
+    "loading": "Loading your favorites…",
+    "loadError": "Could not load your favorites.",
+    "emptyTitle": "No favorites yet",
+    "emptyDescription": "Tap the heart on a barber to find them here.",
+    "emptyAction": "Explore barbers"
+  },
   "distance": {
     "lessThanOneKm": "less than 1 km"
   },

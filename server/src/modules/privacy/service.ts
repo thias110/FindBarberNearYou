@@ -12,6 +12,7 @@ import {
   bookings,
   emailOutbox,
   emailVerificationTokens,
+  favorites,
   notifications,
   passwordResetTokens,
   reviews,
@@ -64,6 +65,10 @@ export async function exportPersonalData(userId: string) {
     .select()
     .from(notifications)
     .where(eq(notifications.userId, userId));
+  const userFavorites = await db
+    .select()
+    .from(favorites)
+    .where(eq(favorites.userId, userId));
 
   const [profile] = await db
     .select()
@@ -192,6 +197,10 @@ export async function exportPersonalData(userId: string) {
       bookingId: n.bookingId,
       readAt: n.readAt,
       createdAt: n.createdAt,
+    })),
+    favorites: userFavorites.map((f) => ({
+      barberProfileId: f.barberProfileId,
+      createdAt: f.createdAt,
     })),
     barber,
   };
@@ -380,6 +389,7 @@ export async function deleteOwnAccount(
 
     // 4. Données de compte rattachées.
     await runner.delete(notifications).where(eq(notifications.userId, user.id));
+    await runner.delete(favorites).where(eq(favorites.userId, user.id));
     await runner
       .delete(emailVerificationTokens)
       .where(eq(emailVerificationTokens.userId, user.id));

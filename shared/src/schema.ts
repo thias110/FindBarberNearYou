@@ -686,6 +686,31 @@ export const notifications = pgTable(
 export type NotificationRow = typeof notifications.$inferSelect;
 export type NewNotificationRow = typeof notifications.$inferInsert;
 
+// --- Favoris (lot N5) ---
+// Un client garde un barber sous la main : clé primaire composée, donc un seul
+// favori par couple. Cascade des deux côtés ; l'anonymisation d'un compte ne
+// supprime pas la ligne `users` et efface donc les favoris explicitement.
+export const favorites = pgTable(
+  "favorites",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    barberProfileId: text("barber_profile_id")
+      .notNull()
+      .references(() => barberProfiles.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.barberProfileId] }),
+    index("favorites_user_created_idx").on(table.userId, table.createdAt),
+  ],
+);
+
+export type FavoriteRow = typeof favorites.$inferSelect;
+
 // --- Journal d'audit (issue #13) ---
 // Trace append-only des actions sensibles. `actor_user_id` passe à NULL si le
 // compte est supprimé (le rôle de l'acteur reste figé dans `actor_role`). Pas de

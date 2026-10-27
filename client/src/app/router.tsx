@@ -12,6 +12,7 @@ import { ClientHomePage } from "../pages/client/HomePage";
 import { PublicBarberProfilePage } from "../pages/client/BarberProfilePage";
 import { BarbersSearchPage } from "../pages/client/BarbersSearchPage";
 import { ClientBookingsPage } from "../pages/client/BookingsPage";
+import { FavoritesPage } from "../pages/client/FavoritesPage";
 import { BarberDashboardPage } from "../pages/barber/DashboardPage";
 import { BarberProfilePage } from "../pages/barber/ProfilePage";
 import { BarberServicesPage } from "../pages/barber/ServicesPage";
@@ -91,6 +92,14 @@ export function AppRoutes() {
         element={
           <RequireRole roles={["CLIENT"]}>
             <ClientBookingsPage />
+          </RequireRole>
+        }
+      />
+      <Route
+        path="/favorites"
+        element={
+          <RequireRole roles={["CLIENT"]}>
+            <FavoritesPage />
           </RequireRole>
         }
       />

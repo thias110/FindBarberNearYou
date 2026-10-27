@@ -2,6 +2,7 @@ export * from "./admin";
 export * from "./auth";
 export * from "./barber";
 export * from "./booking";
+export * from "./favorites";
 export * from "./gallery";
 export * from "./notifications";
 export * from "./review";

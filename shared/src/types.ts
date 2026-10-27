@@ -157,6 +157,11 @@ export interface PublicBarberSearchItem {
   availableToday: boolean;
 }
 
+// Favoris du client (lot N5) : cartes publiques, du plus récent au plus ancien.
+export interface FavoritesResponse {
+  barbers: PublicBarberSearchItem[];
+}
+
 // Prestations populaires (issue #47) : uniquement l'ordre des techniques,
 // sans compteur ni donnée de réservation individuelle.
 export interface PopularTechniquesResponse {

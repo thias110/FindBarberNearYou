@@ -2,6 +2,20 @@
   "audience": {
     "mixed": "Unisex"
   },
+  "favorites": {
+    "title": "I miei preferiti",
+    "intro": "Ritrova i tuoi barbieri e prenota di nuovo in due clic.",
+    "add": "Aggiungi {{name}} ai preferiti",
+    "remove": "Rimuovi {{name}} dai preferiti",
+    "loginToAdd": "Accedi per aggiungere {{name}} ai preferiti",
+    "error": "Impossibile aggiornare i tuoi preferiti. Riprova.",
+    "limitReached": "Hai raggiunto il limite di {{count}} preferiti. Rimuovine uno per aggiungerne un altro.",
+    "loading": "Caricamento dei tuoi preferiti…",
+    "loadError": "Impossibile caricare i tuoi preferiti.",
+    "emptyTitle": "Ancora nessun preferito",
+    "emptyDescription": "Tocca il cuore di un barbiere per ritrovarlo qui.",
+    "emptyAction": "Esplora i barbieri"
+  },
   "distance": {
     "lessThanOneKm": "meno di 1 km"
   },

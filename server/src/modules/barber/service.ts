@@ -913,13 +913,18 @@ function roundRating(average: number | null, count: number): number | null {
   return Number(Number(average).toFixed(2));
 }
 
-function buildSearchWhere(input: BarberSearchQuery): SQL {
-  const conditions: SQL[] = [
+// Barber visible du public : compte actif au rôle BARBER et profil approuvé par
+// l'admin (issue #40). Partagé par la recherche et la liste des favoris (N5).
+export function publicBarberConditions(): SQL[] {
+  return [
     eq(users.status, "ACTIVE"),
     eq(users.role, "BARBER"),
-    // Profil approuvé par l'admin (issue #40).
     isNotNull(barberProfiles.approvedAt),
   ];
+}
+
+function buildSearchWhere(input: BarberSearchQuery): SQL {
+  const conditions: SQL[] = publicBarberConditions();
 
   if (input.q) {
     conditions.push(
@@ -1003,18 +1008,12 @@ function buildSearchWhere(input: BarberSearchQuery): SQL {
   return and(...conditions)!;
 }
 
-export async function searchBarbers(
-  input: BarberSearchQuery,
-): Promise<BarbersSearchResponse> {
-  const where = buildSearchWhere(input);
-
-  const [totalRow] = await db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(barberProfiles)
-    .innerJoin(users, eq(barberProfiles.userId, users.id))
-    .where(where);
-  const total = Number(totalRow?.total ?? 0);
-
+// Cartes publiques des barbers qui satisfont `where` : une seule requête SQL
+// (sous-requêtes corrélées), puis les disponibilités en lot.
+export async function loadSearchItems(
+  where: SQL,
+  page?: { limit: number; offset: number },
+): Promise<PublicBarberSearchItem[]> {
   const rows = await db
     .select({
       id: barberProfiles.id,
@@ -1062,15 +1061,15 @@ export async function searchBarbers(
     .innerJoin(users, eq(barberProfiles.userId, users.id))
     .where(where)
     .orderBy(sql`lower(${barberProfiles.displayName}) asc`, asc(barberProfiles.id))
-    .limit(input.pageSize)
-    .offset((input.page - 1) * input.pageSize);
+    .limit(page?.limit ?? 1000)
+    .offset(page?.offset ?? 0);
 
   // Disponibilité (lot N1) : uniquement pour la page affichée, en lot.
   const availability = await getAvailabilitySummaries(
     rows.map((row) => ({ id: row.id, timezone: row.timezone })),
   );
 
-  const barbers: PublicBarberSearchItem[] = rows.map((row) => {
+  return rows.map((row) => {
     const slot = availability.get(row.id);
     const { latitude, longitude } = approximateCoordinates(
       row.latitude,
@@ -1096,6 +1095,24 @@ export async function searchBarbers(
       nextAvailableAt: slot?.nextAvailableAt ?? null,
       availableToday: slot?.availableToday ?? false,
     };
+  });
+}
+
+export async function searchBarbers(
+  input: BarberSearchQuery,
+): Promise<BarbersSearchResponse> {
+  const where = buildSearchWhere(input);
+
+  const [totalRow] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(barberProfiles)
+    .innerJoin(users, eq(barberProfiles.userId, users.id))
+    .where(where);
+  const total = Number(totalRow?.total ?? 0);
+
+  const barbers = await loadSearchItems(where, {
+    limit: input.pageSize,
+    offset: (input.page - 1) * input.pageSize,
   });
 
   const totalPages = total === 0 ? 0 : Math.ceil(total / input.pageSize);
