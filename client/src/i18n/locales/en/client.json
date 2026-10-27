@@ -301,6 +301,29 @@
         "body": "The professional still needs to confirm it. You'll find it in your appointments.",
         "addToCalendar": "Add to calendar",
         "viewAppointments": "View my appointments"
+      },
+      "express": {
+        "title": "Your details",
+        "intro": "No account yet? One is created with your request. You will then confirm your email to send it to the barber.",
+        "name": "Name",
+        "email": "Email",
+        "password": "Password",
+        "passwordHint": "At least {{min}} characters. You will use it to follow your booking.",
+        "honeypot": "Leave this field empty",
+        "haveAccount": "Already have an account? <loginLink>Sign in</loginLink>.",
+        "paymentNeedsAccount": "This professional requires online payment: <loginLink>sign in</loginLink> or <registerLink>create an account</registerLink> to book.",
+        "errors": {
+          "nameRequired": "Enter your name.",
+          "emailInvalid": "Enter a valid email address.",
+          "passwordTooShort": "The password must be at least {{min}} characters long.",
+          "emailTaken": "An account already exists with this email: sign in to book."
+        },
+        "sent": {
+          "title": "Check your email",
+          "body": "We sent a link to {{email}}. Click it within {{minutes}} minutes to send your request to {{barber}}: the slot is held for you until then.",
+          "notReceived": "Didn't get it? Check your spam folder or <resendLink>resend the link</resendLink>.",
+          "login": "I've confirmed, sign in"
+        }
       }
     },
     "validation": {

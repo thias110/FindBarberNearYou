@@ -68,8 +68,8 @@ authRouter.post("/verify-email", async (req, res) => {
   if (!parsed.success) {
     throw validationError(parsed.error);
   }
-  await verifyEmail(parsed.data.token);
-  res.json({ verified: true });
+  const { expressBooking } = await verifyEmail(parsed.data.token);
+  res.json({ verified: true, expressBooking });
 });
 
 // Renvoi du lien de vérification : réponse générique anti-énumération.

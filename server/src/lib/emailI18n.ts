@@ -47,6 +47,14 @@ export interface EmailStrings {
   verificationAction: string;
   verificationFooter: string;
 
+  // Réservation express (lot N6) : vérification + récapitulatif en un email.
+  expressSubject: (barber: string) => string;
+  expressTitle: string;
+  expressIntro: (p: { barber: string; when: string; what: string }) => string;
+  expressDeadline: (minutes: number) => string;
+  expressAction: string;
+  expressFooter: string;
+
   resetSubject: string;
   resetTitle: string;
   resetIntro: string;
@@ -97,6 +105,16 @@ const fr: EmailStrings = {
   verificationAction: "Confirmer mon adresse",
   verificationFooter:
     "Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.",
+
+  expressSubject: (barber) => `Confirmez votre email pour envoyer votre demande à ${barber}`,
+  expressTitle: "Dernière étape : confirmez votre email",
+  expressIntro: ({ barber, when, what }) =>
+    `Votre demande chez ${barber} pour ${what}, le ${when}, est prête. Confirmez votre adresse email pour l'envoyer : votre compte FindBarber sera activé en même temps.`,
+  expressDeadline: (minutes) =>
+    `Le créneau vous est réservé pendant ${minutes} minutes. Sans confirmation dans ce délai, la demande est annulée et le créneau libéré.`,
+  expressAction: "Confirmer et envoyer ma demande",
+  expressFooter:
+    "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : aucune réservation ne sera envoyée.",
 
   resetSubject: "Réinitialisation de votre mot de passe",
   resetTitle: "Réinitialiser votre mot de passe",
@@ -204,6 +222,16 @@ const en: EmailStrings = {
   verificationFooter:
     "If you didn't sign up for an account, please ignore this email.",
 
+  expressSubject: (barber) => `Confirm your email to send your request to ${barber}`,
+  expressTitle: "Last step: confirm your email",
+  expressIntro: ({ barber, when, what }) =>
+    `Your request with ${barber} for ${what} on ${when} is ready. Confirm your email address to send it; your FindBarber account will be activated at the same time.`,
+  expressDeadline: (minutes) =>
+    `The slot is held for you for ${minutes} minutes. Without confirmation within that time, the request is cancelled and the slot released.`,
+  expressAction: "Confirm and send my request",
+  expressFooter:
+    "If you didn't make this request, please ignore this email: no booking will be sent.",
+
   resetSubject: "Reset your password",
   resetTitle: "Reset your password",
   resetIntro:
@@ -310,6 +338,16 @@ const it: EmailStrings = {
   verificationFooter:
     "Se non hai richiesto tu questa registrazione, ignora questa email.",
 
+  expressSubject: (barber) => `Conferma la tua email per inviare la richiesta a ${barber}`,
+  expressTitle: "Ultimo passaggio: conferma la tua email",
+  expressIntro: ({ barber, when, what }) =>
+    `La tua richiesta presso ${barber} per ${what}, il ${when}, è pronta. Conferma il tuo indirizzo email per inviarla: il tuo account FindBarber verrà attivato nello stesso momento.`,
+  expressDeadline: (minutes) =>
+    `Lo slot è riservato per te per ${minutes} minuti. Senza conferma entro questo tempo, la richiesta viene annullata e lo slot liberato.`,
+  expressAction: "Conferma e invia la richiesta",
+  expressFooter:
+    "Se non hai fatto tu questa richiesta, ignora questa email: nessuna prenotazione verrà inviata.",
+
   resetSubject: "Reimpostazione della password",
   resetTitle: "Reimposta la tua password",
   resetIntro:
@@ -415,6 +453,16 @@ const es: EmailStrings = {
   verificationAction: "Confirmar mi dirección",
   verificationFooter:
     "Si no has sido tú quien se ha registrado, ignora este email.",
+
+  expressSubject: (barber) => `Confirma tu email para enviar tu solicitud a ${barber}`,
+  expressTitle: "Último paso: confirma tu email",
+  expressIntro: ({ barber, when, what }) =>
+    `Tu solicitud con ${barber} para ${what}, el ${when}, está lista. Confirma tu dirección de email para enviarla: tu cuenta de FindBarber se activará al mismo tiempo.`,
+  expressDeadline: (minutes) =>
+    `El horario queda reservado para ti durante ${minutes} minutos. Sin confirmación en ese plazo, la solicitud se cancela y el horario se libera.`,
+  expressAction: "Confirmar y enviar mi solicitud",
+  expressFooter:
+    "Si no has hecho esta solicitud, ignora este email: no se enviará ninguna reserva.",
 
   resetSubject: "Restablecimiento de tu contraseña",
   resetTitle: "Restablece tu contraseña",

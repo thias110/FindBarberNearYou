@@ -59,5 +59,6 @@
   "USER_DELETED": "Questo account è stato eliminato.",
   "USER_NOT_FOUND": "Utente non trovato.",
   "USER_NOT_SUSPENDED": "Questo utente non è sospeso.",
-  "VALIDATION_ERROR": "Alcune informazioni non sono valide."
+  "VALIDATION_ERROR": "Alcune informazioni non sono valide.",
+  "EXPRESS_BOOKING_PAYMENT_REQUIRED": "Questo professionista richiede il pagamento online: crea un account o accedi per prenotare."
 }

@@ -38,6 +38,7 @@ import {
   canMarkNoShow,
   canTransitionBooking,
   computeBookingSlots,
+  earliestHold,
   effectiveBookingStatus,
   isBookingEnded,
   isPendingBookingExpired,
@@ -102,7 +103,7 @@ function toBooking(
             row.createdAt,
             row.startAt,
             LIMITS.bookingPendingTtlHours,
-            row.paymentExpiresAt,
+            earliestHold(row.paymentExpiresAt, row.emailConfirmExpiresAt),
           ).toISOString()
         : null,
     paymentStatus: row.paymentStatus,
@@ -480,165 +481,196 @@ async function createBookingInTransaction(
   clientUserId: string,
   input: BookingCreateInput,
 ): Promise<Booking> {
-  return db.transaction(async (tx) => {
-    const runner = tx as unknown as typeof db;
+  return db.transaction(async (tx) =>
+    insertBookingUnderLock(tx as unknown as typeof db, clientUserId, input),
+  );
+}
 
-    // 1. Verrou du profil : sérialise les créations simultanées du même barber.
-    const [profile] = await runner
-      .select()
-      .from(barberProfiles)
-      .where(eq(barberProfiles.id, input.barberId))
-      .limit(1)
-      .for("update");
-    if (!profile) {
-      throw new AppError(404, "BARBER_NOT_FOUND", "Profil introuvable.");
-    }
-    await assertActiveBarber(runner, profile);
-    if (!profile.timezone) {
-      throw new AppError(
-        409,
-        "BARBER_TIMEZONE_MISSING",
-        "Ce professionnel n'a pas renseigné son fuseau horaire.",
-      );
-    }
+export interface InsertBookingOptions {
+  /**
+   * Réservation express (lot N6) : la demande attend la confirmation de
+   * l'email jusqu'à cette échéance, sans notifier le barber. Refusée si le
+   * barber exige un paiement en ligne.
+   */
+  emailConfirmExpiresAt?: Date;
+}
 
-    // 2. Service actif appartenant bien à ce professionnel.
-    const [service] = await runner
-      .select()
-      .from(barberServices)
-      .where(
-        and(
-          eq(barberServices.id, input.serviceId),
-          eq(barberServices.barberProfileId, profile.id),
-          eq(barberServices.isActive, true),
-        ),
-      )
-      .limit(1);
-    if (!service) {
-      throw new AppError(404, "SERVICE_NOT_FOUND", "Service introuvable.");
-    }
+/**
+ * Crée la demande sous le verrou du profil, dans la transaction `runner`
+ * fournie par l'appelant (création seule, ou création du compte puis de la
+ * demande pour la réservation express).
+ */
+export async function insertBookingUnderLock(
+  runner: typeof db,
+  clientUserId: string,
+  input: BookingCreateInput,
+  options: InsertBookingOptions = {},
+): Promise<Booking> {
+  // 1. Verrou du profil : sérialise les créations simultanées du même barber.
+  const [profile] = await runner
+    .select()
+    .from(barberProfiles)
+    .where(eq(barberProfiles.id, input.barberId))
+    .limit(1)
+    .for("update");
+  if (!profile) {
+    throw new AppError(404, "BARBER_NOT_FOUND", "Profil introuvable.");
+  }
+  await assertActiveBarber(runner, profile);
+  if (!profile.timezone) {
+    throw new AppError(
+      409,
+      "BARBER_TIMEZONE_MISSING",
+      "Ce professionnel n'a pas renseigné son fuseau horaire.",
+    );
+  }
 
-    // 3. Lieu proposé.
-    const [placeRow] = await runner
-      .select({ place: barberProfilePlaces.place })
-      .from(barberProfilePlaces)
-      .where(
-        and(
-          eq(barberProfilePlaces.barberProfileId, profile.id),
-          eq(barberProfilePlaces.place, input.place),
-        ),
-      )
-      .limit(1);
-    if (!placeRow) {
-      throw new AppError(
-        409,
-        "PLACE_NOT_OFFERED",
-        "Ce lieu de prestation n'est pas proposé par ce professionnel.",
-      );
-    }
+  // 2. Service actif appartenant bien à ce professionnel.
+  const [service] = await runner
+    .select()
+    .from(barberServices)
+    .where(
+      and(
+        eq(barberServices.id, input.serviceId),
+        eq(barberServices.barberProfileId, profile.id),
+        eq(barberServices.isActive, true),
+      ),
+    )
+    .limit(1);
+  if (!service) {
+    throw new AppError(404, "SERVICE_NOT_FOUND", "Service introuvable.");
+  }
 
-    // 3b. Adresse client privée : requise et géocodée seulement pour AT_CLIENT ;
-    // nulle (non stockée) pour SALON / AT_PROVIDER. Le géocodage et le contrôle
-    // de zone sont faits ici, sous le verrou du profil.
-    const clientLocation =
-      input.place === "AT_CLIENT"
-        ? await resolveClientLocation(profile, input.clientAddress as string)
-        : null;
+  // 3. Lieu proposé.
+  const [placeRow] = await runner
+    .select({ place: barberProfilePlaces.place })
+    .from(barberProfilePlaces)
+    .where(
+      and(
+        eq(barberProfilePlaces.barberProfileId, profile.id),
+        eq(barberProfilePlaces.place, input.place),
+      ),
+    )
+    .limit(1);
+  if (!placeRow) {
+    throw new AppError(
+      409,
+      "PLACE_NOT_OFFERED",
+      "Ce lieu de prestation n'est pas proposé par ce professionnel.",
+    );
+  }
 
-    // 4. Les demandes échues de ce barber passent en EXPIRED (sous verrou) :
-    // elles ne bloquent plus le créneau ni la contrainte d'exclusion.
-    const now = new Date();
-    await expireStalePendingBookings(runner, now, profile.id);
+  // 3b. Adresse client privée : requise et géocodée seulement pour AT_CLIENT ;
+  // nulle (non stockée) pour SALON / AT_PROVIDER. Le géocodage et le contrôle
+  // de zone sont faits ici, sous le verrou du profil.
+  const clientLocation =
+    input.place === "AT_CLIENT"
+      ? await resolveClientLocation(profile, input.clientAddress as string)
+      : null;
 
-    // 5. Contexte de disponibilité, relu SOUS verrou.
-    const [hours, timeOff, busy] = await Promise.all([
-      loadWorkingHours(runner, profile.id, input.date),
-      loadTimeOff(runner, profile.id, input.date),
-      loadBusy(runner, profile.id, input.date, now),
-    ]);
-    const context = toSlotInputs(hours, timeOff, busy);
+  // 4. Les demandes échues de ce barber passent en EXPIRED (sous verrou) :
+  // elles ne bloquent plus le créneau ni la contrainte d'exclusion.
+  const now = new Date();
+  await expireStalePendingBookings(runner, now, profile.id);
 
-    // 6. Créneau recalculé côté serveur : le client ne peut pas le forger.
-    const slot = computeBookingSlots({
-      date: input.date,
-      timezone: profile.timezone,
+  // 5. Contexte de disponibilité, relu SOUS verrou.
+  const [hours, timeOff, busy] = await Promise.all([
+    loadWorkingHours(runner, profile.id, input.date),
+    loadTimeOff(runner, profile.id, input.date),
+    loadBusy(runner, profile.id, input.date, now),
+  ]);
+  const context = toSlotInputs(hours, timeOff, busy);
+
+  // 6. Créneau recalculé côté serveur : le client ne peut pas le forger.
+  const slot = computeBookingSlots({
+    date: input.date,
+    timezone: profile.timezone,
+    durationMinutes: service.durationMinutes,
+    ...context,
+    now,
+    leadTimeMinutes: LIMITS.bookingLeadTimeMinutes,
+    horizonDays: LIMITS.bookingHorizonDays,
+  }).find((candidate) => candidate.startMinute === input.startMinute);
+  if (!slot) {
+    throw new AppError(
+      409,
+      "SLOT_UNAVAILABLE",
+      "Ce créneau n'est plus disponible.",
+    );
+  }
+
+  // 7. Paiement en ligne exigé par le barber (issue #10).
+  const payment = paymentRequirementFor(profile, service.priceMinor);
+  const express = options.emailConfirmExpiresAt ?? null;
+  if (express && payment) {
+    throw new AppError(
+      409,
+      "EXPRESS_BOOKING_PAYMENT_REQUIRED",
+      "Ce professionnel demande un paiement en ligne : créez un compte ou connectez-vous pour réserver.",
+    );
+  }
+
+  // 8. Insertion avec snapshots figés.
+  const [row] = await runner
+    .insert(bookings)
+    .values({
+      id: randomUUID(),
+      clientUserId,
+      barberProfileId: profile.id,
+      serviceId: service.id,
+      startAt: new Date(slot.startAt),
+      endAt: new Date(slot.endAt),
+      servicePlace: input.place,
+      status: "PENDING",
+      barberDisplayName: profile.displayName,
+      serviceName: service.name,
+      serviceDescription: service.description,
       durationMinutes: service.durationMinutes,
-      ...context,
-      now,
-      leadTimeMinutes: LIMITS.bookingLeadTimeMinutes,
-      horizonDays: LIMITS.bookingHorizonDays,
-    }).find((candidate) => candidate.startMinute === input.startMinute);
-    if (!slot) {
-      throw new AppError(
-        409,
-        "SLOT_UNAVAILABLE",
-        "Ce créneau n'est plus disponible.",
-      );
-    }
+      priceMinor: service.priceMinor,
+      currency: profile.currency,
+      clientAddress:
+        input.place === "AT_CLIENT"
+          ? encryptField(input.clientAddress ?? null)
+          : null,
+      clientLatitude: clientLocation?.latitude ?? null,
+      clientLongitude: clientLocation?.longitude ?? null,
+      ...(payment
+        ? {
+            paymentStatus: "REQUIRES_PAYMENT" as const,
+            amountDueMinor: payment.amountDueMinor,
+            platformFeeMinor: payment.platformFeeMinor,
+            paymentExpiresAt: new Date(now.getTime() + PAYMENT_HOLD_MS),
+          }
+        : {}),
+      emailConfirmExpiresAt: express,
+      // Horloge applicative (pas `now()` SQL) : l'échéance des 24 h se
+      // calcule avec la même horloge que les contrôles d'expiration.
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
 
-    // 7. Paiement en ligne exigé par le barber (issue #10).
-    const payment = paymentRequirementFor(profile, service.priceMinor);
+  // Notification BARBER : nouvelle demande de réservation (même
+  // transaction). Si un paiement est exigé, le barber n'est prévenu qu'une
+  // fois le paiement reçu (webhook Stripe) ; pour une réservation express,
+  // qu'au clic sur le lien de l'email (lot N6).
+  if (!payment && !express) {
+    await notifyBookingEvent(runner, {
+      recipientUserId: profile.userId,
+      actorUserId: clientUserId,
+      bookingId: row.id,
+      type: "BOOKING_REQUESTED",
+    });
+  }
 
-    // 8. Insertion avec snapshots figés.
-    const [row] = await runner
-      .insert(bookings)
-      .values({
-        id: randomUUID(),
-        clientUserId,
-        barberProfileId: profile.id,
-        serviceId: service.id,
-        startAt: new Date(slot.startAt),
-        endAt: new Date(slot.endAt),
-        servicePlace: input.place,
-        status: "PENDING",
-        barberDisplayName: profile.displayName,
-        serviceName: service.name,
-        serviceDescription: service.description,
-        durationMinutes: service.durationMinutes,
-        priceMinor: service.priceMinor,
-        currency: profile.currency,
-        clientAddress:
-          input.place === "AT_CLIENT"
-            ? encryptField(input.clientAddress ?? null)
-            : null,
-        clientLatitude: clientLocation?.latitude ?? null,
-        clientLongitude: clientLocation?.longitude ?? null,
-        ...(payment
-          ? {
-              paymentStatus: "REQUIRES_PAYMENT" as const,
-              amountDueMinor: payment.amountDueMinor,
-              platformFeeMinor: payment.platformFeeMinor,
-              paymentExpiresAt: new Date(now.getTime() + PAYMENT_HOLD_MS),
-            }
-          : {}),
-        // Horloge applicative (pas `now()` SQL) : l'échéance des 24 h se
-        // calcule avec la même horloge que les contrôles d'expiration.
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
-
-    // Notification BARBER : nouvelle demande de réservation (même
-    // transaction). Si un paiement est exigé, le barber n'est prévenu qu'une
-    // fois le paiement reçu (webhook Stripe).
-    if (!payment) {
-      await notifyBookingEvent(runner, {
-        recipientUserId: profile.userId,
-        actorUserId: clientUserId,
-        bookingId: row.id,
-        type: "BOOKING_REQUESTED",
-      });
-    }
-
-    const [client] = await runner
-      .select({ name: users.name })
-      .from(users)
-      .where(eq(users.id, clientUserId))
-      .limit(1);
-    // Nouveau créneau occupé : disponibilité de la recherche à recalculer.
-    invalidateAvailability(row.barberProfileId);
-    return toBooking(row, client?.name ?? null);
-  });
+  const [client] = await runner
+    .select({ name: users.name })
+    .from(users)
+    .where(eq(users.id, clientUserId))
+    .limit(1);
+  // Nouveau créneau occupé : disponibilité de la recherche à recalculer.
+  invalidateAvailability(row.barberProfileId);
+  return toBooking(row, client?.name ?? null);
 }
 
 // --- Résolution du profil barber de l'utilisateur connecté ---
@@ -719,10 +751,13 @@ export async function getBookingDetails(
   const barberProfileId =
     user.role === "BARBER" ? await findOwnBarberProfileId(user.id) : null;
   assertBookingReadAccess(user, row, barberProfileId);
-  // Demande non payée ou abandonnée (issue #10) : invisible du barber.
+  // Demande non payée ou abandonnée (issue #10), ou réservation express dont
+  // l'email n'est pas confirmé (lot N6) : invisible du barber.
   if (
     user.role === "BARBER" &&
-    (row.paymentStatus === "REQUIRES_PAYMENT" || row.paymentStatus === "CANCELLED")
+    (row.paymentStatus === "REQUIRES_PAYMENT" ||
+      row.paymentStatus === "CANCELLED" ||
+      row.emailConfirmExpiresAt !== null)
   ) {
     throw bookingNotFound();
   }
@@ -903,7 +938,9 @@ async function transitionBooking(request: TransitionRequest): Promise<Booking> {
     assertBookingTransitionAccess(user, existing, ownProfileId);
     // Demande pas encore payée (issue #10) : invisible du barber.
     const awaitingPayment = existing.paymentStatus === "REQUIRES_PAYMENT";
-    if (awaitingPayment && user.role === "BARBER") {
+    // Réservation express non confirmée (lot N6) : invisible du barber aussi.
+    const awaitingEmail = existing.emailConfirmExpiresAt !== null;
+    if ((awaitingPayment || awaitingEmail) && user.role === "BARBER") {
       throw bookingNotFound();
     }
 

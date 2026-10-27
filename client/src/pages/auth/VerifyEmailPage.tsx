@@ -9,6 +9,8 @@ import {
 import { AuthLayout } from "../../components/auth/AuthLayout";
 import { Alert } from "../../components/ui/Alert";
 import { Button } from "../../components/ui/Button";
+import { buttonClasses } from "../../components/ui/buttonStyles";
+import type { ExpressBookingOutcome } from "@findbarber/shared/types";
 
 type Phase = "verifying" | "success" | "error";
 
@@ -21,6 +23,8 @@ export function VerifyEmailPage() {
     null,
   );
   const startedRef = useRef(false);
+  // Réservation express (lot N6) : sort de la demande liée à ce compte.
+  const [express, setExpress] = useState<ExpressBookingOutcome | null>(null);
 
   useEffect(() => {
     document.title = t("verifyEmail.documentTitle");
@@ -53,6 +57,7 @@ export function VerifyEmailPage() {
     void runEmailVerification(token, (input) => authApi.verifyEmail(input)).then(
       (outcome) => {
         if (outcome.phase === "success") {
+          setExpress(outcome.expressBooking ?? null);
           setPhase("success");
         } else {
           setErrorMessage(outcome.message);
@@ -74,9 +79,19 @@ export function VerifyEmailPage() {
             {t("verifyEmail.verifying")}
           </Alert>
         )}
-        {phase === "success" && (
+        {phase === "success" && !express && (
           <Alert variant="success" role="status">
             {t("verifyEmail.success")}
+          </Alert>
+        )}
+        {phase === "success" && express?.status === "SENT" && (
+          <Alert variant="success" role="status">
+            {t("verifyEmail.express.sent", { barber: express.barberName })}
+          </Alert>
+        )}
+        {phase === "success" && express?.status === "EXPIRED" && (
+          <Alert variant="warning" role="status">
+            {t("verifyEmail.express.expired", { barber: express.barberName })}
           </Alert>
         )}
         {phase === "error" && (
@@ -93,6 +108,14 @@ export function VerifyEmailPage() {
         >
           {t("actions.login")}
         </Button>
+      )}
+      {phase === "success" && express?.status === "EXPIRED" && (
+        <Link
+          to={`/barbers/${express.barberId}`}
+          className={buttonClasses("secondary", "md", "mt-3 w-full")}
+        >
+          {t("verifyEmail.express.chooseAnother")}
+        </Link>
       )}
 
       {phase === "error" && (

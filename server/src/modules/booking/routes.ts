@@ -1,13 +1,16 @@
 import { Router } from "express";
+import { LIMITS } from "@findbarber/shared/constants";
 import {
   bookingCreateSchema,
   bookingDeclineSchema,
+  bookingExpressSchema,
   reviewCreateSchema,
 } from "@findbarber/shared/validation";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
 import { validationError } from "../../lib/validation.js";
 import { createReview } from "../review/service.js";
+import { createExpressBooking } from "./express.js";
 import {
   cancelBooking,
   completeBooking,
@@ -36,6 +39,23 @@ bookingRouter.post(
     res.status(201).json(await createBooking(req.user!.id, parsed.data));
   },
 );
+
+// Réservation express (lot N6) : visiteur SANS compte. Publique comme
+// l'inscription (aucune session, donc aucun CSRF), limitée en débit comme elle
+// (app.ts). Le champ masqué `website` piège les robots : rempli, la réponse est
+// la même qu'un succès mais rien n'est créé ni envoyé.
+bookingRouter.post("/express", async (req, res) => {
+  const parsed = bookingExpressSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw validationError(parsed.error);
+  }
+  if (parsed.data.website?.trim()) {
+    const decoy = new Date(Date.now() + LIMITS.expressBookingHoldMinutes * 60_000);
+    res.status(201).json({ expiresAt: decoy.toISOString() });
+    return;
+  }
+  res.status(201).json(await createExpressBooking(parsed.data));
+});
 
 // Liste : le CLIENT voit les siennes, le BARBER celles de son profil.
 bookingRouter.get(

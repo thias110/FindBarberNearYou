@@ -9,14 +9,14 @@ export function passwordByteLength(password: string): number {
   return new TextEncoder().encode(password).length;
 }
 
-const emailSchema = z
+export const emailSchema = z
   .string()
   .trim()
   .toLowerCase()
   .email("Invalid email address.")
   .max(254, "Email is too long.");
 
-const passwordSchema = z
+export const passwordSchema = z
   .string()
   .min(
     PASSWORD_MIN_LENGTH,

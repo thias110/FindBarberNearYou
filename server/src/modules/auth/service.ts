@@ -9,7 +9,11 @@ import {
   users,
   type User,
 } from "@findbarber/shared/schema";
-import type { PublicUser, Role } from "@findbarber/shared/types";
+import type {
+  ExpressBookingOutcome,
+  PublicUser,
+  Role,
+} from "@findbarber/shared/types";
 import {
   DEFAULT_LOCALE,
   LOCALES,
@@ -22,6 +26,7 @@ import {
   sendVerificationEmail,
 } from "../../lib/email.js";
 import { publicUploadPath } from "../../lib/storage.js";
+import { releaseExpressBookings } from "../booking/expressRelease.js";
 
 const BCRYPT_COST = 12;
 const EMAIL_TOKEN_BYTES = 32;
@@ -79,29 +84,14 @@ export async function registerUser(input: {
     );
   }
 
-  const passwordHash = await bcrypt.hash(input.password, BCRYPT_COST);
-
-  let created: User;
-  try {
-    const [user] = await db
-      .insert(users)
-      .values({
-        id: randomUUID(),
-        email,
-        passwordHash,
-        role: input.role,
-        name: input.name?.trim() || null,
-        locale: input.locale ?? DEFAULT_LOCALE,
-      })
-      .returning();
-
-    created = user;
-  } catch (err) {
-    if (isUniqueViolation(err)) {
-      throw new AppError(409, "EMAIL_TAKEN", "This email is already registered.");
-    }
-    throw err;
-  }
+  const passwordHash = await hashPassword(input.password);
+  const created = await insertUser(db, {
+    email,
+    passwordHash,
+    role: input.role,
+    name: input.name,
+    locale: input.locale,
+  });
 
   // Compte créé NON vérifié : émission immédiate du lien de vérification. Un
   // échec d'envoi n'échoue pas l'inscription (lien redemandable).
@@ -113,6 +103,47 @@ export async function registerUser(input: {
   });
 
   return toPublicUser(created);
+}
+
+/** Empreinte bcrypt d'un mot de passe (coût commun à tous les comptes). */
+export function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, BCRYPT_COST);
+}
+
+/**
+ * Crée un compte NON vérifié dans la transaction `runner` (inscription seule,
+ * ou compte puis demande pour la réservation express). `email` déjà normalisé.
+ * Un email déjà pris donne 409 `EMAIL_TAKEN`.
+ */
+export async function insertUser(
+  runner: typeof db,
+  input: {
+    email: string;
+    passwordHash: string;
+    role: Role;
+    name?: string;
+    locale?: Locale;
+  },
+): Promise<User> {
+  try {
+    const [user] = await runner
+      .insert(users)
+      .values({
+        id: randomUUID(),
+        email: input.email,
+        passwordHash: input.passwordHash,
+        role: input.role,
+        name: input.name?.trim() || null,
+        locale: input.locale ?? DEFAULT_LOCALE,
+      })
+      .returning();
+    return user!;
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      throw new AppError(409, "EMAIL_TAKEN", "This email is already registered.");
+    }
+    throw err;
+  }
 }
 
 export async function loginUser(input: {
@@ -163,9 +194,10 @@ export async function loginUser(input: {
 // Renvoie le jeton brut, destiné exclusivement à l'email de vérification.
 export async function issueEmailVerificationToken(
   userId: string,
+  runner: typeof db = db,
 ): Promise<string> {
   const token = generateEmailToken();
-  await db.insert(emailVerificationTokens).values({
+  await runner.insert(emailVerificationTokens).values({
     id: randomUUID(),
     userId,
     tokenHash: hashEmailToken(token),
@@ -178,7 +210,11 @@ export async function issueEmailVerificationToken(
 
 // Consomme un jeton valide et marque le compte vérifié. Usage unique + expiry
 // garantis atomiquement par l'UPDATE ... WHERE. Aucune session n'est créée.
-export async function verifyEmail(token: string): Promise<void> {
+// Réservation express (lot N6) : la demande en attente part chez le barber ;
+// le résultat dit au client si elle est partie ou si le délai était dépassé.
+export async function verifyEmail(
+  token: string,
+): Promise<{ expressBooking: ExpressBookingOutcome | null }> {
   const tokenHash = hashEmailToken(token);
   const now = new Date();
 
@@ -216,6 +252,8 @@ export async function verifyEmail(token: string): Promise<void> {
       "Invalid or expired verification link.",
     );
   }
+
+  return { expressBooking: await releaseExpressBookings(user.id, now) };
 }
 
 // Renvoi d'email de vérification. Réponse générique anti-énumération : on ne

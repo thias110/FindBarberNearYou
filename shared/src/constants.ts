@@ -377,6 +377,9 @@ export const LIMITS = {
   depositPercentMax: 90,
   depositPercentDefault: 20,
   paymentHoldMinutes: 35,
+  // Réservation express (lot N6) : délai pour cliquer sur le lien de l'email
+  // ; le créneau reste bloqué pendant ce délai.
+  expressBookingHoldMinutes: 30,
   paymentMinAmountMinor: 100,
   // Adresse client privée (lot 9 passe A, issue #19) : chaîne libre géocodée
   // côté serveur pour `AT_CLIENT`, jamais exposée publiquement.

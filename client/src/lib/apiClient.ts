@@ -33,6 +33,7 @@ import type {
   SiteConfigResponse,
   TimeOff,
   UnreadCountResponse,
+  VerifyEmailResponse,
   TimeOffResponse,
   WorkingHoursResponse,
 } from "@findbarber/shared/types";
@@ -46,6 +47,7 @@ import {
 } from "@findbarber/shared/constants";
 import type {
   BookingCreateInput,
+  BookingExpressInput,
   PaymentSettingsInput,
   ProfileRequest,
   ReviewCreateInput,
@@ -229,7 +231,7 @@ export interface AuthApi {
     password: string;
   }): Promise<{ user: PublicUser; csrfToken: string }>;
   logout(): Promise<void>;
-  verifyEmail(input: { token: string }): Promise<{ verified: boolean }>;
+  verifyEmail(input: { token: string }): Promise<VerifyEmailResponse>;
   resendVerification(input: { email: string }): Promise<{ ok: boolean }>;
   forgotPassword(input: { email: string }): Promise<{ ok: boolean }>;
   resetPassword(input: {
@@ -252,7 +254,7 @@ export const authApi: AuthApi = {
     }),
   logout: () => apiFetch<void>("/api/auth/logout", { method: "POST" }),
   verifyEmail: (input) =>
-    apiFetch<{ verified: boolean }>("/api/auth/verify-email", {
+    apiFetch<VerifyEmailResponse>("/api/auth/verify-email", {
       method: "POST",
       body: input,
     }),
@@ -676,6 +678,8 @@ export const barbersApi: PublicBarbersApi = {
 
 export interface BookingApi {
   create(input: BookingCreateInput): Promise<BookingCreateResponse>;
+  /** Réservation express (lot N6) : visiteur sans compte, sans session. */
+  createExpress(input: BookingExpressInput): Promise<{ expiresAt: string }>;
   list(): Promise<BookingsResponse>;
   getDetails(bookingId: string): Promise<{ booking: BookingDetails }>;
   confirm(bookingId: string): Promise<{ booking: Booking }>;
@@ -692,6 +696,11 @@ export interface BookingApi {
 export const bookingApi: BookingApi = {
   create: (input) =>
     apiFetch<BookingCreateResponse>("/api/bookings", {
+      method: "POST",
+      body: input,
+    }),
+  createExpress: (input) =>
+    apiFetch<{ expiresAt: string }>("/api/bookings/express", {
       method: "POST",
       body: input,
     }),

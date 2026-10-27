@@ -131,6 +131,47 @@ export function verificationEmail(
   });
 }
 
+/** Réservation express (lot N6) : le contexte du récapitulatif. */
+export interface ExpressBookingEmailContext {
+  barberName: string;
+  serviceName: string;
+  servicePlace: ServicePlace;
+  startAt: Date;
+  /** Fuseau du salon : l'heure affichée est toujours celle du salon. */
+  timeZone: string;
+  /** Délai pour cliquer sur le lien. */
+  minutes: number;
+}
+
+/**
+ * Réservation express (lot N6) : un seul email réunit la vérification de
+ * l'adresse et le récapitulatif de la demande. Le lien est celui de la
+ * vérification ordinaire ; le clic transmet la demande au barber.
+ */
+export function expressBookingEmail(
+  to: string,
+  token: string,
+  locale: string | null | undefined,
+  ctx: ExpressBookingEmailContext,
+): MailMessage {
+  const lang = resolveEmailLocale(locale);
+  const s = emailStrings(lang);
+  const url = appUrl(`/verify-email?token=${encodeURIComponent(token)}`);
+  const params = {
+    barber: ctx.barberName,
+    when: s.salonTime(formatBookingDate(ctx.startAt, ctx.timeZone, lang)),
+    what: `${ctx.serviceName} · ${s.servicePlace[ctx.servicePlace]}`,
+  };
+  return render(to, s.expressSubject(ctx.barberName), {
+    locale: lang,
+    strings: s,
+    title: s.expressTitle,
+    paragraphs: [s.expressIntro(params), s.expressDeadline(ctx.minutes)],
+    action: { label: s.expressAction, url },
+    footer: s.expressFooter,
+  });
+}
+
 /** `locale` : langue du destinataire (inconnue ou absente → français). */
 export function passwordResetEmail(
   to: string,

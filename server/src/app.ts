@@ -186,6 +186,9 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api/auth/register", registerLimiter);
   app.use("/api/auth/resend-verification", resendVerificationLimiter);
   app.use("/api/auth/verify-email", verifyEmailLimiter);
+  // Réservation express (lot N6) : crée un compte, donc même bucket que
+  // l'inscription (en plus de celui des mutations).
+  app.use("/api/bookings/express", registerLimiter);
   app.use("/api/bookings", mutationLimiter);
   app.use("/api/barber/address-suggestions", geocodeLimiter);
   app.use("/api/places", placesLimiter);

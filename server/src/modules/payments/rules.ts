@@ -1,4 +1,4 @@
-import { notInArray, sql, type SQL } from "drizzle-orm";
+import { and, isNull, notInArray, sql, type SQL } from "drizzle-orm";
 import { bookings } from "@findbarber/shared/schema";
 
 // --- Règles de paiement partagées (issue #10) ---
@@ -16,12 +16,13 @@ export const paymentStatusOnCancel: SQL = sql`CASE ${bookings.paymentStatus}
 /**
  * Réservations visibles par le barber (liste, détail, statistiques) : une
  * demande pas encore payée, ou abandonnée faute de paiement, n'existe pas pour
- * lui.
+ * lui ; une réservation express dont l'email n'a pas été confirmé non plus
+ * (lot N6).
  */
-export const visibleToBarber: SQL = notInArray(bookings.paymentStatus, [
-  "REQUIRES_PAYMENT",
-  "CANCELLED",
-]);
+export const visibleToBarber: SQL = and(
+  notInArray(bookings.paymentStatus, ["REQUIRES_PAYMENT", "CANCELLED"]),
+  isNull(bookings.emailConfirmExpiresAt),
+)!;
 
 // Calcul partagé avec le client (annonce du montant avant réservation).
 export { amountDueOnline } from "@findbarber/shared/booking";

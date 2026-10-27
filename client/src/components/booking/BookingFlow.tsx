@@ -8,7 +8,7 @@ import {
 } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { LIMITS, type ServicePlace } from "@findbarber/shared/constants";
+import { LIMITS, LOCALES, type ServicePlace } from "@findbarber/shared/constants";
 import { amountDueOnline } from "@findbarber/shared/booking";
 import type {
   Booking,
@@ -36,6 +36,13 @@ import {
 } from "../../lib/bookingWeek";
 import { cn } from "../../lib/cn";
 import { fieldErrorsFrom, focusFirstInvalid } from "../../lib/formErrors";
+import {
+  EMPTY_EXPRESS,
+  EXPRESS_FIELDS,
+  validateExpress,
+  type ExpressErrors,
+  type ExpressValues,
+} from "../../lib/expressBooking";
 import { formatCurrency, formatDuration } from "../../lib/formatters";
 import { downloadIcs } from "../../lib/ics";
 import { label } from "../../lib/labels";
@@ -53,6 +60,7 @@ import {
   SummaryList,
   type BookingSummaryData,
 } from "./BookingSummary";
+import { ExpressFields, ExpressSentScreen } from "./ExpressFields";
 import { WeekGrid, type SelectedSlot } from "./WeekGrid";
 
 type Step = 1 | 2 | 3;
@@ -111,7 +119,7 @@ export function BookingFlow({
   profile: PublicBarberProfile;
   services: PublicBarberService[];
 }) {
-  const { t } = useTranslation("client");
+  const { t, i18n } = useTranslation("client");
   const { user } = useAuth();
 
   const [step, setStep] = useState<Step>(1);
@@ -133,6 +141,10 @@ export function BookingFlow({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
+  // Réservation express (lot N6) : visiteur sans compte.
+  const [express, setExpress] = useState<ExpressValues>(EMPTY_EXPRESS);
+  const [expressErrors, setExpressErrors] = useState<ExpressErrors>({});
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   const formRef = useRef<HTMLFormElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -273,7 +285,20 @@ export function BookingFlow({
       return;
     }
 
-    if (!user || user.role !== "CLIENT" || !selected) return;
+    if (!selected) return;
+    // Visiteur sans compte : réservation express, si le barber ne demande pas
+    // de paiement en ligne (lot N6).
+    const visitor = !user;
+    if (visitor && !expressAllowed) return;
+    if (!visitor && user.role !== "CLIENT") return;
+    if (visitor) {
+      const errors = validateExpress(express, t);
+      setExpressErrors(errors);
+      if (Object.keys(errors).length > 0) {
+        focusFirstInvalid(formRef.current);
+        return;
+      }
+    }
 
     const input: BookingCreateInput = {
       barberId,
@@ -288,6 +313,18 @@ export function BookingFlow({
 
     setSubmitting(true);
     try {
+      if (visitor) {
+        await bookingApi.createExpress({
+          ...input,
+          name: express.name.trim(),
+          email: express.email.trim(),
+          password: express.password,
+          website: express.website,
+          locale: LOCALES.find((code) => code === i18n.resolvedLanguage),
+        });
+        setSentTo(express.email.trim());
+        return;
+      }
       const result = await bookingApi.create(input);
       // Paiement en ligne exigé (issue #10) : direction Stripe Checkout. La
       // demande n'est transmise au barber qu'une fois le paiement reçu.
@@ -302,6 +339,18 @@ export function BookingFlow({
       // ADDRESS_NOT_FOUND, GEOCODING_UNAVAILABLE, BARBER_TIMEZONE_MISSING,
       // VALIDATION_ERROR…). Un refus lié à un champ s'affiche sous ce champ
       // (issue #57), à l'étape qui le porte.
+      if (visitor) {
+        // Email déjà connu : connexion demandée, jamais de fusion de comptes.
+        const accountErrors: ExpressErrors =
+          err instanceof ApiError && err.code === "EMAIL_TAKEN"
+            ? { email: t("booking.flow.express.errors.emailTaken") }
+            : fieldErrorsFrom(err, EXPRESS_FIELDS);
+        if (Object.keys(accountErrors).length > 0) {
+          setExpressErrors(accountErrors);
+          focusFirstInvalid(formRef.current);
+          return;
+        }
+      }
       const field = err instanceof ApiError ? FIELD_BY_ERROR_CODE[err.code] : undefined;
       const fields: BookingFormErrors = field
         ? { [field]: (err as ApiError).message }
@@ -337,7 +386,6 @@ export function BookingFlow({
     else void handleSubmit();
   }
 
-  const canSubmit = Boolean(user && user.role === "CLIENT");
   const onlineAmount = selectedService
     ? amountDueOnline(
         profile.onlinePayment.mode,
@@ -345,6 +393,10 @@ export function BookingFlow({
         selectedService.priceMinor,
       )
     : 0;
+  // Réservation express (lot N6) : réservée aux visiteurs, et seulement sans
+  // paiement en ligne (sinon un compte classique reste demandé).
+  const expressAllowed = !user && onlineAmount === 0;
+  const canSubmit = Boolean(user && user.role === "CLIENT") || expressAllowed;
 
   const summary: BookingSummaryData = {
     barberName: profile.displayName,
@@ -360,16 +412,26 @@ export function BookingFlow({
 
   const authNotice = (
     <>
-      {!user && (
+      {!user && !expressAllowed && (
         <Alert variant="info">
           <Trans
             t={t}
             ns="client"
-            i18nKey="booking.flow.loginPrompt"
+            i18nKey={
+              onlineAmount > 0
+                ? "booking.flow.express.paymentNeedsAccount"
+                : "booking.flow.loginPrompt"
+            }
             components={{
               loginLink: (
                 <Link
                   to="/login"
+                  className="font-medium text-accent-strong underline"
+                />
+              ),
+              registerLink: (
+                <Link
+                  to="/register"
                   className="font-medium text-accent-strong underline"
                 />
               ),
@@ -382,6 +444,13 @@ export function BookingFlow({
       )}
     </>
   );
+
+  // --- Réservation express envoyée : reste le clic sur le lien de l'email ---
+  if (sentTo) {
+    return (
+      <ExpressSentScreen email={sentTo} summary={summary} headingRef={headingRef} />
+    );
+  }
 
   // --- Écran de confirmation -------------------------------------------------
   if (confirmed) {
@@ -557,6 +626,21 @@ export function BookingFlow({
                       })}{" "}
                   {t("booking.flow.onlineDetails")}
                 </Alert>
+              )}
+              {expressAllowed && (
+                <ExpressFields
+                  values={express}
+                  errors={expressErrors}
+                  onChange={(field, value) => {
+                    setExpress((current) => ({ ...current, [field]: value }));
+                    setExpressErrors((current) => {
+                      if (!(field in current)) return current;
+                      const next = { ...current };
+                      delete next[field as keyof ExpressErrors];
+                      return next;
+                    });
+                  }}
+                />
               )}
               {authNotice}
               {/* Erreur globale juste au-dessus du bouton (issue #57). */}

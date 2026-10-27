@@ -23,6 +23,11 @@ export function occupiesSlotCondition(now: Date) {
         // Demande non payée (issue #10) : bloque seulement jusqu'à
         // l'échéance du paiement.
         or(isNull(bookings.paymentExpiresAt), gt(bookings.paymentExpiresAt, now)),
+        // Réservation express (lot N6) : jusqu'à l'échéance de l'email.
+        or(
+          isNull(bookings.emailConfirmExpiresAt),
+          gt(bookings.emailConfirmExpiresAt, now),
+        ),
       ),
     ),
   );

@@ -80,6 +80,20 @@ export interface AddressSuggestion {
   longitude: number;
 }
 
+// Réservation express (lot N6) : sort de la demande au clic sur le lien de
+// l'email. `SENT` : transmise au barber ; `EXPIRED` : délai dépassé.
+export interface ExpressBookingOutcome {
+  status: "SENT" | "EXPIRED";
+  barberName: string;
+  barberId: string;
+}
+
+export interface VerifyEmailResponse {
+  verified: boolean;
+  /** Demande express du compte, ou `null` pour une inscription ordinaire. */
+  expressBooking: ExpressBookingOutcome | null;
+}
+
 // Suggestion de ville ou de quartier pour la recherche publique (lot N4).
 // `name` est la valeur placée dans le champ Ville ; `label` ajoute le contexte
 // (région, pays) pour distinguer les homonymes. Jamais de coordonnées ni
