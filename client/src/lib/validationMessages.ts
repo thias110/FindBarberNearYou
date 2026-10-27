@@ -128,6 +128,7 @@ const EXACT: ReadonlyArray<readonly [source: string, key: string, params?: Param
   // Autocomplétion d'adresse
   ["Saisissez au moins 3 caractères.", "addressSuggestions.queryTooShort"],
   ["La recherche est trop longue.", "addressSuggestions.queryTooLong"],
+  ["Saisissez au moins 2 caractères.", "addressSuggestions.placeQueryTooShort"],
 
   // Horaires
   ["Le jour doit être un entier.", "workingHours.weekdayInteger"],

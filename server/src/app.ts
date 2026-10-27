@@ -8,6 +8,7 @@ import { barberRouter } from "./modules/barber/routes.js";
 import { barbersRouter } from "./modules/barber/publicRoutes.js";
 import { bookingRouter } from "./modules/booking/routes.js";
 import { notificationRouter } from "./modules/notification/routes.js";
+import { placesRouter } from "./modules/places/routes.js";
 import { userRouter } from "./modules/user/routes.js";
 import { siteRouter } from "./modules/site/routes.js";
 import { errorHandler } from "./middleware/error.js";
@@ -35,6 +36,7 @@ export interface AppOptions {
     verifyEmail?: RateLimitOverride;
     passwordReset?: RateLimitOverride;
     geocode?: RateLimitOverride;
+    places?: RateLimitOverride;
   };
 }
 
@@ -137,6 +139,14 @@ export function createApp(options: AppOptions = {}): express.Express {
     skip: !options.rateLimits?.geocode && env.NODE_ENV === "test",
   });
 
+  // Autocomplétion de ville (lot N4) : route publique qui appelle le même
+  // fournisseur payant, donc un bucket plus strict que celui du barber.
+  const placesLimiter = createRateLimiter({
+    windowMs: options.rateLimits?.places?.windowMs ?? 60_000,
+    limit: options.rateLimits?.places?.limit ?? 20,
+    skip: !options.rateLimits?.places && env.NODE_ENV === "test",
+  });
+
   // Emails de réservation (issue #9) : après toute mutation réussie, la file
   // `email_outbox` est traitée sans attendre l'intervalle du répartiteur.
   app.use("/api", (req, res, next) => {
@@ -159,6 +169,7 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api/auth/verify-email", verifyEmailLimiter);
   app.use("/api/bookings", mutationLimiter);
   app.use("/api/barber/address-suggestions", geocodeLimiter);
+  app.use("/api/places", placesLimiter);
   app.use("/api/barber", mutationLimiter);
   // Modérations admin (suspend/reactivate/hide) : même bucket mutations que
   // les autres écritures sensibles ; les GET admin ne sont pas comptés.
@@ -179,6 +190,7 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api/barber/payments", barberPaymentsRouter);
   app.use("/api/barber", barberRouter);
   app.use("/api/barbers", barbersRouter);
+  app.use("/api/places", placesRouter);
   app.use("/api/bookings", bookingRouter);
   app.use("/api/notifications", notificationRouter);
 

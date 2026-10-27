@@ -16,6 +16,11 @@
     "emptyDescription": "Tap the heart on a barber to find them here.",
     "emptyAction": "Explore barbers"
   },
+  "cityField": {
+    "listLabel": "Suggested cities",
+    "count_one": "{{count}} suggestion available",
+    "count_other": "{{count}} suggestions available"
+  },
   "distance": {
     "lessThanOneKm": "less than 1 km"
   },

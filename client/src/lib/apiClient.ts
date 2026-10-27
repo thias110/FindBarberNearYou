@@ -20,6 +20,7 @@ import type {
   FavoritesResponse,
   OwnBarberPhoto,
   OwnBarberPhotosResponse,
+  PlaceSuggestionsResponse,
   AddressSuggestion,
   OwnBarberProfile,
   ProfileCompletion,
@@ -276,6 +277,16 @@ export const authApi: AuthApi = {
 // Configuration publique du site (issues #58, #59) : contact, réseaux, éditeur.
 export const siteApi = {
   config: () => apiFetch<SiteConfigResponse>("/api/site-config"),
+};
+
+// Villes et quartiers pour le champ Ville de la recherche (lot N4) : route
+// publique, sans session.
+export const placesApi = {
+  suggest: (q: string, signal?: AbortSignal) =>
+    apiFetch<PlaceSuggestionsResponse>(
+      `/api/places/suggest${toQueryString({ q })}`,
+      { signal },
+    ),
 };
 
 export interface UserApi {

@@ -10,6 +10,7 @@ import { useSignatureOnce } from "../../lib/useSignatureOnce";
 import { Button } from "../ui/Button";
 import { FadeMotif } from "../ui/FadeMotif";
 import { SegmentedControl } from "../ui/SegmentedControl";
+import { CityCombobox } from "../search/CityCombobox";
 
 export type HeroPlace = ServicePlace | "";
 
@@ -143,14 +144,13 @@ export function HomeHero({ user, onSearch, fullBleed = false }: HomeHeroProps) {
             <label htmlFor={cityId} className="sr-only">
               {t("home.hero.cityLabel")}
             </label>
-            <input
+            <CityCombobox
               id={cityId}
-              type="text"
               value={city}
-              onChange={(event) => setCity(event.target.value)}
+              onChange={setCity}
               placeholder={t("home.hero.cityPlaceholder")}
-              autoComplete="address-level2"
-              className="min-w-0 flex-1 bg-transparent py-2 text-base text-foreground outline-none placeholder:text-foreground-muted"
+              wrapperClassName="min-w-0 flex-1"
+              className="w-full bg-transparent py-2 text-base text-foreground outline-none placeholder:text-foreground-muted"
             />
           </div>
           <SegmentedControl<HeroPlace>

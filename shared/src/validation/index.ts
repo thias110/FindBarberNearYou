@@ -5,6 +5,7 @@ export * from "./booking";
 export * from "./favorites";
 export * from "./gallery";
 export * from "./notifications";
+export * from "./places";
 export * from "./review";
 export * from "./safeText";
 export * from "./stats";

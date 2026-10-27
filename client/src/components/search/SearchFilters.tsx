@@ -8,10 +8,10 @@ import type { VisitorPositionStatus } from "../../lib/visitorPosition";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Field } from "../ui/Field";
-import { Input } from "../ui/Input";
 import { Sheet } from "../ui/Sheet";
 import { chipClasses } from "../ui/chipStyles";
 import { CONTROL_CLASS } from "../ui/control";
+import { CityCombobox } from "./CityCombobox";
 
 // Filtres « intelligents » (issue #52) : uniquement prix, distance et note
 // minimale, chacun appliqué en un geste (sans bouton « Rechercher »). Une
@@ -178,12 +178,12 @@ export function SearchFilters({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <Field label={t("search.filters.cityLabel")} className="min-w-0 flex-1">
             {(control) => (
-              <Input
+              <CityCombobox
                 {...control}
                 value={city}
-                onChange={(event) => onCityChange(event.target.value)}
+                onChange={onCityChange}
                 placeholder={t("search.filters.cityLabel")}
-                autoComplete="address-level2"
+                className={CONTROL_CLASS}
               />
             )}
           </Field>
