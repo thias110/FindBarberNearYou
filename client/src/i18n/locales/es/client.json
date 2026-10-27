@@ -2,6 +2,20 @@
   "audience": {
     "mixed": "Unisex"
   },
+  "favorites": {
+    "title": "Mis favoritos",
+    "intro": "Encuentra a tus barberos y reserva de nuevo en dos clics.",
+    "add": "Añadir a {{name}} a favoritos",
+    "remove": "Quitar a {{name}} de favoritos",
+    "loginToAdd": "Inicia sesión para añadir a {{name}} a favoritos",
+    "error": "No se pudieron actualizar tus favoritos. Inténtalo de nuevo.",
+    "limitReached": "Has alcanzado el límite de {{count}} favoritos. Quita uno para añadir otro.",
+    "loading": "Cargando tus favoritos…",
+    "loadError": "No se pudieron cargar tus favoritos.",
+    "emptyTitle": "Aún no tienes favoritos",
+    "emptyDescription": "Toca el corazón de un barbero para encontrarlo aquí.",
+    "emptyAction": "Explorar barberos"
+  },
   "distance": {
     "lessThanOneKm": "menos de 1 km"
   },

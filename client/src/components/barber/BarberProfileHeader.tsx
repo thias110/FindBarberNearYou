@@ -4,6 +4,7 @@ import { localizedCountryName } from "../../lib/countryName";
 import { resolveUploadUrl } from "../../lib/apiClient";
 import { formatRating } from "../../lib/formatters";
 import { label } from "../../lib/labels";
+import { FavoriteButton } from "../client/FavoriteButton";
 import { StarIcon } from "../search/BarberHighlights";
 import { Badge } from "../ui/Badge";
 import { CertifiedBadge } from "./CertifiedBadge";
@@ -42,7 +43,7 @@ export function BarberProfileHeader({
             {profile.displayName.charAt(0).toUpperCase()}
           </div>
         )}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground">
             {profile.displayName}
           </h1>
@@ -66,6 +67,7 @@ export function BarberProfileHeader({
             </div>
           )}
         </div>
+        <FavoriteButton barberId={profile.id} name={profile.displayName} />
       </div>
 
       <p className="mt-4 whitespace-pre-line text-foreground">

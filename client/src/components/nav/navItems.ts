@@ -23,6 +23,7 @@ export const SIDEBAR_ITEMS: Record<AppRole, NavItem[]> = {
     { to: "/", icon: "home", label: "common:nav.home", end: true },
     { to: "/barbers", icon: "search", label: "common:nav.search" },
     { to: "/appointments", icon: "calendar", label: "common:nav.appointments" },
+    { to: "/favorites", icon: "heart", label: "common:nav.favorites" },
     { to: "/account", icon: "user", label: "common:nav.account" },
   ],
   BARBER: [
@@ -39,12 +40,13 @@ export const SIDEBAR_ITEMS: Record<AppRole, NavItem[]> = {
   ],
 };
 
-// Barre d'onglets mobile : 4 onglets client, 5 onglets barber.
+// Barre d'onglets mobile : 5 onglets client, 5 onglets barber.
 export const TAB_ITEMS: Record<AppRole, NavItem[]> = {
   CLIENT: [
     { to: "/", icon: "home", label: "common:nav.home", end: true },
     { to: "/barbers", icon: "search", label: "common:nav.search" },
     { to: "/appointments", icon: "calendar", label: "common:nav.appointments" },
+    { to: "/favorites", icon: "heart", label: "common:nav.favorites" },
     { to: "/account", icon: "user", label: "common:nav.accountShort" },
   ],
   BARBER: [

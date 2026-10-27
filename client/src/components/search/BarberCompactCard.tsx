@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
@@ -21,9 +22,12 @@ type CompactBarber = Pick<
 // note) et un lien vers le profil. Le nom est un lien étendu à toute la carte.
 export function BarberCompactCard({
   barber,
+  action,
   className,
 }: {
   barber: CompactBarber;
+  /** Action à droite (ex. le cœur des favoris), au-dessus du lien étendu. */
+  action?: ReactNode;
   className?: string;
 }) {
   const { t } = useTranslation("client");
@@ -51,6 +55,7 @@ export function BarberCompactCard({
       <span aria-hidden="true" className={buttonClasses("link", "md", "shrink-0 text-sm")}>
         {t("search.result.viewProfile")}
       </span>
+      {action && <div className="relative z-10 shrink-0">{action}</div>}
     </article>
   );
 }

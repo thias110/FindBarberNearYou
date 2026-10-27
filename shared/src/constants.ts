@@ -368,6 +368,8 @@ export const LIMITS = {
   // Minimisation (issue #14) : l'adresse et la position d'un client (AT_CLIENT)
   // sont effacées ce nombre de jours après la fin du rendez-vous.
   clientAddressRetentionDays: 30,
+  // Favoris (lot N5) : nombre maximal de barbers gardés par un client.
+  favoritesMax: 100,
   // Paiement (issue #10) : acompte en pourcentage du prix, délai pour payer
   // une demande (le créneau reste bloqué pendant ce délai), montant minimal
   // accepté par Stripe (en unités mineures).

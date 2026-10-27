@@ -10,6 +10,7 @@ const EXACT: Record<string, string> = {
   "/": "home",
   "/barbers": "barbers",
   "/appointments": "appointments",
+  "/favorites": "favorites",
   "/account": "account",
   "/settings": "settings",
   "/mentions-legales": "legal",

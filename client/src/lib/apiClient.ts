@@ -17,6 +17,7 @@ import type {
   BookingsResponse,
   BookingSlotsResponse,
   BookingSlotsRangeResponse,
+  FavoritesResponse,
   OwnBarberPhoto,
   OwnBarberPhotosResponse,
   AddressSuggestion,
@@ -283,6 +284,10 @@ export interface UserApi {
   /** Export RGPD (issue #14) : objet JSON de toutes les données du compte. */
   exportData(): Promise<unknown>;
   updateLocale(locale: Locale): Promise<{ user: PublicUser }>;
+  /** Favoris du CLIENT (lot N5) : cartes publiques, du plus récent au plus ancien. */
+  listFavorites(): Promise<FavoritesResponse>;
+  addFavorite(barberId: string): Promise<void>;
+  removeFavorite(barberId: string): Promise<void>;
   /** Suppression définitive (anonymisation), confirmée par le mot de passe. */
   deleteAccount(password: string): Promise<void>;
 }
@@ -304,6 +309,15 @@ export const userApi: UserApi = {
     apiFetch<{ user: PublicUser }>("/api/users/me/locale", {
       method: "PATCH",
       body: { locale },
+    }),
+  listFavorites: () => apiFetch<FavoritesResponse>("/api/users/me/favorites"),
+  addFavorite: (barberId) =>
+    apiFetch<void>(`/api/users/me/favorites/${encodeURIComponent(barberId)}`, {
+      method: "PUT",
+    }),
+  removeFavorite: (barberId) =>
+    apiFetch<void>(`/api/users/me/favorites/${encodeURIComponent(barberId)}`, {
+      method: "DELETE",
     }),
   deleteAccount: (password) =>
     apiFetch<void>("/api/users/me", { method: "DELETE", body: { password } }),

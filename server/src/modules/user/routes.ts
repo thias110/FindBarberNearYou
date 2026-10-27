@@ -1,9 +1,10 @@
 import { Router } from "express";
 import {
   deleteAccountSchema,
+  favoriteParamsSchema,
   localeUpdateSchema,
 } from "@findbarber/shared/validation";
-import { requireAuth } from "../../middleware/auth.js";
+import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
 import { uploadImage } from "../../middleware/upload.js";
 import { AppError } from "../../lib/errors.js";
@@ -12,6 +13,11 @@ import { deleteAvatar, updateAvatar, updateLocale } from "./service.js";
 import { AUTH_COOKIE, CSRF_COOKIE } from "../../lib/cookies.js";
 import { validationError } from "../../lib/validation.js";
 import { deleteOwnAccount, exportPersonalData } from "../privacy/service.js";
+import {
+  addFavorite,
+  listFavorites,
+  removeFavorite,
+} from "../favorites/service.js";
 
 export const userRouter = Router();
 
@@ -52,6 +58,48 @@ userRouter.patch("/me/locale", requireAuth, csrfProtection, async (req, res) => 
   const user = await updateLocale(req.user!.id, parsed.data.locale);
   res.json({ user: toPublicUser(user) });
 });
+
+// --- Favoris (lot N5) : CLIENT uniquement, écritures protégées par le CSRF ---
+
+userRouter.get(
+  "/me/favorites",
+  requireAuth,
+  requireRole("CLIENT"),
+  async (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json(await listFavorites(req.user!.id));
+  },
+);
+
+userRouter.put(
+  "/me/favorites/:barberId",
+  requireAuth,
+  requireRole("CLIENT"),
+  csrfProtection,
+  async (req, res) => {
+    const parsed = favoriteParamsSchema.safeParse(req.params);
+    if (!parsed.success) {
+      throw validationError(parsed.error);
+    }
+    await addFavorite(req.user!.id, parsed.data.barberId);
+    res.status(204).end();
+  },
+);
+
+userRouter.delete(
+  "/me/favorites/:barberId",
+  requireAuth,
+  requireRole("CLIENT"),
+  csrfProtection,
+  async (req, res) => {
+    const parsed = favoriteParamsSchema.safeParse(req.params);
+    if (!parsed.success) {
+      throw validationError(parsed.error);
+    }
+    await removeFavorite(req.user!.id, parsed.data.barberId);
+    res.status(204).end();
+  },
+);
 
 // --- Données personnelles (issue #14) ---
 

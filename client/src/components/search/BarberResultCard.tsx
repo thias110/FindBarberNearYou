@@ -8,6 +8,7 @@ import { formatDistance } from "../../lib/geo";
 import { label } from "../../lib/labels";
 import { Badge } from "../ui/Badge";
 import { CertifiedBadge } from "../barber/CertifiedBadge";
+import { FavoriteButton } from "../client/FavoriteButton";
 import { Card } from "../ui/Card";
 import { buttonClasses } from "../ui/buttonStyles";
 import { BarberPhoto, NextSlot, RatingSummary, StartingPrice } from "./BarberHighlights";
@@ -23,7 +24,7 @@ interface BarberResultCardProps {
 // Carte « résultat » (gabarit du lot DS-3 : plan §2.6.4). Contenu strictement
 // limité à la whitelist publique `PublicBarberSearchItem` : photo, note, prix
 // « à partir de » (#48), prochain créneau libre (lot N1) ; aucune donnée
-// privée. Le favori (lot N5) viendra avec ses données.
+// privée. Le cœur des favoris (lot N5) est posé en haut à droite.
 export function BarberResultCard({
   barber,
   distanceKm = null,
@@ -51,10 +52,15 @@ export function BarberResultCard({
         aria-pressed={selected}
         className="absolute inset-0 z-0 rounded-2xl focus-ring"
       />
+      <FavoriteButton
+        barberId={barber.id}
+        name={barber.displayName}
+        className="absolute right-3 top-3 z-20"
+      />
       <div className="pointer-events-none relative z-10">
         <div className="flex items-start gap-4">
           <BarberPhoto barber={barber} className="h-20 w-20 rounded-xl text-2xl" />
-          <div className="min-w-0">
+          <div className="min-w-0 pr-12">
             {/* h2 pour la hiérarchie de la page, style « h3 » du système. */}
             <h2 className="text-h3 font-bold text-foreground">
               {barber.displayName}

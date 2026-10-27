@@ -169,6 +169,13 @@
       "when": 1792411150275,
       "tag": "0023_no_show",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793122824988,
+      "tag": "0024_favorites",
+      "breakpoints": true
     }
   ]
 }
