@@ -28,6 +28,8 @@ function stalePendingCondition(now: Date) {
       lte(bookings.startAt, now),
       // Demande non payée dans le délai (issue #10).
       lte(bookings.paymentExpiresAt, now),
+      // Réservation express dont l'email n'a pas été confirmé (lot N6).
+      lte(bookings.emailConfirmExpiresAt, now),
     ),
   );
 }
@@ -59,6 +61,7 @@ export async function expireStalePendingBookings(
     .returning({
       id: bookings.id,
       paymentStatus: bookings.paymentStatus,
+      emailConfirmExpiresAt: bookings.emailConfirmExpiresAt,
       clientUserId: bookings.clientUserId,
       barberUserId: sql<string>`(select ${barberProfiles.userId} from ${barberProfiles} where ${barberProfiles.id} = ${bookings.barberProfileId})`,
     });
@@ -78,6 +81,9 @@ export async function expireStalePendingBookings(
   for (const row of expired) {
     // Demande jamais payée : jamais montrée au barber, pas de notification.
     if (row.paymentStatus === "CANCELLED") continue;
+    // Réservation express jamais confirmée (lot N6) : le barber ne l'a pas vue,
+    // et l'adresse du client n'est pas vérifiée (aucun email de plus).
+    if (row.emailConfirmExpiresAt !== null) continue;
     for (const recipientUserId of [row.clientUserId, row.barberUserId]) {
       if (!recipientUserId) continue;
       await notifyBookingEvent(runner, {

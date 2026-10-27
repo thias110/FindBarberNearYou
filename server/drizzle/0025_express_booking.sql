@@ -1,0 +1,1 @@
+ALTER TABLE "bookings" ADD COLUMN "email_confirm_expires_at" timestamp with time zone;

@@ -301,6 +301,29 @@
         "body": "El profesional todavía tiene que confirmarla. La encontrarás en tus citas.",
         "addToCalendar": "Añadir al calendario",
         "viewAppointments": "Ver mis citas"
+      },
+      "express": {
+        "title": "Tus datos",
+        "intro": "¿Aún no tienes cuenta? Se crea con tu solicitud. Después confirmarás tu email para enviarla al barbero.",
+        "name": "Nombre",
+        "email": "Email",
+        "password": "Contraseña",
+        "passwordHint": "Al menos {{min}} caracteres. Te servirá para seguir tu reserva.",
+        "honeypot": "Deja este campo vacío",
+        "haveAccount": "¿Ya tienes cuenta? <loginLink>Inicia sesión</loginLink>.",
+        "paymentNeedsAccount": "Este profesional exige el pago en línea: <loginLink>inicia sesión</loginLink> o <registerLink>crea una cuenta</registerLink> para reservar.",
+        "errors": {
+          "nameRequired": "Indica tu nombre.",
+          "emailInvalid": "Escribe una dirección de email válida.",
+          "passwordTooShort": "La contraseña debe tener al menos {{min}} caracteres.",
+          "emailTaken": "Ya existe una cuenta con este email: inicia sesión para reservar."
+        },
+        "sent": {
+          "title": "Revisa tu email",
+          "body": "Hemos enviado un enlace a {{email}}. Haz clic en él en los próximos {{minutes}} minutos para enviar tu solicitud a {{barber}}: el horario queda reservado para ti hasta entonces.",
+          "notReceived": "¿No lo has recibido? Revisa la carpeta de spam o <resendLink>vuelve a enviar el enlace</resendLink>.",
+          "login": "Ya lo he confirmado, iniciar sesión"
+        }
       }
     },
     "validation": {

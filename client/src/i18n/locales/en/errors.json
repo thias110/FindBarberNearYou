@@ -59,5 +59,6 @@
   "USER_DELETED": "This account has been deleted.",
   "USER_NOT_FOUND": "User not found.",
   "USER_NOT_SUSPENDED": "This user isn't suspended.",
-  "VALIDATION_ERROR": "Some information is invalid."
+  "VALIDATION_ERROR": "Some information is invalid.",
+  "EXPRESS_BOOKING_PAYMENT_REQUIRED": "This professional requires online payment: create an account or sign in to book."
 }

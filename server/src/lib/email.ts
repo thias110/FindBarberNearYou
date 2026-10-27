@@ -1,4 +1,9 @@
-import { passwordResetEmail, verificationEmail } from "./emailTemplates.js";
+import {
+  expressBookingEmail,
+  passwordResetEmail,
+  verificationEmail,
+  type ExpressBookingEmailContext,
+} from "./emailTemplates.js";
 import { sendMail, type MailMessage } from "./mailer.js";
 
 // --- Emails à jeton (vérification, réinitialisation) — issue #9 ---
@@ -26,6 +31,20 @@ export async function sendVerificationEmail(input: {
   await sendSafely(
     verificationEmail(input.to, input.token, input.locale),
     "vérification",
+  );
+}
+
+/** Réservation express (lot N6) : vérification et récapitulatif en un email. */
+export async function sendExpressBookingEmail(
+  input: ExpressBookingEmailContext & {
+    to: string;
+    token: string;
+    locale?: string | null;
+  },
+): Promise<void> {
+  await sendSafely(
+    expressBookingEmail(input.to, input.token, input.locale, input),
+    "réservation express",
   );
 }
 

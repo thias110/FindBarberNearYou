@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { LIMITS, PAYMENT_MODES, SERVICE_PLACES } from "../constants";
+import { LIMITS, LOCALES, PAYMENT_MODES, SERVICE_PLACES } from "../constants";
 import { isValidCalendarDate } from "../dates";
+import { emailSchema, passwordSchema } from "./auth";
 import { safeText } from "./safeText";
 
 const objectIdSchema = z
@@ -31,40 +32,65 @@ const clientAddressSchema = safeText(
 // Le client ne choisit QUE la date et la minute murale locale : le serveur
 // recalcule les créneaux et fait autorité. Aucun instant UTC ni prix/durée
 // fourni par le client n'est accepté (champs inconnus refusés).
-export const bookingCreateSchema = z
-  .object({
-    barberId: objectIdSchema,
-    serviceId: objectIdSchema,
-    date: calendarDateSchema,
-    startMinute: z
-      .number()
-      .int("La minute de début doit être un entier.")
-      .min(0, "La minute de début ne peut pas être négative.")
-      .max(1439, "La minute de début ne peut pas dépasser 23:59."),
-    place: servicePlaceSchema,
-    clientAddress: clientAddressSchema.optional(),
-  })
-  .strict()
-  .superRefine((data, ctx) => {
-    if (data.place === "AT_CLIENT") {
-      if (!data.clientAddress) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Une adresse est requise pour une prestation chez le client.",
-          path: ["clientAddress"],
-        });
-      }
-    } else if (data.clientAddress) {
+const bookingFields = {
+  barberId: objectIdSchema,
+  serviceId: objectIdSchema,
+  date: calendarDateSchema,
+  startMinute: z
+    .number()
+    .int("La minute de début doit être un entier.")
+    .min(0, "La minute de début ne peut pas être négative.")
+    .max(1439, "La minute de début ne peut pas dépasser 23:59."),
+  place: servicePlaceSchema,
+  clientAddress: clientAddressSchema.optional(),
+};
+
+// Adresse client exigée pour AT_CLIENT, refusée sinon (création et express).
+function refineClientAddress(
+  data: { place: string; clientAddress?: string },
+  ctx: z.RefinementCtx,
+): void {
+  if (data.place === "AT_CLIENT") {
+    if (!data.clientAddress) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          "L'adresse client n'est autorisée que pour une prestation chez le client (AT_CLIENT).",
+        message: "Une adresse est requise pour une prestation chez le client.",
         path: ["clientAddress"],
       });
     }
-  });
+  } else if (data.clientAddress) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        "L'adresse client n'est autorisée que pour une prestation chez le client (AT_CLIENT).",
+      path: ["clientAddress"],
+    });
+  }
+}
+
+export const bookingCreateSchema = z
+  .object(bookingFields)
+  .strict()
+  .superRefine(refineClientAddress);
 
 export type BookingCreateInput = z.infer<typeof bookingCreateSchema>;
+
+// Réservation express (lot N6) : un visiteur crée son compte dans le tunnel.
+// Mêmes règles que l'inscription pour l'email, le mot de passe et le nom ;
+// `website` est un piège à robots (champ masqué, doit rester vide).
+export const bookingExpressSchema = z
+  .object({
+    ...bookingFields,
+    email: emailSchema,
+    password: passwordSchema,
+    name: safeText(100, "Name is too long.").min(1, "Name cannot be empty."),
+    locale: z.enum(LOCALES).optional(),
+    website: z.string().max(500).optional(),
+  })
+  .strict()
+  .superRefine(refineClientAddress);
+
+export type BookingExpressInput = z.infer<typeof bookingExpressSchema>;
 
 // --- Créneaux publics ---
 export const bookingSlotsQuerySchema = z

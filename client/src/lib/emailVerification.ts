@@ -1,3 +1,4 @@
+import type { ExpressBookingOutcome } from "@findbarber/shared/types";
 import { ApiError } from "./apiClient";
 
 // --- Vérification d'email (page /verify-email) ---
@@ -18,7 +19,8 @@ export type EmailVerificationMessage =
   | typeof NETWORK_MESSAGE;
 
 export type EmailVerificationOutcome =
-  | { phase: "success" }
+  // Réservation express (lot N6) : présente seulement si le compte en a une.
+  | { phase: "success"; expressBooking?: ExpressBookingOutcome }
   | { phase: "error"; message: EmailVerificationMessage };
 
 export async function runEmailVerification(
@@ -29,8 +31,12 @@ export async function runEmailVerification(
     return { phase: "error", message: INVALID_TOKEN_MESSAGE };
   }
   try {
-    await verify({ token });
-    return { phase: "success" };
+    const result = (await verify({ token })) as {
+      expressBooking?: ExpressBookingOutcome | null;
+    } | null;
+    return result?.expressBooking
+      ? { phase: "success", expressBooking: result.expressBooking }
+      : { phase: "success" };
   } catch (err) {
     if (err instanceof ApiError) {
       // Expiré / déjà utilisé / invalide : message public uniforme.

@@ -498,6 +498,13 @@ export const bookings = pgTable(
     amountDueMinor: integer("amount_due_minor"),
     platformFeeMinor: integer("platform_fee_minor"),
     paymentExpiresAt: timestamp("payment_expires_at", { withTimezone: true }),
+    // Réservation express (lot N6) : demande d'un visiteur qui a créé son
+    // compte dans le tunnel. Non nulle tant que l'email n'est pas confirmé :
+    // la demande bloque le créneau jusqu'à cette échéance, reste invisible du
+    // barber et expire sans clic. Remise à NULL au clic sur le lien.
+    emailConfirmExpiresAt: timestamp("email_confirm_expires_at", {
+      withTimezone: true,
+    }),
     stripeCheckoutSessionId: text("stripe_checkout_session_id"),
     stripeCheckoutUrl: text("stripe_checkout_url"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),

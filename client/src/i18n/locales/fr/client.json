@@ -301,6 +301,29 @@
         "body": "Le professionnel doit encore la confirmer. Vous la retrouvez dans vos rendez-vous.",
         "addToCalendar": "Ajouter au calendrier",
         "viewAppointments": "Voir mes rendez-vous"
+      },
+      "express": {
+        "title": "Vos coordonnées",
+        "intro": "Pas encore de compte ? Il est créé avec votre demande. Vous confirmerez ensuite votre email pour l'envoyer au barber.",
+        "name": "Nom",
+        "email": "Email",
+        "password": "Mot de passe",
+        "passwordHint": "Au moins {{min}} caractères. Il vous servira à suivre votre réservation.",
+        "honeypot": "Laissez ce champ vide",
+        "haveAccount": "Déjà un compte ? <loginLink>Connectez-vous</loginLink>.",
+        "paymentNeedsAccount": "Ce professionnel demande un paiement en ligne : <loginLink>connectez-vous</loginLink> ou <registerLink>créez un compte</registerLink> pour réserver.",
+        "errors": {
+          "nameRequired": "Indiquez votre nom.",
+          "emailInvalid": "Saisissez une adresse email valide.",
+          "passwordTooShort": "Le mot de passe doit contenir au moins {{min}} caractères.",
+          "emailTaken": "Un compte existe déjà avec cet email : connectez-vous pour réserver."
+        },
+        "sent": {
+          "title": "Vérifiez votre email",
+          "body": "Nous avons envoyé un lien à {{email}}. Cliquez dessus dans les {{minutes}} minutes pour envoyer votre demande à {{barber}} : le créneau vous est réservé jusque-là.",
+          "notReceived": "Pas reçu ? Regardez dans vos courriers indésirables ou <resendLink>renvoyez le lien</resendLink>.",
+          "login": "J'ai confirmé, me connecter"
+        }
       }
     },
     "validation": {

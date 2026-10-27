@@ -228,19 +228,31 @@ export function canMarkNoShow(startAt: Date | string, now: Date): boolean {
 /**
  * Échéance d'une demande PENDING : 24 h après sa création, ou le début du
  * rendez-vous s'il arrive avant (une demande ne peut plus être acceptée une
- * fois le créneau commencé). Une demande en attente de paiement (issue #10)
- * expire au plus tard à `paymentExpiresAt`.
+ * fois le créneau commencé). Une demande en attente de paiement (issue #10) ou
+ * de confirmation d'email (lot N6) expire au plus tard à cette échéance
+ * (`holdExpiresAt`, voir `earliestHold`).
  */
 export function pendingBookingExpiresAt(
   createdAt: Date | string,
   startAt: Date | string,
   ttlHours: number = LIMITS.bookingPendingTtlHours,
-  paymentExpiresAt: Date | string | null = null,
+  holdExpiresAt: Date | string | null = null,
 ): Date {
   const ttlEnd = new Date(createdAt).getTime() + ttlHours * MS_PER_HOUR_BOOKING;
   const candidates = [ttlEnd, new Date(startAt).getTime()];
-  if (paymentExpiresAt) candidates.push(new Date(paymentExpiresAt).getTime());
+  if (holdExpiresAt) candidates.push(new Date(holdExpiresAt).getTime());
   return new Date(Math.min(...candidates));
+}
+
+/** Échéance de blocage la plus proche : paiement (issue #10) ou email (lot N6). */
+export function earliestHold(
+  paymentExpiresAt: Date | string | null | undefined,
+  emailConfirmExpiresAt: Date | string | null | undefined,
+): Date | null {
+  const times = [paymentExpiresAt, emailConfirmExpiresAt]
+    .filter((value): value is Date | string => Boolean(value))
+    .map((value) => new Date(value).getTime());
+  return times.length > 0 ? new Date(Math.min(...times)) : null;
 }
 
 interface PendingLike {
@@ -248,6 +260,7 @@ interface PendingLike {
   createdAt: Date | string;
   startAt: Date | string;
   paymentExpiresAt?: Date | string | null;
+  emailConfirmExpiresAt?: Date | string | null;
 }
 
 /** Une demande PENDING a-t-elle atteint son échéance à l'instant `now` ? */
@@ -258,7 +271,7 @@ export function isPendingBookingExpired(booking: PendingLike, now: Date): boolea
       booking.createdAt,
       booking.startAt,
       LIMITS.bookingPendingTtlHours,
-      booking.paymentExpiresAt ?? null,
+      earliestHold(booking.paymentExpiresAt, booking.emailConfirmExpiresAt),
     ).getTime() <= now.getTime()
   );
 }
