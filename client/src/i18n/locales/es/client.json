@@ -207,7 +207,14 @@
       "from": "desde {{price}}",
       "aria": "{{name}}, desde {{price}}"
     },
-    "cluster": "{{count}} barberos aquí: acercar"
+    "cluster": "{{count}} barberos aquí: acercar",
+    "locate": {
+      "label": "Mi ubicación",
+      "pending": "Buscando tu ubicación…",
+      "centered": "Mapa centrado en tu ubicación.",
+      "denied": "Ubicación denegada. Permite la ubicación en tu navegador para localizarte.",
+      "unavailable": "Ubicación no disponible. Inténtalo de nuevo o escribe una ciudad."
+    }
   },
   "profile": {
     "loading": "Cargando el perfil…",

@@ -207,7 +207,14 @@
       "from": "from {{price}}",
       "aria": "{{name}}, from {{price}}"
     },
-    "cluster": "{{count}} barbers here: zoom in"
+    "cluster": "{{count}} barbers here: zoom in",
+    "locate": {
+      "label": "My location",
+      "pending": "Finding your location…",
+      "centered": "Map centered on your location.",
+      "denied": "Location denied. Allow location access in your browser to find yourself on the map.",
+      "unavailable": "Location unavailable. Try again or enter a city."
+    }
   },
   "profile": {
     "loading": "Loading profile…",

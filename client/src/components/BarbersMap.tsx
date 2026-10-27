@@ -10,7 +10,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 // compatible avec la CSP `worker-src 'self'`.
 import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
-import type { GeoBounds } from "../lib/geo";
+import type { GeoBounds, LatLng } from "../lib/geo";
+import type { VisitorPositionStatus } from "../lib/visitorPosition";
 import { getMapSettings, MAP_ATTRIBUTION } from "../lib/mapConfig";
 import { groupPins } from "../lib/mapClusters";
 import { intlLocale } from "../i18n";
@@ -41,9 +42,20 @@ interface BarbersMapProps {
    * recadre pas sur eux (sinon elle bougerait sous les doigts du visiteur).
    */
   autoFit?: boolean;
+  /**
+   * Bouton « Ma position » (lot « Ma position ») : position du visiteur (en
+   * mémoire seulement), état de la demande, action du bouton et compteur qui
+   * recentre la carte sur la position à chaque incrément.
+   */
+  userPosition?: LatLng | null;
+  locateStatus?: VisitorPositionStatus;
+  onLocate?: () => void;
+  locateToken?: number;
 }
 
 const VIEWPORT_DEBOUNCE_MS = 400;
+// Zoom d'arrivée sur la position du visiteur (quartier) ; on ne dézoome jamais.
+const LOCATE_ZOOM = 13;
 
 export interface MapPadding {
   top: number;
@@ -181,6 +193,60 @@ function safePadding(map: maplibregl.Map, padding: MapPadding): MapPadding {
   };
 }
 
+// Contrôle « Ma position » : un bouton dans le groupe des boutons de zoom
+// (mêmes dimensions et styles, thème sombre compris).
+const LOCATE_ICON =
+  '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="20" height="20" ' +
+  'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">' +
+  '<circle cx="12" cy="12" r="3.5"/><circle cx="12" cy="12" r="7.5"/>' +
+  '<path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/></svg>';
+
+class LocateControl implements maplibregl.IControl {
+  private container: HTMLDivElement | null = null;
+  private button: HTMLButtonElement | null = null;
+
+  constructor(private readonly onClick: () => void) {}
+
+  onAdd(): HTMLElement {
+    const container = document.createElement("div");
+    container.className = "maplibregl-ctrl maplibregl-ctrl-group";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.innerHTML = LOCATE_ICON;
+    button.style.display = "flex";
+    button.style.alignItems = "center";
+    button.style.justifyContent = "center";
+    button.addEventListener("click", this.onClick);
+    container.appendChild(button);
+    this.container = container;
+    this.button = button;
+    return container;
+  }
+
+  onRemove(): void {
+    this.container?.remove();
+    this.container = null;
+    this.button = null;
+  }
+
+  update(label: string, busy: boolean): void {
+    if (!this.button) return;
+    this.button.setAttribute("aria-label", label);
+    this.button.title = label;
+    this.button.setAttribute("aria-busy", busy ? "true" : "false");
+    this.button.style.opacity = busy ? "0.6" : "";
+  }
+}
+
+// Repère de la position du visiteur : un point, purement décoratif.
+function createUserElement(): HTMLDivElement {
+  const element = document.createElement("div");
+  element.setAttribute("aria-hidden", "true");
+  element.className =
+    "h-4 w-4 rounded-full border-2 border-white bg-accent shadow-2 ring-4 ring-accent/25";
+  return element;
+}
+
 export default function BarbersMap({
   barbers,
   selectedId,
@@ -192,6 +258,10 @@ export default function BarbersMap({
   padding = DEFAULT_PADDING,
   onViewportChange,
   autoFit = true,
+  userPosition = null,
+  locateStatus = "idle",
+  onLocate,
+  locateToken = 0,
 }: BarbersMapProps) {
   const { t } = useTranslation("client");
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -224,6 +294,10 @@ export default function BarbersMap({
   selectedIdRef.current = selectedId;
   const tRef = useRef(t);
   tRef.current = t;
+  const onLocateRef = useRef(onLocate);
+  onLocateRef.current = onLocate;
+  const locateControlRef = useRef<LocateControl | null>(null);
+  const userMarkerRef = useRef<maplibregl.Marker | null>(null);
 
   // Regroupement (plan §2.6.9) : recalculé après chaque déplacement et chaque
   // mise à jour des épingles. Les épingles réunies sont masquées (donc hors de
@@ -315,6 +389,9 @@ export default function BarbersMap({
       new maplibregl.NavigationControl({ showCompass: false }),
       "top-right",
     );
+    const locateControl = new LocateControl(() => onLocateRef.current?.());
+    map.addControl(locateControl, "top-right");
+    locateControlRef.current = locateControl;
 
     const watchdog = window.setTimeout(() => {
       if (!loadedRef.current) setStatus("error");
@@ -379,6 +456,8 @@ export default function BarbersMap({
       observer.disconnect();
       markers.clear();
       clustersRef.current = [];
+      userMarkerRef.current = null;
+      locateControlRef.current = null;
       map.remove();
       mapRef.current = null;
       appliedStyleRef.current = null;
@@ -467,6 +546,49 @@ export default function BarbersMap({
       essential: true,
     });
   }, [selectedId]);
+
+  // --- Bouton « Ma position » : libellé, état d'attente, repère et recentrage ---
+  useEffect(() => {
+    locateControlRef.current?.update(
+      t("map.locate.label"),
+      locateStatus === "pending",
+    );
+  }, [t, locateStatus, status]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || status === "error" || status === "unconfigured") return;
+    if (!userPosition) {
+      userMarkerRef.current?.remove();
+      userMarkerRef.current = null;
+      return;
+    }
+    const lngLat: [number, number] = [userPosition.longitude, userPosition.latitude];
+    if (!userMarkerRef.current) {
+      userMarkerRef.current = new maplibregl.Marker({ element: createUserElement() })
+        .setLngLat(lngLat)
+        .addTo(map);
+    } else {
+      userMarkerRef.current.setLngLat(lngLat);
+    }
+  }, [userPosition, status]);
+
+  // Recentrage à chaque appui (le compteur change), sans relancer la recherche
+  // de zone : un déplacement programmatique n'a pas d'`originalEvent`.
+  const userPositionRef = useRef(userPosition);
+  userPositionRef.current = userPosition;
+  useEffect(() => {
+    const map = mapRef.current;
+    const target = userPositionRef.current;
+    if (locateToken === 0 || !map || !target || statusRef.current !== "ready") return;
+    map.easeTo({
+      center: [target.longitude, target.latitude],
+      zoom: Math.max(map.getZoom(), LOCATE_ZOOM),
+      padding: safePadding(map, paddingRef.current),
+      duration: reducedMotionRef.current ? 0 : 600,
+      essential: true,
+    });
+  }, [locateToken]);
 
   return (
     <div
