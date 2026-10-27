@@ -9,11 +9,19 @@ import { barbersRouter } from "./modules/barber/publicRoutes.js";
 import { bookingRouter } from "./modules/booking/routes.js";
 import { notificationRouter } from "./modules/notification/routes.js";
 import { placesRouter } from "./modules/places/routes.js";
+import {
+  createCityPageRouter,
+  createSitemapRouter,
+} from "./modules/seo/routes.js";
 import { userRouter } from "./modules/user/routes.js";
 import { siteRouter } from "./modules/site/routes.js";
 import { errorHandler } from "./middleware/error.js";
 import { resolveUploadDir } from "./lib/storage.js";
-import { configureTrustProxy, securityHeaders } from "./middleware/security.js";
+import {
+  configureTrustProxy,
+  securityHeaders,
+  seoPageHeaders,
+} from "./middleware/security.js";
 import { createRateLimiter, MUTATING_METHODS } from "./middleware/rateLimit.js";
 import { kickEmailDispatch } from "./modules/email/outbox.js";
 import {
@@ -37,7 +45,10 @@ export interface AppOptions {
     passwordReset?: RateLimitOverride;
     geocode?: RateLimitOverride;
     places?: RateLimitOverride;
+    seo?: RateLimitOverride;
   };
+  /** Barbers minimum pour qu'une ville ait sa page (défaut : CITY_PAGE_MIN_BARBERS). */
+  cityPageMinBarbers?: number;
 }
 
 export function createApp(options: AppOptions = {}): express.Express {
@@ -147,6 +158,14 @@ export function createApp(options: AppOptions = {}): express.Express {
     skip: !options.rateLimits?.places && env.NODE_ENV === "test",
   });
 
+  // Pages ville, plan du site et robots.txt (lot N9) : publics et mis en cache,
+  // mais chaque page non cachée interroge la base.
+  const seoLimiter = createRateLimiter({
+    windowMs: options.rateLimits?.seo?.windowMs ?? 60_000,
+    limit: options.rateLimits?.seo?.limit ?? 120,
+    skip: !options.rateLimits?.seo && env.NODE_ENV === "test",
+  });
+
   // Emails de réservation (issue #9) : après toute mutation réussie, la file
   // `email_outbox` est traitée sans attendre l'intervalle du répartiteur.
   app.use("/api", (req, res, next) => {
@@ -191,6 +210,17 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api/barber", barberRouter);
   app.use("/api/barbers", barbersRouter);
   app.use("/api/places", placesRouter);
+  // Pages HTML publiques (lot N9) : hors de /api, relayées par Nginx.
+  const seoOptions = {
+    minBarbers: options.cityPageMinBarbers ?? env.CITY_PAGE_MIN_BARBERS,
+  };
+  app.use(
+    "/barbers/ville",
+    seoLimiter,
+    seoPageHeaders(env.NODE_ENV === "production"),
+    createCityPageRouter(seoOptions),
+  );
+  app.use(seoLimiter, createSitemapRouter(seoOptions));
   app.use("/api/bookings", bookingRouter);
   app.use("/api/notifications", notificationRouter);
 
