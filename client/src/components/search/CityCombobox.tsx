@@ -51,6 +51,8 @@ export function CityCombobox({
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  // Réponse reçue sans aucune ville : l'état « aucune ville trouvée » (plan §2.6.2).
+  const [noResults, setNoResults] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const [box, setBox] = useState<CSSProperties>({});
@@ -61,6 +63,7 @@ export function CityCombobox({
     const trimmed = query.trim();
     if (trimmed.length < PLACE_QUERY_MIN) {
       setSuggestions([]);
+      setNoResults(false);
       return;
     }
     const controller = new AbortController();
@@ -69,10 +72,14 @@ export function CityCombobox({
         .suggest(trimmed, controller.signal)
         .then((res) => {
           setSuggestions(res.suggestions);
+          setNoResults(res.suggestions.length === 0);
           setActive(-1);
         })
         .catch(() => {
-          if (!controller.signal.aborted) setSuggestions([]);
+          if (controller.signal.aborted) return;
+          // Service indisponible (503, 429...) : silence, la saisie libre reste.
+          setSuggestions([]);
+          setNoResults(false);
         });
     }, DEBOUNCE_MS);
     return () => {
@@ -97,11 +104,12 @@ export function CityCombobox({
   }, []);
 
   const expanded = open && suggestions.length > 0;
+  const showList = expanded || (open && noResults);
 
   // La liste est rendue dans <body> en position fixe, calée sous le champ : les
   // panneaux de recherche défilent ou rognent (overflow) tout ce qui dépasse.
   useLayoutEffect(() => {
-    if (!expanded) return;
+    if (!showList) return;
     function place() {
       const rect = wrapperRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -119,7 +127,7 @@ export function CityCombobox({
       window.removeEventListener("resize", place);
       window.removeEventListener("scroll", place, true);
     };
-  }, [expanded]);
+  }, [showList]);
 
   function choose(suggestion: PlaceSuggestion) {
     onChange(suggestion.name);
@@ -182,6 +190,7 @@ export function CityCombobox({
         onChange={(event) => {
           onChange(event.target.value);
           setQuery(event.target.value);
+          setNoResults(false);
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
@@ -193,9 +202,9 @@ export function CityCombobox({
           id={listId}
           role="listbox"
           aria-label={t("cityField.listLabel")}
-          hidden={!expanded}
+          hidden={!showList}
           style={box}
-          className="z-[60] max-h-64 overflow-y-auto rounded-xl border border-border bg-surface p-1 text-foreground shadow-2"
+          className="z-50 max-h-64 overflow-y-auto rounded-xl border border-border bg-surface p-1 text-foreground shadow-2"
         >
           {suggestions.map((suggestion, index) => (
             <li
@@ -210,18 +219,30 @@ export function CityCombobox({
               }}
               onMouseEnter={() => setActive(index)}
               className={cn(
-                "flex min-h-11 cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm",
+                "flex min-h-12 cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm",
                 index === active && "bg-accent-soft",
               )}
             >
               {suggestion.label}
             </li>
           ))}
+          {noResults && suggestions.length === 0 && (
+            <li
+              role="presentation"
+              className="px-3 py-3 text-sm text-foreground-muted"
+            >
+              {t("cityField.noResults")}
+            </li>
+          )}
         </ul>,
         document.body,
       )}
       <span role="status" className="sr-only">
-        {expanded ? t("cityField.count", { count: suggestions.length }) : ""}
+        {expanded
+          ? t("cityField.count", { count: suggestions.length })
+          : showList
+            ? t("cityField.noResults")
+            : ""}
       </span>
     </div>
   );

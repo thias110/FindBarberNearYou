@@ -19,7 +19,8 @@
   "cityField": {
     "listLabel": "Ciudades sugeridas",
     "count_one": "{{count}} sugerencia disponible",
-    "count_other": "{{count}} sugerencias disponibles"
+    "count_other": "{{count}} sugerencias disponibles",
+    "noResults": "No se encontró ninguna ciudad"
   },
   "distance": {
     "lessThanOneKm": "menos de 1 km"
