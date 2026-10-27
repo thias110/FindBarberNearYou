@@ -220,7 +220,7 @@ export function createApp(options: AppOptions = {}): express.Express {
     seoPageHeaders(env.NODE_ENV === "production"),
     createCityPageRouter(seoOptions),
   );
-  app.use(seoLimiter, createSitemapRouter(seoOptions));
+  app.use(createSitemapRouter(seoOptions, seoLimiter));
   app.use("/api/bookings", bookingRouter);
   app.use("/api/notifications", notificationRouter);
 
