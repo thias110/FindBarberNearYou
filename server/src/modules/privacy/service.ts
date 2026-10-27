@@ -241,9 +241,13 @@ async function cancelUpcoming(
       id: bookings.id,
       clientUserId: bookings.clientUserId,
       barberProfileId: bookings.barberProfileId,
+      emailConfirmExpiresAt: bookings.emailConfirmExpiresAt,
     });
 
   for (const booking of upcoming) {
+    // Réservation express non confirmée (lot N6) : ni le barber ne l'a vue, ni
+    // l'adresse du client n'est vérifiée. Personne n'est prévenu.
+    if (booking.emailConfirmExpiresAt !== null) continue;
     let recipientUserId = booking.clientUserId;
     let type: NotificationType = "BOOKING_CANCELLED_BY_BARBER";
     if (scope === "CLIENT") {

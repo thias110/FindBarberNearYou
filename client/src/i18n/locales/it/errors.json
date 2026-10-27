@@ -60,5 +60,6 @@
   "USER_NOT_FOUND": "Utente non trovato.",
   "USER_NOT_SUSPENDED": "Questo utente non è sospeso.",
   "VALIDATION_ERROR": "Alcune informazioni non sono valide.",
-  "EXPRESS_BOOKING_PAYMENT_REQUIRED": "Questo professionista richiede il pagamento online: crea un account o accedi per prenotare."
+  "EXPRESS_BOOKING_PAYMENT_REQUIRED": "Questo professionista richiede il pagamento online: crea un account o accedi per prenotare.",
+  "EXPRESS_BOOKING_TOO_MANY": "Ci sono troppe richieste in attesa presso questo professionista: riprova tra qualche minuto, oppure accedi."
 }

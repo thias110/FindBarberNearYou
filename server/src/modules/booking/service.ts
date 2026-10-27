@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, gt, gte, lt, lte } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lt, lte, sql } from "drizzle-orm";
 import type { PgUpdateSetSource } from "drizzle-orm/pg-core";
 import { db } from "../../db/client.js";
 import {
@@ -65,7 +65,11 @@ import { recordAudit } from "../../lib/audit.js";
 import { decryptField, encryptField } from "../../lib/fieldCrypto.js";
 import { notifyBookingEvent } from "../notification/service.js";
 import { openCheckout, PAYMENT_HOLD_MS, paymentRequirementFor } from "../payments/service.js";
-import { paymentStatusOnCancel, visibleToBarber } from "../payments/rules.js";
+import {
+  hiddenFromBarber,
+  paymentStatusOnCancel,
+  visibleToBarber,
+} from "../payments/rules.js";
 import { expireStalePendingBookings } from "./expiry.js";
 import { invalidateAvailability } from "./availability.js";
 import { occupiesSlotCondition } from "./occupancy.js";
@@ -601,13 +605,35 @@ export async function insertBookingUnderLock(
 
   // 7. Paiement en ligne exigé par le barber (issue #10).
   const payment = paymentRequirementFor(profile, service.priceMinor);
-  const express = options.emailConfirmExpiresAt ?? null;
-  if (express && payment) {
+  const emailHoldUntil = options.emailConfirmExpiresAt ?? null;
+  if (emailHoldUntil && payment) {
     throw new AppError(
       409,
       "EXPRESS_BOOKING_PAYMENT_REQUIRED",
       "Ce professionnel demande un paiement en ligne : créez un compte ou connectez-vous pour réserver.",
     );
+  }
+  if (emailHoldUntil) {
+    // Plafond des demandes express non confirmées chez ce barber (sous le
+    // verrou du profil) : des adresses jetables ne peuvent pas bloquer tout
+    // son agenda.
+    const [held] = await runner
+      .select({ count: sql<number>`count(*)::int` })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.barberProfileId, profile.id),
+          eq(bookings.status, "PENDING"),
+          gt(bookings.emailConfirmExpiresAt, now),
+        ),
+      );
+    if ((held?.count ?? 0) >= LIMITS.expressPendingMaxPerBarber) {
+      throw new AppError(
+        409,
+        "EXPRESS_BOOKING_TOO_MANY",
+        "Trop de demandes sont en attente chez ce professionnel : réessayez dans quelques minutes, ou connectez-vous.",
+      );
+    }
   }
 
   // 8. Insertion avec snapshots figés.
@@ -642,7 +668,7 @@ export async function insertBookingUnderLock(
             paymentExpiresAt: new Date(now.getTime() + PAYMENT_HOLD_MS),
           }
         : {}),
-      emailConfirmExpiresAt: express,
+      emailConfirmExpiresAt: emailHoldUntil,
       // Horloge applicative (pas `now()` SQL) : l'échéance des 24 h se
       // calcule avec la même horloge que les contrôles d'expiration.
       createdAt: now,
@@ -654,7 +680,7 @@ export async function insertBookingUnderLock(
   // transaction). Si un paiement est exigé, le barber n'est prévenu qu'une
   // fois le paiement reçu (webhook Stripe) ; pour une réservation express,
   // qu'au clic sur le lien de l'email (lot N6).
-  if (!payment && !express) {
+  if (!payment && !emailHoldUntil) {
     await notifyBookingEvent(runner, {
       recipientUserId: profile.userId,
       actorUserId: clientUserId,
@@ -753,12 +779,7 @@ export async function getBookingDetails(
   assertBookingReadAccess(user, row, barberProfileId);
   // Demande non payée ou abandonnée (issue #10), ou réservation express dont
   // l'email n'est pas confirmé (lot N6) : invisible du barber.
-  if (
-    user.role === "BARBER" &&
-    (row.paymentStatus === "REQUIRES_PAYMENT" ||
-      row.paymentStatus === "CANCELLED" ||
-      row.emailConfirmExpiresAt !== null)
-  ) {
+  if (user.role === "BARBER" && hiddenFromBarber(row)) {
     throw bookingNotFound();
   }
 
@@ -939,8 +960,7 @@ async function transitionBooking(request: TransitionRequest): Promise<Booking> {
     // Demande pas encore payée (issue #10) : invisible du barber.
     const awaitingPayment = existing.paymentStatus === "REQUIRES_PAYMENT";
     // Réservation express non confirmée (lot N6) : invisible du barber aussi.
-    const awaitingEmail = existing.emailConfirmExpiresAt !== null;
-    if ((awaitingPayment || awaitingEmail) && user.role === "BARBER") {
+    if (user.role === "BARBER" && hiddenFromBarber(existing)) {
       throw bookingNotFound();
     }
 

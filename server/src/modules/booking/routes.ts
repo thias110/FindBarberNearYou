@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { LIMITS } from "@findbarber/shared/constants";
 import {
   bookingCreateSchema,
   bookingDeclineSchema,
@@ -10,7 +9,7 @@ import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { csrfProtection } from "../../middleware/csrf.js";
 import { validationError } from "../../lib/validation.js";
 import { createReview } from "../review/service.js";
-import { createExpressBooking } from "./express.js";
+import { createExpressBooking, EXPRESS_HOLD_MS } from "./express.js";
 import {
   cancelBooking,
   completeBooking,
@@ -49,12 +48,13 @@ bookingRouter.post("/express", async (req, res) => {
   if (!parsed.success) {
     throw validationError(parsed.error);
   }
-  if (parsed.data.website?.trim()) {
-    const decoy = new Date(Date.now() + LIMITS.expressBookingHoldMinutes * 60_000);
+  const { website, ...input } = parsed.data;
+  if (website?.trim()) {
+    const decoy = new Date(Date.now() + EXPRESS_HOLD_MS);
     res.status(201).json({ expiresAt: decoy.toISOString() });
     return;
   }
-  res.status(201).json(await createExpressBooking(parsed.data));
+  res.status(201).json(await createExpressBooking(input));
 });
 
 // Liste : le CLIENT voit les siennes, le BARBER celles de son profil.

@@ -24,5 +24,17 @@ export const visibleToBarber: SQL = and(
   isNull(bookings.emailConfirmExpiresAt),
 )!;
 
+/** Même règle, sur une ligne déjà lue (détail et transitions). */
+export function hiddenFromBarber(row: {
+  paymentStatus: string;
+  emailConfirmExpiresAt: Date | null;
+}): boolean {
+  return (
+    row.paymentStatus === "REQUIRES_PAYMENT" ||
+    row.paymentStatus === "CANCELLED" ||
+    row.emailConfirmExpiresAt !== null
+  );
+}
+
 // Calcul partagé avec le client (annonce du montant avant réservation).
 export { amountDueOnline } from "@findbarber/shared/booking";

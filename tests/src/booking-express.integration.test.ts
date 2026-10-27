@@ -2,6 +2,7 @@
 // étape du tunnel. Compte non vérifié + demande en attente de l'email (créneau
 // bloqué 30 min, invisible du barber) ; le clic sur le lien transmet la
 // demande ; sans clic, elle expire sans prévenir personne.
+import { randomUUID } from "node:crypto";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { and, eq } from "drizzle-orm";
@@ -14,14 +15,19 @@ import {
   bookings,
   emailVerificationTokens,
   notifications,
+  passwordResetTokens,
   users,
 } from "@findbarber/shared/schema";
 import { LIMITS } from "@findbarber/shared/constants";
-import { issueEmailVerificationToken } from "../../server/src/modules/auth/service";
+import {
+  hashEmailToken,
+  issueEmailVerificationToken,
+} from "../../server/src/modules/auth/service";
 import { sweepExpiredPendingBookings } from "../../server/src/modules/booking/expiry";
 import { configurePaymentsForTests } from "../../server/src/lib/payments";
 import { expressBookingEmail } from "../../server/src/lib/emailTemplates";
 import {
+  PASSWORD,
   createUser,
   futureDate,
   login,
@@ -239,6 +245,22 @@ describe("POST /api/bookings/express", () => {
     expect(await db.select().from(users).where(eq(users.email, VISITOR))).toHaveLength(0);
   });
 
+  it("plafonne les demandes non confirmées chez un même barber", async () => {
+    const barber = await seedBarber("express-barber@example.com");
+    for (let i = 0; i < LIMITS.expressPendingMaxPerBarber; i += 1) {
+      const ok = await request(app)
+        .post("/api/bookings/express")
+        .send(expressBody(barber, { email: `v${i}@example.com`, startMinute: 600 + i * 30 }));
+      expect(ok.status).toBe(201);
+    }
+    const res = await request(app)
+      .post("/api/bookings/express")
+      .send(expressBody(barber, { email: "de-trop@example.com", startMinute: 780 }));
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe("EXPRESS_BOOKING_TOO_MANY");
+    expect(await userByEmail("de-trop@example.com")).toBeUndefined();
+  });
+
   it("limite le débit avec le bucket de l'inscription (429)", async () => {
     const limited = createApp({ rateLimits: { register: { windowMs: 60_000, limit: 1 } } });
     const barber = await seedBarber("express-barber@example.com");
@@ -301,6 +323,44 @@ describe("confirmation de l'email (clic sur le lien)", () => {
     expect((await userByEmail(VISITOR))!.emailVerifiedAt).not.toBeNull();
   });
 
+  it("deux liens cliqués : la demande part une fois, sans faux « délai dépassé »", async () => {
+    const barber = await seedBarber("express-barber@example.com");
+    await request(app).post("/api/bookings/express").send(expressBody(barber));
+    const user = await userByEmail(VISITOR);
+    const first = await issueEmailVerificationToken(user!.id);
+    const second = await issueEmailVerificationToken(user!.id);
+
+    const a = await request(app).post("/api/auth/verify-email").send({ token: first });
+    const b = await request(app).post("/api/auth/verify-email").send({ token: second });
+    expect(a.body.expressBooking).toMatchObject({ status: "SENT" });
+    expect(b.status).toBe(200);
+    expect(b.body.expressBooking).toBeNull();
+    expect(await barberNotifications(barber)).toHaveLength(1);
+  });
+
+  it("la réinitialisation du mot de passe transmet aussi la demande", async () => {
+    const barber = await seedBarber("express-barber@example.com");
+    await request(app).post("/api/bookings/express").send(expressBody(barber));
+    const user = await userByEmail(VISITOR);
+    const token = `reset-${randomUUID()}`;
+    await db.insert(passwordResetTokens).values({
+      id: randomUUID(),
+      userId: user!.id,
+      tokenHash: hashEmailToken(token),
+      expiresAt: new Date(Date.now() + 3_600_000),
+    });
+
+    const res = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token, password: "NouveauMotDePasse123!" });
+    expect(res.status).toBeLessThan(300);
+    const [booking] = await bookingsOf(user!.id);
+    expect(booking!.emailConfirmExpiresAt).toBeNull();
+    expect((await barberNotifications(barber)).map((n) => n.type)).toEqual([
+      "BOOKING_REQUESTED",
+    ]);
+  });
+
   it("une inscription ordinaire ne renvoie aucune demande express", async () => {
     const userId = await createUser("ordinaire@example.com", "CLIENT");
     await db.update(users).set({ emailVerifiedAt: null }).where(eq(users.id, userId));
@@ -348,6 +408,26 @@ describe("expiration sans clic", () => {
         place: "SALON",
       });
     expect(res.status).toBe(201);
+  });
+});
+
+describe("annulations système", () => {
+  it("la suppression du compte du barber ne prévient pas un visiteur non confirmé", async () => {
+    const barber = await seedBarber("express-barber@example.com");
+    await request(app).post("/api/bookings/express").send(expressBody(barber));
+    const session = await login(app, "express-barber@example.com");
+    const res = await session.agent
+      .delete("/api/users/me")
+      .set("X-CSRF-Token", session.csrf)
+      .send({ password: PASSWORD });
+    expect(res.status).toBe(204);
+
+    const user = await userByEmail(VISITOR);
+    const [booking] = await bookingsOf(user!.id);
+    expect(booking!.status).toBe("CANCELLED");
+    expect(
+      await db.select().from(notifications).where(eq(notifications.userId, user!.id)),
+    ).toHaveLength(0);
   });
 });
 

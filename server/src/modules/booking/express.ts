@@ -23,19 +23,20 @@ import { insertBookingUnderLock } from "./service.js";
 // demande au barber (voir `expressRelease.ts`) ; sans clic, elle expire.
 // Garde-fous : email déjà connu → connexion demandée (aucune fusion
 // silencieuse) ; barber qui exige un paiement en ligne → compte classique ;
-// limitation de débit dédiée et piège à robots dans la route.
+// plafond de demandes non confirmées par barber (`insertBookingUnderLock`) ;
+// limiteur de l'inscription et piège à robots dans la route.
+
+/** Délai pour cliquer sur le lien, en millisecondes. */
+export const EXPRESS_HOLD_MS = LIMITS.expressBookingHoldMinutes * 60_000;
 
 export async function createExpressBooking(
-  input: BookingExpressInput,
+  input: Omit<BookingExpressInput, "website">,
 ): Promise<{ expiresAt: string }> {
-  // Champs du compte et piège à robots séparés de la demande elle-même.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { email, password, name, locale, website, ...bookingInput } = input;
+  // Champs du compte séparés de la demande elle-même.
+  const { email, password, name, locale, ...bookingInput } = input;
   // Hachage hors transaction : jamais de calcul coûteux sous le verrou du profil.
   const passwordHash = await hashPassword(password);
-  const expiresAt = new Date(
-    Date.now() + LIMITS.expressBookingHoldMinutes * 60_000,
-  );
+  const expiresAt = new Date(Date.now() + EXPRESS_HOLD_MS);
 
   let created;
   try {
