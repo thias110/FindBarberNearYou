@@ -314,7 +314,7 @@
 @media (max-width: 1023px) {
   .fb-search-map .maplibregl-ctrl-top-right {
     top: auto;
-    bottom: 120px;
+    bottom: 140px;
   }
   .fb-search-map .maplibregl-ctrl-bottom-right {
     bottom: 80px;

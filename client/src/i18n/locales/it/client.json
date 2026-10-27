@@ -207,7 +207,14 @@
       "from": "da {{price}}",
       "aria": "{{name}}, da {{price}}"
     },
-    "cluster": "{{count}} barbieri qui: ingrandisci"
+    "cluster": "{{count}} barbieri qui: ingrandisci",
+    "locate": {
+      "label": "La mia posizione",
+      "pending": "Ricerca della tua posizione…",
+      "centered": "Mappa centrata sulla tua posizione.",
+      "denied": "Posizione negata. Consenti la posizione nel browser per localizzarti.",
+      "unavailable": "Posizione non disponibile. Riprova o inserisci una città."
+    }
   },
   "profile": {
     "loading": "Caricamento del profilo…",

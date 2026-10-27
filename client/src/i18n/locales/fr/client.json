@@ -207,7 +207,14 @@
       "from": "dès {{price}}",
       "aria": "{{name}}, dès {{price}}"
     },
-    "cluster": "{{count}} barbers ici : zoomer"
+    "cluster": "{{count}} barbers ici : zoomer",
+    "locate": {
+      "label": "Ma position",
+      "pending": "Recherche de votre position…",
+      "centered": "Carte centrée sur votre position.",
+      "denied": "Position refusée. Autorisez la géolocalisation dans votre navigateur pour vous localiser.",
+      "unavailable": "Position introuvable. Réessayez ou saisissez une ville."
+    }
   },
   "profile": {
     "loading": "Chargement du profil…",

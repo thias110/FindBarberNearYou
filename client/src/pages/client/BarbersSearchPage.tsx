@@ -97,6 +97,45 @@ export function BarbersSearchPage() {
     (visitor.status === "idle" || visitor.status === "pending");
   const position = visitor.position;
 
+  // Bouton « Ma position » de la carte : demande la position (invite du
+  // navigateur au besoin), puis recentre la carte dessus. Un message bref dit ce
+  // qui se passe ; la position reste en mémoire (voir visitorPosition).
+  const [locating, setLocating] = useState(false);
+  const [locateToken, setLocateToken] = useState(0);
+  const [locateNotice, setLocateNotice] = useState<
+    "pending" | "centered" | "denied" | "unavailable" | null
+  >(null);
+
+  function handleLocate() {
+    if (visitor.status === "granted") {
+      setLocateToken((count) => count + 1);
+      setLocateNotice("centered");
+      return;
+    }
+    setLocating(true);
+    setLocateNotice("pending");
+    requestVisitorPosition();
+  }
+
+  useEffect(() => {
+    if (!locating) return;
+    if (visitor.status === "granted") {
+      setLocating(false);
+      setLocateToken((count) => count + 1);
+      setLocateNotice("centered");
+    } else if (visitor.status === "denied" || visitor.status === "unavailable") {
+      setLocating(false);
+      setLocateNotice(visitor.status);
+    }
+  }, [locating, visitor.status]);
+
+  // Les messages de résultat s'effacent seuls ; « recherche en cours » reste.
+  useEffect(() => {
+    if (locateNotice === null || locateNotice === "pending") return;
+    const timer = window.setTimeout(() => setLocateNotice(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [locateNotice]);
+
   // Un rayon présent dans l'URL (lien partagé, rechargement) redemande la position.
   useEffect(() => {
     if (radiusKm !== null && visitor.status === "idle") requestVisitorPosition();
@@ -613,6 +652,10 @@ export function BarbersSearchPage() {
               padding={mapPadding}
               onViewportChange={handleViewportChange}
               autoFit={!areaActive}
+              userPosition={position}
+              locateStatus={visitor.status}
+              onLocate={handleLocate}
+              locateToken={locateToken}
             />
           </Suspense>
         </MapErrorBoundary>
@@ -623,9 +666,23 @@ export function BarbersSearchPage() {
             onClose={closeCard}
           />
         )}
+        {/* Message du bouton « Ma position » : annoncé aux lecteurs d'écran
+            (région toujours présente), visible à la place de la mention
+            d'approximation le temps qu'il dure. */}
+        <span role="status" className="sr-only">
+          {locateNotice ? t(`map.locate.${locateNotice}`) : ""}
+        </span>
+        {locateNotice && !selectedBarber && (
+          <p
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-[8.75rem] left-3 z-10 max-w-[calc(100%-5rem)] rounded-full bg-surface/90 px-3 py-1 text-xs text-foreground shadow-sm lg:bottom-8 lg:left-auto lg:right-3 lg:max-w-sm"
+          >
+            {t(`map.locate.${locateNotice}`)}
+          </p>
+        )}
         {/* La fiche affiche déjà cette mention : pas de doublon. */}
-        {!selectedBarber && (
-          <p className="pointer-events-none absolute bottom-[7.5rem] left-3 z-10 rounded-full lg:bottom-8 lg:left-auto lg:right-3 bg-surface/90 px-3 py-1 text-xs text-foreground-muted shadow-sm">
+        {!selectedBarber && !locateNotice && (
+          <p className="pointer-events-none absolute bottom-[8.75rem] left-3 z-10 rounded-full lg:bottom-8 lg:left-auto lg:right-3 bg-surface/90 px-3 py-1 text-xs text-foreground-muted shadow-sm">
             {t("labels:approximateLocation")}
           </p>
         )}
