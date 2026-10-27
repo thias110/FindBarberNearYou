@@ -1,4 +1,5 @@
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
+import { escapeHtml } from "../../lib/emailTemplates.js";
 import type { CityGroup } from "./service.js";
 
 // --- Rendu des pages ville, du plan du site et de robots.txt (lot N9) ---
@@ -8,21 +9,16 @@ import type { CityGroup } from "./service.js";
 
 const SITE_NAME = "FindBarber";
 
-/** Échappe un texte pour le HTML (contenu et attributs). */
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+// U+2028 et U+2029 (séparateurs de ligne, invalides dans du JavaScript) ; U+00A0 et
+// U+202F (espaces insécables des montants formatés en français).
+const LINE_SEPARATORS = new RegExp("[" + String.fromCharCode(0x2028, 0x2029) + "]", "g");
+const NO_BREAK_SPACES = new RegExp("[" + String.fromCharCode(0xa0, 0x202f) + "]", "g");
 
 /** JSON sûr dans un `<script>` : `<` devient `\u003c` (pas de `</script>` possible). */
 export function jsonForScript(value: unknown): string {
   return JSON.stringify(value)
     .replace(/</g, "\\u003c")
-    .replace(new RegExp("[" + String.fromCharCode(0x2028, 0x2029) + "]", "g"), " ");
+    .replace(LINE_SEPARATORS, " ");
 }
 
 function formatPrice(minor: number, currency: string): string {
@@ -35,7 +31,7 @@ function formatPrice(minor: number, currency: string): string {
     maximumFractionDigits: 2,
   })
     .format(amount)
-    .replace(new RegExp("[" + String.fromCharCode(0xa0, 0x202f) + "]", "g"), " ");
+    .replace(NO_BREAK_SPACES, " ");
 }
 
 function formatRating(value: number): string {
@@ -143,6 +139,13 @@ function barberItem(barber: PublicBarberSearchItem): string {
   return `<li><a href="/barbers/${encodeURIComponent(barber.id)}">${photo}<span><span class="name">${escapeHtml(barber.displayName)}</span><span class="meta">${escapeHtml(parts.join(" · "))}</span></span></a></li>`;
 }
 
+/** « Saint-Denis (La Réunion) » quand un autre pays a une ville de même nom. */
+export function cityLabel(city: CityGroup): string {
+  if (!city.disambiguated) return city.name;
+  const country = new Intl.DisplayNames("fr", { type: "region" }).of(city.countryCode);
+  return `${city.name} (${country ?? city.countryCode})`;
+}
+
 export function cityPageUrl(baseUrl: string, slug: string): string {
   return `${baseUrl}/barbers/ville/${slug}`;
 }
@@ -155,14 +158,15 @@ export function renderCityPage(input: {
   const { baseUrl, city, barbers } = input;
   const count = barbers.length;
   const cheapest = cheapestLabel(barbers);
-  const title = `Barbers à ${city.name} : réservation en ligne | ${SITE_NAME}`;
-  const description = `${barbersLabel(count)} à ${city.name} : coupes, barbe, dégradé${cheapest ? `, ${cheapest}` : ""}. Consultez les avis et réservez en ligne sur ${SITE_NAME}.`;
+  const label = cityLabel(city);
+  const title = `Barbers à ${label} : réservation en ligne | ${SITE_NAME}`;
+  const description = `${barbersLabel(count)} à ${label} : coupes, barbe, dégradé${cheapest ? `, ${cheapest}` : ""}. Consultez les avis et réservez en ligne sur ${SITE_NAME}.`;
   const canonical = cityPageUrl(baseUrl, city.slug);
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: `Barbers à ${city.name}`,
+    name: `Barbers à ${label}`,
     itemListElement: barbers.map((barber, index) => ({
       "@type": "ListItem",
       position: index + 1,
@@ -192,8 +196,8 @@ export function renderCityPage(input: {
   };
 
   const body = `<main>
-<h1>Barbers à ${escapeHtml(city.name)}</h1>
-<p class="lead">${barbersLabel(count)} à ${escapeHtml(city.name)} : consultez les avis, les prix et les créneaux disponibles.</p>
+<h1>Barbers à ${escapeHtml(label)}</h1>
+<p class="lead">${barbersLabel(count)} à ${escapeHtml(label)} : consultez les avis, les prix et les créneaux disponibles.</p>
 <a class="cta" href="/barbers?city=${encodeURIComponent(city.name)}">Voir la carte et réserver</a>
 <ul>
 ${barbers.map(barberItem).join("\n")}

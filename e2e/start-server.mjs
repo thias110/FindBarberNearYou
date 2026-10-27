@@ -20,6 +20,8 @@ const env = {
   CORS_ORIGIN: "http://localhost:5173",
   FRONTEND_URL: "http://localhost:5173",
   VITE_API_URL: "http://localhost:4000",
+  // Pages ville (lot N9) : la démo compte 2 barbers à Genève.
+  CITY_PAGE_MIN_BARBERS: "2",
   // Les parcours se connectent souvent depuis la même IP.
   LOGIN_RATE_LIMIT_MAX: "1000",
   REGISTER_RATE_LIMIT_MAX: "1000",

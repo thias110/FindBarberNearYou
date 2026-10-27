@@ -67,6 +67,7 @@ import { publicUploadPath } from "../../lib/storage.js";
 import {
   getAvailabilitySummaries,
   invalidateAvailability,
+  type AvailabilitySummary,
 } from "../booking/availability.js";
 
 function toOwnProfile(
@@ -1069,7 +1070,7 @@ export async function loadSearchItems(
   // Disponibilité (lot N1) : uniquement pour la page affichée, en lot.
   const availability =
     options.availability === false
-      ? new Map<string, { nextAvailableAt: string | null; availableToday: boolean }>()
+      ? new Map<string, AvailabilitySummary>()
       : await getAvailabilitySummaries(
           rows.map((row) => ({ id: row.id, timezone: row.timezone })),
         );

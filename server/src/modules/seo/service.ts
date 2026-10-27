@@ -17,6 +17,9 @@ export interface CityGroup {
   slug: string;
   /** Nom affiché : l'orthographe la plus répandue parmi les profils. */
   name: string;
+  countryCode: string;
+  /** Vrai quand un autre pays a une ville de même nom (Saint-Denis) : le pays suffixe l'identifiant. */
+  disambiguated: boolean;
   /** Orthographes présentes en base (casse et accents), pour retrouver les barbers. */
   spellings: string[];
   barberCount: number;
@@ -35,31 +38,60 @@ async function loadCityIndex(now: number): Promise<Map<string, CityGroup>> {
   const rows = await db
     .select({
       city: barberProfiles.city,
+      countryCode: barberProfiles.countryCode,
       barberCount: sql<number>`count(*)::int`,
     })
     .from(barberProfiles)
     .innerJoin(users, eq(barberProfiles.userId, users.id))
     .where(and(...publicBarberConditions()))
-    .groupBy(barberProfiles.city);
+    .groupBy(barberProfiles.city, barberProfiles.countryCode);
 
-  const groups = new Map<string, CityGroup>();
-  const bestSpellingCount = new Map<string, number>();
+  // Une ville = (identifiant, pays) : « Saint-Denis » en France et à La
+  // Réunion sont deux pages. Le pays qui a le plus de barbers garde
+  // l'identifiant simple, les autres reçoivent le code pays en suffixe.
+  const byKey = new Map<string, CityGroup & { bestSpellingCount: number }>();
   for (const row of rows) {
     const slug = slugifyCity(row.city);
     if (slug === "") continue;
-    const group = groups.get(slug) ?? {
+    const key = `${slug}|${row.countryCode}`;
+    const group = byKey.get(key) ?? {
       slug,
       name: row.city,
+      countryCode: row.countryCode,
+      disambiguated: false,
       spellings: [],
       barberCount: 0,
+      bestSpellingCount: 0,
     };
     group.spellings.push(row.city);
     group.barberCount += row.barberCount;
-    if (row.barberCount > (bestSpellingCount.get(slug) ?? 0)) {
-      bestSpellingCount.set(slug, row.barberCount);
+    if (row.barberCount > group.bestSpellingCount) {
+      group.bestSpellingCount = row.barberCount;
       group.name = row.city;
     }
-    groups.set(slug, group);
+    byKey.set(key, group);
+  }
+
+  const bySlug = new Map<string, CityGroup[]>();
+  for (const group of byKey.values()) {
+    bySlug.set(group.slug, [...(bySlug.get(group.slug) ?? []), group]);
+  }
+
+  const groups = new Map<string, CityGroup>();
+  for (const [slug, candidates] of bySlug) {
+    candidates.sort(
+      (a, b) =>
+        b.barberCount - a.barberCount ||
+        a.countryCode.localeCompare(b.countryCode),
+    );
+    candidates.forEach((group, index) => {
+      if (index === 0) {
+        groups.set(slug, { ...group, disambiguated: candidates.length > 1 });
+      } else {
+        const suffixed = `${slug}-${group.countryCode.toLowerCase()}`;
+        groups.set(suffixed, { ...group, slug: suffixed, disambiguated: true });
+      }
+    });
   }
   cached = { expiresAt: now + CITY_INDEX_TTL_MS, groups };
   return groups;
@@ -94,6 +126,7 @@ export async function getCityPage(
     and(
       ...publicBarberConditions(),
       inArray(barberProfiles.city, city.spellings),
+      eq(barberProfiles.countryCode, city.countryCode),
     )!,
     undefined,
     { availability: false },

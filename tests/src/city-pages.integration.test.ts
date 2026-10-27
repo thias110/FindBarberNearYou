@@ -9,7 +9,11 @@ import { env } from "../../server/src/config/env";
 import { db } from "../../server/src/db/client";
 import { migrateDb } from "../../server/src/db/migrate";
 import { barberProfiles, users } from "@findbarber/shared/schema";
-import { clearCityIndexCache } from "../../server/src/modules/seo/service";
+import {
+  CITY_INDEX_TTL_MS,
+  clearCityIndexCache,
+  listCityPages,
+} from "../../server/src/modules/seo/service";
 import { resetBookingTables, seedBarber } from "./booking-api-helpers";
 
 const BASE = env.FRONTEND_URL.replace(/\/+$/, "");
@@ -26,15 +30,19 @@ beforeEach(async () => {
 
 let counter = 0;
 
-/** Crée `cities.length` barbers approuvés, un par ville donnée. */
-async function seedIn(cities: string[], displayName = "Barbier Test") {
+/** Crée `cities.length` barbers approuvés, un par ville donnée (pays : `country`). */
+async function seedIn(
+  cities: string[],
+  displayName = "Barbier Test",
+  country = "CH",
+) {
   const seeded = [];
   for (const city of cities) {
     counter += 1;
     const barber = await seedBarber(`city-${counter}@example.com`);
     await db
       .update(barberProfiles)
-      .set({ city, displayName: `${displayName} ${counter}` })
+      .set({ city, countryCode: country, displayName: `${displayName} ${counter}` })
       .where(eq(barberProfiles.id, barber.profileId));
     seeded.push(barber);
   }
@@ -118,6 +126,38 @@ describe("GET /barbers/ville/:slug", () => {
     expect(res.text).not.toContain("1 barbers");
   });
 
+  it("échappe aussi le nom de ville (titre, texte) et encode le lien de recherche", async () => {
+    const city = "Saint-Étienne <b> & 'x'";
+    await seedIn([city, city, city]);
+    const res = await request(app).get("/barbers/ville/saint-etienne-b-x");
+
+    expect(res.status).toBe(200);
+    expect(res.text).not.toContain("<b>");
+    expect(res.text).toContain("Saint-Étienne &lt;b&gt; &amp; &#39;x&#39;");
+    expect(res.text).toContain(`href="/barbers?city=${encodeURIComponent(city)}"`);
+  });
+
+  it("sépare deux villes de même nom dans des pays différents", async () => {
+    await seedIn(["Saint-Denis", "Saint-Denis", "Saint-Denis"], "Metropole", "FR");
+    await seedIn(["Saint-Denis", "Saint-Denis", "Saint-Denis"], "Reunion", "RE");
+
+    const main = await request(app).get("/barbers/ville/saint-denis");
+    const other = await request(app).get("/barbers/ville/saint-denis-re");
+    expect(main.status).toBe(200);
+    expect(other.status).toBe(200);
+    // Égalité de barbers : le code pays le plus petit garde l'identifiant simple.
+    expect(main.text).toContain("Metropole");
+    expect(main.text).not.toContain("Reunion");
+    expect(other.text).toContain("Reunion");
+    expect(other.text).not.toContain("Metropole");
+    expect(main.text).toContain("<h1>Barbers à Saint-Denis (France)</h1>");
+    expect(other.text).toContain("Réunion");
+
+    const sitemap = await request(app).get("/sitemap.xml");
+    expect(sitemap.text).toContain("/barbers/ville/saint-denis</loc>");
+    expect(sitemap.text).toContain("/barbers/ville/saint-denis-re</loc>");
+  });
+
   it("regroupe les orthographes d'une même ville", async () => {
     await seedIn(["Genève", "GENÈVE", "geneve"]);
     const res = await request(app).get("/barbers/ville/geneve");
@@ -169,6 +209,35 @@ describe("GET /barbers/ville/:slug", () => {
     }
   });
 
+  it("garde la réponse en mémoire 10 minutes, puis relit la base", async () => {
+    const t0 = 1_000_000;
+    await seedIn(["Genève", "Genève", "Genève"]);
+    expect((await listCityPages(3, t0)).map((c) => c.slug)).toEqual(["geneve"]);
+
+    await seedIn(["Lausanne", "Lausanne", "Lausanne"]);
+    expect((await listCityPages(3, t0 + CITY_INDEX_TTL_MS - 1)).map((c) => c.slug)).toEqual([
+      "geneve",
+    ]);
+    expect((await listCityPages(3, t0 + CITY_INDEX_TTL_MS + 1)).map((c) => c.slug)).toEqual([
+      "geneve",
+      "lausanne",
+    ]);
+  });
+
+  it("le limiteur ne touche que ces pages, jamais les autres routes", async () => {
+    const limited = createApp({
+      cityPageMinBarbers: 3,
+      rateLimits: { seo: { windowMs: 60_000, limit: 1 } },
+    });
+    // Routes déclarées après le routeur SEO : elles ne doivent pas être limitées.
+    for (let i = 0; i < 3; i += 1) {
+      expect((await request(limited).get("/api/barbers")).status).toBe(200);
+    }
+    // Le plan du site partage le limiteur des pages ville.
+    expect((await request(limited).get("/sitemap.xml")).status).toBe(200);
+    expect((await request(limited).get("/robots.txt")).status).toBe(429);
+  });
+
   it("limite le débit (429)", async () => {
     const limited = createApp({
       cityPageMinBarbers: 3,
@@ -189,6 +258,7 @@ describe("GET /sitemap.xml et /robots.txt", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("application/xml");
+    expect(res.headers["cache-control"]).toContain("max-age=600");
     expect(res.text).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
     expect(res.text).toContain(`<loc>${BASE}/barbers/ville/geneve</loc>`);
     expect(res.text).not.toContain("lausanne");
