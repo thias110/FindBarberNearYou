@@ -16,6 +16,11 @@
     "emptyDescription": "Touchez le cœur d'un barber pour le retrouver ici.",
     "emptyAction": "Explorer les barbers"
   },
+  "cityField": {
+    "listLabel": "Villes suggérées",
+    "count_one": "{{count}} suggestion disponible",
+    "count_other": "{{count}} suggestions disponibles"
+  },
   "distance": {
     "lessThanOneKm": "moins de 1 km"
   },

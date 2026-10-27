@@ -80,6 +80,19 @@ export interface AddressSuggestion {
   longitude: number;
 }
 
+// Suggestion de ville ou de quartier pour la recherche publique (lot N4).
+// `name` est la valeur placée dans le champ Ville ; `label` ajoute le contexte
+// (région, pays) pour distinguer les homonymes. Jamais de coordonnées ni
+// d'adresse de barber.
+export interface PlaceSuggestion {
+  name: string;
+  label: string;
+}
+
+export interface PlaceSuggestionsResponse {
+  suggestions: PlaceSuggestion[];
+}
+
 // Progression de finalisation du profil (issue #42), vue du propriétaire.
 export interface ProfileCompletion {
   steps: { step: ProfileCompletionStep; done: boolean }[];

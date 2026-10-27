@@ -16,6 +16,11 @@
     "emptyDescription": "Tocca il cuore di un barbiere per ritrovarlo qui.",
     "emptyAction": "Esplora i barbieri"
   },
+  "cityField": {
+    "listLabel": "Città suggerite",
+    "count_one": "{{count}} suggerimento disponibile",
+    "count_other": "{{count}} suggerimenti disponibili"
+  },
   "distance": {
     "lessThanOneKm": "meno di 1 km"
   },

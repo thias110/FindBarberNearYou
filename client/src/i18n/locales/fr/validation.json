@@ -63,7 +63,8 @@
   },
   "addressSuggestions": {
     "queryTooShort": "Saisissez au moins 3 caractères.",
-    "queryTooLong": "La recherche est trop longue."
+    "queryTooLong": "La recherche est trop longue.",
+    "placeQueryTooShort": "Saisissez au moins 2 caractères."
   },
   "workingHours": {
     "weekdayInteger": "Le jour doit être un entier.",
