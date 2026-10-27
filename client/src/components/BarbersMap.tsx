@@ -50,7 +50,7 @@ interface BarbersMapProps {
   userPosition?: LatLng | null;
   locateStatus?: VisitorPositionStatus;
   onLocate?: () => void;
-  locateToken?: number;
+  recenterCount?: number;
 }
 
 const VIEWPORT_DEBOUNCE_MS = 400;
@@ -194,7 +194,10 @@ function safePadding(map: maplibregl.Map, padding: MapPadding): MapPadding {
 }
 
 // Contrôle « Ma position » : un bouton dans le groupe des boutons de zoom
-// (mêmes dimensions et styles, thème sombre compris).
+// (mêmes dimensions et styles, thème sombre compris). Il fait donc 29 px comme
+// ces boutons et non les 44 px du design system : dérogation assumée, un seul
+// bouton plus grand que son voisin de groupe serait incohérent.
+// L'état « occupé » (aria-busy) est habillé dans index.css.
 const LOCATE_ICON =
   '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="20" height="20" ' +
   'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">' +
@@ -234,7 +237,6 @@ class LocateControl implements maplibregl.IControl {
     this.button.setAttribute("aria-label", label);
     this.button.title = label;
     this.button.setAttribute("aria-busy", busy ? "true" : "false");
-    this.button.style.opacity = busy ? "0.6" : "";
   }
 }
 
@@ -261,7 +263,7 @@ export default function BarbersMap({
   userPosition = null,
   locateStatus = "idle",
   onLocate,
-  locateToken = 0,
+  recenterCount = 0,
 }: BarbersMapProps) {
   const { t } = useTranslation("client");
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -574,13 +576,17 @@ export default function BarbersMap({
   }, [userPosition, status]);
 
   // Recentrage à chaque appui (le compteur change), sans relancer la recherche
-  // de zone : un déplacement programmatique n'a pas d'`originalEvent`.
+  // de zone : un déplacement programmatique n'a pas d'`originalEvent`. Un appui
+  // pendant le chargement de la carte est tenu en attente jusqu'à `ready`.
   const userPositionRef = useRef(userPosition);
   userPositionRef.current = userPosition;
+  const handledRecenterRef = useRef(0);
   useEffect(() => {
     const map = mapRef.current;
     const target = userPositionRef.current;
-    if (locateToken === 0 || !map || !target || statusRef.current !== "ready") return;
+    if (recenterCount === handledRecenterRef.current) return;
+    if (!map || !target || status !== "ready") return;
+    handledRecenterRef.current = recenterCount;
     map.easeTo({
       center: [target.longitude, target.latitude],
       zoom: Math.max(map.getZoom(), LOCATE_ZOOM),
@@ -588,7 +594,7 @@ export default function BarbersMap({
       duration: reducedMotionRef.current ? 0 : 600,
       essential: true,
     });
-  }, [locateToken]);
+  }, [recenterCount, status]);
 
   return (
     <div
