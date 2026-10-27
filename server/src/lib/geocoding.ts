@@ -32,7 +32,7 @@ export interface Geocoder {
   geocode(address: string): Promise<GeocodingResult>;
   /** Autocomplétion d'adresse ; facultative pour les faux géocodeurs. */
   suggest?(query: string, options: SuggestOptions): Promise<AddressSuggestion[]>;
-  /** Autocomplétion de villes et quartiers (lot N4) ; jamais d'adresses. */
+  /** Autocomplétion de villes (lot N4) ; jamais d'adresses. */
   suggestPlaces?(query: string, limit: number): Promise<PlaceSuggestion[]>;
 }
 
@@ -105,41 +105,29 @@ export class MapTilerGeocoder implements Geocoder {
     });
     if (options.countryCode) params.set("country", options.countryCode.toLowerCase());
     const url = `${this.endpoint}/${encodeURIComponent(query)}.json?${params.toString()}`;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
-    try {
-      const response = await fetch(url, { signal: controller.signal });
-      if (!response.ok) throw new Error("bad status");
-      return extractSuggestions(await response.json(), options.limit);
-    } catch {
-      // Jamais la saisie en clair dans le message d'erreur.
-      throw new AppError(
-        503,
-        "GEOCODING_UNAVAILABLE",
-        "Service de géocodage indisponible.",
-      );
-    } finally {
-      clearTimeout(timer);
-    }
+    return extractSuggestions(await this.getJson(url), options.limit);
   }
 
   async suggestPlaces(query: string, limit: number): Promise<PlaceSuggestion[]> {
     const params = new URLSearchParams({
       key: this.apiKey,
       autocomplete: "true",
-      // Villes et quartiers seulement : ni adresses, ni rues, ni lieux.
+      // Villes seulement : ni adresses, ni rues, ni lieux.
       types: PLACE_TYPES.join(","),
-      // Langue vide : noms locaux (« Genève »), ceux que saisissent les barbers.
-      language: "",
       limit: String(limit),
     });
     const url = `${this.endpoint}/${encodeURIComponent(query)}.json?${params.toString()}`;
+    return extractPlaces(await this.getJson(url), limit);
+  }
+
+  /** GET JSON avec délai ; toute défaillance devient un 503 sans la saisie. */
+  private async getJson(url: string): Promise<unknown> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
       const response = await fetch(url, { signal: controller.signal });
       if (!response.ok) throw new Error("bad status");
-      return extractPlaces(await response.json(), limit);
+      return await response.json();
     } catch {
       // Jamais la saisie en clair dans le message d'erreur.
       throw new AppError(
@@ -153,15 +141,13 @@ export class MapTilerGeocoder implements Geocoder {
   }
 }
 
-// Types de lieux MapTiler acceptés par l'autocomplétion de ville (lot N4).
-const PLACE_TYPES = [
-  "municipality",
-  "municipal_district",
-  "locality",
-  "neighbourhood",
-];
+// Types de lieux MapTiler acceptés (lot N4). Villes seulement : le filtre
+// `city` de la recherche compare le nom saisi à la ville du profil, donc un
+// quartier ou un arrondissement (« Le Marais », « Paris 4e ») ne trouverait
+// aucun barber, à l'inverse du but du lot.
+const PLACE_TYPES = ["municipality", "locality"];
 
-/** Villes et quartiers d'une réponse GeoJSON, sans doublon ni confiance dans la forme. */
+/** Villes d'une réponse GeoJSON, sans doublon ni confiance dans la forme. */
 export function extractPlaces(data: unknown, limit: number): PlaceSuggestion[] {
   if (typeof data !== "object" || data === null) return [];
   const features = (data as { features?: unknown }).features;
@@ -250,7 +236,7 @@ export async function geocodeAddress(
   return resolveGeocoder().geocode(address);
 }
 
-/** Autocomplétion de villes et quartiers via le géocodeur actif (lot N4). */
+/** Autocomplétion de villes via le géocodeur actif (lot N4). */
 export async function suggestPlaces(
   query: string,
   limit: number,
