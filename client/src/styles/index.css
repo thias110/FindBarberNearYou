@@ -311,6 +311,9 @@
    Sous 1024 px, le panneau de liste replié occupe le bas de l'écran (80 px)
    et la barre de recherche le haut : les boutons de zoom et l'attribution
    (obligatoire, CGU MapTiler) remontent au-dessus du panneau. */
+/* 140 px = 8,75 rem : même valeur que les pastilles de BarbersSearchPage
+   (`bottom-[8.75rem]`), au-dessus de l'attribution qui passe sur deux lignes
+   à 375 px. */
 @media (max-width: 1023px) {
   .fb-search-map .maplibregl-ctrl-top-right {
     top: auto;
@@ -319,4 +322,9 @@
   .fb-search-map .maplibregl-ctrl-bottom-right {
     bottom: 80px;
   }
+}
+
+/* Bouton « Ma position » : demande en cours (BarbersMap, LocateControl). */
+.maplibregl-ctrl button[aria-busy="true"] {
+  opacity: 0.6;
 }
