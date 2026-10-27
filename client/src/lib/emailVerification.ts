@@ -1,4 +1,7 @@
-import type { ExpressBookingOutcome } from "@findbarber/shared/types";
+import type {
+  ExpressBookingOutcome,
+  VerifyEmailResponse,
+} from "@findbarber/shared/types";
 import { ApiError } from "./apiClient";
 
 // --- Vérification d'email (page /verify-email) ---
@@ -25,15 +28,13 @@ export type EmailVerificationOutcome =
 
 export async function runEmailVerification(
   token: string | null,
-  verify: (input: { token: string }) => Promise<unknown>,
+  verify: (input: { token: string }) => Promise<Partial<VerifyEmailResponse> | void>,
 ): Promise<EmailVerificationOutcome> {
   if (!token) {
     return { phase: "error", message: INVALID_TOKEN_MESSAGE };
   }
   try {
-    const result = (await verify({ token })) as {
-      expressBooking?: ExpressBookingOutcome | null;
-    } | null;
+    const result = await verify({ token });
     return result?.expressBooking
       ? { phase: "success", expressBooking: result.expressBooking }
       : { phase: "success" };

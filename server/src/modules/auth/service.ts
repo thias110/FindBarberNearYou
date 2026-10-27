@@ -212,48 +212,53 @@ export async function issueEmailVerificationToken(
 // garantis atomiquement par l'UPDATE ... WHERE. Aucune session n'est créée.
 // Réservation express (lot N6) : la demande en attente part chez le barber ;
 // le résultat dit au client si elle est partie ou si le délai était dépassé.
+// Jeton, compte et transmission sont dans UNE transaction : un échec de la
+// transmission laisse le jeton intact (le lien reste utilisable).
 export async function verifyEmail(
   token: string,
 ): Promise<{ expressBooking: ExpressBookingOutcome | null }> {
   const tokenHash = hashEmailToken(token);
   const now = new Date();
 
-  const [consumed] = await db
-    .update(emailVerificationTokens)
-    .set({ consumedAt: now })
-    .where(
-      and(
-        eq(emailVerificationTokens.tokenHash, tokenHash),
-        isNull(emailVerificationTokens.consumedAt),
-        gt(emailVerificationTokens.expiresAt, now),
-      ),
-    )
-    .returning({ userId: emailVerificationTokens.userId });
+  return db.transaction(async (tx) => {
+    const runner = tx as unknown as typeof db;
+    const [consumed] = await runner
+      .update(emailVerificationTokens)
+      .set({ consumedAt: now })
+      .where(
+        and(
+          eq(emailVerificationTokens.tokenHash, tokenHash),
+          isNull(emailVerificationTokens.consumedAt),
+          gt(emailVerificationTokens.expiresAt, now),
+        ),
+      )
+      .returning({ userId: emailVerificationTokens.userId });
 
-  if (!consumed) {
-    // Réponse uniforme : expiré / déjà utilisé / inconnu ne sont pas distingués.
-    throw new AppError(
-      400,
-      "INVALID_VERIFICATION_TOKEN",
-      "Invalid or expired verification link.",
-    );
-  }
+    if (!consumed) {
+      // Réponse uniforme : expiré / déjà utilisé / inconnu ne sont pas distingués.
+      throw new AppError(
+        400,
+        "INVALID_VERIFICATION_TOKEN",
+        "Invalid or expired verification link.",
+      );
+    }
 
-  const [user] = await db
-    .update(users)
-    .set({ emailVerifiedAt: now })
-    .where(eq(users.id, consumed.userId))
-    .returning({ id: users.id });
+    const [user] = await runner
+      .update(users)
+      .set({ emailVerifiedAt: now })
+      .where(eq(users.id, consumed.userId))
+      .returning({ id: users.id });
 
-  if (!user) {
-    throw new AppError(
-      400,
-      "INVALID_VERIFICATION_TOKEN",
-      "Invalid or expired verification link.",
-    );
-  }
+    if (!user) {
+      throw new AppError(
+        400,
+        "INVALID_VERIFICATION_TOKEN",
+        "Invalid or expired verification link.",
+      );
+    }
 
-  return { expressBooking: await releaseExpressBookings(user.id, now) };
+    return { expressBooking: await releaseExpressBookings(runner, user.id, now) };
+  });
 }
 
 // Renvoi d'email de vérification. Réponse générique anti-énumération : on ne
@@ -383,5 +388,11 @@ export async function resetPassword(token: string, password: string): Promise<vo
           isNull(passwordResetTokens.consumedAt),
         ),
       );
+
+    // Le lien prouve la possession de l'adresse : une réservation express en
+    // attente part chez le barber, comme au clic sur le lien de vérification.
+    if (user.emailVerifiedAt === null) {
+      await releaseExpressBookings(tx as unknown as typeof db, consumed.userId, now);
+    }
   });
 }

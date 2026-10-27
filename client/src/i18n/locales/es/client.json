@@ -310,13 +310,13 @@
         "password": "Contraseña",
         "passwordHint": "Al menos {{min}} caracteres. Te servirá para seguir tu reserva.",
         "honeypot": "Deja este campo vacío",
-        "haveAccount": "¿Ya tienes cuenta? <loginLink>Inicia sesión</loginLink>.",
+        "haveAccount": "¿Ya tienes cuenta? <loginLink>Inicia sesión</loginLink>. ¿Cuenta creada pero aún sin confirmar? <resendLink>Vuelve a enviar el enlace</resendLink>.",
         "paymentNeedsAccount": "Este profesional exige el pago en línea: <loginLink>inicia sesión</loginLink> o <registerLink>crea una cuenta</registerLink> para reservar.",
         "errors": {
           "nameRequired": "Indica tu nombre.",
           "emailInvalid": "Escribe una dirección de email válida.",
           "passwordTooShort": "La contraseña debe tener al menos {{min}} caracteres.",
-          "emailTaken": "Ya existe una cuenta con este email: inicia sesión para reservar."
+          "emailTaken": "Ya existe una cuenta con este email: inicia sesión o vuelve a enviar el enlace de confirmación si aún no está confirmada."
         },
         "sent": {
           "title": "Revisa tu email",

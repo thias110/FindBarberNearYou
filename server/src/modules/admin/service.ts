@@ -336,7 +336,11 @@ export async function suspendUser(
         // Lire les réservations futures actives AVANT l'annulation, pour
         // notifier chaque CLIENT concerné dans la même transaction.
         const affected = await tx
-          .select({ id: bookings.id, clientUserId: bookings.clientUserId })
+          .select({
+            id: bookings.id,
+            clientUserId: bookings.clientUserId,
+            emailConfirmExpiresAt: bookings.emailConfirmExpiresAt,
+          })
           .from(bookings)
           .where(
             and(
@@ -366,6 +370,9 @@ export async function suspendUser(
           );
 
         for (const booking of affected) {
+          // Réservation express non confirmée (lot N6) : adresse non vérifiée,
+          // aucun email.
+          if (booking.emailConfirmExpiresAt !== null) continue;
           await notifyBookingEvent(tx as unknown as typeof db, {
             recipientUserId: booking.clientUserId,
             actorUserId,

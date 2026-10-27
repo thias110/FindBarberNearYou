@@ -380,6 +380,9 @@ export const LIMITS = {
   // Réservation express (lot N6) : délai pour cliquer sur le lien de l'email
   // ; le créneau reste bloqué pendant ce délai.
   expressBookingHoldMinutes: 30,
+  // Demandes express non confirmées en même temps chez un même barber : au-delà,
+  // un visiteur doit attendre ou se connecter (anti-blocage de créneaux).
+  expressPendingMaxPerBarber: 3,
   paymentMinAmountMinor: 100,
   // Adresse client privée (lot 9 passe A, issue #19) : chaîne libre géocodée
   // côté serveur pour `AT_CLIENT`, jamais exposée publiquement.

@@ -99,6 +99,12 @@ export function ExpressFields({
             loginLink: (
               <Link to="/login" className="font-medium text-accent-strong underline" />
             ),
+            resendLink: (
+              <Link
+                to="/resend-verification"
+                className="font-medium text-accent-strong underline"
+              />
+            ),
           }}
         />
       </p>

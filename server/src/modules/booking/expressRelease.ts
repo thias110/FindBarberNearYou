@@ -12,63 +12,64 @@ import { notifyBookingEvent } from "../notification/service.js";
 
 /**
  * Transmet les demandes express encore valables du compte `userId` et rend le
- * sort de la plus récente (ou `null` si le compte n'en a pas). L'UPDATE gardé
- * par le statut et l'échéance est idempotent : une demande n'est transmise
- * qu'une fois, même si deux vérifications se croisent.
+ * sort de la plus récente (ou `null` si le compte n'en a pas). S'exécute dans
+ * la transaction `runner` de l'appelant (vérification de l'email ou
+ * réinitialisation du mot de passe). Les demandes sont verrouillées : deux
+ * liens cliqués en même temps sont traités l'un après l'autre, et le second ne
+ * trouve plus rien à transmettre (jamais de faux « délai dépassé »).
  */
 export async function releaseExpressBookings(
+  runner: typeof db,
   userId: string,
   now: Date = new Date(),
 ): Promise<ExpressBookingOutcome | null> {
-  return db.transaction(async (tx) => {
-    const runner = tx as unknown as typeof db;
-    const awaiting = await runner
-      .select({
-        id: bookings.id,
-        barberId: bookings.barberProfileId,
-        barberName: bookings.barberDisplayName,
-        barberUserId: barberProfiles.userId,
-      })
-      .from(bookings)
-      .innerJoin(barberProfiles, eq(barberProfiles.id, bookings.barberProfileId))
+  const awaiting = await runner
+    .select({
+      id: bookings.id,
+      barberId: bookings.barberProfileId,
+      barberName: bookings.barberDisplayName,
+      barberUserId: barberProfiles.userId,
+    })
+    .from(bookings)
+    .innerJoin(barberProfiles, eq(barberProfiles.id, bookings.barberProfileId))
+    .where(
+      and(
+        eq(bookings.clientUserId, userId),
+        isNotNull(bookings.emailConfirmExpiresAt),
+      ),
+    )
+    .orderBy(desc(bookings.createdAt))
+    .for("update", { of: bookings });
+  if (awaiting.length === 0) return null;
+
+  let latest: ExpressBookingOutcome | null = null;
+  for (const booking of awaiting) {
+    const [released] = await runner
+      .update(bookings)
+      .set({ emailConfirmExpiresAt: null, updatedAt: now })
       .where(
         and(
-          eq(bookings.clientUserId, userId),
-          isNotNull(bookings.emailConfirmExpiresAt),
+          eq(bookings.id, booking.id),
+          eq(bookings.status, "PENDING"),
+          gt(bookings.emailConfirmExpiresAt, now),
+          // Le rendez-vous ne doit pas avoir commencé entre-temps.
+          gt(bookings.startAt, now),
         ),
       )
-      .orderBy(desc(bookings.createdAt));
-    if (awaiting.length === 0) return null;
-
-    let latest: ExpressBookingOutcome | null = null;
-    for (const booking of awaiting) {
-      const [released] = await runner
-        .update(bookings)
-        .set({ emailConfirmExpiresAt: null, updatedAt: now })
-        .where(
-          and(
-            eq(bookings.id, booking.id),
-            eq(bookings.status, "PENDING"),
-            gt(bookings.emailConfirmExpiresAt, now),
-            // Le rendez-vous ne doit pas avoir commencé entre-temps.
-            gt(bookings.startAt, now),
-          ),
-        )
-        .returning({ id: bookings.id });
-      if (released) {
-        await notifyBookingEvent(runner, {
-          recipientUserId: booking.barberUserId,
-          actorUserId: userId,
-          bookingId: booking.id,
-          type: "BOOKING_REQUESTED",
-        });
-      }
-      latest ??= {
-        status: released ? "SENT" : "EXPIRED",
-        barberName: booking.barberName,
-        barberId: booking.barberId,
-      };
+      .returning({ id: bookings.id });
+    if (released) {
+      await notifyBookingEvent(runner, {
+        recipientUserId: booking.barberUserId,
+        actorUserId: userId,
+        bookingId: booking.id,
+        type: "BOOKING_REQUESTED",
+      });
     }
-    return latest;
-  });
+    latest ??= {
+      status: released ? "SENT" : "EXPIRED",
+      barberName: booking.barberName,
+      barberId: booking.barberId,
+    };
+  }
+  return latest;
 }

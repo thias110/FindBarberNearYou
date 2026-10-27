@@ -269,6 +269,8 @@ export function BookingFlow({
   }
 
   async function handleSubmit() {
+    // Entrée pressée deux fois : un seul envoi.
+    if (submitting) return;
     setSubmitError(null);
 
     const errors = validateBookingForm({
