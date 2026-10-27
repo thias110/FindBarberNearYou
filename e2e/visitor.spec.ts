@@ -33,12 +33,48 @@ test("recherche par ville depuis l'accueil, au clavier", async ({ page }) => {
     page.getByRole("link", { name: "Aller au contenu" }),
   ).toBeFocused();
 
-  const city = page.getByRole("textbox", { name: "Ville" });
+  // Champ Ville avec suggestions (lot N4) : rôle `combobox`. Sans service de
+  // géocodage (cas des tests), il reste un champ texte et Entrée soumet.
+  const city = page.getByRole("combobox", { name: "Ville" });
   await tabTo(page, city);
   await page.keyboard.type("Genève");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/barbers\?city=Gen%C3%A8ve/);
   await expect(page.getByText("Karim — Barber Plainpalais")).toBeVisible();
+});
+
+test("recherche par ville : une suggestion se choisit au clavier", async ({
+  page,
+}) => {
+  // Pas de clé de géocodage en test : la réponse de l'API est simulée.
+  await page.route("**/api/places/suggest**", (route) =>
+    route.fulfill({
+      json: {
+        suggestions: [
+          { name: "Genève", label: "Genève, Genève, Suisse" },
+          { name: "Gex", label: "Gex, Ain, France" },
+        ],
+      },
+    }),
+  );
+  await page.goto("/");
+  const city = page.getByRole("combobox", { name: "Ville" });
+  await city.fill("Ge");
+  await expect(
+    page.getByRole("listbox", { name: "Villes suggérées" }).getByRole("option"),
+  ).toHaveCount(2);
+
+  // Deux flèches bas désignent la deuxième suggestion ; Entrée la valide
+  // sans soumettre le formulaire.
+  await city.press("ArrowDown");
+  await city.press("ArrowDown");
+  await city.press("Enter");
+  await expect(city).toHaveValue("Gex");
+  await expect(page).toHaveURL(/\/$/);
+
+  // Liste fermée : Entrée soumet la recherche.
+  await city.press("Enter");
+  await expect(page).toHaveURL(/\/barbers\?city=Gex/);
 });
 
 test("inscription au clavier seul jusqu'à « Vérifiez votre email »", async ({
