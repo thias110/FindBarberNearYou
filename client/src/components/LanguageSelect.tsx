@@ -44,7 +44,7 @@ export function LanguageSelect({
           value={locale}
           onChange={(event) => handleChange(event.target.value)}
           className={cn(
-            "block min-h-11 w-auto cursor-pointer rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors duration-fast",
+            "block min-h-11 w-auto cursor-pointer rounded-full border px-3 py-1.5 text-sm font-semibold",
             tone === "onNight"
               ? "focus-ring-on-night border-white/20 bg-night/80 text-white hover:border-white/35 hover:bg-night"
               : "focus-ring border-border-strong bg-surface text-foreground hover:bg-surface-muted",

@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Accordion, type AccordionItem } from "../components/ui/Accordion";
 import { Card } from "../components/ui/Card";
-import { FadeMotif } from "../components/ui/FadeMotif";
 import { PageContainer } from "../components/ui/PageContainer";
 
 // Questions fréquentes (lot N7, plan E26). Chaque réponse ne décrit que ce que
@@ -26,9 +25,8 @@ export function FaqPage() {
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <PageContainer width="reading" stack="lg">
-        <Card className="overflow-hidden p-0">
-          <FadeMotif className="h-2.5 w-full text-accent/20" />
-          <header className="p-6 sm:p-8">
+        <Card className="p-6 sm:p-8">
+          <header>
             <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
               {t("title")}
             </h1>

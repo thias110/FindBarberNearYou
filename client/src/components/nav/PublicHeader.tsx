@@ -52,12 +52,12 @@ export function PublicHeader() {
       <div
         className={cn(
           "mx-auto flex h-16 max-w-6xl items-center gap-2 rounded-full border pl-3 pr-2 sm:pl-4",
-          "transition-[background-color,box-shadow,border-color] duration-base ease-out",
+          "transition-shadow duration-base ease-out",
           scrolled
             ? "border-border bg-surface shadow-2"
             : onNight
               ? "border-white/15 bg-night/75 shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_18px_42px_-16px_rgb(0_0_0/0.65)] backdrop-blur-xl backdrop-saturate-150"
-              : "border-border/80 bg-surface/85 shadow-1 backdrop-blur-xl backdrop-saturate-150",
+              : "border-border/80 bg-surface/95 shadow-1 backdrop-blur-xl backdrop-saturate-150",
         )}
       >
         <Link

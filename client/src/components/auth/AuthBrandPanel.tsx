@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Logo } from "../Logo";
-import { FadeMotif } from "../ui/FadeMotif";
 
 const BENEFITS = [
   "brand.benefits.book",
@@ -26,8 +25,7 @@ function CheckIcon() {
 }
 
 // Panneau de marque desktop (deuxième colonne de la coque AuthLayout). Caché
-// sur mobile : l'en-tête compact de AuthLayout porte alors le logo. Section
-// « nuit » alignée sur l'identité « Dégradé » (sans boules décoratives, issue #60).
+// sur mobile : l'en-tête compact de AuthLayout porte alors le logo.
 export function AuthBrandPanel() {
   const { t } = useTranslation("auth");
   return (
@@ -63,12 +61,9 @@ export function AuthBrandPanel() {
         </ul>
       </div>
 
-      <div className="relative">
-        <FadeMotif className="h-12 w-full text-cobalt/25" />
-        <p className="border-t border-white/10 px-10 py-6 text-xs text-night-muted">
-          {t("brand.footer")}
-        </p>
-      </div>
+      <p className="relative border-t border-white/10 px-10 py-6 text-xs text-night-muted">
+        {t("brand.footer")}
+      </p>
     </div>
   );
 }

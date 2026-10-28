@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { LanguageSelect } from "../LanguageSelect";
 import { Logo } from "../Logo";
 import { Card } from "../ui/Card";
-import { FadeMotif } from "../ui/FadeMotif";
 import { AuthBrandPanel } from "./AuthBrandPanel";
 
 // Coque partagée Login/Register : mobile-first, une colonne ; à partir de lg,
@@ -27,9 +26,8 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         <main className="relative flex min-w-0 items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
           {/* Langue (issue #37) : en lg, le header mobile est masqué. */}
           <LanguageSelect compact className="absolute right-6 top-4 hidden lg:block" />
-          <Card className="w-full max-w-md overflow-hidden p-0 shadow-card">
-            <FadeMotif className="h-2.5 w-full text-accent/20" />
-            <div className="p-6 sm:p-8">{children}</div>
+          <Card className="w-full max-w-md p-6 shadow-card sm:p-8">
+            {children}
           </Card>
         </main>
       </div>

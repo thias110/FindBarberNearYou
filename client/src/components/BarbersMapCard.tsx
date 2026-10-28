@@ -6,7 +6,6 @@ import { formatDistance } from "../lib/geo";
 import { label } from "../lib/labels";
 import { CertifiedBadge } from "./barber/CertifiedBadge";
 import { Badge } from "./ui/Badge";
-import { FadeMotif } from "./ui/FadeMotif";
 import { buttonClasses } from "./ui/buttonStyles";
 import {
   BarberPhoto,
@@ -59,15 +58,14 @@ export function BarbersMapCard({
       // droite, hors du panneau latéral.
       className="pointer-events-auto absolute inset-x-3 bottom-24 z-10 mx-auto max-w-md overflow-hidden rounded-3xl border border-border bg-surface shadow-3 lg:inset-x-auto lg:bottom-10 lg:right-6 lg:w-[25rem]"
     >
-      <FadeMotif className="h-2.5 w-full text-accent/20" />
-      <div aria-hidden="true" className="flex justify-center pt-1.5 sm:hidden">
+      <div aria-hidden="true" className="flex justify-center pt-2 sm:hidden">
         <span className="h-1.5 w-10 rounded-full bg-border-strong" />
       </div>
       <button
         type="button"
         onClick={onClose}
         aria-label={t("map.card.close")}
-        className="absolute right-2.5 top-3.5 z-10 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface/90 text-xl leading-none text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-ring"
+        className="absolute right-2.5 top-2.5 z-10 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface/90 text-xl leading-none text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-ring"
       >
         <span aria-hidden="true">×</span>
       </button>

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { Card } from "./Card";
-import { FadeMotif } from "./FadeMotif";
 
 export interface EmptyStateProps {
   title: string;
@@ -13,8 +12,7 @@ export interface EmptyStateProps {
   className?: string;
 }
 
-// État vide (lot DS-3, plan §2.7) : motif « dégradé », titre, une phrase qui
-// dit quoi faire, une action. Un écran vide est une invitation à agir.
+// État vide : repère visuel discret, titre, une phrase qui dit quoi faire, une action.
 export function EmptyState({
   title,
   description,
@@ -25,8 +23,24 @@ export function EmptyState({
   const Heading = headingLevel === 2 ? "h2" : "h3";
   return (
     <Card className={cn("flex flex-col items-center p-8 text-center", className)}>
-      <FadeMotif className="h-12 w-[7.5rem] text-accent/25" />
-      <Heading className="mt-5 text-h3 font-bold text-foreground">{title}</Heading>
+      <span
+        aria-hidden="true"
+        className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-soft text-accent-strong"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+      </span>
+      <Heading className="mt-4 text-h3 font-bold text-foreground">{title}</Heading>
       {description && (
         <p className="mt-1.5 max-w-[45ch] text-sm text-foreground-muted">
           {description}
