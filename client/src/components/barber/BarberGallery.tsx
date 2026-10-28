@@ -23,18 +23,25 @@ export function BarberGallery({
   const { t } = useTranslation("barber");
   return (
     <Card className="p-6">
-      <h2 className="text-h3 font-bold text-foreground">{t("public.gallery.title")}</h2>
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-h3 font-bold text-foreground">{t("public.gallery.title")}</h2>
+        {!loading && photos.length > 0 && (
+          <span className="text-xs font-semibold tabular-nums text-foreground-muted">
+            {photos.length}
+          </span>
+        )}
+      </div>
 
       {loading ? (
         <div
           aria-busy="true"
-          className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3"
+          className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3"
         >
           <span className="sr-only" role="status">
             {t("public.gallery.loading")}
           </span>
           {[0, 1, 2].map((index) => (
-            <Skeleton key={index} className="h-40 w-full rounded-xl" />
+            <Skeleton key={index} className="h-44 w-full rounded-xl" />
           ))}
         </div>
       ) : error ? (
@@ -54,20 +61,22 @@ export function BarberGallery({
           {t("public.gallery.empty")}
         </p>
       ) : (
-        <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <ul className="mt-4 grid grid-cols-2 gap-3.5 sm:grid-cols-3">
           {photos.map((photo) => (
             <li
               key={photo.id}
-              className="overflow-hidden rounded-xl bg-surface-muted"
+              className="group overflow-hidden rounded-xl border border-border/70 bg-surface-muted shadow-1"
             >
-              <img
-                src={resolveUploadUrl(photo.imagePath) ?? ""}
-                alt={photo.caption ?? t("public.gallery.photoAlt")}
-                loading="lazy"
-                className="h-40 w-full object-cover"
-              />
+              <div className="overflow-hidden">
+                <img
+                  src={resolveUploadUrl(photo.imagePath) ?? ""}
+                  alt={photo.caption ?? t("public.gallery.photoAlt")}
+                  loading="lazy"
+                  className="h-44 w-full object-cover transition-transform duration-slow ease-out motion-safe:group-hover:scale-105"
+                />
+              </div>
               {photo.caption && (
-                <p className="p-2 text-xs text-foreground-muted">
+                <p className="border-t border-border/60 bg-surface px-3 py-2 text-xs font-medium text-foreground-muted">
                   {photo.caption}
                 </p>
               )}

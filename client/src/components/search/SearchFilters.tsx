@@ -53,9 +53,11 @@ interface SearchFiltersProps {
 
 function ChipGroup({ legend, children }: { legend: string; children: ReactNode }) {
   return (
-    <fieldset className="min-w-0">
-      <legend className="mb-1.5 text-sm font-semibold text-foreground">{legend}</legend>
-      <div className="flex flex-wrap gap-2">{children}</div>
+    <fieldset className="min-w-0 pt-3 first:pt-0">
+      <legend className="mb-1.5 text-xs font-bold uppercase tracking-[0.06em] text-foreground-muted">
+        {legend}
+      </legend>
+      <div className="flex flex-wrap gap-1.5">{children}</div>
     </fieldset>
   );
 }
@@ -93,90 +95,90 @@ export function SearchFilters({
 
   const advancedFilters = (
     <>
-          <ChipGroup legend={t("search.filters.maxPrice")}>
-            <label className="w-24">
-              <span className="sr-only">{t("search.filters.maxPriceCurrency")}</span>
-              <select
-                value={filters.currency}
-                onChange={(event) =>
-                  update("currency", event.target.value as Currency)
-                }
-                className={CONTROL_CLASS}
-              >
-                {SUPPORTED_CURRENCIES.map((code) => (
-                  <option key={code} value={code}>
-                    {code}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {PRICE_OPTIONS.map((price) => (
-              <button
-                key={price}
-                type="button"
-                aria-pressed={filters.maxPrice === String(price)}
-                onClick={() => toggle("maxPrice", price)}
-                className={chipClasses(filters.maxPrice === String(price))}
-              >
-                ≤ {price} {filters.currency}
-              </button>
+      <ChipGroup legend={t("search.filters.maxPrice")}>
+        <label className="w-24">
+          <span className="sr-only">{t("search.filters.maxPriceCurrency")}</span>
+          <select
+            value={filters.currency}
+            onChange={(event) =>
+              update("currency", event.target.value as Currency)
+            }
+            className={CONTROL_CLASS}
+          >
+            {SUPPORTED_CURRENCIES.map((code) => (
+              <option key={code} value={code}>
+                {code}
+              </option>
             ))}
-          </ChipGroup>
+          </select>
+        </label>
+        {PRICE_OPTIONS.map((price) => (
+          <button
+            key={price}
+            type="button"
+            aria-pressed={filters.maxPrice === String(price)}
+            onClick={() => toggle("maxPrice", price)}
+            className={chipClasses(filters.maxPrice === String(price))}
+          >
+            ≤ {price} {filters.currency}
+          </button>
+        ))}
+      </ChipGroup>
 
-          <ChipGroup legend={t("search.filters.distance")}>
-            {RADIUS_OPTIONS.map((radius) => (
-              <button
-                key={radius}
-                type="button"
-                disabled={distanceBlocked}
-                aria-pressed={filters.radiusKm === String(radius)}
-                aria-describedby="distance-help"
-                onClick={() => toggle("radiusKm", radius)}
-                className={chipClasses(filters.radiusKm === String(radius))}
-              >
-                {radius} km
-              </button>
-            ))}
-            <p id="distance-help" className="w-full text-xs text-foreground-muted">
-              {positionStatus === "denied"
-                ? t("search.filters.distanceHelp.denied")
-                : positionStatus === "unavailable"
-                  ? t("search.filters.distanceHelp.unavailable")
-                  : positionStatus === "pending"
-                    ? t("search.filters.distanceHelp.pending")
-                    : positionStatus === "granted"
-                      ? t("search.filters.distanceHelp.granted")
-                      : t("search.filters.distanceHelp.idle")}
-            </p>
-          </ChipGroup>
+      <ChipGroup legend={t("search.filters.distance")}>
+        {RADIUS_OPTIONS.map((radius) => (
+          <button
+            key={radius}
+            type="button"
+            disabled={distanceBlocked}
+            aria-pressed={filters.radiusKm === String(radius)}
+            aria-describedby="distance-help"
+            onClick={() => toggle("radiusKm", radius)}
+            className={chipClasses(filters.radiusKm === String(radius))}
+          >
+            {radius} km
+          </button>
+        ))}
+        <p id="distance-help" className="w-full pt-0.5 text-xs text-foreground-muted">
+          {positionStatus === "denied"
+            ? t("search.filters.distanceHelp.denied")
+            : positionStatus === "unavailable"
+              ? t("search.filters.distanceHelp.unavailable")
+              : positionStatus === "pending"
+                ? t("search.filters.distanceHelp.pending")
+                : positionStatus === "granted"
+                  ? t("search.filters.distanceHelp.granted")
+                  : t("search.filters.distanceHelp.idle")}
+        </p>
+      </ChipGroup>
 
-          <ChipGroup legend={t("search.filters.minRating")}>
-            {RATING_OPTIONS.map((rating) => (
-              <button
-                key={rating}
-                type="button"
-                aria-pressed={filters.minRating === String(rating)}
-                aria-label={
-                  rating === 5
-                    ? t("search.filters.ratingMaxAria")
-                    : t("search.filters.ratingAria", { rating })
-                }
-                onClick={() => toggle("minRating", rating)}
-                className={chipClasses(filters.minRating === String(rating))}
-              >
-                {rating === 5 ? "5 ★" : t("search.filters.ratingChip", { rating })}
-              </button>
-            ))}
-          </ChipGroup>
+      <ChipGroup legend={t("search.filters.minRating")}>
+        {RATING_OPTIONS.map((rating) => (
+          <button
+            key={rating}
+            type="button"
+            aria-pressed={filters.minRating === String(rating)}
+            aria-label={
+              rating === 5
+                ? t("search.filters.ratingMaxAria")
+                : t("search.filters.ratingAria", { rating })
+            }
+            onClick={() => toggle("minRating", rating)}
+            className={chipClasses(filters.minRating === String(rating))}
+          >
+            {rating === 5 ? "5 ★" : t("search.filters.ratingChip", { rating })}
+          </button>
+        ))}
+      </ChipGroup>
     </>
   );
 
   return (
-    <Card className="p-4 sm:p-5">
+    <Card className="p-4">
       <form onSubmit={onSubmit} className="space-y-3" role="search">
         {/* Ligne toujours visible : ville + recherche + accès aux filtres. */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <Field label={t("search.filters.cityLabel")} className="min-w-0 flex-1">
+        <div className="flex flex-col gap-2">
+          <Field label={t("search.filters.cityLabel")} className="min-w-0">
             {(control) => (
               <CityCombobox
                 {...control}
@@ -188,7 +190,7 @@ export function SearchFilters({
             )}
           </Field>
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" className="min-h-[44px]">
+            <Button type="submit" className="min-h-[44px] flex-1">
               {t("search.filters.submit")}
             </Button>
             <Button
@@ -238,7 +240,10 @@ export function SearchFilters({
 
         {/* Desktop : filtres toujours visibles dans le panneau. */}
         {advancedVisible && (
-          <div id="search-filters" className="grid grid-cols-1 gap-4">
+          <div
+            id="search-filters"
+            className="grid grid-cols-1 gap-3 divide-y divide-border/70 border-t border-border/70 pt-3"
+          >
             {advancedFilters}
           </div>
         )}
@@ -263,7 +268,7 @@ export function SearchFilters({
             </>
           }
         >
-          <div id="search-filters" className="grid grid-cols-1 gap-5 pt-1">
+          <div id="search-filters" className="grid grid-cols-1 gap-4 divide-y divide-border/70 pt-1">
             {advancedFilters}
           </div>
         </Sheet>

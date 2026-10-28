@@ -12,8 +12,8 @@ import { FadeMotif } from "../ui/FadeMotif";
 // avis → « Nouveau sur FindBarber » (jamais « 0,0 »), sans service actif → pas
 // de prix.
 //
-// `tone="onNight"` : texte clair, pour les cartes vitrine posées sur une photo
-// voilée de nuit.
+// `tone="onNight"` : texte clair et repli photo studio sombre, pour les cartes
+// vitrine posées sur un fond de nuit.
 
 export type HighlightTone = "default" | "onNight";
 
@@ -45,12 +45,16 @@ export function StarIcon({ className }: { className?: string }) {
  * Photo du barber ou visuel par défaut (initiale sur le motif « dégradé »).
  * `className` fixe la taille ; l'image est `lazy` et ses dimensions sont
  * réservées par l'appelant (pas de saut de mise en page).
+ * En `tone="onNight"`, le repli sans photo adopte une toile nuit éclairée au
+ * cobalt et au laiton, cohérente avec les cartes vitrine de l'accueil.
  */
 export function BarberPhoto({
   barber,
+  tone = "default",
   className,
 }: {
   barber: BarberLike;
+  tone?: HighlightTone;
   className?: string;
 }) {
   const url = barber.avatarPath ? resolveUploadUrl(barber.avatarPath) : null;
@@ -64,6 +68,24 @@ export function BarberPhoto({
       />
     );
   }
+  const initial = barber.displayName.charAt(0).toUpperCase();
+  if (tone === "onNight") {
+    return (
+      <div
+        aria-hidden="true"
+        className={cn(
+          "grid shrink-0 place-items-center overflow-hidden bg-night-2 font-display font-bold text-white",
+          "bg-[radial-gradient(85%_70%_at_78%_18%,rgb(var(--fb-cobalt)/0.36),transparent_68%),radial-gradient(70%_60%_at_18%_82%,rgb(var(--fb-brass)/0.2),transparent_70%)]",
+          className,
+        )}
+      >
+        <FadeMotif className="h-2/5 w-full self-end text-cobalt/25 [grid-area:1/1]" />
+        <span className="mb-8 flex h-24 w-24 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-4xl font-extrabold tracking-tight text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.16)] backdrop-blur-sm [grid-area:1/1]">
+          {initial}
+        </span>
+      </div>
+    );
+  }
   return (
     <div
       aria-hidden="true"
@@ -75,14 +97,12 @@ export function BarberPhoto({
       )}
     >
       <FadeMotif className="h-1/2 w-full self-end text-accent/15 [grid-area:1/1]" />
-      <span className="[grid-area:1/1]">
-        {barber.displayName.charAt(0).toUpperCase()}
-      </span>
+      <span className="[grid-area:1/1]">{initial}</span>
     </div>
   );
 }
 
-/** Note moyenne + nombre d'avis, ou « Pas encore d'avis ». */
+/** Note moyenne + nombre d'avis, ou « Nouveau sur FindBarber ». */
 export function RatingSummary({
   barber,
   tone = "default",
@@ -146,7 +166,12 @@ export function StartingPrice({
       <span className={tone === "onNight" ? "text-night-muted" : "text-foreground-muted"}>
         {t("search.highlights.startingFrom")}{" "}
       </span>
-      <span className="font-semibold">
+      <span
+        className={cn(
+          "font-semibold",
+          tone === "onNight" && "font-display text-base font-bold text-white",
+        )}
+      >
         {formatCurrency(barber.startingPriceMinor, barber.currency)}
       </span>
     </p>

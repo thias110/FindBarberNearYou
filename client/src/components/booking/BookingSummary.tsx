@@ -5,6 +5,7 @@ import { cn } from "../../lib/cn";
 import { formatCurrency, formatDuration } from "../../lib/formatters";
 import { label } from "../../lib/labels";
 import { formatMinutes } from "../../lib/time";
+import { FadeMotif } from "../ui/FadeMotif";
 import { formatDayLong } from "./format";
 
 export interface BookingSummaryData {
@@ -32,7 +33,7 @@ function Row({ term, children }: { term: string; children: ReactNode }) {
   return (
     <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3 py-2.5 text-sm">
       <dt className="text-foreground-muted">{term}</dt>
-      <dd className="min-w-0 font-medium text-foreground">{children}</dd>
+      <dd className="min-w-0 font-semibold text-foreground">{children}</dd>
     </div>
   );
 }
@@ -57,7 +58,7 @@ export function SummaryList({ data }: { data: BookingSummaryData }) {
 
   return (
     <div>
-      <dl className="divide-y divide-border">
+      <dl className="divide-y divide-border/70">
         <Row term={t("booking.flow.summary.barber")}>{data.barberName}</Row>
         <Row term={t("booking.flow.summary.service")}>
           {data.serviceName ? (
@@ -93,11 +94,11 @@ export function SummaryList({ data }: { data: BookingSummaryData }) {
         </Row>
         <Row term={t("booking.flow.summary.payment")}>{payment}</Row>
       </dl>
-      <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-border pt-3">
-        <span className="text-sm font-semibold text-foreground">
+      <div className="mt-3 flex items-baseline justify-between gap-3 rounded-xl bg-surface-muted px-3.5 py-3">
+        <span className="text-sm font-bold text-foreground">
           {t("booking.flow.summary.total")}
         </span>
-        <span className="font-display text-h4 font-bold tabular-nums text-foreground">
+        <span className="font-display text-xl font-extrabold tabular-nums text-foreground">
           {hasService ? formatCurrency(data.priceMinor as number, data.currency) : "–"}
         </span>
       </div>
@@ -118,14 +119,17 @@ export function BookingSummaryAside({
     <aside
       aria-label={t("booking.flow.summary.title")}
       className={cn(
-        "hidden rounded-lg border border-border bg-surface p-5 shadow-1 lg:sticky lg:top-24 lg:block",
+        "hidden overflow-hidden rounded-2xl border border-border bg-surface shadow-card-sm lg:sticky lg:top-24 lg:block",
         className,
       )}
     >
-      <h3 className="mb-1 text-h4 font-bold text-foreground">
-        {t("booking.flow.summary.title")}
-      </h3>
-      <SummaryList data={data} />
+      <FadeMotif className="h-2.5 w-full text-accent/20" />
+      <div className="p-5">
+        <h3 className="mb-1 text-h4 font-bold text-foreground">
+          {t("booking.flow.summary.title")}
+        </h3>
+        <SummaryList data={data} />
+      </div>
     </aside>
   );
 }

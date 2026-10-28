@@ -43,10 +43,18 @@
         "AT_PROVIDER": "Chez le pro",
         "AT_CLIENT": "À domicile"
       },
-      "searchLabel": "Rechercher un barber"
+      "searchLabel": "Rechercher un barber",
+      "liveBadge": "Réservation en ligne 24h/24 · Salon & domicile",
+      "aroundMe": "Autour de moi",
+      "highlights": {
+        "certified": "Profils vérifiés",
+        "realtime": "Créneaux en direct",
+        "express": "Réservation express"
+      }
     },
     "categories": {
-      "title": "Prestations populaires"
+      "title": "Prestations populaires",
+      "subtitle": "Explorez directement par spécialité."
     },
     "preview": {
       "atHome": "À domicile",
@@ -76,7 +84,18 @@
       "login": "Se connecter",
       "barberTitle": "Vous êtes barber ?",
       "barberDescription": "Présentez vos services, gérez vos horaires et recevez des réservations, au salon ou à domicile.",
-      "barberCta": "Proposer mes services"
+      "barberCta": "Proposer mes services",
+      "clientBadge": "Espace client",
+      "clientPerks": {
+        "favorites": "Vos barbers favoris accessibles en un clic",
+        "calendar": "Ajout instantané au calendrier (.ics) et suivi en direct"
+      },
+      "barberBadge": "Espace professionnel",
+      "barberPerks": {
+        "agenda": "Agenda en ligne sans double réservation",
+        "places": "Au salon, chez vous ou à domicile client",
+        "payments": "Paiement sur place, acompte ou totalité en ligne"
+      }
     },
     "steps": {
       "title": "Comment ça marche",
@@ -91,7 +110,8 @@
       "book": {
         "title": "Réservez",
         "description": "Choisissez un créneau et confirmez votre rendez-vous."
-      }
+      },
+      "subtitle": "De la recherche à la confirmation, sans friction."
     },
     "logout": "Se déconnecter"
   },

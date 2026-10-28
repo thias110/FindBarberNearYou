@@ -47,6 +47,7 @@ import { formatCurrency, formatDuration } from "../../lib/formatters";
 import { downloadIcs } from "../../lib/ics";
 import { label } from "../../lib/labels";
 import { Alert } from "../ui/Alert";
+import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { buttonClasses } from "../ui/buttonStyles";
 import { Card } from "../ui/Card";
@@ -114,10 +115,14 @@ export function BookingFlow({
   barberId,
   profile,
   services,
+  externalSelection = null,
+  onServiceChange,
 }: {
   barberId: string;
   profile: PublicBarberProfile;
   services: PublicBarberService[];
+  externalSelection?: { id: string; seq: number } | null;
+  onServiceChange?: (serviceId: string) => void;
 }) {
   const { t, i18n } = useTranslation("client");
   const { user } = useAuth();
@@ -149,6 +154,7 @@ export function BookingFlow({
   const formRef = useRef<HTMLFormElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const previousStep = useRef<Step>(1);
+  const appliedSeqRef = useRef(0);
   const idPrefix = useId();
 
   const horizon = LIMITS.bookingHorizonDays;
@@ -178,9 +184,28 @@ export function BookingFlow({
 
   function handleServiceChange(value: string) {
     setServiceId(value);
+    onServiceChange?.(value);
     resetSlotSelection();
     clearFieldError("serviceId");
   }
+
+  useEffect(() => {
+    if (!externalSelection || externalSelection.seq === appliedSeqRef.current) return;
+    appliedSeqRef.current = externalSelection.seq;
+    setServiceId(externalSelection.id);
+    onServiceChange?.(externalSelection.id);
+    setSelected(null);
+    setWeekData(null);
+    setWeekOffset(0);
+    setFieldErrors((current) => {
+      const next = { ...current };
+      delete next.serviceId;
+      delete next.startMinute;
+      delete next.date;
+      return next;
+    });
+    setStep(1);
+  }, [externalSelection, onServiceChange]);
 
   function handlePlaceChange(value: ServicePlace | "") {
     setPlace(value);
@@ -478,33 +503,63 @@ export function BookingFlow({
       className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start"
     >
       <div className="min-w-0">
-        <Card className="p-4 sm:p-6">
-          <h2 className="text-lg font-bold text-foreground">{t("booking.flow.title")}</h2>
-
-          <div aria-hidden="true" className="mt-3 flex gap-1.5">
-            {[1, 2, 3].map((index) => (
-              <span
-                key={index}
-                className={cn(
-                  "h-1 flex-1 rounded-full transition-colors duration-base",
-                  index <= step ? "bg-accent" : "bg-border",
-                )}
-              />
-            ))}
+        <Card className="p-5 sm:p-6 shadow-card-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-bold text-foreground">{t("booking.flow.title")}</h2>
+            <p className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold tabular-nums text-foreground-muted">
+              {t("booking.flow.progress", { current: step, total: 3 })}
+            </p>
           </div>
-          <p className="mt-2 text-xs font-medium text-foreground-muted">
-            {t("booking.flow.progress", { current: step, total: 3 })}
-          </p>
+
+          <div aria-hidden="true" className="mt-3.5 grid grid-cols-3 gap-2">
+            {([1, 2, 3] as const).map((index) => {
+              const active = index === step;
+              const completed = index < step;
+              return (
+                <div key={index} className="space-y-1.5">
+                  <div
+                    className={cn(
+                      "h-1.5 rounded-full transition-colors duration-base",
+                      active || completed ? "bg-accent" : "bg-border",
+                    )}
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold tabular-nums",
+                        active
+                          ? "bg-accent text-accent-foreground"
+                          : completed
+                            ? "bg-accent-soft text-accent-strong"
+                            : "bg-surface-muted text-foreground-muted",
+                      )}
+                    >
+                      {index}
+                    </span>
+                    <span
+                      className={cn(
+                        "truncate text-xs font-medium",
+                        active ? "font-bold text-foreground" : "text-foreground-muted",
+                      )}
+                    >
+                      {t(`booking.flow.steps.${STEP_KEYS[index - 1]}`)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
           <h3
             ref={headingRef}
             tabIndex={-1}
-            className="mt-1 text-h4 font-bold text-foreground focus:outline-none"
+            className="mt-4 border-t border-border/70 pt-4 text-h3 font-bold text-foreground focus:outline-none"
           >
             {stepTitle}
           </h3>
 
           {step === 1 && (
-            <div className="mt-4 space-y-4">
+            <div className="mt-4 space-y-5">
               <Field label={t("booking.flow.service.label")} error={fieldErrors.serviceId}>
                 {(control) => (
                   <Select
@@ -522,6 +577,31 @@ export function BookingFlow({
                   </Select>
                 )}
               </Field>
+
+              {selectedService && (
+                <div className="rounded-xl border border-border bg-surface-muted/60 p-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-foreground">
+                        {selectedService.name}
+                      </p>
+                      {selectedService.description && (
+                        <p className="mt-0.5 text-xs leading-relaxed text-foreground-muted">
+                          {selectedService.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="font-display text-base font-extrabold tabular-nums text-foreground">
+                        {formatCurrency(selectedService.priceMinor, profile.currency)}
+                      </p>
+                      <Badge variant="neutral" size="sm" className="mt-1">
+                        {formatDuration(selectedService.durationMinutes)}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div data-invalid={fieldErrors.place ? "true" : undefined}>
                 <p id={`${idPrefix}-place-label`} className="text-sm font-semibold text-foreground">
@@ -567,8 +647,12 @@ export function BookingFlow({
 
               {authNotice}
 
-              <div className="flex justify-end">
-                <Button type="button" className="w-full sm:w-auto" onClick={handleContinue}>
+              <div className="flex justify-end pt-1">
+                <Button
+                  type="button"
+                  className="w-full shadow-cta sm:w-auto"
+                  onClick={handleContinue}
+                >
                   {t("booking.flow.next")}
                 </Button>
               </div>
@@ -602,11 +686,11 @@ export function BookingFlow({
                   <p id={errorId("startMinute")}>{slotError}</p>
                 </Alert>
               )}
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+              <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-between">
                 <Button type="button" variant="ghost" onClick={() => goTo(1)}>
                   {t("booking.flow.back")}
                 </Button>
-                <Button type="button" onClick={handleContinue}>
+                <Button type="button" className="shadow-cta" onClick={handleContinue}>
                   {t("booking.flow.next")}
                 </Button>
               </div>
@@ -615,7 +699,7 @@ export function BookingFlow({
 
           {step === 3 && (
             <div className="mt-4 space-y-4">
-              <div className="rounded-lg border border-border p-4 lg:hidden">
+              <div className="rounded-xl border border-border bg-surface-muted/30 p-4 lg:hidden">
                 <SummaryList data={summary} />
               </div>
               {onlineAmount > 0 && selectedService && (
@@ -646,7 +730,7 @@ export function BookingFlow({
               {authNotice}
               {/* Erreur globale juste au-dessus du bouton (issue #57). */}
               {submitError && <Alert variant="danger">{submitError}</Alert>}
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+              <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-between">
                 <Button
                   type="button"
                   variant="ghost"
@@ -657,6 +741,7 @@ export function BookingFlow({
                 </Button>
                 <Button
                   type="submit"
+                  className="shadow-cta"
                   isLoading={submitting}
                   disabled={submitting || !canSubmit}
                 >
@@ -713,13 +798,13 @@ function ConfirmationScreen({
   }
 
   return (
-    <Card className="mx-auto max-w-[35rem] p-6 sm:p-8">
+    <Card className="mx-auto max-w-[35rem] p-6 shadow-card sm:p-8">
       <div className="flex flex-col items-center text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-success/15 text-success">
+        <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-success/15 text-success ring-1 ring-success/25">
           <svg
             aria-hidden="true"
             viewBox="0 0 24 24"
-            className="h-7 w-7"
+            className="h-8 w-8"
             fill="none"
             stroke="currentColor"
             strokeWidth="2.4"
@@ -748,7 +833,7 @@ function ConfirmationScreen({
         </p>
       </div>
 
-      <div className="mt-6 rounded-lg border border-border p-4">
+      <div className="mt-6 rounded-xl border border-border p-4">
         <SummaryList data={summary} />
       </div>
 
@@ -756,7 +841,7 @@ function ConfirmationScreen({
         <Button variant="secondary" onClick={addToCalendar}>
           {t("booking.flow.confirmation.addToCalendar")}
         </Button>
-        <Link to="/appointments" className={buttonClasses("primary")}>
+        <Link to="/appointments" className={buttonClasses("primary", "md", "shadow-cta")}>
           {t("booking.flow.confirmation.viewAppointments")}
         </Link>
       </div>

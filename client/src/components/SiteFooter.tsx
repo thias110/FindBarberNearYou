@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import type { SocialNetwork } from "@findbarber/shared/types";
 import { useAuth } from "../app/auth-context";
 import { useSiteConfig } from "../lib/siteConfig";
+import { Logo } from "./Logo";
 import { FadeMotif } from "./ui/FadeMotif";
 
 // Pied de page global (issue #59, design system « Dégradé » : plan §2.6.10) :
@@ -60,8 +61,10 @@ function SocialIcon({ network }: { network: SocialNetwork }) {
 function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <h2 className="font-sans text-h4 font-bold text-white">{title}</h2>
-      <ul className="mt-2">{children}</ul>
+      <h2 className="font-sans text-xs font-bold uppercase tracking-[0.08em] text-white">
+        {title}
+      </h2>
+      <ul className="mt-2.5">{children}</ul>
     </div>
   );
 }
@@ -76,10 +79,14 @@ export function SiteFooter() {
     <footer>
       {/* Raccord avec la section précédente : les lignes se resserrent vers la nuit. */}
       <FadeMotif className="h-10 w-full rotate-180 text-night" />
-      <div className="bg-night text-white">
+      <div className="relative overflow-hidden bg-night text-white">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_85%_0%,rgb(var(--fb-cobalt)/0.18),transparent_70%)]"
+        />
         <nav
           aria-label={t("footer.nav")}
-          className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-x-6 gap-y-8 px-4 pb-8 pt-10 sm:px-8 lg:grid-cols-4"
+          className="relative mx-auto grid w-full max-w-6xl grid-cols-2 gap-x-6 gap-y-8 px-4 pb-8 pt-12 sm:px-8 lg:grid-cols-4"
         >
           <FooterColumn title={t("footer.searchTitle")}>
             <li>
@@ -128,8 +135,13 @@ export function SiteFooter() {
             </li>
           </FooterColumn>
         </nav>
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-white/10 px-4 py-5 sm:px-8">
-          <p className="text-sm text-night-muted">© {new Date().getFullYear()} FindBarber</p>
+        <div className="relative mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 border-t border-white/10 px-4 py-6 sm:px-8">
+          <div className="flex flex-wrap items-center gap-4">
+            <Logo tone="onNight" />
+            <p className="text-sm text-night-muted">
+              © {new Date().getFullYear()} FindBarber
+            </p>
+          </div>
           {socialLinks.length > 0 && (
             <ul aria-label={t("footer.social")} className="flex items-center gap-1">
               {socialLinks.map((link) => (
@@ -141,7 +153,7 @@ export function SiteFooter() {
                     aria-label={t("footer.newTab", {
                       network: NETWORK_LABEL[link.network],
                     })}
-                    className={`${LINK_CLASS} min-w-11 justify-center rounded-full`}
+                    className={`${LINK_CLASS} min-w-11 justify-center rounded-full hover:bg-white/[0.08]`}
                   >
                     <SocialIcon network={link.network} />
                   </a>

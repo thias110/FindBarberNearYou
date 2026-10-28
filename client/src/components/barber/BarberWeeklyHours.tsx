@@ -18,16 +18,31 @@ export function BarberWeeklyHours({ hours }: { hours: PublicWeeklyHours }) {
   return (
     <Card className="p-6">
       <section aria-labelledby={titleId}>
-        <h2 id={titleId} className="text-h3 font-bold text-foreground">
-          {t("profile.hours.title")}
-        </h2>
+        <div className="flex items-center gap-2">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 20 20"
+            className="h-5 w-5 shrink-0 text-accent-strong"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="10" cy="10" r="7.5" />
+            <path d="M10 6v4l2.8 1.8" />
+          </svg>
+          <h2 id={titleId} className="text-h3 font-bold text-foreground">
+            {t("profile.hours.title")}
+          </h2>
+        </div>
         {hours.intervals.length === 0 ? (
           <p className="mt-2 text-sm text-foreground-muted">
             {t("profile.hours.empty")}
           </p>
         ) : (
           <>
-            <dl className="mt-3 divide-y divide-border">
+            <dl className="mt-4 divide-y divide-border/70">
               {WEEKDAYS.map((weekday) => {
                 const ranges = hours.intervals.filter((i) => i.weekday === weekday);
                 const isToday = hours.today === weekday;
@@ -38,13 +53,13 @@ export function BarberWeeklyHours({ hours }: { hours: PublicWeeklyHours }) {
                     aria-current={isToday ? "date" : undefined}
                     className={cn(
                       "flex items-start justify-between gap-4 py-2.5 text-sm",
-                      isToday && "-mx-3 rounded-lg bg-accent-soft px-3",
+                      isToday && "-mx-3 rounded-xl border border-accent/25 bg-accent-soft px-3",
                     )}
                   >
                     <dt
                       className={cn(
                         "flex items-center gap-2",
-                        isToday ? "font-semibold text-accent-strong" : "text-foreground",
+                        isToday ? "font-bold text-accent-strong" : "font-medium text-foreground",
                       )}
                     >
                       {label("weekday", weekday)}
@@ -65,7 +80,7 @@ export function BarberWeeklyHours({ hours }: { hours: PublicWeeklyHours }) {
                             key={range.startMinute}
                             className={cn(
                               "block",
-                              isToday ? "font-semibold text-foreground" : "text-foreground",
+                              isToday ? "font-bold text-foreground" : "text-foreground",
                             )}
                           >
                             {formatMinutesRange(range.startMinute, range.endMinute)}
