@@ -37,9 +37,9 @@ describe("format des erreurs de validation", () => {
   it("n'ajoute pas `fields` aux autres erreurs", async () => {
     await createUser("deja@example.com", "CLIENT");
     const res = await request(app)
-      .post("/api/auth/register")
-      .send({ email: "deja@example.com", password: "password123", role: "CLIENT" });
-    expect(res.status).toBe(409);
+      .post("/api/auth/login")
+      .send({ email: "deja@example.com", password: "mauvais-mot-de-passe" });
+    expect(res.status).toBe(401);
     expect(res.body.error).not.toHaveProperty("fields");
   });
 });

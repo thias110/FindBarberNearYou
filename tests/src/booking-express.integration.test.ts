@@ -216,14 +216,19 @@ describe("POST /api/bookings/express", () => {
     expect(confirm.status).toBe(404);
   });
 
-  it("demande de se connecter si l'email a déjà un compte (aucune fusion)", async () => {
+  it("email déjà inscrit : même réponse, aucune fusion, titulaire prévenu", async () => {
     const barber = await seedBarber("express-barber@example.com");
     await createUser(VISITOR, "CLIENT");
     const res = await request(app).post("/api/bookings/express").send(expressBody(barber));
 
-    expect(res.status).toBe(409);
-    expect(res.body.error.code).toBe("EMAIL_TAKEN");
+    // Réponse identique à un succès : l'existence du compte ne fuit pas.
+    expect(res.status).toBe(201);
+    expect(typeof res.body.expiresAt).toBe("string");
     expect(await db.select().from(bookings)).toHaveLength(0);
+    const mails = sentEmails().filter((m) => m.to === VISITOR);
+    expect(mails).toHaveLength(1);
+    expect(mails[0]!.text).toContain("/login");
+    expect(mails[0]!.text).not.toContain("token=");
   });
 
   it("ne crée rien si le créneau n'est plus libre (compte compris)", async () => {
