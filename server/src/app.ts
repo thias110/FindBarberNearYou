@@ -22,7 +22,7 @@ import {
   securityHeaders,
   seoPageHeaders,
 } from "./middleware/security.js";
-import { createRateLimiter, MUTATING_METHODS } from "./middleware/rateLimit.js";
+import { bodyField, createRateLimiter, MUTATING_METHODS } from "./middleware/rateLimit.js";
 import { kickEmailDispatch } from "./modules/email/outbox.js";
 import {
   barberPaymentsRouter,
@@ -46,6 +46,9 @@ export interface AppOptions {
     geocode?: RateLimitOverride;
     places?: RateLimitOverride;
     seo?: RateLimitOverride;
+    loginAccount?: RateLimitOverride;
+    expressBarber?: RateLimitOverride;
+    publicRead?: RateLimitOverride;
   };
   /** Barbers minimum pour qu'une ville ait sa page (défaut : CITY_PAGE_MIN_BARBERS). */
   cityPageMinBarbers?: number;
@@ -160,6 +163,35 @@ export function createApp(options: AppOptions = {}): express.Express {
 
   // Pages ville, plan du site et robots.txt (lot N9) : publics et mis en cache,
   // mais chaque page non cachée interroge la base.
+  // Limites qui ne dépendent pas de l'IP (audit de sécurité) : changer d'IP
+  // ne contourne pas la limite des échecs de connexion sur un même compte, ni
+  // celle des demandes express vers un même barber.
+  const loginAccountLimiter = createRateLimiter({
+    windowMs:
+      options.rateLimits?.loginAccount?.windowMs ??
+      env.LOGIN_ACCOUNT_RATE_LIMIT_WINDOW_MS,
+    limit:
+      options.rateLimits?.loginAccount?.limit ?? env.LOGIN_ACCOUNT_RATE_LIMIT_MAX,
+    skip: !options.rateLimits?.loginAccount && env.NODE_ENV === "test",
+    key: bodyField("email"),
+    skipSuccessfulRequests: true,
+  });
+
+  const expressBarberLimiter = createRateLimiter({
+    windowMs: options.rateLimits?.expressBarber?.windowMs ?? 30 * 60_000,
+    limit: options.rateLimits?.expressBarber?.limit ?? 10,
+    skip: !options.rateLimits?.expressBarber && env.NODE_ENV === "test",
+    key: bodyField("barberId"),
+  });
+
+  // Lectures publiques des barbers (profil, créneaux, avis) : requêtes SQL
+  // coûteuses, sans compte requis.
+  const publicReadLimiter = createRateLimiter({
+    windowMs: options.rateLimits?.publicRead?.windowMs ?? 60_000,
+    limit: options.rateLimits?.publicRead?.limit ?? 120,
+    skip: !options.rateLimits?.publicRead && env.NODE_ENV === "test",
+  });
+
   const seoLimiter = createRateLimiter({
     windowMs: options.rateLimits?.seo?.windowMs ?? 60_000,
     limit: options.rateLimits?.seo?.limit ?? 120,
@@ -180,7 +212,7 @@ export function createApp(options: AppOptions = {}): express.Express {
     next();
   });
 
-  app.use("/api/auth/login", loginLimiter);
+  app.use("/api/auth/login", loginLimiter, loginAccountLimiter);
   app.use("/api/auth/forgot-password", passwordResetLimiter);
   app.use("/api/auth/reset-password", passwordResetLimiter);
   app.use("/api/auth/register", registerLimiter);
@@ -188,8 +220,9 @@ export function createApp(options: AppOptions = {}): express.Express {
   app.use("/api/auth/verify-email", verifyEmailLimiter);
   // Réservation express (lot N6) : crée un compte, donc même bucket que
   // l'inscription (en plus de celui des mutations).
-  app.use("/api/bookings/express", registerLimiter);
+  app.use("/api/bookings/express", registerLimiter, expressBarberLimiter);
   app.use("/api/bookings", mutationLimiter);
+  app.use("/api/barbers", publicReadLimiter);
   app.use("/api/barber/address-suggestions", geocodeLimiter);
   app.use("/api/places", placesLimiter);
   app.use("/api/barber", mutationLimiter);

@@ -1,4 +1,5 @@
 import {
+  accountExistsEmail,
   expressBookingEmail,
   passwordResetEmail,
   verificationEmail,
@@ -32,6 +33,14 @@ export async function sendVerificationEmail(input: {
     verificationEmail(input.to, input.token, input.locale),
     "vérification",
   );
+}
+
+/** Adresse déjà inscrite : le titulaire est prévenu (aucun jeton). */
+export async function sendAccountExistsEmail(input: {
+  to: string;
+  locale?: string | null;
+}): Promise<void> {
+  await sendSafely(accountExistsEmail(input.to, input.locale), "compte existant");
 }
 
 /** Réservation express (lot N6) : vérification et récapitulatif en un email. */

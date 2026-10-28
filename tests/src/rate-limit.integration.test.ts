@@ -106,3 +106,58 @@ describe("mutation rate limiting", () => {
     expect(blocked.body.error.code).toBe("RATE_LIMITED");
   });
 });
+
+// Audit de sécurité (lot 2) : limites qui ne dépendent pas de l'IP.
+describe("login : limite par compte, quelle que soit l'IP", () => {
+  it("bloque un même email après N échecs, sans toucher les autres comptes", async () => {
+    const app = createApp({ rateLimits: { loginAccount: { windowMs: 60_000, limit: 2 } } });
+    for (let i = 0; i < 2; i += 1) {
+      const res = await request(app)
+        .post("/api/auth/login")
+        // La casse et les espaces ne contournent pas la limite.
+        .send({ email: i === 0 ? "cible@example.com" : " CIBLE@example.com ", password: "faux" });
+      expect(res.status).toBe(401);
+    }
+    const blocked = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "cible@example.com", password: PASSWORD });
+    expect(blocked.status).toBe(429);
+
+    const other = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "autre@example.com", password: PASSWORD });
+    expect(other.status).toBe(401);
+  });
+});
+
+describe("réservation express : limite par barber", () => {
+  it("bloque les demandes express vers un même barber au-delà du quota", async () => {
+    const app = createApp({ rateLimits: { expressBarber: { windowMs: 60_000, limit: 2 } } });
+    const body = (barberId: string) => ({
+      barberId,
+      serviceId: "00000000-0000-0000-0000-000000000000",
+      date: "2030-01-10",
+      startMinute: 600,
+      place: "SALON",
+      email: "robot@example.com",
+      name: "Robot",
+      website: "piege",
+    });
+    for (let i = 0; i < 2; i += 1) {
+      const res = await request(app).post("/api/bookings/express").send(body("11111111-1111-4111-8111-111111111111"));
+      expect(res.status).toBe(201);
+    }
+    expect((await request(app).post("/api/bookings/express").send(body("11111111-1111-4111-8111-111111111111"))).status).toBe(429);
+    expect((await request(app).post("/api/bookings/express").send(body("22222222-2222-4222-8222-222222222222"))).status).toBe(201);
+  });
+});
+
+describe("routes publiques des barbers : limite de lecture", () => {
+  it("retourne 429 au-delà du quota de lecture", async () => {
+    const app = createApp({ rateLimits: { publicRead: { windowMs: 60_000, limit: 2 } } });
+    for (let i = 0; i < 2; i += 1) {
+      expect((await request(app).get("/api/barbers/inconnu")).status).not.toBe(429);
+    }
+    expect((await request(app).get("/api/barbers/inconnu")).status).toBe(429);
+  });
+});

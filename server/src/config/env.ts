@@ -64,6 +64,13 @@ const envSchema = z.object({
   // (anti brute-force), inscription moyen, mutations sensibles global.
   LOGIN_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  // Échecs de connexion sur un MÊME compte (toutes IP confondues).
+  LOGIN_ACCOUNT_RATE_LIMIT_WINDOW_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(3_600_000),
+  LOGIN_ACCOUNT_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
   REGISTER_RATE_LIMIT_WINDOW_MS: z.coerce
     .number()
     .int()

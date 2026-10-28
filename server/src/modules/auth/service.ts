@@ -23,6 +23,7 @@ import {
 import { env } from "../../config/env.js";
 import { AppError, isUniqueViolation } from "../../lib/errors.js";
 import {
+  sendAccountExistsEmail,
   sendPasswordResetEmail,
   sendVerificationEmail,
 } from "../../lib/email.js";
@@ -86,13 +87,22 @@ export async function registerUser(input: {
   }
 
   const passwordHash = await hashPassword(input.password);
-  const created = await insertUser(db, {
-    email,
-    passwordHash,
-    role: input.role,
-    name: input.name,
-    locale: input.locale,
-  });
+  let created: User;
+  try {
+    created = await insertUser(db, {
+      email,
+      passwordHash,
+      role: input.role,
+      name: input.name,
+      locale: input.locale,
+    });
+  } catch (err) {
+    if (!isEmailTaken(err)) throw err;
+    // Adresse déjà inscrite : réponse identique à une inscription neuve (un
+    // compte fictif, jamais enregistré), et le titulaire est prévenu.
+    await notifyExistingAccount(email);
+    return decoyPublicUser(email, input);
+  }
 
   // Compte créé NON vérifié : émission immédiate du lien de vérification. Un
   // échec d'envoi n'échoue pas l'inscription (lien redemandable).
@@ -104,6 +114,39 @@ export async function registerUser(input: {
   });
 
   return toPublicUser(created);
+}
+
+export function isEmailTaken(err: unknown): boolean {
+  return err instanceof AppError && err.code === "EMAIL_TAKEN";
+}
+
+/** Prévient le titulaire d'une adresse déjà inscrite (compte actif seulement). */
+export async function notifyExistingAccount(email: string): Promise<void> {
+  const [user] = await db
+    .select({ email: users.email, status: users.status, locale: users.locale })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+  if (user?.status === "ACTIVE") {
+    await sendAccountExistsEmail({ to: user.email, locale: user.locale });
+  }
+}
+
+/** Compte fictif renvoyé à la place d'un compte existant (anti-énumération). */
+function decoyPublicUser(
+  email: string,
+  input: { role: Role; name?: string; locale?: Locale },
+): PublicUser {
+  return {
+    id: randomUUID(),
+    email,
+    role: input.role,
+    status: "ACTIVE",
+    name: input.name?.trim() || null,
+    locale: input.locale ?? DEFAULT_LOCALE,
+    avatarPath: null,
+    createdAt: new Date().toISOString(),
+  };
 }
 
 /** Empreinte bcrypt d'un mot de passe (coût commun à tous les comptes). */
@@ -147,6 +190,13 @@ export async function insertUser(
   }
 }
 
+let dummyHash: Promise<string> | null = null;
+/** Empreinte calculée une fois, au même coût que les vraies. */
+function dummyPasswordHash(): Promise<string> {
+  dummyHash ??= bcrypt.hash(randomBytes(16).toString("hex"), BCRYPT_COST);
+  return dummyHash;
+}
+
 export async function loginUser(input: {
   email: string;
   password: string;
@@ -159,20 +209,22 @@ export async function loginUser(input: {
     .where(eq(users.email, email))
     .limit(1);
 
-  if (!user || user.status === "DELETED") {
+  // Compte inconnu : bcrypt est tout de même exécuté (empreinte factice), pour
+  // que le temps de réponse ne révèle pas quelles adresses sont inscrites.
+  const known = user && user.status !== "DELETED" ? user : null;
+  const passwordMatches = await bcrypt.compare(
+    input.password,
+    known?.passwordHash ?? (await dummyPasswordHash()),
+  );
+  if (!known || !passwordMatches) {
     throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password.");
   }
 
-  const passwordMatches = await bcrypt.compare(input.password, user.passwordHash);
-  if (!passwordMatches) {
-    throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password.");
-  }
-
-  if (user.status === "SUSPENDED") {
+  if (known.status === "SUSPENDED") {
     throw new AppError(403, "ACCOUNT_SUSPENDED", "This account has been suspended.");
   }
 
-  if (user.emailVerifiedAt === null) {
+  if (known.emailVerifiedAt === null) {
     throw new AppError(
       403,
       "EMAIL_NOT_VERIFIED",
@@ -182,13 +234,13 @@ export async function loginUser(input: {
 
   const csrfToken = randomBytes(32).toString("hex");
   const token = jwt.sign(
-    { sub: user.id, csrf: csrfToken },
+    { sub: known.id, csrf: csrfToken },
     env.JWT_SECRET,
     // Durée du JWT, en secondes
     { expiresIn: env.JWT_EXPIRES_IN_SECONDS },
   );
 
-  return { user: toPublicUser(user), token, csrfToken };
+  return { user: toPublicUser(known), token, csrfToken };
 }
 
 // Crée et stocke un jeton de vérification (empreinte SHA-256 uniquement).

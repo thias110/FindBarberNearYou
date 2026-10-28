@@ -131,6 +131,24 @@ export function verificationEmail(
   });
 }
 
+/**
+ * Inscription ou réservation express avec une adresse déjà inscrite : la
+ * réponse de l'API est celle d'un succès (aucune fuite de l'existence du
+ * compte) et le titulaire reçoit ce message, sans aucun lien à jeton.
+ */
+export function accountExistsEmail(to: string, locale?: string | null): MailMessage {
+  const lang = resolveEmailLocale(locale);
+  const s = emailStrings(lang);
+  return render(to, s.accountExistsSubject, {
+    locale: lang,
+    strings: s,
+    title: s.accountExistsTitle,
+    paragraphs: [s.accountExistsIntro],
+    action: { label: s.accountExistsAction, url: appUrl("/login") },
+    footer: s.accountExistsFooter,
+  });
+}
+
 /** Réservation express (lot N6) : le contexte du récapitulatif. */
 export interface ExpressBookingEmailContext {
   barberName: string;

@@ -139,10 +139,16 @@ function toBookingDetails(
 // Résout l'adresse client pour `AT_CLIENT` : vérifie la configuration de zone,
 // géocode côté serveur, calcule la distance Haversine et refuse hors zone.
 // Aucune coordonnée acceptée du navigateur : seules celles du géocodeur font foi.
-async function resolveClientLocation(
+type ClientLocation = { latitude: number; longitude: number };
+
+/** Zone d'intervention et coordonnées du barber exigées pour AT_CLIENT. */
+function assertServiceAreaDefined(
   profile: BarberProfile,
-  address: string,
-): Promise<{ latitude: number; longitude: number }> {
+): asserts profile is BarberProfile & {
+  travelRadiusKm: number;
+  latitude: number;
+  longitude: number;
+} {
   if (profile.travelRadiusKm === null) {
     throw new AppError(
       409,
@@ -160,8 +166,36 @@ async function resolveClientLocation(
       "Coordonnées du professionnel indisponibles.",
     );
   }
+}
 
-  const geocoded = await geocodeAddress(address);
+/**
+ * Réservation chez le client : géocode l'adresse AVANT la transaction (appel
+ * réseau jamais fait sous le verrou du profil, qui bloquerait toutes les
+ * réservations de ce barber pendant l'attente). Le profil est lu sans verrou
+ * pour ne pas géocoder pour rien ; la zone est revérifiée sous verrou.
+ */
+export async function geocodeClientAddress(
+  input: BookingCreateInput,
+): Promise<ClientLocation | undefined> {
+  if (input.place !== "AT_CLIENT") return undefined;
+  const [profile] = await db
+    .select()
+    .from(barberProfiles)
+    .where(eq(barberProfiles.id, input.barberId))
+    .limit(1);
+  if (!profile) {
+    throw new AppError(404, "BARBER_NOT_FOUND", "Profil introuvable.");
+  }
+  assertServiceAreaDefined(profile);
+  return geocodeAddress(input.clientAddress as string);
+}
+
+/** Contrôle de zone, sans appel réseau (sous le verrou du profil). */
+function checkClientLocation(
+  profile: BarberProfile,
+  geocoded: ClientLocation,
+): ClientLocation {
+  assertServiceAreaDefined(profile);
   const distanceKm = haversineDistanceKm(
     profile.latitude,
     profile.longitude,
@@ -457,8 +491,9 @@ export async function createBooking(
   input: BookingCreateInput,
 ): Promise<{ booking: Booking; checkoutUrl: string | null }> {
   let booking: Booking;
+  const clientLocation = await geocodeClientAddress(input);
   try {
-    booking = await createBookingInTransaction(clientUserId, input);
+    booking = await createBookingInTransaction(clientUserId, input, clientLocation);
   } catch (err) {
     // Filet en base : la contrainte d'exclusion `bookings_no_overlap` a refusé
     // un chevauchement que le verrou applicatif aurait dû empêcher.
@@ -484,9 +519,12 @@ export async function createBooking(
 async function createBookingInTransaction(
   clientUserId: string,
   input: BookingCreateInput,
+  clientLocation: ClientLocation | undefined,
 ): Promise<Booking> {
   return db.transaction(async (tx) =>
-    insertBookingUnderLock(tx as unknown as typeof db, clientUserId, input),
+    insertBookingUnderLock(tx as unknown as typeof db, clientUserId, input, {
+      clientLocation,
+    }),
   );
 }
 
@@ -497,6 +535,8 @@ export interface InsertBookingOptions {
    * barber exige un paiement en ligne.
    */
   emailConfirmExpiresAt?: Date;
+  /** AT_CLIENT : adresse déjà géocodée hors transaction (`geocodeClientAddress`). */
+  clientLocation?: ClientLocation;
 }
 
 /**
@@ -564,13 +604,16 @@ export async function insertBookingUnderLock(
     );
   }
 
-  // 3b. Adresse client privée : requise et géocodée seulement pour AT_CLIENT ;
-  // nulle (non stockée) pour SALON / AT_PROVIDER. Le géocodage et le contrôle
-  // de zone sont faits ici, sous le verrou du profil.
-  const clientLocation =
-    input.place === "AT_CLIENT"
-      ? await resolveClientLocation(profile, input.clientAddress as string)
-      : null;
+  // 3b. Adresse client privée : requise seulement pour AT_CLIENT ; nulle (non
+  // stockée) pour SALON / AT_PROVIDER. Géocodée par l'appelant AVANT la
+  // transaction ; seul le contrôle de zone (sans réseau) se fait sous verrou.
+  let clientLocation: ClientLocation | null = null;
+  if (input.place === "AT_CLIENT") {
+    if (!options.clientLocation) {
+      throw new Error("AT_CLIENT : adresse non géocodée avant la transaction.");
+    }
+    clientLocation = checkClientLocation(profile, options.clientLocation);
+  }
 
   // 4. Les demandes échues de ce barber passent en EXPIRED (sous verrou) :
   // elles ne bloquent plus le créneau ni la contrainte d'exclusion.

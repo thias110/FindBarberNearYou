@@ -59,7 +59,7 @@ test("un visiteur réserve sans compte et doit confirmer son email", async ({
   await expectNoA11yViolations(page);
 });
 
-test("un email déjà connu demande de se connecter", async ({ page }) => {
+test("un email déjà connu reçoit la même réponse (aucune fuite)", async ({ page }) => {
   const res = await page.request.post(`${API}/api/bookings/express`, {
     data: {
       barberId: "00000000-0000-0000-0000-000000000000",
@@ -71,6 +71,7 @@ test("un email déjà connu demande de se connecter", async ({ page }) => {
       name: "Doublon",
     },
   });
-  expect(res.status()).toBe(409);
-  expect((await res.json()).error.code).toBe("EMAIL_TAKEN");
+  // Barber inconnu : la demande échoue, mais l'email connu n'est jamais
+  // signalé comme tel.
+  expect((await res.json()).error?.code).not.toBe("EMAIL_TAKEN");
 });

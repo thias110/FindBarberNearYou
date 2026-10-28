@@ -47,6 +47,14 @@ export interface EmailStrings {
   verificationAction: string;
   verificationFooter: string;
 
+  // Inscription ou réservation express avec une adresse déjà inscrite : la
+  // réponse ne le révèle pas, le titulaire est prévenu par email.
+  accountExistsSubject: string;
+  accountExistsTitle: string;
+  accountExistsIntro: string;
+  accountExistsAction: string;
+  accountExistsFooter: string;
+
   // Réservation express (lot N6) : vérification + récapitulatif en un email.
   expressSubject: (barber: string) => string;
   expressTitle: string;
@@ -105,6 +113,14 @@ const fr: EmailStrings = {
   verificationAction: "Confirmer mon adresse",
   verificationFooter:
     "Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.",
+
+  accountExistsSubject: "Vous avez déjà un compte FindBarber",
+  accountExistsTitle: "Vous avez déjà un compte",
+  accountExistsIntro:
+    "Quelqu'un, sans doute vous, a voulu créer un compte ou réserver avec cette adresse. Elle a déjà un compte FindBarber : connectez-vous pour réserver. Mot de passe oublié ? Vous pourrez le réinitialiser depuis la page de connexion.",
+  accountExistsAction: "Me connecter",
+  accountExistsFooter:
+    "Si ce n'était pas vous, ignorez cet email : rien n'a été modifié sur votre compte.",
 
   expressSubject: (barber) => `Confirmez votre email pour envoyer votre demande à ${barber}`,
   expressTitle: "Dernière étape : confirmez votre email",
@@ -222,6 +238,14 @@ const en: EmailStrings = {
   verificationFooter:
     "If you didn't sign up for an account, please ignore this email.",
 
+  accountExistsSubject: "You already have a FindBarber account",
+  accountExistsTitle: "You already have an account",
+  accountExistsIntro:
+    "Someone, probably you, tried to create an account or book with this address. It already has a FindBarber account: sign in to book. Forgot your password? You can reset it from the sign-in page.",
+  accountExistsAction: "Sign in",
+  accountExistsFooter:
+    "If this wasn't you, ignore this email: nothing has changed on your account.",
+
   expressSubject: (barber) => `Confirm your email to send your request to ${barber}`,
   expressTitle: "Last step: confirm your email",
   expressIntro: ({ barber, when, what }) =>
@@ -338,6 +362,14 @@ const it: EmailStrings = {
   verificationFooter:
     "Se non hai richiesto tu questa registrazione, ignora questa email.",
 
+  accountExistsSubject: "Hai già un account FindBarber",
+  accountExistsTitle: "Hai già un account",
+  accountExistsIntro:
+    "Qualcuno, probabilmente tu, ha provato a creare un account o a prenotare con questo indirizzo. Ha già un account FindBarber: accedi per prenotare. Password dimenticata? Puoi reimpostarla dalla pagina di accesso.",
+  accountExistsAction: "Accedi",
+  accountExistsFooter:
+    "Se non sei stato tu, ignora questa email: nulla è cambiato nel tuo account.",
+
   expressSubject: (barber) => `Conferma la tua email per inviare la richiesta a ${barber}`,
   expressTitle: "Ultimo passaggio: conferma la tua email",
   expressIntro: ({ barber, when, what }) =>
@@ -453,6 +485,14 @@ const es: EmailStrings = {
   verificationAction: "Confirmar mi dirección",
   verificationFooter:
     "Si no has sido tú quien se ha registrado, ignora este email.",
+
+  accountExistsSubject: "Ya tienes una cuenta de FindBarber",
+  accountExistsTitle: "Ya tienes una cuenta",
+  accountExistsIntro:
+    "Alguien, probablemente tú, intentó crear una cuenta o reservar con esta dirección. Ya tiene una cuenta de FindBarber: inicia sesión para reservar. ¿Olvidaste tu contraseña? Puedes restablecerla desde la página de inicio de sesión.",
+  accountExistsAction: "Iniciar sesión",
+  accountExistsFooter:
+    "Si no fuiste tú, ignora este email: nada ha cambiado en tu cuenta.",
 
   expressSubject: (barber) => `Confirma tu email para enviar tu solicitud a ${barber}`,
   expressTitle: "Último paso: confirma tu email",

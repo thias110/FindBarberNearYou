@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -8,6 +8,7 @@ import { db } from "../../server/src/db/client";
 import { migrateDb } from "../../server/src/db/migrate";
 import { users } from "@findbarber/shared/schema";
 import { markEmailVerified } from "./auth-helpers";
+import { clearSentEmails, sentEmails } from "../../server/src/lib/mailer";
 
 const app = createApp();
 
@@ -17,6 +18,11 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await db.delete(users);
+  clearSentEmails();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 const PASSWORD = "password123";
@@ -75,17 +81,30 @@ describe("POST /api/auth/register", () => {
     expect(res.body.user.email).toBe("client@example.com");
   });
 
-  it("rejects an already used email with 409", async () => {
-    await request(app)
+  it("does not reveal an already used email (same 201, warning email)", async () => {
+    const first = await request(app)
       .post("/api/auth/register")
       .send({ email: "dup@example.com", password: PASSWORD, role: "CLIENT" });
+    clearSentEmails();
 
     const res = await request(app)
       .post("/api/auth/register")
-      .send({ email: "dup@example.com", password: PASSWORD, role: "CLIENT" });
+      .send({ email: "dup@example.com", password: "Autre-mot-de-passe-9", role: "BARBER" });
 
-    expect(res.status).toBe(409);
-    expect(res.body.error.code).toBe("EMAIL_TAKEN");
+    // Même réponse qu'une inscription neuve : rien ne distingue les deux.
+    expect(res.status).toBe(201);
+    expect(Object.keys(res.body.user).sort()).toEqual(Object.keys(first.body.user).sort());
+    expect(res.body.user.email).toBe("dup@example.com");
+    expect(res.body.user.id).not.toBe(first.body.user.id);
+
+    // Le compte existant n'est pas modifié, et son titulaire est prévenu.
+    const rows = await db.select().from(users).where(eq(users.email, "dup@example.com"));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.role).toBe("CLIENT");
+    const mails = sentEmails().filter((m) => m.to === "dup@example.com");
+    expect(mails).toHaveLength(1);
+    expect(mails[0]!.text).toContain("/login");
+    expect(mails[0]!.text).not.toContain("token=");
   });
 
   it("rejects an invalid (too short) password with 400", async () => {
@@ -365,5 +384,17 @@ describe("auth rate limiting", () => {
 
     expect(blocked.status).toBe(429);
     expect(blocked.body.error.code).toBe("RATE_LIMITED");
+  });
+});
+
+describe("login timing", () => {
+  it("runs bcrypt even for an unknown email (same response time)", async () => {
+    const compare = vi.spyOn(bcrypt, "compare");
+    const res = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "nobody@example.com", password: PASSWORD });
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("INVALID_CREDENTIALS");
+    expect(compare).toHaveBeenCalledTimes(1);
   });
 });

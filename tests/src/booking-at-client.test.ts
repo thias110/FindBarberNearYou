@@ -442,3 +442,40 @@ describe("private booking details access", () => {
     expect(JSON.stringify(search.body)).not.toContain("Rue du Client 1");
   });
 });
+
+describe("AT_CLIENT booking — géocodage hors verrou (audit de sécurité)", () => {
+  it("géocode avant la transaction : la base reste disponible pendant l'appel", async () => {
+    // Un géocodeur lent sous le verrou du profil bloquerait toutes les
+    // réservations de ce barber. Pendant l'appel, une autre requête doit
+    // pouvoir lire la base sans attendre la fin de la transaction.
+    let databaseFreeDuringGeocoding = false;
+    setGeocoder({
+      geocode: async () => {
+        databaseFreeDuringGeocoding = await Promise.race([
+          db.select().from(users).limit(1).then(() => true),
+          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 1_500)),
+        ]);
+        return NEAR_CLIENT_COORDS;
+      },
+    } as unknown as Geocoder);
+    const date = futureDate(7);
+    const { barberId, serviceId } = await setupBookableBarber(
+      "atclient-lock@example.com",
+      date,
+      AT_CLIENT_OVERRIDES,
+    );
+    await register("atclient-lock-client@example.com", "CLIENT");
+    const client = await login("atclient-lock-client@example.com");
+
+    const res = await createBooking(client.agent, client.csrf, {
+      barberId,
+      serviceId,
+      date,
+      startMinute: 540,
+      place: "AT_CLIENT",
+      clientAddress: "Rue du Client 1, Genève",
+    });
+    expect(res.status).toBe(201);
+    expect(databaseFreeDuringGeocoding).toBe(true);
+  });
+});
