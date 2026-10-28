@@ -109,10 +109,10 @@ const fr: EmailStrings = {
   expressSubject: (barber) => `Confirmez votre email pour envoyer votre demande à ${barber}`,
   expressTitle: "Dernière étape : confirmez votre email",
   expressIntro: ({ barber, when, what }) =>
-    `Votre demande chez ${barber} pour ${what}, le ${when}, est prête. Confirmez votre adresse email pour l'envoyer : votre compte FindBarber sera activé en même temps.`,
+    `Votre demande chez ${barber} pour ${what}, le ${when}, est prête. Choisissez le mot de passe de votre compte FindBarber pour l'envoyer : votre adresse sera confirmée en même temps.`,
   expressDeadline: (minutes) =>
     `Le créneau vous est réservé pendant ${minutes} minutes. Sans confirmation dans ce délai, la demande est annulée et le créneau libéré.`,
-  expressAction: "Confirmer et envoyer ma demande",
+  expressAction: "Choisir mon mot de passe et envoyer ma demande",
   expressFooter:
     "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : aucune réservation ne sera envoyée.",
 
@@ -225,10 +225,10 @@ const en: EmailStrings = {
   expressSubject: (barber) => `Confirm your email to send your request to ${barber}`,
   expressTitle: "Last step: confirm your email",
   expressIntro: ({ barber, when, what }) =>
-    `Your request with ${barber} for ${what} on ${when} is ready. Confirm your email address to send it; your FindBarber account will be activated at the same time.`,
+    `Your request with ${barber} for ${what} on ${when} is ready. Choose the password for your FindBarber account to send it; your email address will be confirmed at the same time.`,
   expressDeadline: (minutes) =>
     `The slot is held for you for ${minutes} minutes. Without confirmation within that time, the request is cancelled and the slot released.`,
-  expressAction: "Confirm and send my request",
+  expressAction: "Choose my password and send my request",
   expressFooter:
     "If you didn't make this request, please ignore this email: no booking will be sent.",
 
@@ -341,10 +341,10 @@ const it: EmailStrings = {
   expressSubject: (barber) => `Conferma la tua email per inviare la richiesta a ${barber}`,
   expressTitle: "Ultimo passaggio: conferma la tua email",
   expressIntro: ({ barber, when, what }) =>
-    `La tua richiesta presso ${barber} per ${what}, il ${when}, è pronta. Conferma il tuo indirizzo email per inviarla: il tuo account FindBarber verrà attivato nello stesso momento.`,
+    `La tua richiesta presso ${barber} per ${what}, il ${when}, è pronta. Scegli la password del tuo account FindBarber per inviarla: il tuo indirizzo email verrà confermato nello stesso momento.`,
   expressDeadline: (minutes) =>
     `Lo slot è riservato per te per ${minutes} minuti. Senza conferma entro questo tempo, la richiesta viene annullata e lo slot liberato.`,
-  expressAction: "Conferma e invia la richiesta",
+  expressAction: "Scegli la password e invia la richiesta",
   expressFooter:
     "Se non hai fatto tu questa richiesta, ignora questa email: nessuna prenotazione verrà inviata.",
 
@@ -457,10 +457,10 @@ const es: EmailStrings = {
   expressSubject: (barber) => `Confirma tu email para enviar tu solicitud a ${barber}`,
   expressTitle: "Último paso: confirma tu email",
   expressIntro: ({ barber, when, what }) =>
-    `Tu solicitud con ${barber} para ${what}, el ${when}, está lista. Confirma tu dirección de email para enviarla: tu cuenta de FindBarber se activará al mismo tiempo.`,
+    `Tu solicitud con ${barber} para ${what}, el ${when}, está lista. Elige la contraseña de tu cuenta de FindBarber para enviarla: tu dirección de email se confirmará al mismo tiempo.`,
   expressDeadline: (minutes) =>
     `El horario queda reservado para ti durante ${minutes} minutos. Sin confirmación en ese plazo, la solicitud se cancela y el horario se libera.`,
-  expressAction: "Confirmar y enviar mi solicitud",
+  expressAction: "Elegir mi contraseña y enviar mi solicitud",
   expressFooter:
     "Si no has hecho esta solicitud, ignora este email: no se enviará ninguna reserva.",
 

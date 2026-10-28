@@ -156,11 +156,12 @@ const envSchema = z.object({
     (value) => (value === "" ? undefined : value),
     z.string().optional(),
   ),
-  // Nombre de hops de proxy de confiance (optionnel, entier positif uniquement).
+  // Nombre de hops de proxy de confiance (entier, 0 = aucun proxy).
   // Absent ou vide → aucun trust proxy (défaut Express `false`, jamais `true`).
+  // Obligatoire en production (voir plus bas).
   TRUST_PROXY_HOPS: z.preprocess(
     (value) => (value === "" || value === undefined ? undefined : value),
-    z.coerce.number().int().positive().max(10).optional(),
+    z.coerce.number().int().min(0).max(10).optional(),
   ),
   // Clé API MapTiler côté SERVEUR pour géocoder l'adresse client (AT_CLIENT).
   // Secret serveur : jamais exposé au navigateur. Absente → géocodage
@@ -209,6 +210,14 @@ if (env.NODE_ENV === "production") {
   ) {
     throw new Error(
       "FIELD_ENCRYPTION_KEY (32 bytes, base64) is required when NODE_ENV=production.",
+    );
+  }
+  // Mal réglé, soit toutes les requêtes semblent venir du proxy (une seule
+  // personne bloque la connexion de tous), soit l'IP se falsifie par
+  // `X-Forwarded-For` et les limites de débit ne servent plus à rien.
+  if (env.TRUST_PROXY_HOPS === undefined) {
+    throw new Error(
+      "TRUST_PROXY_HOPS is required when NODE_ENV=production: the number of reverse proxies in front of Node (1 behind Nginx, 0 without proxy).",
     );
   }
   if (env.MAIL_TRANSPORT !== "smtp" || !env.SMTP_HOST) {

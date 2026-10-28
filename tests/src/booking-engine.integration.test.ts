@@ -563,6 +563,12 @@ describe("changements d'heure Europe/Zurich (API)", () => {
       const res = await book(w.clientSession, w.barber, "2026-10-25", minute);
       expect(res.status, `minute ${minute}`).toBe(201);
       created.push(res.body.booking as { startAt: string; endAt: string });
+      // Confirmée : le créneau reste occupé, sans compter dans le plafond
+      // des demandes en attente du client.
+      await db
+        .update(bookings)
+        .set({ status: "CONFIRMED" })
+        .where(eq(bookings.id, res.body.booking.id));
     }
     expect(created.map((b) => b.startAt)).toEqual([
       "2026-10-24T23:00:00.000Z", // 01:00 CEST

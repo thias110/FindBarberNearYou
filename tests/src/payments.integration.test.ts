@@ -257,10 +257,15 @@ describe("réservation avec paiement à la demande", () => {
     const client = await login(app, CLIENT_EMAIL);
     const full = await book(client, barber, futureDate(3), 600);
     expect(full.body.booking.amountDueMinor).toBe(2500);
+    // Hors du plafond des demandes en attente du client (créneau toujours occupé).
+    const confirm = (id: string) =>
+      db.update(bookings).set({ status: "CONFIRMED" }).where(eq(bookings.id, id));
+    await confirm(full.body.booking.id);
 
     await db.update(barberProfiles).set({ paymentMode: "NONE" }).where(eq(barberProfiles.id, barber.profileId));
     const none = await book(client, barber, futureDate(3), 660);
     expect(none.body).toMatchObject({ checkoutUrl: null, booking: { paymentStatus: "NOT_REQUIRED" } });
+    await confirm(none.body.booking.id);
 
     await db.update(barberProfiles).set({ paymentMode: "FULL" }).where(eq(barberProfiles.id, barber.profileId));
     configurePaymentsForTests(null);

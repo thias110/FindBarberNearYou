@@ -383,6 +383,13 @@ export const LIMITS = {
   // Demandes express non confirmées en même temps chez un même barber : au-delà,
   // un visiteur doit attendre ou se connecter (anti-blocage de créneaux).
   expressPendingMaxPerBarber: 3,
+  // Demandes en attente (PENDING) en même temps pour un même client, chez un
+  // même barber et au total : un seul compte ne peut pas bloquer un agenda.
+  clientPendingMaxPerBarber: 2,
+  clientPendingMaxTotal: 5,
+  // Taille maximale d'une image envoyée, en pixels, vérifiée avant décodage
+  // (24 Mpx, au-delà d'une photo de téléphone courante).
+  imageMaxInputPixels: 24_000_000,
   paymentMinAmountMinor: 100,
   // Adresse client privée (lot 9 passe A, issue #19) : chaîne libre géocodée
   // côté serveur pour `AT_CLIENT`, jamais exposée publiquement.

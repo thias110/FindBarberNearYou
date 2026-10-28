@@ -144,9 +144,9 @@ export interface ExpressBookingEmailContext {
 }
 
 /**
- * Réservation express (lot N6) : un seul email réunit la vérification de
- * l'adresse et le récapitulatif de la demande. Le lien est celui de la
- * vérification ordinaire ; le clic transmet la demande au barber.
+ * Réservation express (lot N6) : un seul email réunit le lien de choix du
+ * mot de passe et le récapitulatif de la demande. Choisir son mot de passe
+ * vérifie l'adresse et transmet la demande au barber.
  */
 export function expressBookingEmail(
   to: string,
@@ -156,7 +156,7 @@ export function expressBookingEmail(
 ): MailMessage {
   const lang = resolveEmailLocale(locale);
   const s = emailStrings(lang);
-  const url = appUrl(`/verify-email?token=${encodeURIComponent(token)}`);
+  const url = appUrl(`/reset-password?token=${encodeURIComponent(token)}`);
   const params = {
     barber: ctx.barberName,
     when: s.salonTime(formatBookingDate(ctx.startAt, ctx.timeZone, lang)),

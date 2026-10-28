@@ -70,7 +70,7 @@ import {
   paymentStatusOnCancel,
   visibleToBarber,
 } from "../payments/rules.js";
-import { expireStalePendingBookings } from "./expiry.js";
+import { activePendingCondition, expireStalePendingBookings } from "./expiry.js";
 import { invalidateAvailability } from "./availability.js";
 import { occupiesSlotCondition } from "./occupancy.js";
 
@@ -576,6 +576,27 @@ export async function insertBookingUnderLock(
   // elles ne bloquent plus le créneau ni la contrainte d'exclusion.
   const now = new Date();
   await expireStalePendingBookings(runner, now, profile.id);
+
+  // 4b. Plafond des demandes en attente du client, chez ce barber (compté
+  // sous le verrou du profil) et au total : un seul compte ne peut pas
+  // bloquer un agenda en réservant tous les créneaux.
+  const [pending] = await runner
+    .select({
+      total: sql<number>`count(*)::int`,
+      here: sql<number>`(count(*) filter (where ${bookings.barberProfileId} = ${profile.id}))::int`,
+    })
+    .from(bookings)
+    .where(and(eq(bookings.clientUserId, clientUserId), activePendingCondition(now)));
+  if (
+    (pending?.here ?? 0) >= LIMITS.clientPendingMaxPerBarber ||
+    (pending?.total ?? 0) >= LIMITS.clientPendingMaxTotal
+  ) {
+    throw new AppError(
+      409,
+      "TOO_MANY_PENDING_BOOKINGS",
+      "Vous avez déjà trop de demandes en attente : attendez la réponse du professionnel ou annulez-en une.",
+    );
+  }
 
   // 5. Contexte de disponibilité, relu SOUS verrou.
   const [hours, timeOff, busy] = await Promise.all([

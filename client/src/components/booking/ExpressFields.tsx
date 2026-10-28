@@ -2,7 +2,6 @@ import { useEffect, type RefObject } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { LIMITS } from "@findbarber/shared/constants";
-import { PASSWORD_MIN_LENGTH } from "@findbarber/shared/validation";
 import type { ExpressErrors, ExpressValues } from "../../lib/expressBooking";
 import { buttonClasses } from "../ui/buttonStyles";
 import { Card } from "../ui/Card";
@@ -11,9 +10,9 @@ import { Input } from "../ui/Input";
 import { SummaryList, type BookingSummaryData } from "./BookingSummary";
 
 // --- Réservation express (lot N6) ---
-// Un visiteur sans compte saisit nom, email et mot de passe à la dernière étape
-// du tunnel : le compte est créé avec la demande, qui part chez le barber au
-// clic sur le lien reçu par email. Le champ `website` est un piège à robots :
+// Un visiteur sans compte saisit nom et email à la dernière étape du tunnel :
+// le compte est créé avec la demande, qui part chez le barber quand il choisit
+// son mot de passe depuis le lien reçu par email. Le champ `website` est un piège à robots :
 // hors écran, hors tabulation, ignoré des lecteurs d'écran.
 
 export function ExpressFields({
@@ -57,22 +56,6 @@ export function ExpressFields({
             inputMode="email"
             value={values.email}
             onChange={(event) => onChange("email", event.target.value)}
-          />
-        )}
-      </Field>
-      <Field
-        label={t("booking.flow.express.password")}
-        hint={t("booking.flow.express.passwordHint", { min: PASSWORD_MIN_LENGTH })}
-        error={errors.password}
-      >
-        {(control) => (
-          <Input
-            {...control}
-            type="password"
-            name="password"
-            autoComplete="new-password"
-            value={values.password}
-            onChange={(event) => onChange("password", event.target.value)}
           />
         )}
       </Field>

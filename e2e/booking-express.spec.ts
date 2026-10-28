@@ -51,7 +51,6 @@ test("un visiteur réserve sans compte et doit confirmer son email", async ({
   await page
     .getByRole("textbox", { name: "Email" })
     .fill(`express-${Date.now()}@example.com`);
-  await page.getByLabel("Mot de passe", { exact: true }).fill("MotDePasse123!");
   await submit.click();
 
   await expect(page.getByRole("heading", { name: "Vérifiez votre email" })).toBeVisible();
@@ -69,7 +68,6 @@ test("un email déjà connu demande de se connecter", async ({ page }) => {
       startMinute: 600,
       place: "SALON",
       email: "client@demo.ch",
-      password: "MotDePasse123!",
       name: "Doublon",
     },
   });

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { LIMITS, LOCALES, PAYMENT_MODES, SERVICE_PLACES } from "../constants";
 import { isValidCalendarDate } from "../dates";
-import { emailSchema, passwordSchema } from "./auth";
+import { emailSchema } from "./auth";
 import { safeText } from "./safeText";
 
 const objectIdSchema = z
@@ -76,13 +76,14 @@ export const bookingCreateSchema = z
 export type BookingCreateInput = z.infer<typeof bookingCreateSchema>;
 
 // Réservation express (lot N6) : un visiteur crée son compte dans le tunnel.
-// Mêmes règles que l'inscription pour l'email, le mot de passe et le nom ;
+// Mêmes règles que l'inscription pour l'email et le nom. Aucun mot de passe :
+// il est choisi depuis le lien reçu par email, ce qui empêche un tiers de
+// créer un compte au nom d'autrui avec un mot de passe qu'il connaît.
 // `website` est un piège à robots (champ masqué, doit rester vide).
 export const bookingExpressSchema = z
   .object({
     ...bookingFields,
     email: emailSchema,
-    password: passwordSchema,
     name: safeText(100, "Name is too long.").min(1, "Name cannot be empty."),
     locale: z.enum(LOCALES).optional(),
     website: z.string().max(500).optional(),

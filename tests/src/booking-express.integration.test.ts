@@ -26,6 +26,7 @@ import {
 import { sweepExpiredPendingBookings } from "../../server/src/modules/booking/expiry";
 import { configurePaymentsForTests } from "../../server/src/lib/payments";
 import { expressBookingEmail } from "../../server/src/lib/emailTemplates";
+import { clearSentEmails, sentEmails } from "../../server/src/lib/mailer";
 import {
   PASSWORD,
   createUser,
@@ -48,6 +49,7 @@ beforeEach(async () => {
   await db.delete(auditLogs);
   await db.delete(emailVerificationTokens);
   await resetBookingTables();
+  clearSentEmails();
 });
 
 afterEach(() => {
@@ -62,7 +64,6 @@ function expressBody(barber: SeededBarber, overrides: Record<string, unknown> = 
     startMinute: 600,
     place: "SALON",
     email: VISITOR,
-    password: "MotDePasse123!",
     name: "Visiteur Express",
     locale: "fr",
     ...overrides,
@@ -76,6 +77,14 @@ async function userByEmail(email: string) {
 
 async function bookingsOf(userId: string) {
   return db.select().from(bookings).where(eq(bookings.clientUserId, userId));
+}
+
+/** Jeton du lien reçu par email (choix du mot de passe). */
+function emailedToken(to: string): string {
+  const mail = [...sentEmails()].reverse().find((m) => m.to === to);
+  const match = mail?.text.match(/\/reset-password\?token=([0-9a-f]+)/);
+  if (!match) throw new Error(`aucun lien de choix du mot de passe envoyé à ${to}`);
+  return match[1]!;
 }
 
 /** Simule le clic sur le lien : un jeton neuf, consommé par la vraie route. */
@@ -119,14 +128,56 @@ describe("POST /api/bookings/express", () => {
     expect(await barberNotifications(barber)).toHaveLength(0);
   });
 
-  it("n'ouvre pas de session et la connexion attend la vérification", async () => {
+  it("ne fixe aucun mot de passe : personne ne peut se connecter avant le lien", async () => {
     const barber = await seedBarber("express-barber@example.com");
+    const withPassword = await request(app)
+      .post("/api/bookings/express")
+      .send(expressBody(barber, { password: "MotDePasse123!" }));
+    // Le mot de passe n'est plus demandé à la réservation (schéma strict).
+    expect(withPassword.status).toBe(400);
+
     await request(app).post("/api/bookings/express").send(expressBody(barber));
     const res = await request(app)
       .post("/api/auth/login")
       .send({ email: VISITOR, password: "MotDePasse123!" });
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe("EMAIL_NOT_VERIFIED");
+    expect(res.status).toBe(401);
+  });
+
+  it("pré-détournement impossible : vérifier l'email ne donne l'accès à personne", async () => {
+    // Un tiers réserve avec l'adresse de la victime, qui clique sur le lien.
+    const barber = await seedBarber("express-barber@example.com");
+    await request(app).post("/api/bookings/express").send(expressBody(barber));
+    const user = await userByEmail(VISITOR);
+    expect((await clickLink(user!.id)).status).toBe(200);
+
+    // Le tiers n'a jamais choisi de mot de passe : aucun ne fonctionne.
+    for (const password of ["MotDePasse123!", "", "password"]) {
+      const res = await request(app).post("/api/auth/login").send({ email: VISITOR, password });
+      expect(res.status, password).not.toBe(200);
+    }
+  });
+
+  it("l'email mène au choix du mot de passe, qui transmet la demande", async () => {
+    const barber = await seedBarber("express-barber@example.com");
+    await request(app).post("/api/bookings/express").send(expressBody(barber));
+    const token = emailedToken(VISITOR);
+
+    const reset = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token, password: "MonVraiMotDePasse123!" });
+    expect(reset.status).toBeLessThan(300);
+
+    const user = await userByEmail(VISITOR);
+    expect(user!.emailVerifiedAt).not.toBeNull();
+    const [booking] = await bookingsOf(user!.id);
+    expect(booking!.emailConfirmExpiresAt).toBeNull();
+    expect((await barberNotifications(barber)).map((n) => n.type)).toEqual([
+      "BOOKING_REQUESTED",
+    ]);
+    const login = await request(app)
+      .post("/api/auth/login")
+      .send({ email: VISITOR, password: "MonVraiMotDePasse123!" });
+    expect(login.status).toBe(200);
   });
 
   it("bloque le créneau pour les autres clients pendant l'attente", async () => {
@@ -226,12 +277,11 @@ describe("POST /api/bookings/express", () => {
     expect(await db.select().from(bookings)).toHaveLength(0);
   });
 
-  it("valide la saisie (nom, email, mot de passe, champs inconnus)", async () => {
+  it("valide la saisie (nom, email, champs inconnus)", async () => {
     const barber = await seedBarber("express-barber@example.com");
     const bad = [
       { name: "" },
       { email: "pas-un-email" },
-      { password: "court" },
       { role: "ADMIN" },
       { place: "AT_CLIENT" },
     ];
@@ -296,13 +346,9 @@ describe("confirmation de l'email (clic sur le lien)", () => {
     const notes = await barberNotifications(barber);
     expect(notes.map((n) => n.type)).toEqual(["BOOKING_REQUESTED"]);
 
-    // Le barber la voit maintenant, et le client peut se connecter.
+    // Le barber la voit maintenant.
     const session = await login(app, "express-barber@example.com");
     expect((await session.agent.get("/api/bookings")).body.bookings).toHaveLength(1);
-    const clientLogin = await request(app)
-      .post("/api/auth/login")
-      .send({ email: VISITOR, password: "MotDePasse123!" });
-    expect(clientLogin.status).toBe(200);
   });
 
   it("après le délai, la demande a expiré et le barber n'est pas prévenu", async () => {
@@ -356,6 +402,29 @@ describe("confirmation de l'email (clic sur le lien)", () => {
     expect(res.status).toBeLessThan(300);
     const [booking] = await bookingsOf(user!.id);
     expect(booking!.emailConfirmExpiresAt).toBeNull();
+    expect((await barberNotifications(barber)).map((n) => n.type)).toEqual([
+      "BOOKING_REQUESTED",
+    ]);
+  });
+
+  it("« Renvoyer le lien » renvoie le lien de choix du mot de passe", async () => {
+    const barber = await seedBarber("express-barber@example.com");
+    await request(app).post("/api/bookings/express").send(expressBody(barber));
+    clearSentEmails();
+    // Délai de renvoi écoulé depuis le premier email.
+    await db
+      .update(passwordResetTokens)
+      .set({ createdAt: new Date(Date.now() - 3_600_000) });
+
+    const res = await request(app)
+      .post("/api/auth/resend-verification")
+      .send({ email: VISITOR });
+    expect(res.status).toBeLessThan(300);
+    const token = emailedToken(VISITOR);
+    const reset = await request(app)
+      .post("/api/auth/reset-password")
+      .send({ token, password: "MonVraiMotDePasse123!" });
+    expect(reset.status).toBeLessThan(300);
     expect((await barberNotifications(barber)).map((n) => n.type)).toEqual([
       "BOOKING_REQUESTED",
     ]);
@@ -442,7 +511,9 @@ describe("email combiné (vérification et récapitulatif)", () => {
       minutes: 30,
     });
     expect(mail.subject).toContain("Barbier <Test>");
-    expect(mail.text).toContain("/verify-email?token=jeton-brut");
+    // Le lien fait choisir le mot de passe : il prouve la possession de
+    // l'adresse sans jamais reprendre un mot de passe saisi par un tiers.
+    expect(mail.text).toContain("/reset-password?token=jeton-brut");
     expect(mail.text).toContain("Coupe classique");
     expect(mail.text).toContain("11:00");
     expect(mail.text).toContain("30 minutes");
