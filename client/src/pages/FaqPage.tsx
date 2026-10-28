@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Accordion, type AccordionItem } from "../components/ui/Accordion";
+import { Card } from "../components/ui/Card";
+import { FadeMotif } from "../components/ui/FadeMotif";
 import { PageContainer } from "../components/ui/PageContainer";
 
 // Questions fréquentes (lot N7, plan E26). Chaque réponse ne décrit que ce que
@@ -24,12 +26,17 @@ export function FaqPage() {
   return (
     <div className="min-h-screen bg-background p-4 sm:p-8">
       <PageContainer width="reading" stack="lg">
-        <header>
-          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">
-            {t("title")}
-          </h1>
-          <p className="mt-2 max-w-[60ch] text-foreground-muted">{t("intro")}</p>
-        </header>
+        <Card className="overflow-hidden p-0">
+          <FadeMotif className="h-2.5 w-full text-accent/20" />
+          <header className="p-6 sm:p-8">
+            <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+              {t("title")}
+            </h1>
+            <p className="mt-2 max-w-[60ch] leading-relaxed text-foreground-muted">
+              {t("intro")}
+            </p>
+          </header>
+        </Card>
         <section aria-labelledby="faq-clients" className="space-y-3">
           <h2 id="faq-clients" className="text-xl font-bold text-foreground">
             {t("clients.title")}

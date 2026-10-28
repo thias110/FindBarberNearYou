@@ -10,6 +10,7 @@ import { label } from "../../lib/labels";
 import { BookingStatusBadge } from "../BookingStatusBadge";
 import { ReviewForm } from "../ReviewForm";
 import { Alert } from "../ui/Alert";
+import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { buttonClasses } from "../ui/buttonStyles";
 import { Card } from "../ui/Card";
@@ -73,28 +74,47 @@ export function BookingCard({
 }: BookingCardProps) {
   const { t } = useTranslation("client");
   return (
-    <Card className="p-4 sm:p-5">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-semibold text-foreground">{booking.serviceName}</p>
-          <p className="text-sm text-foreground-muted">
+    <Card className="p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-base font-bold text-foreground">{booking.serviceName}</p>
+            <Badge variant="neutral" size="sm">
+              {label("servicePlace", booking.servicePlace)}
+            </Badge>
+          </div>
+          <p className="mt-0.5 text-sm text-foreground-muted">
             {t("bookings.card.with", { name: booking.barberDisplayName })}
           </p>
-          <p className="mt-1 text-sm text-foreground">
+          <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold tabular-nums text-foreground">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 16 16"
+              className="h-4 w-4 shrink-0 text-accent-strong"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="2.5" y="3.5" width="11" height="10" rx="1.8" />
+              <path d="M5.5 2v3M10.5 2v3M2.5 6.8h11" />
+            </svg>
             {formatDateTime(booking.startAt)}
           </p>
-          <p className="text-sm text-foreground-muted">
-            {label("servicePlace", booking.servicePlace)} ·{" "}
+          <p className="mt-1 text-sm tabular-nums text-foreground-muted">
             {formatDuration(booking.durationMinutes)} ·{" "}
-            {formatCurrency(booking.priceMinor, booking.currency)}
+            <span className="font-semibold text-foreground">
+              {formatCurrency(booking.priceMinor, booking.currency)}
+            </span>
           </p>
           {booking.status === "CANCELLED" && booking.cancelledBy && (
-            <p className="mt-1 text-xs text-foreground-muted">
+            <p className="mt-1.5 text-xs text-foreground-muted">
               {cancelledByLabel(booking.cancelledBy, t)}
             </p>
           )}
           {booking.status === "DECLINED" && (
-            <p className="mt-1 text-xs text-foreground-muted">
+            <p className="mt-1.5 text-xs text-foreground-muted">
               {booking.declineReason
                 ? t("bookings.card.declinedWithReason", {
                     reason: booking.declineReason,
@@ -103,12 +123,12 @@ export function BookingCard({
             </p>
           )}
           {booking.status === "NO_SHOW" && (
-            <p className="mt-1 text-xs text-foreground-muted">
+            <p className="mt-1.5 text-xs text-foreground-muted">
               {t("bookings.card.noShowReported")}
             </p>
           )}
           {booking.status === "EXPIRED" && (
-            <p className="mt-1 text-xs text-foreground-muted">
+            <p className="mt-1.5 text-xs text-foreground-muted">
               {booking.paymentStatus === "CANCELLED"
                 ? t("bookings.card.expiredUnpaid")
                 : t("bookings.card.expiredNoAnswer")}
@@ -117,7 +137,7 @@ export function BookingCard({
           {booking.status === "PENDING" &&
             booking.expiresAt &&
             booking.paymentStatus !== "REQUIRES_PAYMENT" && (
-              <p className="mt-1 text-xs text-foreground-muted">
+              <p className="mt-1.5 text-xs text-foreground-muted">
                 {t("bookings.card.pendingUntil", {
                   date: formatDateTime(booking.expiresAt),
                 })}
@@ -125,7 +145,7 @@ export function BookingCard({
             )}
           {booking.amountDueMinor !== null &&
             booking.paymentStatus !== "NOT_REQUIRED" && (
-              <p className="mt-1 text-xs text-foreground-muted">
+              <p className="mt-1.5 text-xs text-foreground-muted">
                 {label("bookingPaymentStatus", booking.paymentStatus)} ·{" "}
                 {formatCurrency(booking.amountDueMinor, booking.currency)}
                 {booking.amountDueMinor < booking.priceMinor
@@ -156,9 +176,9 @@ export function BookingCard({
       )}
 
       {booking.servicePlace === "AT_CLIENT" && (
-        <div className="mt-3 border-t border-border pt-3">
+        <div className="mt-3.5 border-t border-border/70 pt-3.5">
           {detail ? (
-            <div className="rounded-lg bg-surface-muted p-3">
+            <div className="rounded-xl bg-surface-muted p-3.5">
               <p className="text-xs font-semibold text-foreground-muted">
                 {t("bookings.card.address")}
               </p>
@@ -187,9 +207,9 @@ export function BookingCard({
       {booking.status === "CONFIRMED" &&
         (booking.servicePlace === "SALON" ||
           booking.servicePlace === "AT_PROVIDER") && (
-          <div className="mt-3 border-t border-border pt-3">
+          <div className="mt-3.5 border-t border-border/70 pt-3.5">
             {detail ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-muted p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-surface-muted p-3.5">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">
                     {t("bookings.card.barberAddress")}
@@ -206,7 +226,7 @@ export function BookingCard({
                     aria-label={t("bookings.card.directionsAria", {
                       address: detail.barberAddress,
                     })}
-                    className={buttonClasses("primary", "sm", "shrink-0")}
+                    className={buttonClasses("primary", "sm", "shrink-0 shadow-cta")}
                   >
                     {t("bookings.card.directions")}
                   </a>
@@ -226,7 +246,7 @@ export function BookingCard({
         )}
 
       {booking.status === "COMPLETED" && (
-        <div className="mt-3 border-t border-border pt-3">
+        <div className="mt-3.5 border-t border-border/70 pt-3.5">
           {booking.hasReview ? (
             <p className="text-sm text-foreground-muted">
               {reviewThanks
@@ -255,7 +275,7 @@ export function BookingCard({
       )}
 
       {cancellable && (
-        <div className="mt-3 border-t border-border pt-3">
+        <div className="mt-3.5 border-t border-border/70 pt-3.5">
           {confirming ? (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-danger">

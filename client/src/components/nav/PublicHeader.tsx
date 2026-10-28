@@ -12,11 +12,13 @@ import { ProsMenu } from "./ProsMenu";
 const SCROLL_OPAQUE_PX = 80;
 
 // Barre du site public (lot DS-4, plan §2.6.6) : pilule flottante de 64 px,
-// en verre en haut de page, opaque avec `shadow-2` après 80 px de défilement.
+// en verre biseauté (« liquid glass ») en haut de page, opaque avec `shadow-2`
+// après 80 px de défilement.
 // Desktop : logo, Rechercher, menu « Pour les pros », langue, Connexion, CTA
 // « Réserver ». Mobile : logo, langue et burger (menu plein écran).
-// Sur le hero de nuit de l'accueil, tant qu'on n'a pas défilé : verre nuit et
-// texte blanc. Hauteur totale 4,5 rem, comme la barre des espaces connectés.
+// Sur le hero de nuit de l'accueil, tant qu'on n'a pas défilé : verre nuit à
+// liseré spéculaire et texte blanc. Hauteur totale 4,5 rem, comme la barre des
+// espaces connectés.
 export function PublicHeader() {
   const { t } = useTranslation("common");
   const [scrolled, setScrolled] = useState(false);
@@ -54,8 +56,8 @@ export function PublicHeader() {
           scrolled
             ? "border-border bg-surface shadow-2"
             : onNight
-              ? "border-white/10 bg-night/70 backdrop-blur-md backdrop-saturate-150"
-              : "border-border/70 bg-surface/80 shadow-1 backdrop-blur-md backdrop-saturate-150",
+              ? "border-white/15 bg-night/75 shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_18px_42px_-16px_rgb(0_0_0/0.65)] backdrop-blur-xl backdrop-saturate-150"
+              : "border-border/80 bg-surface/85 shadow-1 backdrop-blur-xl backdrop-saturate-150",
         )}
       >
         <Link
@@ -76,7 +78,7 @@ export function PublicHeader() {
         </nav>
         <div className="ml-auto flex min-w-0 items-center gap-2">
           {/* Langue accessible à tous, même sans compte (issue #37). */}
-          <LanguageSelect compact />
+          <LanguageSelect compact tone={onNight ? "onNight" : "default"} />
           <Link
             to="/login"
             className={buttonClasses(
@@ -92,7 +94,11 @@ export function PublicHeader() {
           </Link>
           <Link
             to="/barbers"
-            className={buttonClasses("primary", "sm", "hidden whitespace-nowrap md:inline-flex")}
+            className={buttonClasses(
+              "primary",
+              "sm",
+              cn("hidden whitespace-nowrap md:inline-flex", onNight && "shadow-cta"),
+            )}
           >
             {t("nav.book")}
           </Link>

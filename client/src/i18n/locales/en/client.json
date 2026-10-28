@@ -43,10 +43,18 @@
         "AT_PROVIDER": "At the pro's",
         "AT_CLIENT": "At home"
       },
-      "searchLabel": "Search for a barber"
+      "searchLabel": "Search for a barber",
+      "liveBadge": "24/7 online booking · Salon & home",
+      "aroundMe": "Near me",
+      "highlights": {
+        "certified": "Verified profiles",
+        "realtime": "Live availability",
+        "express": "Express booking"
+      }
     },
     "categories": {
-      "title": "Popular services"
+      "title": "Popular services",
+      "subtitle": "Browse directly by specialty."
     },
     "preview": {
       "atHome": "At home",
@@ -76,7 +84,18 @@
       "login": "Log in",
       "barberTitle": "Are you a barber?",
       "barberDescription": "Showcase your services, manage your hours and receive bookings, at the salon or at clients' homes.",
-      "barberCta": "Offer my services"
+      "barberCta": "Offer my services",
+      "clientBadge": "Client experience",
+      "clientPerks": {
+        "favorites": "Your favorite barbers one click away",
+        "calendar": "Instant calendar export (.ics) and live tracking"
+      },
+      "barberBadge": "For professionals",
+      "barberPerks": {
+        "agenda": "Online schedule with zero double-booking",
+        "places": "In salon, at your studio or at client's home",
+        "payments": "Pay on site, deposit or full online payment"
+      }
     },
     "steps": {
       "title": "How it works",
@@ -91,7 +110,8 @@
       "book": {
         "title": "Book",
         "description": "Choose a time slot and confirm your appointment."
-      }
+      },
+      "subtitle": "From search to confirmation, friction-free."
     },
     "logout": "Log out"
   },

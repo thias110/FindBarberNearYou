@@ -61,6 +61,7 @@ export function BarbersSearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   // Liste ouverte : panneau latéral (desktop) ou panneau du bas (mobile,
   // replié par défaut pour laisser la carte occuper l'écran).
   const [listOpen, setListOpen] = useState(() =>
@@ -193,7 +194,10 @@ export function BarbersSearchPage() {
     if (selectedId && !barbers.some((b) => b.id === selectedId)) {
       setSelectedId(null);
     }
-  }, [barbers, selectedId]);
+    if (hoveredId && !barbers.some((b) => b.id === hoveredId)) {
+      setHoveredId(null);
+    }
+  }, [barbers, selectedId, hoveredId]);
 
   // Clic sur un marqueur → le résultat correspondant défile dans la liste.
   useEffect(() => {
@@ -308,7 +312,7 @@ export function BarbersSearchPage() {
   // panneau latéral (desktop) ou sous la barre de recherche et le panneau du
   // bas (mobile).
   const mapPadding = isDesktop
-    ? { top: 56, bottom: 56, left: listOpen ? 440 : 56, right: 56 }
+    ? { top: 56, bottom: 56, left: listOpen ? 448 : 56, right: 56 }
     : { top: 150, bottom: 110, left: 32, right: 32 };
   const areaActive = area !== null && !radiusActive;
   const resultCountLabel = radiusActive
@@ -352,7 +356,7 @@ export function BarbersSearchPage() {
           {t("search.page.loading")}
         </span>
         {[0, 1, 2].map((index) => (
-          <Skeleton key={index} className="h-32 w-full rounded-2xl" />
+          <Skeleton key={index} className="h-36 w-full rounded-2xl" />
         ))}
       </div>
     ) : error ? (
@@ -397,7 +401,13 @@ export function BarbersSearchPage() {
                 barber={barber}
                 distanceKm={distanceById.get(barber.id) ?? null}
                 selected={barber.id === selectedId}
+                hovered={barber.id === hoveredId}
                 onSelect={selectBarber}
+                onHoverChange={(hovered) =>
+                  setHoveredId((current) =>
+                    hovered ? barber.id : current === barber.id ? null : current,
+                  )
+                }
               />
             </div>
           ))}
@@ -413,7 +423,7 @@ export function BarbersSearchPage() {
             >
               {t("search.page.previous")}
             </Button>
-            <span className="text-sm text-foreground-muted">
+            <span className="text-sm tabular-nums text-foreground-muted">
               {t("search.page.pageOf", {
                 page: pagination.page,
                 total: pagination.totalPages,
@@ -433,7 +443,7 @@ export function BarbersSearchPage() {
     );
 
   const resultsSummary = (
-    <p className="text-sm text-foreground-muted" role="status">
+    <p className="text-sm font-medium tabular-nums text-foreground-muted" role="status">
       {loading || waitingForPosition ? t("search.page.searching") : resultCountLabel}
       {radiusTruncated && ` · ${t("search.page.radiusTruncated")}`}
       {moreInArea && ` · ${t("search.page.moreInArea")}`}
@@ -454,16 +464,16 @@ export function BarbersSearchPage() {
 
       {isDesktop ? (
         listOpen ? (
-          // Panneau en verre (plan §2.4 et §2.6.9) : 400 px, `radius-xl`,
+          // Panneau en verre (plan §2.4 et §2.6.9) : 408 px, `radius-xl`,
           // fond opaque si le navigateur ne gère pas `backdrop-filter`.
           <section
             id="search-results"
             aria-label={t("search.page.results")}
-            className="absolute bottom-4 left-4 top-4 z-20 flex w-[25rem] flex-col overflow-hidden rounded-3xl border border-border bg-surface/80 shadow-3 backdrop-blur-[16px] backdrop-saturate-150 supports-[not(backdrop-filter:blur(1px))]:bg-surface"
+            className="absolute bottom-4 left-4 top-4 z-20 flex w-[25.5rem] flex-col overflow-hidden rounded-3xl border border-border bg-surface/85 shadow-3 backdrop-blur-xl backdrop-saturate-150 supports-[not(backdrop-filter:blur(1px))]:bg-surface"
           >
             <div className="space-y-3 overflow-y-auto p-4">
               {filtersPanel}
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 px-1">
                 {resultsSummary}
                 <Button
                   variant="ghost"
@@ -485,6 +495,17 @@ export function BarbersSearchPage() {
             aria-expanded="false"
             onClick={() => setListOpen(true)}
           >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            >
+              <path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" />
+            </svg>
             {t("search.page.showList")}
           </Button>
         )
@@ -609,7 +630,9 @@ export function BarbersSearchPage() {
               key={mapRetryToken}
               barbers={barbers}
               selectedId={selectedId}
+              hoveredId={hoveredId}
               onSelect={selectBarber}
+              onHover={setHoveredId}
               reducedMotion={reducedMotion}
               onRetry={() => setMapRetryToken((n) => n + 1)}
               onShowList={() => setListOpen(true)}

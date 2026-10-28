@@ -77,7 +77,7 @@ function Check() {
 // jour), 7 colonnes égales dès `sm:`.
 const TRACK =
   "-mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-7 sm:overflow-visible sm:px-0 sm:pb-0";
-const COLUMN = "w-[4.5rem] shrink-0 snap-start sm:w-auto";
+const COLUMN = "w-[4.75rem] shrink-0 snap-start sm:w-auto";
 
 export function WeekGrid({
   dates,
@@ -114,10 +114,10 @@ export function WeekGrid({
         <div className={TRACK}>
           {dates.map((date) => (
             <div key={date} className={COLUMN}>
-              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-16 w-full rounded-xl" />
               <div className="mt-2 space-y-2">
                 {[0, 1, 2, 3].map((index) => (
-                  <Skeleton key={index} className="h-11 w-full rounded-md" />
+                  <Skeleton key={index} className="h-11 w-full rounded-xl" />
                 ))}
               </div>
             </div>
@@ -165,6 +165,7 @@ export function WeekGrid({
           const slots = slotsByDate.get(date) ?? [];
           const empty = slots.length === 0;
           const isToday = date === today;
+          const hasSelected = selected?.date === date;
           const longDate = formatDayLong(date);
           return (
             <div
@@ -180,16 +181,27 @@ export function WeekGrid({
             >
               <div
                 className={cn(
-                  "rounded-lg bg-surface-muted/60 py-2 text-center",
-                  empty && "text-foreground-muted/60",
+                  "rounded-xl border py-2 text-center transition-colors duration-fast",
+                  hasSelected
+                    ? "border-accent bg-accent-soft text-accent-strong"
+                    : isToday
+                      ? "border-accent/40 bg-accent-soft text-accent-strong"
+                      : empty
+                        ? "border-border/60 bg-surface-muted/50 text-foreground-muted"
+                        : "border-border bg-surface-muted text-foreground",
                 )}
               >
-                <p className="text-xs font-medium capitalize text-foreground-muted">
+                <p
+                  className={cn(
+                    "text-xs font-semibold capitalize",
+                    hasSelected || isToday ? "text-accent-strong" : "text-foreground-muted",
+                  )}
+                >
                   {formatWeekdayShort(date)}
                 </p>
                 <p
                   className={cn(
-                    "text-base font-bold tabular-nums",
+                    "font-display text-base font-extrabold tabular-nums",
                     empty && "line-through decoration-1",
                   )}
                 >
@@ -226,11 +238,11 @@ export function WeekGrid({
                         aria-label={`${longDate}, ${time}`}
                         onClick={() => onSelect({ date, slot })}
                         className={cn(
-                          "focus-ring-on-surface inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-md border px-1 text-sm font-semibold tabular-nums",
-                          "transition-[color,background-color,border-color] duration-fast ease-out disabled:cursor-not-allowed disabled:opacity-50",
+                          "focus-ring-on-surface inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-xl border px-1 text-sm font-semibold tabular-nums",
+                          "transition-[color,background-color,border-color,box-shadow] duration-fast ease-out disabled:cursor-not-allowed disabled:opacity-50",
                           isSelected
-                            ? "border-accent bg-accent text-accent-foreground"
-                            : "border-transparent bg-surface-muted text-foreground hover:border-accent",
+                            ? "border-accent bg-accent text-accent-foreground shadow-cta"
+                            : "border-border bg-surface text-foreground shadow-1 hover:border-accent hover:bg-accent-soft hover:text-accent-strong",
                         )}
                       >
                         {isSelected && <Check />}
@@ -249,7 +261,7 @@ export function WeekGrid({
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-border/70 bg-surface-muted/50 p-1.5">
         <Button
           variant="secondary"
           size="icon"
@@ -259,7 +271,7 @@ export function WeekGrid({
         >
           <Chevron direction="left" />
         </Button>
-        <p aria-live="polite" className="text-sm font-semibold tabular-nums text-foreground">
+        <p aria-live="polite" className="text-sm font-bold tabular-nums text-foreground">
           {weekLabel}
         </p>
         <Button

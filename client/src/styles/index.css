@@ -174,21 +174,24 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid rgb(var(--fb-border));
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid rgb(var(--fb-border-strong));
   border-radius: 9999px;
   background: rgb(var(--fb-surface));
   color: rgb(var(--fb-foreground));
   box-shadow: var(--fb-shadow-1), var(--fb-shadow-2);
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   transform-origin: 50% 100%;
   transition:
     transform var(--fb-motion-fast) var(--fb-ease-out),
     background-color var(--fb-motion-fast) var(--fb-ease-out),
+    border-color var(--fb-motion-fast) var(--fb-ease-out),
+    box-shadow var(--fb-motion-fast) var(--fb-ease-out),
     color var(--fb-motion-fast) var(--fb-ease-out);
 }
 
@@ -202,8 +205,25 @@
   height: 8px;
   transform: translateX(-50%) rotate(45deg);
   background: inherit;
-  border-right: 1px solid rgb(var(--fb-border));
-  border-bottom: 1px solid rgb(var(--fb-border));
+  border-right: 1px solid rgb(var(--fb-border-strong));
+  border-bottom: 1px solid rgb(var(--fb-border-strong));
+  transition: border-color var(--fb-motion-fast) var(--fb-ease-out);
+}
+
+.fb-price-pin--hovered {
+  z-index: 1;
+}
+
+.fb-price-pin--hovered:not(.fb-price-pin--selected) .fb-price-pin__body {
+  border-color: rgb(var(--fb-accent));
+  color: rgb(var(--fb-accent-strong));
+  box-shadow:
+    var(--fb-shadow-2),
+    0 0 0 3px rgb(var(--fb-accent) / 0.18);
+}
+
+.fb-price-pin--hovered:not(.fb-price-pin--selected) .fb-price-pin__body::after {
+  border-color: rgb(var(--fb-accent));
 }
 
 .fb-price-pin--selected {
@@ -214,6 +234,9 @@
   border-color: rgb(var(--fb-accent));
   background: rgb(var(--fb-accent));
   color: rgb(var(--fb-accent-foreground));
+  box-shadow:
+    var(--fb-shadow-2),
+    0 0 0 3px rgb(var(--fb-accent) / 0.25);
 }
 
 .fb-price-pin--selected .fb-price-pin__body::after {
@@ -221,11 +244,12 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .fb-price-pin:hover .fb-price-pin__body {
-    transform: scale(1.06);
+  .fb-price-pin:hover .fb-price-pin__body,
+  .fb-price-pin--hovered .fb-price-pin__body {
+    transform: scale(1.07);
   }
   .fb-price-pin--selected .fb-price-pin__body {
-    transform: scale(1.08);
+    transform: scale(1.1);
   }
 }
 

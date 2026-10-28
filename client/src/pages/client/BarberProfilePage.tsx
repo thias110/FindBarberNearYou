@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import type {
@@ -8,6 +8,7 @@ import type {
 } from "@findbarber/shared/types";
 import i18n from "../../i18n";
 import { apiErrorMessage, barbersApi } from "../../lib/apiClient";
+import { usePrefersReducedMotion } from "../../lib/media";
 import { useScrollToHash } from "../../lib/useScrollToHash";
 import { BookingFlow } from "../../components/booking/BookingFlow";
 import { BarberProfileHeader } from "../../components/barber/BarberProfileHeader";
@@ -22,6 +23,7 @@ import { PageContainer } from "../../components/ui/PageContainer";
 export function PublicBarberProfilePage() {
   const { t } = useTranslation("client");
   const { barberId } = useParams();
+  const reducedMotion = usePrefersReducedMotion();
   const [data, setData] = useState<PublicBarberProfileWithServices | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +37,25 @@ export function PublicBarberProfilePage() {
   const [photosLoading, setPhotosLoading] = useState(true);
   const [photosError, setPhotosError] = useState<string | null>(null);
   const [photosReload, setPhotosReload] = useState(0);
+
+  const [selectedServiceId, setSelectedServiceId] = useState("");
+  const [externalSelection, setExternalSelection] = useState<{
+    id: string;
+    seq: number;
+  } | null>(null);
+
+  const handleChooseFromList = useCallback(
+    (serviceId: string) => {
+      setSelectedServiceId(serviceId);
+      setExternalSelection((prev) => ({ id: serviceId, seq: (prev?.seq ?? 0) + 1 }));
+      const target = document.getElementById("reserver");
+      target?.scrollIntoView({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "start",
+      });
+    },
+    [reducedMotion],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -130,11 +151,14 @@ export function PublicBarberProfilePage() {
           <span className="sr-only" role="status">
             {t("profile.loading")}
           </span>
-          <Card className="flex items-center gap-4 p-6">
-            <Skeleton className="h-20 w-20 shrink-0 rounded-full" />
-            <div className="w-full space-y-2">
-              <Skeleton className="h-6 w-1/2" />
-              <Skeleton className="h-4 w-1/3" />
+          <Card className="overflow-hidden p-0">
+            <Skeleton className="h-28 w-full rounded-none sm:h-36" />
+            <div className="flex items-center gap-4 p-6">
+              <Skeleton className="h-20 w-20 shrink-0 rounded-2xl" />
+              <div className="w-full space-y-2">
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-4 w-1/3" />
+              </div>
             </div>
           </Card>
           <div className="grid gap-6 lg:grid-cols-3">
@@ -174,6 +198,8 @@ export function PublicBarberProfilePage() {
         barberId={profile.id}
         profile={profile}
         services={services}
+        externalSelection={externalSelection}
+        onServiceChange={setSelectedServiceId}
       />
     ) : (
       <Card className="p-6">
@@ -206,22 +232,32 @@ export function PublicBarberProfilePage() {
           {bookingPanel}
         </aside>
 
-        <div className="min-w-0 space-y-6">
-          <BarberServices profile={profile} services={services} />
-          <BarberWeeklyHours hours={data.weeklyHours} />
-          <BarberGallery
-            photos={photos}
-            loading={photosLoading}
-            error={photosError}
-            onRetry={() => setPhotosReload((n) => n + 1)}
-          />
-          <BarberReviews
-            summary={reviews?.summary ?? null}
-            reviews={reviews?.reviews ?? []}
-            loading={reviewsLoading}
-            error={reviewsError}
-            onRetry={() => setReviewsReload((n) => n + 1)}
-          />
+        <div className="grid min-w-0 gap-6 lg:grid-cols-12 lg:items-start">
+          <div className="min-w-0 space-y-6 lg:col-span-7">
+            <BarberServices
+              profile={profile}
+              services={services}
+              selectedServiceId={selectedServiceId}
+              onSelectService={handleChooseFromList}
+            />
+            <BarberGallery
+              photos={photos}
+              loading={photosLoading}
+              error={photosError}
+              onRetry={() => setPhotosReload((n) => n + 1)}
+            />
+            <BarberReviews
+              summary={reviews?.summary ?? null}
+              reviews={reviews?.reviews ?? []}
+              loading={reviewsLoading}
+              error={reviewsError}
+              onRetry={() => setReviewsReload((n) => n + 1)}
+            />
+          </div>
+
+          <div className="min-w-0 lg:sticky lg:top-24 lg:col-span-5">
+            <BarberWeeklyHours hours={data.weeklyHours} />
+          </div>
         </div>
       </PageContainer>
     </div>

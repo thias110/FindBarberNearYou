@@ -11,15 +11,22 @@ import { Select } from "./ui/Select";
 // porte son attribut `lang` pour être bien prononcée par un lecteur d'écran.
 export function LanguageSelect({
   compact = false,
+  tone = "default",
   className,
 }: {
-  /** Version header : libellé masqué visuellement, largeur réduite. */
+  /** Version header : libellé masqué visuellement, pilule compacte. */
   compact?: boolean;
+  /** Ton « nuit » pour la barre flottante posée sur le hero sombre. */
+  tone?: "default" | "onNight";
   className?: string;
 }) {
   const { t } = useTranslation("common");
   const { locale, setLocale } = useLocale();
   const id = useId();
+
+  const handleChange = (next: string) => {
+    if (isLocale(next)) void setLocale(next as Locale);
+  };
 
   return (
     <div className={cn(compact ? "shrink-0" : "space-y-1.5", className)}>
@@ -31,21 +38,42 @@ export function LanguageSelect({
       >
         {t("language.label")}
       </label>
-      <Select
-        id={id}
-        value={locale}
-        onChange={(event) => {
-          const next = event.target.value;
-          if (isLocale(next)) void setLocale(next as Locale);
-        }}
-        className={compact ? "w-auto py-1.5 pl-2 pr-8 text-sm" : undefined}
-      >
-        {LOCALES.map((code) => (
-          <option key={code} value={code} lang={code}>
-            {compact ? code.toUpperCase() : LOCALE_NAMES[code]}
-          </option>
-        ))}
-      </Select>
+      {compact ? (
+        <select
+          id={id}
+          value={locale}
+          onChange={(event) => handleChange(event.target.value)}
+          className={cn(
+            "block min-h-11 w-auto cursor-pointer rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors duration-fast",
+            tone === "onNight"
+              ? "focus-ring-on-night border-white/20 bg-night/80 text-white hover:border-white/35 hover:bg-night"
+              : "focus-ring border-border-strong bg-surface text-foreground hover:bg-surface-muted",
+          )}
+        >
+          {LOCALES.map((code) => (
+            <option
+              key={code}
+              value={code}
+              lang={code}
+              className="bg-surface text-foreground"
+            >
+              {code.toUpperCase()}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <Select
+          id={id}
+          value={locale}
+          onChange={(event) => handleChange(event.target.value)}
+        >
+          {LOCALES.map((code) => (
+            <option key={code} value={code} lang={code}>
+              {LOCALE_NAMES[code]}
+            </option>
+          ))}
+        </Select>
+      )}
     </div>
   );
 }

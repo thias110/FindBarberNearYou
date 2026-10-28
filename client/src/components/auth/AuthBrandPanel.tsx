@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Logo } from "../Logo";
+import { FadeMotif } from "../ui/FadeMotif";
 
 const BENEFITS = [
   "brand.benefits.book",
@@ -25,39 +26,49 @@ function CheckIcon() {
 }
 
 // Panneau de marque desktop (deuxième colonne de la coque AuthLayout). Caché
-// sur mobile : l'en-tête compact de AuthLayout porte alors le logo. Sans
-// boules décoratives (issue #60), comme l'accueil.
+// sur mobile : l'en-tête compact de AuthLayout porte alors le logo. Section
+// « nuit » alignée sur l'identité « Dégradé » (sans boules décoratives, issue #60).
 export function AuthBrandPanel() {
   const { t } = useTranslation("auth");
   return (
-    <div className="flex h-full min-h-screen flex-col justify-between border-r border-border bg-surface p-10">
-      <div>
-        <Logo />
+    <div className="relative flex h-full min-h-screen flex-col justify-between overflow-hidden bg-night text-white">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_75%_at_85%_10%,rgb(var(--fb-cobalt)/0.34),transparent_70%),radial-gradient(55%_65%_at_10%_95%,rgb(var(--fb-brass)/0.18),transparent_70%)]"
+      />
+
+      <div className="relative p-10 pb-0">
+        <Logo tone="onNight" />
       </div>
 
-      <div className="max-w-md">
-        <p className="text-3xl font-semibold leading-tight text-foreground">
+      <div className="relative max-w-lg px-10 py-8">
+        <p className="font-display text-3xl font-extrabold leading-tight tracking-tight text-white xl:text-4xl">
           {t("brand.tagline")}
         </p>
-        <p className="mt-4 text-base text-foreground-muted">
+        <p className="mt-4 text-base leading-relaxed text-night-muted">
           {t("brand.description")}
         </p>
-        <ul className="mt-8 space-y-3">
+        <ul className="mt-8 space-y-3.5">
           {BENEFITS.map((benefit) => (
             <li
               key={benefit}
-              className="flex items-start gap-3 text-sm text-foreground"
+              className="flex items-start gap-3 text-sm text-white"
             >
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-strong">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.08] text-ring-on-night">
                 <CheckIcon />
               </span>
-              <span>{t(benefit)}</span>
+              <span className="leading-relaxed">{t(benefit)}</span>
             </li>
           ))}
         </ul>
       </div>
 
-      <p className="text-xs text-foreground-muted">{t("brand.footer")}</p>
+      <div className="relative">
+        <FadeMotif className="h-12 w-full text-cobalt/25" />
+        <p className="border-t border-white/10 px-10 py-6 text-xs text-night-muted">
+          {t("brand.footer")}
+        </p>
+      </div>
     </div>
   );
 }

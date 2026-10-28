@@ -44,13 +44,26 @@ export function chipClasses(
 // un rail `segmentRailClasses()` contenant des segments `segmentClasses()`.
 // Le composant `SegmentedControl` assemble les deux avec le bon rôle ARIA
 // (radiogroup) et la navigation au clavier.
-export function segmentRailClasses(className?: string): string {
-  return cn("inline-flex items-center gap-1 rounded-full bg-surface-muted p-1", className);
+export function segmentRailClasses(
+  className?: string,
+  { stackOnMobile = false }: { stackOnMobile?: boolean } = {},
+): string {
+  return cn(
+    stackOnMobile
+      ? "grid grid-cols-2 gap-1 rounded-2xl bg-surface-muted p-1 sm:inline-flex sm:items-center sm:rounded-full"
+      : "inline-flex items-center gap-1 rounded-full bg-surface-muted p-1",
+    className,
+  );
 }
 
-export function segmentClasses(selected: boolean, className?: string): string {
+export function segmentClasses(
+  selected: boolean,
+  className?: string,
+  { stackOnMobile = false }: { stackOnMobile?: boolean } = {},
+): string {
   return cn(
-    "focus-ring inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full px-4 text-sm font-semibold sm:min-h-10",
+    "focus-ring inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full text-sm font-semibold sm:min-h-10",
+    stackOnMobile ? "px-3 sm:px-4" : "px-4",
     "transition-[color,background-color,box-shadow] duration-base ease-out",
     "disabled:cursor-not-allowed disabled:opacity-50",
     selected

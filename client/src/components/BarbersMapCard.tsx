@@ -6,6 +6,7 @@ import { formatDistance } from "../lib/geo";
 import { label } from "../lib/labels";
 import { CertifiedBadge } from "./barber/CertifiedBadge";
 import { Badge } from "./ui/Badge";
+import { FadeMotif } from "./ui/FadeMotif";
 import { buttonClasses } from "./ui/buttonStyles";
 import {
   BarberPhoto,
@@ -56,22 +57,36 @@ export function BarbersMapCard({
       }}
       // Mobile : au-dessus du panneau de liste replié. Desktop : en bas à
       // droite, hors du panneau latéral.
-      className="pointer-events-auto absolute inset-x-3 bottom-24 z-10 mx-auto max-w-md overflow-hidden rounded-3xl border border-border bg-surface shadow-card lg:inset-x-auto lg:bottom-10 lg:right-6 lg:w-96"
+      className="pointer-events-auto absolute inset-x-3 bottom-24 z-10 mx-auto max-w-md overflow-hidden rounded-3xl border border-border bg-surface shadow-3 lg:inset-x-auto lg:bottom-10 lg:right-6 lg:w-[25rem]"
     >
-      <div aria-hidden="true" className="flex justify-center pt-2 sm:hidden">
+      <FadeMotif className="h-2.5 w-full text-accent/20" />
+      <div aria-hidden="true" className="flex justify-center pt-1.5 sm:hidden">
         <span className="h-1.5 w-10 rounded-full bg-border-strong" />
       </div>
       <button
         type="button"
         onClick={onClose}
         aria-label={t("map.card.close")}
-        className="absolute right-2 top-2 z-10 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface/90 text-xl leading-none text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-ring"
+        className="absolute right-2.5 top-3.5 z-10 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface/90 text-xl leading-none text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-ring"
       >
         <span aria-hidden="true">×</span>
       </button>
 
       <div className="flex gap-4 p-4 pr-12">
-        <BarberPhoto barber={barber} className="h-24 w-24 rounded-2xl text-3xl" />
+        <div className="relative shrink-0">
+          <BarberPhoto
+            barber={barber}
+            className="h-24 w-24 rounded-2xl text-3xl ring-1 ring-border/70"
+          />
+          {barber.availableToday && (
+            <span
+              aria-hidden="true"
+              className="absolute left-2 top-2 flex h-3 w-3 items-center justify-center rounded-full bg-surface shadow-1"
+            >
+              <span className="h-2 w-2 rounded-full bg-success" />
+            </span>
+          )}
+        </div>
         <div className="min-w-0 flex-1">
           <h3 className="break-words text-lg font-bold leading-snug text-foreground">
             {barber.displayName}
@@ -100,7 +115,7 @@ export function BarbersMapCard({
       <div className="flex flex-wrap items-center gap-2 p-4">
         <Link
           to={`/barbers/${barber.id}#reserver`}
-          className={buttonClasses("primary", "md", "flex-1")}
+          className={buttonClasses("primary", "md", "flex-1 shadow-cta")}
         >
           {t("map.card.book")}
         </Link>
@@ -111,7 +126,7 @@ export function BarbersMapCard({
           {t("map.card.viewProfile")}
         </Link>
       </div>
-      <p className="px-4 pb-3 text-xs text-foreground-muted">
+      <p className="border-t border-border/60 bg-surface-muted/40 px-4 py-2.5 text-xs text-foreground-muted">
         {t("labels:approximateLocation")}
       </p>
     </section>

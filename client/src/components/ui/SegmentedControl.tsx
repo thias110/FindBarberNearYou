@@ -17,6 +17,8 @@ export interface SegmentedControlProps<T extends string> {
   options: SegmentedOption<T>[];
   value: T;
   onChange: (value: T) => void;
+  /** Grille 2 colonnes sur mobile, rail en ligne à partir de `sm:`. */
+  stackOnMobile?: boolean;
   className?: string;
 }
 
@@ -25,6 +27,7 @@ export function SegmentedControl<T extends string>({
   options,
   value,
   onChange,
+  stackOnMobile = false,
   className,
 }: SegmentedControlProps<T>) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -55,7 +58,7 @@ export function SegmentedControl<T extends string>({
       role="radiogroup"
       aria-label={label}
       onKeyDown={move}
-      className={segmentRailClasses(className)}
+      className={segmentRailClasses(className, { stackOnMobile })}
     >
       {options.map((option, index) => {
         const selected = option.value === value;
@@ -71,7 +74,7 @@ export function SegmentedControl<T extends string>({
             tabIndex={option.value === tabStop ? 0 : -1}
             disabled={option.disabled}
             onClick={() => onChange(option.value)}
-            className={segmentClasses(selected)}
+            className={segmentClasses(selected, undefined, { stackOnMobile })}
           >
             {option.label}
           </button>

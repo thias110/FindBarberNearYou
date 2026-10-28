@@ -43,10 +43,18 @@
         "AT_PROVIDER": "Dal professionista",
         "AT_CLIENT": "A domicilio"
       },
-      "searchLabel": "Cerca un barbiere"
+      "searchLabel": "Cerca un barbiere",
+      "liveBadge": "Prenotazione online 24h/24 · Salone e domicilio",
+      "aroundMe": "Vicino a me",
+      "highlights": {
+        "certified": "Profili verificati",
+        "realtime": "Disponibilità in tempo reale",
+        "express": "Prenotazione express"
+      }
     },
     "categories": {
-      "title": "Prestazioni più richieste"
+      "title": "Prestazioni più richieste",
+      "subtitle": "Esplora direttamente per specialità."
     },
     "preview": {
       "atHome": "A domicilio",
@@ -76,7 +84,18 @@
       "login": "Accedi",
       "barberTitle": "Sei un barbiere?",
       "barberDescription": "Presenta i tuoi servizi, gestisci i tuoi orari e ricevi prenotazioni, in salone o a domicilio.",
-      "barberCta": "Offri i miei servizi"
+      "barberCta": "Offri i miei servizi",
+      "clientBadge": "Spazio clienti",
+      "clientPerks": {
+        "favorites": "I tuoi barbieri preferiti a portata di clic",
+        "calendar": "Esportazione calendario (.ics) e stato in tempo reale"
+      },
+      "barberBadge": "Spazio professionisti",
+      "barberPerks": {
+        "agenda": "Agenda online senza doppie prenotazioni",
+        "places": "In salone, nel tuo studio o a domicilio",
+        "payments": "Pagamento in sede, acconto o saldo online"
+      }
     },
     "steps": {
       "title": "Come funziona",
@@ -91,7 +110,8 @@
       "book": {
         "title": "Prenota",
         "description": "Scegli una fascia oraria e conferma il tuo appuntamento."
-      }
+      },
+      "subtitle": "Dalla ricerca alla conferma, senza attriti."
     },
     "logout": "Esci"
   },

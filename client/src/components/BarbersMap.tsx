@@ -21,7 +21,9 @@ type MapStatus = "loading" | "ready" | "error" | "unconfigured";
 interface BarbersMapProps {
   barbers: PublicBarberSearchItem[];
   selectedId: string | null;
+  hoveredId?: string | null;
   onSelect: (id: string) => void;
+  onHover?: (id: string | null) => void;
   reducedMotion: boolean;
   onRetry: () => void;
   onShowList: () => void;
@@ -252,7 +254,9 @@ function createUserElement(): HTMLDivElement {
 export default function BarbersMap({
   barbers,
   selectedId,
+  hoveredId = null,
   onSelect,
+  onHover,
   reducedMotion,
   onRetry,
   onShowList,
@@ -280,6 +284,10 @@ export default function BarbersMap({
   // Refs pour garder les callbacks/valeurs à jour sans relancer l'init.
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  const onHoverRef = useRef(onHover);
+  onHoverRef.current = onHover;
+  const hoveredIdRef = useRef(hoveredId);
+  hoveredIdRef.current = hoveredId;
   const reducedMotionRef = useRef(reducedMotion);
   reducedMotionRef.current = reducedMotion;
   const barbersRef = useRef(barbers);
@@ -512,6 +520,13 @@ export default function BarbersMap({
         element.addEventListener("click", () =>
           onSelectRef.current(barber.id),
         );
+        element.addEventListener("mouseenter", () =>
+          onHoverRef.current?.(barber.id),
+        );
+        element.addEventListener("mouseleave", () =>
+          onHoverRef.current?.(null),
+        );
+        element.classList.toggle("fb-price-pin--hovered", barber.id === hoveredIdRef.current);
         const marker = new maplibregl.Marker({ element, anchor: "bottom" })
           .setLngLat([barber.longitude, barber.latitude])
           .addTo(map);
@@ -520,6 +535,7 @@ export default function BarbersMap({
       } else {
         entry.marker.setLngLat([barber.longitude, barber.latitude]);
         updateMarkerElement(entry.element, barber, selected, t);
+        entry.element.classList.toggle("fb-price-pin--hovered", barber.id === hoveredIdRef.current);
       }
     }
     if (status === "ready") reclusterRef.current();
@@ -534,6 +550,13 @@ export default function BarbersMap({
       }
     }
   }, [barbers, status, selectedId, autoFit, t]);
+
+  // --- Survol bidirectionnel liste <-> carte (sans recadrage ni reclustering) ---
+  useEffect(() => {
+    for (const [id, entry] of markersRef.current) {
+      entry.element.classList.toggle("fb-price-pin--hovered", id === hoveredId);
+    }
+  }, [hoveredId, status]);
 
   // --- La sélection (clic liste) amène le marqueur dans la vue, sans recentrage global ---
   useEffect(() => {

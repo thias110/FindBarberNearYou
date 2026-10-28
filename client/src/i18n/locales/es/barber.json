@@ -307,7 +307,9 @@
     },
     "services": {
       "empty": "Aún no hay servicios.",
-      "title": "Servicios"
+      "title": "Servicios",
+      "choose": "Elegir",
+      "selected": "Seleccionado"
     }
   },
   "services": {
