@@ -61,5 +61,6 @@
   "USER_NOT_SUSPENDED": "Cet utilisateur n'est pas suspendu.",
   "VALIDATION_ERROR": "Certaines informations sont invalides.",
   "EXPRESS_BOOKING_PAYMENT_REQUIRED": "Ce professionnel demande un paiement en ligne : créez un compte ou connectez-vous pour réserver.",
-  "EXPRESS_BOOKING_TOO_MANY": "Trop de demandes sont en attente chez ce professionnel : réessayez dans quelques minutes, ou connectez-vous."
+  "EXPRESS_BOOKING_TOO_MANY": "Trop de demandes sont en attente chez ce professionnel : réessayez dans quelques minutes, ou connectez-vous.",
+  "TOO_MANY_PENDING_BOOKINGS": "Vous avez déjà trop de demandes en attente : attendez la réponse du professionnel ou annulez-en une."
 }

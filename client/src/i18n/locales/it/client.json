@@ -304,23 +304,20 @@
       },
       "express": {
         "title": "I tuoi dati",
-        "intro": "Non hai ancora un account? Viene creato con la tua richiesta. Poi confermerai la tua email per inviarla al barbiere.",
+        "intro": "Non hai ancora un account? Viene creato con la tua richiesta. Poi sceglierai la password dal link ricevuto via email, e la richiesta verrà inviata al barbiere.",
         "name": "Nome",
         "email": "Email",
-        "password": "Password",
-        "passwordHint": "Almeno {{min}} caratteri. Ti servirà per seguire la tua prenotazione.",
         "honeypot": "Lascia vuoto questo campo",
         "haveAccount": "Hai già un account? <loginLink>Accedi</loginLink>. Account creato ma non ancora confermato? <resendLink>Invia di nuovo il link</resendLink>.",
         "paymentNeedsAccount": "Questo professionista richiede il pagamento online: <loginLink>accedi</loginLink> o <registerLink>crea un account</registerLink> per prenotare.",
         "errors": {
           "nameRequired": "Indica il tuo nome.",
           "emailInvalid": "Inserisci un indirizzo email valido.",
-          "passwordTooShort": "La password deve contenere almeno {{min}} caratteri.",
           "emailTaken": "Esiste già un account con questa email: accedi, o invia di nuovo il link di conferma se non è ancora confermato."
         },
         "sent": {
           "title": "Controlla la tua email",
-          "body": "Abbiamo inviato un link a {{email}}. Cliccalo entro {{minutes}} minuti per inviare la tua richiesta a {{barber}}: lo slot è riservato per te fino ad allora.",
+          "body": "Abbiamo inviato un link a {{email}}. Cliccalo entro {{minutes}} minuti per scegliere la password e inviare la tua richiesta a {{barber}}: lo slot è riservato per te fino ad allora.",
           "notReceived": "Non l'hai ricevuto? Controlla la cartella spam o <resendLink>invia di nuovo il link</resendLink>.",
           "login": "Ho confermato, accedi"
         }

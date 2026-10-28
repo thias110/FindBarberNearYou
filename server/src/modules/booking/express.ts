@@ -6,21 +6,25 @@ import type { BookingExpressInput } from "@findbarber/shared/validation";
 import { AppError, isExclusionViolation } from "../../lib/errors.js";
 import { sendExpressBookingEmail } from "../../lib/email.js";
 import {
+  generateEmailToken,
   hashPassword,
   insertUser,
-  issueEmailVerificationToken,
+  issuePasswordResetToken,
   normalizeEmail,
 } from "../auth/service.js";
 import { insertBookingUnderLock } from "./service.js";
 
 // --- Réservation express (lot N6) ---
-// Un visiteur sans compte réserve en saisissant nom, email et mot de passe à
-// la dernière étape du tunnel. Dans UNE transaction : le compte est créé non
-// vérifié, la demande est enregistrée en attente de l'email (créneau bloqué
-// `expressBookingHoldMinutes`, demande invisible du barber), et un jeton de
-// vérification est émis. Après validation de la transaction, un seul email
-// réunit le lien de vérification et le récapitulatif. Le clic transmet la
-// demande au barber (voir `expressRelease.ts`) ; sans clic, elle expire.
+// Un visiteur sans compte réserve en saisissant nom et email à la dernière
+// étape du tunnel. Dans UNE transaction : le compte est créé non vérifié, avec
+// un mot de passe aléatoire que personne ne connaît, la demande est
+// enregistrée en attente de l'email (créneau bloqué `expressBookingHoldMinutes`,
+// demande invisible du barber), et un jeton de choix du mot de passe est émis.
+// Après validation de la transaction, un seul email réunit ce lien et le
+// récapitulatif. Choisir son mot de passe prouve la possession de l'adresse,
+// vérifie le compte et transmet la demande au barber (`resetPassword`, puis
+// `expressRelease.ts`) ; sans clic, elle expire. Un tiers qui réserve avec
+// l'adresse d'autrui ne peut donc jamais se connecter à ce compte.
 // Garde-fous : email déjà connu → connexion demandée (aucune fusion
 // silencieuse) ; barber qui exige un paiement en ligne → compte classique ;
 // plafond de demandes non confirmées par barber (`insertBookingUnderLock`) ;
@@ -33,9 +37,10 @@ export async function createExpressBooking(
   input: Omit<BookingExpressInput, "website">,
 ): Promise<{ expiresAt: string }> {
   // Champs du compte séparés de la demande elle-même.
-  const { email, password, name, locale, ...bookingInput } = input;
-  // Hachage hors transaction : jamais de calcul coûteux sous le verrou du profil.
-  const passwordHash = await hashPassword(password);
+  const { email, name, locale, ...bookingInput } = input;
+  // Mot de passe inutilisable (jamais transmis). Hachage hors transaction :
+  // jamais de calcul coûteux sous le verrou du profil.
+  const passwordHash = await hashPassword(generateEmailToken());
   const expiresAt = new Date(Date.now() + EXPRESS_HOLD_MS);
 
   let created;
@@ -52,7 +57,7 @@ export async function createExpressBooking(
       const booking = await insertBookingUnderLock(runner, user.id, bookingInput, {
         emailConfirmExpiresAt: expiresAt,
       });
-      const token = await issueEmailVerificationToken(user.id, runner);
+      const token = await issuePasswordResetToken(user.id, runner);
       return { user, booking, token };
     });
   } catch (err) {

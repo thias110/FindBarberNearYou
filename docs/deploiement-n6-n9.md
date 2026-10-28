@@ -15,6 +15,8 @@ de ces conditions n'est pas remplie (`server/src/config/env.ts`) :
       d'exemple (`change-me`, etc.).
 - [ ] `MAIL_TRANSPORT=smtp` et `SMTP_HOST` renseigné (plus `SMTP_PORT`,
       `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` selon le fournisseur).
+- [ ] `TRUST_PROXY_HOPS` : nombre de proxys devant Node (1 derrière le Nginx
+      du projet, déjà réglé dans `docker-compose.yml` ; 0 sans proxy).
 
 À renseigner aussi, sans quoi le site démarre mais fonctionne mal :
 
@@ -27,8 +29,8 @@ de ces conditions n'est pas remplie (`server/src/config/env.ts`) :
 - [ ] `EMAIL_FROM` : expéditeur réel (le défaut est `no-reply@findbarber.local`).
 - [ ] `MAPTILER_GEOCODING_API_KEY` : sans elle, les réservations à domicile
       sont refusées.
-- [ ] Optionnel : `CITY_PAGE_MIN_BARBERS` (défaut 3), `TRUST_PROXY_HOPS`
-      derrière Nginx, clés Stripe, informations légales et réseaux sociaux.
+- [ ] Optionnel : `CITY_PAGE_MIN_BARBERS` (défaut 3), clés Stripe,
+      informations légales et réseaux sociaux.
 
 ## 2. Avant le déploiement
 

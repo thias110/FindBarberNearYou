@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
+  bookings,
   emailVerificationTokens,
   passwordResetTokens,
   users,
@@ -278,6 +279,19 @@ export async function resendVerification(email: string): Promise<void> {
     return;
   }
 
+  // Compte créé par une réservation express (seul cas où un compte non
+  // vérifié a des réservations) : aucun mot de passe connu, le lien renvoyé
+  // est donc celui du choix du mot de passe.
+  const [expressBooking] = await db
+    .select({ id: bookings.id })
+    .from(bookings)
+    .where(eq(bookings.clientUserId, user.id))
+    .limit(1);
+  if (expressBooking) {
+    await sendPasswordChoiceLink(user);
+    return;
+  }
+
   const [last] = await db
     .select()
     .from(emailVerificationTokens)
@@ -308,7 +322,11 @@ export async function requestPasswordReset(email: string): Promise<void> {
     .where(eq(users.email, normalizeEmail(email)))
     .limit(1);
   if (!user || user.status !== "ACTIVE") return;
+  await sendPasswordChoiceLink(user);
+}
 
+/** Envoie un lien de (ré)initialisation, sauf pendant le délai de renvoi. */
+async function sendPasswordChoiceLink(user: User): Promise<void> {
   const [last] = await db
     .select({ createdAt: passwordResetTokens.createdAt })
     .from(passwordResetTokens)
@@ -318,14 +336,23 @@ export async function requestPasswordReset(email: string): Promise<void> {
   const cooldownMs = env.EMAIL_RESEND_COOLDOWN_SECONDS * 1000;
   if (last && Date.now() - last.createdAt.getTime() < cooldownMs) return;
 
+  const token = await issuePasswordResetToken(user.id);
+  await sendPasswordResetEmail({ to: user.email, token, locale: user.locale });
+}
+
+/** Émet un jeton de réinitialisation ; seule son empreinte est stockée. */
+export async function issuePasswordResetToken(
+  userId: string,
+  runner: typeof db = db,
+): Promise<string> {
   const token = generateEmailToken();
-  await db.insert(passwordResetTokens).values({
+  await runner.insert(passwordResetTokens).values({
     id: randomUUID(),
-    userId: user.id,
+    userId,
     tokenHash: hashEmailToken(token),
     expiresAt: new Date(Date.now() + env.PASSWORD_RESET_TOKEN_TTL_SECONDS * 1000),
   });
-  await sendPasswordResetEmail({ to: user.email, token, locale: user.locale });
+  return token;
 }
 
 function invalidResetToken(): AppError {

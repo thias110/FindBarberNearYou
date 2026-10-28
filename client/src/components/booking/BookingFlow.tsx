@@ -320,7 +320,6 @@ export function BookingFlow({
           ...input,
           name: express.name.trim(),
           email: express.email.trim(),
-          password: express.password,
           website: express.website,
           locale: LOCALES.find((code) => code === i18n.resolvedLanguage),
         });

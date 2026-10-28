@@ -1,4 +1,4 @@
-import { and, eq, lte, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { barberProfiles, bookings } from "@findbarber/shared/schema";
 import { LIMITS } from "@findbarber/shared/constants";
@@ -16,6 +16,24 @@ import { notifyBookingEvent } from "../notification/service.js";
 // plusieurs instances (une ligne n'expire qu'une fois).
 
 const SWEEP_INTERVAL_MS = 5 * 60_000;
+
+/**
+ * Demandes PENDING encore valables : le contraire exact de
+ * `stalePendingCondition`, écrit sans NOT pour que les échéances absentes
+ * (NULL) ne fassent pas disparaître la ligne.
+ */
+export function activePendingCondition(now: Date) {
+  const ttlStart = new Date(
+    now.getTime() - LIMITS.bookingPendingTtlHours * 3_600_000,
+  );
+  return and(
+    eq(bookings.status, "PENDING"),
+    gt(bookings.createdAt, ttlStart),
+    gt(bookings.startAt, now),
+    or(isNull(bookings.paymentExpiresAt), gt(bookings.paymentExpiresAt, now)),
+    or(isNull(bookings.emailConfirmExpiresAt), gt(bookings.emailConfirmExpiresAt, now)),
+  );
+}
 
 function stalePendingCondition(now: Date) {
   const ttlStart = new Date(

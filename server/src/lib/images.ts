@@ -6,13 +6,22 @@ import { AppError } from "./errors.js";
 // une image décodable ; `.rotate()` applique l'orientation EXIF puis la retire.
 // Les métadonnées ne sont PAS conservées (sharp les supprime par défaut, on
 // n'appelle jamais `withMetadata`). Sortie WebP.
+// Le format est lu dans le contenu (jamais le type annoncé par le navigateur) :
+// seuls JPEG, PNG et WebP sont décodés, ce qui écarte SVG, TIFF et les autres
+// décodeurs natifs. La taille en pixels est bornée avant décodage, contre les
+// « bombes » de décompression (petit fichier, image géante en mémoire).
+
+const ACCEPTED_FORMATS = new Set(["jpeg", "png", "webp"]);
 
 async function toWebp(
   buffer: Buffer,
   resize: ResizeOptions,
 ): Promise<Buffer> {
+  const options = { limitInputPixels: LIMITS.imageMaxInputPixels, failOn: "error" as const };
   try {
-    return await sharp(buffer)
+    const { format } = await sharp(buffer, options).metadata();
+    if (!format || !ACCEPTED_FORMATS.has(format)) throw new Error("format refusé");
+    return await sharp(buffer, options)
       .rotate()
       .resize(resize)
       .webp({ quality: 82 })

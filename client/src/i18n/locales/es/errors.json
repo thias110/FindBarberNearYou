@@ -61,5 +61,6 @@
   "USER_NOT_SUSPENDED": "Este usuario no está suspendido.",
   "VALIDATION_ERROR": "Algunos datos no son válidos.",
   "EXPRESS_BOOKING_PAYMENT_REQUIRED": "Este profesional exige el pago en línea: crea una cuenta o inicia sesión para reservar.",
-  "EXPRESS_BOOKING_TOO_MANY": "Hay demasiadas solicitudes pendientes con este profesional: inténtalo de nuevo en unos minutos o inicia sesión."
+  "EXPRESS_BOOKING_TOO_MANY": "Hay demasiadas solicitudes pendientes con este profesional: inténtalo de nuevo en unos minutos o inicia sesión.",
+  "TOO_MANY_PENDING_BOOKINGS": "Ya tienes demasiadas solicitudes pendientes: espera la respuesta del profesional o cancela una."
 }
