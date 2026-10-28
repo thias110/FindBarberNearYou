@@ -30,9 +30,21 @@ export function AuthBrandPanel() {
   const { t } = useTranslation("auth");
   return (
     <div className="relative flex h-full min-h-screen flex-col justify-between overflow-hidden bg-night text-white">
+      <img
+        src="/images/editorial/hero-atelier.webp"
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        decoding="async"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-35"
+      />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_75%_at_85%_10%,rgb(var(--fb-cobalt)/0.34),transparent_70%),radial-gradient(55%_65%_at_10%_95%,rgb(var(--fb-brass)/0.18),transparent_70%)]"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-night via-night/90 to-night/75"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_75%_at_85%_10%,rgb(var(--fb-cobalt)/0.34),transparent_70%),radial-gradient(55%_65%_at_10%_95%,rgb(var(--fb-brass)/0.22),transparent_70%)]"
       />
 
       <div className="relative p-10 pb-0">
@@ -46,11 +58,11 @@ export function AuthBrandPanel() {
         <p className="mt-4 text-base leading-relaxed text-night-muted">
           {t("brand.description")}
         </p>
-        <ul className="mt-8 space-y-3.5">
+        <ul className="mt-8 space-y-3">
           {BENEFITS.map((benefit) => (
             <li
               key={benefit}
-              className="flex items-start gap-3 text-sm text-white"
+              className="flex items-start gap-3 rounded-2xl border border-white/12 bg-night/75 px-4 py-3 text-sm text-white backdrop-blur-sm"
             >
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.08] text-ring-on-night">
                 <CheckIcon />
@@ -61,7 +73,7 @@ export function AuthBrandPanel() {
         </ul>
       </div>
 
-      <p className="relative border-t border-white/10 px-10 py-6 text-xs text-night-muted">
+      <p className="relative border-t border-white/10 bg-night/60 px-10 py-6 text-xs text-night-muted">
         {t("brand.footer")}
       </p>
     </div>

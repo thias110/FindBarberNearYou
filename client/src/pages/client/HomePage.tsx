@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { PublicBarberSearchItem } from "@findbarber/shared/types";
@@ -25,6 +25,7 @@ import { Skeleton } from "../../components/ui/Skeleton";
 import { HomeHero, type HeroPlace } from "../../components/home/HomeHero";
 import { CategoryChips } from "../../components/home/CategoryChips";
 import { BarberPreviewCard } from "../../components/home/BarberPreviewCard";
+import { HomeStepsShowcase } from "../../components/home/HomeStepsShowcase";
 import { buttonClasses } from "../../components/ui/buttonStyles";
 import { PageContainer } from "../../components/ui/PageContainer";
 
@@ -34,63 +35,13 @@ import { PageContainer } from "../../components/ui/PageContainer";
 const PREVIEW_LIMIT = 8;
 const BENTO_SIZE = 5;
 
-const PRIMARY_LINK_CLASS = buttonClasses("primary");
-const SECONDARY_LINK_CLASS = buttonClasses("secondary");
+const PRIMARY_LINK_CLASS = buttonClasses("primary", "lg", "shadow-cta");
+const SECONDARY_LINK_CLASS = buttonClasses("secondary", "lg");
+const VIEW_ALL_LINK_CLASS = buttonClasses("secondary");
 const INVERSE_LINK_CLASS = buttonClasses("inverse", "lg");
 
-// Étapes « Comment ça marche » : textes dans `client:home.steps.<clé>`.
-const STEPS = ["search", "compare", "book"] as const;
-type StepKey = (typeof STEPS)[number];
-
-function StepIllustration({ step }: { step: StepKey }) {
-  const icons: Record<StepKey, ReactNode> = {
-    search: (
-      <>
-        <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
-        <circle cx="12" cy="10" r="2.5" />
-      </>
-    ),
-    compare: (
-      <>
-        <path d="M12 3.2l2.5 5.2 5.7.8-4.1 4 1 5.6L12 16.1l-5.1 2.7 1-5.6-4.1-4 5.7-.8L12 3.2z" />
-      </>
-    ),
-    book: (
-      <>
-        <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
-        <path d="M3.5 9.5h17M8 3v3.5M16 3v3.5" />
-        <path d="M9 14.5l2.2 2.2 4.3-4.4" />
-      </>
-    ),
-  };
-
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "flex h-12 w-12 items-center justify-center rounded-2xl border transition-colors duration-base",
-        step === "compare"
-          ? "border-brass/30 bg-brass-soft text-brass-strong"
-          : "border-border bg-surface-muted text-accent-strong group-hover/step:border-accent/30 group-hover/step:bg-accent-soft",
-      )}
-    >
-      <svg
-        viewBox="0 0 24 24"
-        className="h-6 w-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {icons[step]}
-      </svg>
-    </span>
-  );
-}
-
-// Accueil : public pour les visiteurs (incitation à l'inscription), enrichi
-// pour un CLIENT connecté (rendez-vous, déconnexion). Les BARBER et ADMIN sont
+// Accueil : vitrine éditoriale publique pour les visiteurs, enrichie pour un
+// CLIENT connecté (rendez-vous, déconnexion). Les BARBER et ADMIN sont
 // redirigés vers leur espace par la route.
 export function ClientHomePage() {
   const { t } = useTranslation("client");
@@ -141,7 +92,6 @@ export function ClientHomePage() {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        // Une annulation (démontage) n'est pas une erreur utilisateur.
         if (err instanceof DOMException && err.name === "AbortError") return;
         setError(
           err instanceof Error
@@ -159,8 +109,7 @@ export function ClientHomePage() {
     };
   }, [reloadToken]);
 
-  // Recherche par ville et lieu : contrat d'URL de BarbersSearchPage
-  // (`city`, `place`).
+  // Recherche par ville et lieu : contrat d'URL de BarbersSearchPage (`city`, `place`).
   function handleSearch(city: string, place: HeroPlace) {
     const params = new URLSearchParams();
     const trimmed = city.trim();
@@ -208,10 +157,10 @@ export function ClientHomePage() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="fb-canvas-glow min-h-screen bg-background">
       {/* Visiteur : hero de nuit pleine largeur sous la barre flottante. */}
       {!user && hero}
-      <div className="p-4 sm:p-8">
+      <div className="px-4 pb-12 pt-6 sm:px-8 sm:pb-16 sm:pt-10">
         <PageContainer width="wide" stack="none" className="space-y-section">
           {accountDeleted && (
             <Alert variant="success">{t("home.accountDeleted")}</Alert>
@@ -219,7 +168,7 @@ export function ClientHomePage() {
 
           {user && hero}
 
-          <div className="space-y-14">
+          <div className="space-y-16">
             <CategoryChips techniques={popularTechniques} />
 
             <section aria-labelledby="home-barbers-title">
@@ -237,7 +186,7 @@ export function ClientHomePage() {
                 </div>
                 <Link
                   to="/barbers"
-                  className={cn(SECONDARY_LINK_CLASS, "group/all")}
+                  className={cn(VIEW_ALL_LINK_CLASS, "group/all")}
                 >
                   {t("home.barbers.viewAll")}
                   <svg
@@ -292,9 +241,6 @@ export function ClientHomePage() {
                   }
                 />
               ) : (
-                // Mobile : carrousel horizontal (glissement au doigt, accroche
-                // par carte ; le focus fait défiler la carte en vue).
-                // Desktop : grille bento adaptative, sans colonne morte.
                 <ul
                   aria-label={t("home.barbers.title")}
                   className={cn(
@@ -332,46 +278,7 @@ export function ClientHomePage() {
             </section>
           </div>
 
-          <section aria-labelledby="home-steps-title">
-            <div>
-              <h2
-                id="home-steps-title"
-                className="font-display text-h2 font-bold text-foreground"
-              >
-                {t("home.steps.title")}
-              </h2>
-              <p className="mt-1 text-sm text-foreground-muted sm:text-base">
-                {t("home.steps.subtitle")}
-              </p>
-            </div>
-            {/* Vraie séquence : les numéros portent l'ordre des étapes. */}
-            <ol className="mt-6 grid gap-5 md:grid-cols-3">
-              {STEPS.map((step, index) => (
-                <li
-                  key={step}
-                  className="group/step flex flex-col justify-between rounded-3xl border border-border bg-surface p-6 shadow-1 transition-[transform,box-shadow,border-color] duration-base ease-out hover:border-border-strong hover:shadow-2 motion-safe:hover:-translate-y-1 sm:p-7"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span
-                      aria-hidden="true"
-                      className="inline-flex h-10 min-w-10 items-center justify-center rounded-xl bg-accent-soft px-2.5 font-display text-base font-extrabold tabular-nums text-accent-strong"
-                    >
-                      0{index + 1}
-                    </span>
-                    <StepIllustration step={step} />
-                  </div>
-                  <div className="mt-6">
-                    <p className="font-display text-h3 font-bold text-foreground">
-                      {t(`home.steps.${step}.title`)}
-                    </p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-foreground-muted">
-                      {t(`home.steps.${step}.description`)}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
+          <HomeStepsShowcase />
 
           {user ? (
             <section aria-labelledby="home-appointments-title">
@@ -396,85 +303,164 @@ export function ClientHomePage() {
               </Card>
             </section>
           ) : (
-            <section
-              aria-labelledby="home-join-title"
-              className="grid gap-6 lg:grid-cols-12"
-            >
+            <section aria-labelledby="home-join-title" className="space-y-8">
               <h2 id="home-join-title" className="sr-only">
                 {t("home.join.title")}
               </h2>
 
-              {/* Panneau vitrine « nuit » pour les professionnels : alterne le
-                  rythme jour / nuit de la page (plan §1 E01, E03). */}
-              <div className="relative isolate flex flex-col justify-between overflow-hidden rounded-4xl bg-night p-7 text-white shadow-2 ring-1 ring-inset ring-white/10 sm:p-10 lg:col-span-7">
+              {/* Vitrine « Espace professionnel » pleine largeur : photographie d'atelier + aperçu agenda */}
+              <div className="relative isolate grid gap-8 overflow-hidden rounded-4xl bg-night p-7 text-white shadow-3 ring-1 ring-inset ring-white/12 sm:p-10 lg:grid-cols-12 lg:items-center lg:gap-10 lg:p-12">
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(36rem_24rem_at_88%_15%,rgb(var(--fb-cobalt)/0.3),transparent_70%),radial-gradient(28rem_20rem_at_10%_90%,rgb(var(--fb-brass)/0.16),transparent_70%)]"
+                  className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(44rem_30rem_at_85%_15%,rgb(var(--fb-cobalt)/0.34),transparent_70%),radial-gradient(36rem_24rem_at_10%_90%,rgb(var(--fb-brass)/0.18),transparent_70%)]"
                 />
-                <div>
-                  <p className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1 text-xs font-semibold text-ring-on-night">
+
+                <div className="lg:col-span-6">
+                  <p className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3.5 py-1 text-xs font-semibold text-ring-on-night">
+                    <span
+                      aria-hidden="true"
+                      className="h-1.5 w-1.5 rounded-full bg-brass"
+                    />
                     {t("home.join.barberBadge")}
                   </p>
-                  <p className="mt-4 font-display text-h2 font-bold text-white">
+                  <p className="mt-4 font-display text-h2 font-extrabold text-white">
                     {t("home.join.barberTitle")}
                   </p>
-                  <p className="mt-2 max-w-[46ch] text-base leading-relaxed text-night-muted">
+                  <p className="mt-2.5 max-w-[46ch] text-base leading-relaxed text-night-muted">
                     {t("home.join.barberDescription")}
                   </p>
-                  <ul className="mt-6 space-y-2.5 text-sm text-white">
+
+                  <ul className="mt-6 space-y-3 text-sm text-white">
                     {(["agenda", "places", "payments"] as const).map((perk) => (
-                      <li key={perk} className="flex items-start gap-2.5">
-                        <svg
+                      <li key={perk} className="flex items-start gap-3">
+                        <span
                           aria-hidden="true"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          className="mt-0.5 h-4 w-4 shrink-0 text-brass"
+                          className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-brass/40 bg-brass/15 text-brass"
                         >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0Z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
+                          <svg
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="h-3.5 w-3.5"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0Z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </span>
                         <span>{t(`home.join.barberPerks.${perk}`)}</span>
                       </li>
                     ))}
                   </ul>
-                </div>
-                <div className="mt-8 pt-2">
-                  <Link
-                    to="/register?role=BARBER"
-                    className={cn(INVERSE_LINK_CLASS, "group/pro")}
-                  >
-                    {t("home.join.barberCta")}
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 20 20"
-                      className="h-4 w-4 shrink-0 transition-transform duration-fast ease-out motion-safe:group-hover/pro:translate-x-0.5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+
+                  <div className="mt-8">
+                    <Link
+                      to="/register?role=BARBER"
+                      className={cn(INVERSE_LINK_CLASS, "group/pro")}
                     >
-                      <path d="M4 10h11M11 5.5L15.5 10 11 14.5" />
-                    </svg>
-                  </Link>
+                      {t("home.join.barberCta")}
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 20 20"
+                        className="h-4 w-4 shrink-0 transition-transform duration-fast ease-out motion-safe:group-hover/pro:translate-x-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M4 10h11M11 5.5L15.5 10 11 14.5" />
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+
+                <div
+                  aria-hidden="true"
+                  className="relative overflow-hidden rounded-3xl border border-white/15 bg-night-2 p-2.5 shadow-2 lg:col-span-6"
+                >
+                  <div className="relative min-h-[17.5rem] overflow-hidden rounded-2xl sm:min-h-0 sm:aspect-[16/10]">
+                    <img
+                      src="/images/editorial/pro-studio.webp"
+                      alt=""
+                      width={1280}
+                      height={720}
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-night via-night/45 to-transparent" />
+
+                    {/* Mini-aperçu d'agenda professionnel superposé en verre sombre */}
+                    <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/15 bg-night/85 p-3.5 backdrop-blur-xl sm:p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-display text-sm font-bold text-white">
+                          {t("home.join.proPreview.title")}
+                        </p>
+                        <span className="rounded-full border border-brass/40 bg-brass/15 px-2.5 py-0.5 text-[0.6875rem] font-semibold text-white">
+                          {t("home.join.proPreview.protected")}
+                        </span>
+                      </div>
+                      <div className="mt-2.5 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2">
+                          <span className="font-medium text-white">
+                            <span className="mr-2 font-bold tabular-nums text-ring-on-night">
+                              09:30
+                            </span>
+                            {t("home.join.proPreview.slot1")}
+                          </span>
+                          <span className="font-semibold text-brass">
+                            {t("home.join.proPreview.confirmed")}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2">
+                          <span className="font-medium text-white">
+                            <span className="mr-2 font-bold tabular-nums text-ring-on-night">
+                              14:00
+                            </span>
+                            {t("home.join.proPreview.slot2")}
+                          </span>
+                          <span className="font-semibold text-brass">
+                            {t("home.join.proPreview.confirmed")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Panneau client en surface claire. */}
-              <div className="flex flex-col justify-between rounded-4xl border border-border bg-surface p-7 text-foreground shadow-1 sm:p-10 lg:col-span-5">
-                <div>
+              {/* Vitrine « Espace client » éditoriale */}
+              <div className="grid gap-6 overflow-hidden rounded-4xl border border-border bg-surface p-6 text-foreground shadow-2 sm:p-10 lg:grid-cols-12 lg:items-center lg:gap-10">
+                <div
+                  aria-hidden="true"
+                  className="relative aspect-[16/10] overflow-hidden rounded-3xl border border-border/70 lg:col-span-5 lg:aspect-[4/3]"
+                >
+                  <img
+                    src="/images/editorial/craft-home.webp"
+                    alt=""
+                    width={800}
+                    height={600}
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-night/80 via-transparent to-transparent" />
+                  <p className="absolute bottom-3.5 left-3.5 rounded-full border border-white/20 bg-night/80 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
+                    {t("home.hero.showcase.modeBadge")}
+                  </p>
+                </div>
+
+                <div className="lg:col-span-7">
                   <Badge variant="accent">{t("home.join.clientBadge")}</Badge>
-                  <p className="mt-4 font-display text-h2 font-bold text-foreground">
+                  <p className="mt-4 font-display text-h2 font-extrabold text-foreground">
                     {t("home.join.clientTitle")}
                   </p>
-                  <p className="mt-2 text-base leading-relaxed text-foreground-muted">
+                  <p className="mt-2 max-w-[48ch] text-base leading-relaxed text-foreground-muted">
                     {t("home.join.clientDescription")}
                   </p>
+
                   <ul className="mt-6 space-y-2.5 text-sm text-foreground">
-                    {(["favorites", "calendar"] as const).map((perk) => (
+                    {(["favorites", "calendar", "privacy"] as const).map((perk) => (
                       <li key={perk} className="flex items-start gap-2.5">
                         <svg
                           aria-hidden="true"
@@ -492,14 +478,15 @@ export function ClientHomePage() {
                       </li>
                     ))}
                   </ul>
-                </div>
-                <div className="mt-8 flex flex-wrap gap-3 pt-2">
-                  <Link to="/register" className={PRIMARY_LINK_CLASS}>
-                    {t("home.join.register")}
-                  </Link>
-                  <Link to="/login" className={SECONDARY_LINK_CLASS}>
-                    {t("home.join.login")}
-                  </Link>
+
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <Link to="/register" className={PRIMARY_LINK_CLASS}>
+                      {t("home.join.register")}
+                    </Link>
+                    <Link to="/login" className={SECONDARY_LINK_CLASS}>
+                      {t("home.join.login")}
+                    </Link>
+                  </div>
                 </div>
               </div>
             </section>

@@ -504,20 +504,20 @@ export function BookingFlow({
       className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start"
     >
       <div className="min-w-0">
-        <Card className="p-5 sm:p-6 shadow-card-sm">
+        <Card className="rounded-3xl border-border/80 p-5 shadow-card sm:p-7">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-bold text-foreground">{t("booking.flow.title")}</h2>
-            <p className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold tabular-nums text-foreground-muted">
+            <p className="rounded-full border border-border/70 bg-surface-muted px-3 py-1 text-xs font-bold tabular-nums text-foreground-muted">
               {t("booking.flow.progress", { current: step, total: 3 })}
             </p>
           </div>
 
-          <div aria-hidden="true" className="mt-3.5 grid grid-cols-3 gap-2">
+          <div aria-hidden="true" className="mt-4 grid grid-cols-3 gap-2.5">
             {([1, 2, 3] as const).map((index) => {
               const active = index === step;
               const completed = index < step;
               return (
-                <div key={index} className="space-y-1.5">
+                <div key={index} className="space-y-2">
                   <div
                     className={cn(
                       "h-1.5 rounded-full transition-colors duration-base",
@@ -529,13 +529,13 @@ export function BookingFlow({
                       className={cn(
                         "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold tabular-nums",
                         active
-                          ? "bg-accent text-accent-foreground"
+                          ? "bg-accent text-accent-foreground shadow-1"
                           : completed
                             ? "bg-accent-soft text-accent-strong"
                             : "bg-surface-muted text-foreground-muted",
                       )}
                     >
-                      {index}
+                      {completed ? "✓" : index}
                     </span>
                     <span
                       className={cn(
@@ -554,7 +554,7 @@ export function BookingFlow({
           <h3
             ref={headingRef}
             tabIndex={-1}
-            className="mt-4 border-t border-border/70 pt-4 text-h3 font-bold text-foreground focus:outline-none"
+            className="mt-5 border-t border-border/70 pt-4 text-h3 font-bold text-foreground focus:outline-none"
           >
             {stepTitle}
           </h3>
@@ -580,7 +580,7 @@ export function BookingFlow({
               </Field>
 
               {selectedService && (
-                <div className="rounded-xl border border-border bg-surface-muted/60 p-3.5">
+                <div className="rounded-2xl border border-accent/25 bg-accent-soft/35 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-foreground">

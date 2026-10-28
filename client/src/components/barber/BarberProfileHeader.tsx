@@ -27,29 +27,37 @@ export function BarberProfileHeader({
   const hasRating = totalReviews > 0 && averageRating !== null;
 
   return (
-    <Card className="overflow-hidden p-0 shadow-card">
-      {/* Bandeau studio « Nuit » purement décoratif */}
+    <Card className="overflow-hidden rounded-3xl border-border/80 p-0 shadow-card">
+      {/* Bandeau studio « Nuit » éditorial purement décoratif */}
       <div
         aria-hidden="true"
-        className="relative h-28 overflow-hidden bg-night sm:h-36"
+        className="relative h-36 overflow-hidden bg-night sm:h-48"
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_110%_at_85%_0%,rgb(var(--fb-cobalt)/0.38),transparent_70%),radial-gradient(45%_95%_at_10%_100%,rgb(var(--fb-brass)/0.22),transparent_70%)]" />
+        <img
+          src="/images/editorial/pro-studio.webp"
+          alt=""
+          decoding="async"
+          className="h-full w-full object-cover object-center opacity-50"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-night via-night/55 to-night/25" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_110%_at_85%_0%,rgb(var(--fb-cobalt)/0.36),transparent_70%),radial-gradient(45%_95%_at_10%_100%,rgb(var(--fb-brass)/0.24),transparent_70%)]" />
       </div>
 
       <div className="px-5 pb-6 sm:px-8 sm:pb-8">
-        <div className="-mt-12 flex items-end justify-between gap-4 sm:-mt-14">
+        <div className="-mt-12 flex items-end justify-between gap-4 sm:-mt-16">
           {profile.avatarPath ? (
             <img
               src={resolveUploadUrl(profile.avatarPath) ?? ""}
               alt={t("public.header.avatarAlt", { name: profile.displayName })}
-              className="relative z-10 h-24 w-24 shrink-0 rounded-2xl border-4 border-surface bg-surface object-cover shadow-2 sm:h-28 sm:w-28"
+              className="relative z-10 h-24 w-24 shrink-0 rounded-3xl border-4 border-surface bg-surface object-cover shadow-card sm:h-28 sm:w-28"
             />
           ) : (
             <div
               aria-hidden="true"
-              className="relative z-10 grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-surface bg-accent-soft font-display text-3xl font-extrabold text-accent-strong shadow-2 sm:h-28 sm:w-28 sm:text-4xl"
+              className="relative z-10 grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-3xl border-4 border-surface bg-night font-display text-3xl font-extrabold text-white shadow-card sm:h-28 sm:w-28 sm:text-4xl"
             >
-              <span>{profile.displayName.charAt(0).toUpperCase()}</span>
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_80%_at_25%_15%,rgb(var(--fb-cobalt)/0.45),transparent_70%),radial-gradient(75%_75%_at_85%_90%,rgb(var(--fb-brass)/0.32),transparent_70%)]" />
+              <span className="relative">{profile.displayName.charAt(0).toUpperCase()}</span>
             </div>
           )}
 
@@ -61,13 +69,13 @@ export function BarberProfileHeader({
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+              <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-4xl">
                 {profile.displayName}
               </h1>
               {profile.certified && <CertifiedBadge />}
             </div>
 
-            <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-sm text-foreground-muted">
+            <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-foreground-muted">
               <svg
                 aria-hidden="true"
                 viewBox="0 0 16 16"
@@ -81,7 +89,7 @@ export function BarberProfileHeader({
                 <path d="M8 14s4.5-4.2 4.5-7.5a4.5 4.5 0 1 0-9 0C3.5 9.8 8 14 8 14Z" />
                 <circle cx="8" cy="6.5" r="1.5" />
               </svg>
-              <span>
+              <span className="font-medium text-foreground">
                 {profile.postalCode ? `${profile.postalCode}, ` : ""}
                 {profile.city}, {countryName}
               </span>
@@ -92,14 +100,14 @@ export function BarberProfileHeader({
 
           {hasRating && (
             // Bloc de note (plan §2.6.5) : 56 × 56 px, note en Bricolage 800.
-            <div className="flex items-center gap-3 self-start rounded-2xl border border-border bg-surface-muted/60 p-2 pr-4">
+            <div className="flex items-center gap-3 self-start rounded-2xl border border-border/80 bg-surface-muted/70 p-2 pr-4 shadow-1">
               <span className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-brass/35 bg-brass-soft text-foreground shadow-1">
                 <span className="font-display text-2xl font-extrabold leading-none tabular-nums">
                   {formatRating(averageRating)}
                 </span>
                 <StarIcon className="mt-0.5 h-3.5 w-3.5" />
               </span>
-              <span className="text-sm font-medium text-foreground-muted">
+              <span className="text-sm font-semibold text-foreground-muted">
                 {t("common.reviewCount", { count: totalReviews })}
               </span>
             </div>

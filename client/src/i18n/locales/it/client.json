@@ -50,11 +50,18 @@
         "certified": "Profili verificati",
         "realtime": "Disponibilità in tempo reale",
         "express": "Prenotazione express"
+      },
+      "showcase": {
+        "modeBadge": "Salone · Studio · Domicilio",
+        "slotTitle": "Orari in tempo reale",
+        "slotMeta": "Senza scaricare l'app",
+        "confirmedChip": "Calendario .ics incluso"
       }
     },
     "categories": {
       "title": "Prestazioni più richieste",
-      "subtitle": "Esplora direttamente per specialità."
+      "subtitle": "Esplora direttamente per specialità.",
+      "explore": "Esplora"
     },
     "preview": {
       "atHome": "A domicilio",
@@ -88,13 +95,21 @@
       "clientBadge": "Spazio clienti",
       "clientPerks": {
         "favorites": "I tuoi barbieri preferiti a portata di clic",
-        "calendar": "Esportazione calendario (.ics) e stato in tempo reale"
+        "calendar": "Esportazione calendario (.ics) e stato in tempo reale",
+        "privacy": "Indirizzo esatto e itinerario rivelati dopo la conferma"
       },
       "barberBadge": "Spazio professionisti",
       "barberPerks": {
         "agenda": "Agenda online senza doppie prenotazioni",
         "places": "In salone, nel tuo studio o a domicilio",
         "payments": "Pagamento in sede, acconto o saldo online"
+      },
+      "proPreview": {
+        "title": "Agenda e incassi",
+        "slot1": "Taglio + barba · In salone",
+        "slot2": "Sfumatura · A domicilio",
+        "confirmed": "Confermato",
+        "protected": "Zero sovrapposizioni garantite"
       }
     },
     "steps": {
@@ -111,7 +126,28 @@
         "title": "Prenota",
         "description": "Scegli una fascia oraria e conferma il tuo appuntamento."
       },
-      "subtitle": "Dalla ricerca alla conferma, senza attriti."
+      "subtitle": "Dalla ricerca alla conferma, senza attriti.",
+      "stage": {
+        "search": {
+          "badge": "Mappa interattiva e filtri",
+          "headline": "Salone, studio privato o a domicilio",
+          "caption": "Filtra per città, raggio intorno a te, budget o specialità in un gesto.",
+          "aroundPill": "Vicino a me · 10 km"
+        },
+        "compare": {
+          "badge": "Disponibilità verificate",
+          "headline": "Orari reali su 7 giorni, prezzi chiari",
+          "caption": "Visualizza subito il prossimo orario libero, la durata esatta e le recensioni verificate.",
+          "selectedPill": "Orario selezionato"
+        },
+        "book": {
+          "badge": "Prenotazione express o con account",
+          "headline": "Prenotato in 3 passaggi, indirizzo sbloccato",
+          "caption": "Prenota anche senza account, aggiungi al calendario (.ics) e ricevi l'itinerario dopo la conferma.",
+          "privacyPill": "Indirizzo rivelato dopo la conferma",
+          "icsPill": "Esporta calendario .ics"
+        }
+      }
     },
     "logout": "Esci"
   },

@@ -43,7 +43,7 @@ export function BarberReviews({
   const hasSummary = summary !== null && summary.totalReviews > 0;
 
   return (
-    <Card className="p-6">
+    <Card className="rounded-3xl border-border/80 p-6 shadow-card-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-h3 font-bold text-foreground">{t("public.reviews.title")}</h2>
         {hasSummary && summary.averageRating !== null && (

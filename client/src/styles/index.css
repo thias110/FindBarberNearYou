@@ -61,6 +61,43 @@
   .focus-ring-on-night {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-on-night focus-visible:ring-offset-2 focus-visible:ring-offset-night;
   }
+
+  /* Pilule flottante biseautée (« liquid glass ») de l'en-tête public. */
+  .fb-liquid-nav-night {
+    background-color: rgb(var(--fb-night) / 0.8);
+    border-color: rgb(255 255 255 / 0.2);
+    box-shadow:
+      inset 1px 1px 0 0 rgb(255 255 255 / 0.34),
+      inset 0 2px 1px 0 rgb(255 255 255 / 0.14),
+      inset -1px -1px 0 0 rgb(0 0 0 / 0.35),
+      0 0 0 0.5px rgb(var(--fb-ring-on-night) / 0.32),
+      0 18px 44px -10px rgb(0 0 0 / 0.62),
+      0 4px 14px 0 rgb(0 0 0 / 0.32);
+  }
+
+  .fb-liquid-nav-day {
+    background-color: rgb(var(--fb-surface) / 0.95);
+    border-color: rgb(var(--fb-border));
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.7),
+      0 0 0 0.5px rgb(var(--fb-accent) / 0.08),
+      var(--fb-shadow-2);
+  }
+
+  .dark .fb-liquid-nav-day {
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.08),
+      0 0 0 0.5px rgb(var(--fb-ring) / 0.16),
+      var(--fb-shadow-2);
+  }
+
+  /* Toile de fond atmosphérique (halos cobalt et laiton très doux). */
+  .fb-canvas-glow {
+    background-image:
+      radial-gradient(44rem 28rem at 4% 12%, rgb(var(--fb-accent) / 0.06), transparent 72%),
+      radial-gradient(40rem 26rem at 96% 46%, rgb(var(--fb-brass) / 0.06), transparent 72%),
+      radial-gradient(46rem 28rem at 10% 86%, rgb(var(--fb-accent) / 0.05), transparent 72%);
+  }
 }
 
 /* Transition douce lors du changement de thème, uniquement si l'utilisateur
@@ -181,8 +218,9 @@
   background: rgb(var(--fb-surface));
   color: rgb(var(--fb-foreground));
   box-shadow: var(--fb-shadow-1), var(--fb-shadow-2);
+  font-family: var(--fb-font-display);
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

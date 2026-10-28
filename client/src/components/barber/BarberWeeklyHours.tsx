@@ -16,7 +16,7 @@ export function BarberWeeklyHours({ hours }: { hours: PublicWeeklyHours }) {
   const titleId = "barber-hours-title";
 
   return (
-    <Card className="p-6">
+    <Card className="rounded-3xl border-border/80 p-6 shadow-card-sm">
       <section aria-labelledby={titleId}>
         <div className="flex items-center gap-2">
           <svg

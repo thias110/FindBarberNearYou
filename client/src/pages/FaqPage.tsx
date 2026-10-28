@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Accordion, type AccordionItem } from "../components/ui/Accordion";
-import { Card } from "../components/ui/Card";
 import { PageContainer } from "../components/ui/PageContainer";
 
 // Questions fréquentes (lot N7, plan E26). Chaque réponse ne décrit que ce que
@@ -23,18 +22,22 @@ export function FaqPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-8">
+    <div className="fb-canvas-glow min-h-screen bg-background p-4 sm:p-8">
       <PageContainer width="reading" stack="lg">
-        <Card className="p-6 sm:p-8">
-          <header>
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+        <div className="relative overflow-hidden rounded-3xl border border-night-border bg-night p-7 text-white shadow-card sm:p-10">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_90%_at_85%_0%,rgb(var(--fb-cobalt)/0.34),transparent_70%),radial-gradient(50%_80%_at_10%_100%,rgb(var(--fb-brass)/0.2),transparent_70%)]"
+          />
+          <header className="relative">
+            <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-4xl">
               {t("title")}
             </h1>
-            <p className="mt-2 max-w-[60ch] leading-relaxed text-foreground-muted">
+            <p className="mt-3 max-w-[60ch] leading-relaxed text-night-muted">
               {t("intro")}
             </p>
           </header>
-        </Card>
+        </div>
         <section aria-labelledby="faq-clients" className="space-y-3">
           <h2 id="faq-clients" className="text-xl font-bold text-foreground">
             {t("clients.title")}

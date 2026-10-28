@@ -50,11 +50,18 @@
         "certified": "Perfiles verificados",
         "realtime": "Horarios en tiempo real",
         "express": "Reserva exprés"
+      },
+      "showcase": {
+        "modeBadge": "Salón · Estudio · Domicilio",
+        "slotTitle": "Horarios en tiempo real",
+        "slotMeta": "Sin descargar ninguna app",
+        "confirmedChip": "Calendario .ics incluido"
       }
     },
     "categories": {
       "title": "Servicios populares",
-      "subtitle": "Explora directamente por especialidad."
+      "subtitle": "Explora directamente por especialidad.",
+      "explore": "Explorar"
     },
     "preview": {
       "atHome": "A domicilio",
@@ -88,13 +95,21 @@
       "clientBadge": "Espacio cliente",
       "clientPerks": {
         "favorites": "Tus barberos favoritos a un clic",
-        "calendar": "Añadir al calendario (.ics) y seguimiento en vivo"
+        "calendar": "Añadir al calendario (.ics) y seguimiento en vivo",
+        "privacy": "Dirección exacta y ruta reveladas tras la confirmación"
       },
       "barberBadge": "Espacio profesional",
       "barberPerks": {
         "agenda": "Agenda online sin dobles reservas",
         "places": "En el salón, en tu estudio o a domicilio",
         "payments": "Pago en el local, señal o pago completo online"
+      },
+      "proPreview": {
+        "title": "Agenda y cobros",
+        "slot1": "Corte + barba · En salón",
+        "slot2": "Degradado · A domicilio",
+        "confirmed": "Confirmado",
+        "protected": "Cero solapamientos garantizados"
       }
     },
     "steps": {
@@ -111,7 +126,28 @@
         "title": "Reserva",
         "description": "Elige un horario y confirma tu cita."
       },
-      "subtitle": "De la búsqueda a la confirmación, sin fricciones."
+      "subtitle": "De la búsqueda a la confirmación, sin fricciones.",
+      "stage": {
+        "search": {
+          "badge": "Mapa interactivo y filtros",
+          "headline": "Salón, estudio privado o a domicilio",
+          "caption": "Filtra por ciudad, radio cerca de ti, presupuesto o especialidad en un toque.",
+          "aroundPill": "Cerca de mí · 10 km"
+        },
+        "compare": {
+          "badge": "Disponibilidad verificada",
+          "headline": "Horarios reales a 7 días, precios claros",
+          "caption": "Consulta al instante el próximo hueco libre, la duración exacta y las reseñas verificadas.",
+          "selectedPill": "Horario seleccionado"
+        },
+        "book": {
+          "badge": "Reserva exprés o con cuenta",
+          "headline": "Reservado en 3 pasos, dirección desbloqueada",
+          "caption": "Reserva incluso sin cuenta previa, añádelo a tu calendario (.ics) y recibe cómo llegar tras la confirmación.",
+          "privacyPill": "Dirección revelada tras confirmar",
+          "icsPill": "Exportar calendario .ics"
+        }
+      }
     },
     "logout": "Cerrar sesión"
   },

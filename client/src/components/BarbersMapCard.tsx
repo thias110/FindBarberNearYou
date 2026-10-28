@@ -56,7 +56,7 @@ export function BarbersMapCard({
       }}
       // Mobile : au-dessus du panneau de liste replié. Desktop : en bas à
       // droite, hors du panneau latéral.
-      className="pointer-events-auto absolute inset-x-3 bottom-24 z-10 mx-auto max-w-md overflow-hidden rounded-3xl border border-border bg-surface shadow-3 lg:inset-x-auto lg:bottom-10 lg:right-6 lg:w-[25rem]"
+      className="pointer-events-auto absolute inset-x-3 bottom-24 z-10 mx-auto max-w-md overflow-hidden rounded-3xl border border-border/85 bg-surface/95 shadow-3 backdrop-blur-xl backdrop-saturate-150 supports-[not(backdrop-filter:blur(1px))]:bg-surface lg:inset-x-auto lg:bottom-10 lg:right-6 lg:w-[25rem]"
     >
       <div aria-hidden="true" className="flex justify-center pt-2 sm:hidden">
         <span className="h-1.5 w-10 rounded-full bg-border-strong" />
