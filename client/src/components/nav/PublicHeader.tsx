@@ -38,26 +38,29 @@ export function PublicHeader() {
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     cn(
-      "inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-semibold transition-colors duration-fast",
+      "inline-flex min-h-11 items-center rounded-full px-3.5 text-sm font-semibold",
       onNight
-        ? "focus-ring-on-night text-white hover:bg-white/10"
+        ? cn(
+            "focus-ring-on-night hover:bg-white/12",
+            isActive ? "bg-white/12 text-white" : "text-white",
+          )
         : cn(
             "focus-ring hover:bg-surface-muted",
-            isActive ? "text-accent-strong" : "text-foreground",
+            isActive ? "bg-accent-soft text-accent-strong" : "text-foreground",
           ),
     );
 
   return (
-    <header className="sticky top-0 z-40 h-[4.5rem] px-2 pt-2 sm:px-4">
+    <header className="sticky top-0 z-40 h-[4.5rem] px-2 pt-2.5 sm:px-4">
       <div
         className={cn(
-          "mx-auto flex h-16 max-w-6xl items-center gap-2 rounded-full border pl-3 pr-2 sm:pl-4",
-          "transition-shadow duration-base ease-out",
+          "mx-auto flex h-16 max-w-6xl items-center gap-2 rounded-full border pl-3.5 pr-2.5 sm:pl-5",
+          "transition-shadow duration-base ease-out backdrop-blur-xl backdrop-saturate-150",
           scrolled
-            ? "border-border bg-surface shadow-2"
+            ? "fb-liquid-nav-day bg-surface"
             : onNight
-              ? "border-white/15 bg-night/75 shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_18px_42px_-16px_rgb(0_0_0/0.65)] backdrop-blur-xl backdrop-saturate-150"
-              : "border-border/80 bg-surface/95 shadow-1 backdrop-blur-xl backdrop-saturate-150",
+              ? "fb-liquid-nav-night"
+              : "fb-liquid-nav-day",
         )}
       >
         <Link
@@ -68,7 +71,7 @@ export function PublicHeader() {
             onNight ? "focus-ring-on-night" : "focus-ring",
           )}
         >
-          <Logo tone={onNight ? "onNight" : "default"} />
+          <Logo key={onNight ? "night" : "day"} tone={onNight ? "onNight" : "default"} />
         </Link>
         <nav aria-label={t("nav.main")} className="ml-3 hidden items-center gap-1 md:flex">
           <NavLink to="/barbers" className={navLinkClass}>
@@ -79,13 +82,20 @@ export function PublicHeader() {
         <div className="ml-auto flex min-w-0 items-center gap-2">
           {/* Langue accessible à tous, même sans compte (issue #37). */}
           <LanguageSelect compact tone={onNight ? "onNight" : "default"} />
+          <span
+            aria-hidden="true"
+            className={cn(
+              "hidden h-5 w-px md:block",
+              onNight ? "bg-white/15" : "bg-border",
+            )}
+          />
           <Link
             to="/login"
             className={buttonClasses(
               "ghost",
               "sm",
               cn(
-                "hidden whitespace-nowrap md:inline-flex",
+                "hidden whitespace-nowrap transition-none md:inline-flex",
                 onNight && "focus-ring-on-night text-white hover:bg-white/10",
               ),
             )}
@@ -95,12 +105,27 @@ export function PublicHeader() {
           <Link
             to="/barbers"
             className={buttonClasses(
-              "primary",
+              onNight ? "inverse" : "primary",
               "sm",
-              cn("hidden whitespace-nowrap md:inline-flex", onNight && "shadow-cta"),
+              cn(
+                "group/book hidden whitespace-nowrap transition-none md:inline-flex",
+                !onNight && "shadow-cta",
+              ),
             )}
           >
             {t("nav.book")}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 16 16"
+              className="h-3.5 w-3.5 transition-transform duration-fast ease-out motion-safe:group-hover/book:translate-x-0.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3.5 8h8.5M8.5 4.5L12 8l-3.5 3.5" />
+            </svg>
           </Link>
           <button
             type="button"

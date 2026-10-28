@@ -174,10 +174,10 @@ export function SearchFilters({
   );
 
   return (
-    <Card className="p-4">
+    <Card className="rounded-2xl border-border/80 bg-surface/95 p-4 shadow-1">
       <form onSubmit={onSubmit} className="space-y-3" role="search">
         {/* Ligne toujours visible : ville + recherche + accès aux filtres. */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5">
           <Field label={t("search.filters.cityLabel")} className="min-w-0">
             {(control) => (
               <CityCombobox
@@ -190,7 +190,7 @@ export function SearchFilters({
             )}
           </Field>
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" className="min-h-[44px] flex-1">
+            <Button type="submit" className="min-h-[44px] flex-1 shadow-cta">
               {t("search.filters.submit")}
             </Button>
             <Button

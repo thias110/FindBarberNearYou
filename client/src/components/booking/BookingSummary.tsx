@@ -93,7 +93,7 @@ export function SummaryList({ data }: { data: BookingSummaryData }) {
         </Row>
         <Row term={t("booking.flow.summary.payment")}>{payment}</Row>
       </dl>
-      <div className="mt-3 flex items-baseline justify-between gap-3 rounded-xl bg-surface-muted px-3.5 py-3">
+      <div className="mt-3.5 flex items-baseline justify-between gap-3 rounded-2xl border border-border/80 bg-surface-muted px-4 py-3.5">
         <span className="text-sm font-bold text-foreground">
           {t("booking.flow.summary.total")}
         </span>
@@ -118,13 +118,32 @@ export function BookingSummaryAside({
     <aside
       aria-label={t("booking.flow.summary.title")}
       className={cn(
-        "hidden rounded-2xl border border-border bg-surface p-5 shadow-card-sm lg:sticky lg:top-24 lg:block",
+        "hidden rounded-3xl border border-border/80 bg-surface p-5 shadow-card sm:p-6 lg:sticky lg:top-24 lg:block",
         className,
       )}
     >
-      <h3 className="mb-1 text-h4 font-bold text-foreground">
-        {t("booking.flow.summary.title")}
-      </h3>
+      <div className="mb-2 flex items-center gap-2">
+        <span
+          aria-hidden="true"
+          className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-soft text-accent-strong"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="2.5" y="3" width="11" height="10.5" rx="2" />
+            <path d="M5.5 1.8v2.4M10.5 1.8v2.4M2.5 6.5h11" />
+          </svg>
+        </span>
+        <h3 className="text-h4 font-bold text-foreground">
+          {t("booking.flow.summary.title")}
+        </h3>
+      </div>
       <SummaryList data={data} />
     </aside>
   );

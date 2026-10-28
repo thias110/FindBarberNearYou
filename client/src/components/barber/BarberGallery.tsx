@@ -22,11 +22,11 @@ export function BarberGallery({
 }: BarberGalleryProps) {
   const { t } = useTranslation("barber");
   return (
-    <Card className="p-6">
-      <div className="flex items-baseline justify-between gap-2">
+    <Card className="rounded-3xl border-border/80 p-6 shadow-card-sm">
+      <div className="flex items-center justify-between gap-2">
         <h2 className="text-h3 font-bold text-foreground">{t("public.gallery.title")}</h2>
         {!loading && photos.length > 0 && (
-          <span className="text-xs font-semibold tabular-nums text-foreground-muted">
+          <span className="rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-bold tabular-nums text-foreground-muted">
             {photos.length}
           </span>
         )}
@@ -41,7 +41,7 @@ export function BarberGallery({
             {t("public.gallery.loading")}
           </span>
           {[0, 1, 2].map((index) => (
-            <Skeleton key={index} className="h-44 w-full rounded-xl" />
+            <Skeleton key={index} className="h-44 w-full rounded-2xl" />
           ))}
         </div>
       ) : error ? (
@@ -65,7 +65,7 @@ export function BarberGallery({
           {photos.map((photo) => (
             <li
               key={photo.id}
-              className="group overflow-hidden rounded-xl border border-border/70 bg-surface-muted shadow-1"
+              className="group overflow-hidden rounded-2xl border border-border/80 bg-surface-muted shadow-1"
             >
               <div className="overflow-hidden">
                 <img

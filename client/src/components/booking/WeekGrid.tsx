@@ -261,7 +261,7 @@ export function WeekGrid({
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-border/70 bg-surface-muted/50 p-1.5">
+      <div className="mb-3.5 flex items-center justify-between gap-2 rounded-2xl border border-border/80 bg-surface-muted/60 p-1.5">
         <Button
           variant="secondary"
           size="icon"

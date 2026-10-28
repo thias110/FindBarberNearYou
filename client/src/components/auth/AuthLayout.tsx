@@ -23,10 +23,10 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           <AuthBrandPanel />
         </aside>
 
-        <main className="relative flex min-w-0 items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
+        <main className="fb-canvas-glow relative flex min-w-0 items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
           {/* Langue (issue #37) : en lg, le header mobile est masqué. */}
           <LanguageSelect compact className="absolute right-6 top-4 hidden lg:block" />
-          <Card className="w-full max-w-md p-6 shadow-card sm:p-8">
+          <Card className="w-full max-w-md rounded-3xl border-border/80 p-6 shadow-card sm:p-9">
             {children}
           </Card>
         </main>

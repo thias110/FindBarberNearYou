@@ -50,11 +50,18 @@
         "certified": "Verified profiles",
         "realtime": "Live availability",
         "express": "Express booking"
+      },
+      "showcase": {
+        "modeBadge": "Salon · Studio · Home",
+        "slotTitle": "Real-time time slots",
+        "slotMeta": "No app download required",
+        "confirmedChip": "Calendar .ics included"
       }
     },
     "categories": {
       "title": "Popular services",
-      "subtitle": "Browse directly by specialty."
+      "subtitle": "Browse directly by specialty.",
+      "explore": "Explore"
     },
     "preview": {
       "atHome": "At home",
@@ -88,13 +95,21 @@
       "clientBadge": "Client experience",
       "clientPerks": {
         "favorites": "Your favorite barbers one click away",
-        "calendar": "Instant calendar export (.ics) and live tracking"
+        "calendar": "Instant calendar export (.ics) and live tracking",
+        "privacy": "Exact address and directions revealed after confirmation"
       },
       "barberBadge": "For professionals",
       "barberPerks": {
         "agenda": "Online schedule with zero double-booking",
         "places": "In salon, at your studio or at client's home",
         "payments": "Pay on site, deposit or full online payment"
+      },
+      "proPreview": {
+        "title": "Schedule & payouts",
+        "slot1": "Cut + beard · In salon",
+        "slot2": "Skin fade · At home",
+        "confirmed": "Confirmed",
+        "protected": "Zero overlap guaranteed"
       }
     },
     "steps": {
@@ -111,7 +126,28 @@
         "title": "Book",
         "description": "Choose a time slot and confirm your appointment."
       },
-      "subtitle": "From search to confirmation, friction-free."
+      "subtitle": "From search to confirmation, friction-free.",
+      "stage": {
+        "search": {
+          "badge": "Interactive map & filters",
+          "headline": "Salon, private studio or at home",
+          "caption": "Filter by city, radius around you, budget or specialty in one tap.",
+          "aroundPill": "Near me · 10 km"
+        },
+        "compare": {
+          "badge": "Verified availability",
+          "headline": "Real 7-day slots, transparent pricing",
+          "caption": "Instantly see the next open slot, exact duration and verified client reviews.",
+          "selectedPill": "Selected slot"
+        },
+        "book": {
+          "badge": "Express or account booking",
+          "headline": "Booked in 3 steps, exact address unlocked",
+          "caption": "Book even without a prior account, add to your calendar (.ics) and get directions once confirmed.",
+          "privacyPill": "Address revealed after confirmation",
+          "icsPill": "Calendar .ics export"
+        }
+      }
     },
     "logout": "Log out"
   },

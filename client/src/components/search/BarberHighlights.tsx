@@ -72,14 +72,38 @@ export function BarberPhoto({
       <div
         aria-hidden="true"
         className={cn(
-          "grid shrink-0 place-items-center overflow-hidden bg-night-2 font-display font-bold text-white",
-          "bg-[radial-gradient(85%_70%_at_78%_18%,rgb(var(--fb-cobalt)/0.38),transparent_68%),radial-gradient(70%_60%_at_18%_82%,rgb(var(--fb-brass)/0.2),transparent_70%)]",
+          "shrink-0 overflow-hidden bg-night-2 font-display font-bold text-white",
+          "bg-[radial-gradient(90%_75%_at_80%_16%,rgb(var(--fb-cobalt)/0.44),transparent_68%),radial-gradient(75%_65%_at_16%_80%,rgb(var(--fb-brass)/0.26),transparent_70%)]",
           className,
         )}
       >
-        <span className="mb-8 flex h-24 w-24 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-4xl font-extrabold tracking-tight text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.16)] backdrop-blur-sm">
-          {initial}
-        </span>
+        <div className="relative grid h-full w-full place-items-center">
+          {/* Halo géométrique d'atelier en arrière-plan */}
+          <div className="pointer-events-none h-44 w-44 rounded-full border border-white/10 bg-white/[0.02]" />
+          {/* Médaillon biseauté d'atelier au centre supérieur */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pb-24">
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl border border-white/20 bg-night/55 shadow-[0_20px_40px_-16px_rgb(0_0_0/0.7),inset_0_1px_0_rgb(255_255_255/0.22)] backdrop-blur-md">
+              <span className="text-4xl font-extrabold tracking-tight text-white">
+                {initial}
+              </span>
+              <span className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full border border-brass/50 bg-night text-brass shadow-1">
+                <svg
+                  viewBox="0 0 20 20"
+                  className="h-3.5 w-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="6" cy="6" r="2.2" />
+                  <circle cx="6" cy="14" r="2.2" />
+                  <path d="M7.9 7.3L16 14.8M7.9 12.7L16 5.2" />
+                </svg>
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -87,11 +111,12 @@ export function BarberPhoto({
     <div
       aria-hidden="true"
       className={cn(
-        "grid shrink-0 place-items-center overflow-hidden bg-accent-soft font-display font-bold text-accent-strong",
+        "grid shrink-0 place-items-center overflow-hidden bg-night-2 font-display font-extrabold text-white",
+        "bg-[radial-gradient(85%_85%_at_80%_15%,rgb(var(--fb-cobalt)/0.42),transparent_70%),radial-gradient(75%_75%_at_15%_85%,rgb(var(--fb-brass)/0.24),transparent_72%)]",
         className,
       )}
     >
-      <span>{initial}</span>
+      <span className="drop-shadow-sm">{initial}</span>
     </div>
   );
 }

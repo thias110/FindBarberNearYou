@@ -146,15 +146,15 @@ export function PublicBarberProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-4 sm:p-8">
+      <div className="fb-canvas-glow min-h-screen bg-background p-4 sm:p-8">
         <PageContainer width="wide" aria-busy="true">
           <span className="sr-only" role="status">
             {t("profile.loading")}
           </span>
-          <Card className="overflow-hidden p-0">
-            <Skeleton className="h-28 w-full rounded-none sm:h-36" />
+          <Card className="overflow-hidden rounded-3xl p-0">
+            <Skeleton className="h-36 w-full rounded-none sm:h-48" />
             <div className="flex items-center gap-4 p-6">
-              <Skeleton className="h-20 w-20 shrink-0 rounded-2xl" />
+              <Skeleton className="h-24 w-24 shrink-0 rounded-3xl" />
               <div className="w-full space-y-2">
                 <Skeleton className="h-6 w-1/2" />
                 <Skeleton className="h-4 w-1/3" />
@@ -213,7 +213,7 @@ export function PublicBarberProfilePage() {
     );
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-8">
+    <div className="fb-canvas-glow min-h-screen bg-background p-4 sm:p-8">
       <PageContainer width="wide" stack="md">
         <BarberProfileHeader
           profile={profile}

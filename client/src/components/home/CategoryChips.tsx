@@ -3,7 +3,16 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import type { Technique } from "@findbarber/shared/constants";
 import { label } from "../../lib/labels";
-import { chipClasses } from "../ui/chipStyles";
+
+const TECHNIQUE_IMAGES: Record<Technique, string> = {
+  COUPE: "/images/editorial/craft-cut.webp",
+  DEGRADE: "/images/editorial/craft-fade.webp",
+  TAPER: "/images/editorial/craft-fade.webp",
+  BARBE: "/images/editorial/craft-beard.webp",
+  TRESSES: "/images/editorial/craft-braids.webp",
+  LOCKS: "/images/editorial/craft-braids.webp",
+  COLORATION: "/images/editorial/craft-color.webp",
+};
 
 function TechniqueIcon({ technique }: { technique: Technique }) {
   const paths: Record<Technique, ReactNode> = {
@@ -16,10 +25,8 @@ function TechniqueIcon({ technique }: { technique: Technique }) {
     ),
     DEGRADE: (
       <>
-        <path d="M3.5 5h13" strokeWidth={2.2} />
-        <path d="M3.5 8.5h13" strokeWidth={1.8} />
-        <path d="M3.5 12h13" strokeWidth={1.4} />
-        <path d="M3.5 15.5h13" strokeWidth={1} />
+        <circle cx="10" cy="10" r="6.5" />
+        <path d="M10 3.5v13" />
       </>
     ),
     TAPER: (
@@ -55,7 +62,7 @@ function TechniqueIcon({ technique }: { technique: Technique }) {
     <svg
       aria-hidden="true"
       viewBox="0 0 20 20"
-      className="h-4 w-4 shrink-0 text-accent-strong"
+      className="h-4 w-4 shrink-0 text-white"
       fill="none"
       stroke="currentColor"
       strokeWidth={1.8}
@@ -67,48 +74,86 @@ function TechniqueIcon({ technique }: { technique: Technique }) {
   );
 }
 
-// Prestations populaires (issue #47) : classement calculé par le serveur
-// (techniques les plus réservées), complété par une liste par défaut. Les chips
-// pointent vers le contrat d'URL de la recherche (`technique=<CODE>`).
+// Galerie tactile des spécialités (issue #47) : classement calculé par le
+// serveur, présenté sous forme de tuiles photographiques éditoriales qui mènent
+// directement au filtre `technique=<CODE>` de la recherche.
 export function CategoryChips({ techniques }: { techniques: readonly Technique[] }) {
   const { t } = useTranslation("client");
   return (
     <section aria-labelledby="home-categories-title">
-      <div>
-        <h2
-          id="home-categories-title"
-          className="font-display text-h2 font-bold text-foreground"
-        >
-          {t("home.categories.title")}
-        </h2>
-        <p className="mt-1 text-sm text-foreground-muted">
-          {t("home.categories.subtitle")}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2
+            id="home-categories-title"
+            className="font-display text-h2 font-bold text-foreground"
+          >
+            {t("home.categories.title")}
+          </h2>
+          <p className="mt-1 text-sm text-foreground-muted sm:text-base">
+            {t("home.categories.subtitle")}
+          </p>
+        </div>
       </div>
-      <ul className="mt-5 flex flex-wrap gap-2.5">
-        {techniques.map((technique) => (
-          <li key={technique}>
+
+      <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+        {techniques.map((technique, idx) => (
+          <li
+            key={technique}
+            className={
+              techniques.length === 5 && idx === 0
+                ? "col-span-2 sm:col-span-1"
+                : undefined
+            }
+          >
             <Link
               to={`/barbers?technique=${technique}`}
-              className={chipClasses(false, {
-                className:
-                  "group/chip gap-2 pl-3.5 pr-4 shadow-1 hover:border-accent motion-safe:hover:-translate-y-0.5",
-              })}
+              className="focus-ring group/cat relative isolate flex aspect-[16/10] w-full flex-col justify-between overflow-hidden rounded-3xl bg-night p-4 text-white shadow-1 ring-1 ring-inset ring-white/12 transition-[transform,box-shadow] duration-base ease-out hover:shadow-3 hover:ring-white/30 motion-safe:hover:-translate-y-1 sm:aspect-[4/3]"
             >
-              <TechniqueIcon technique={technique} />
-              <span>{label("technique", technique)}</span>
-              <svg
+              <img
+                src={TECHNIQUE_IMAGES[technique]}
+                alt=""
+                width={720}
+                height={540}
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 -z-10 h-full w-full object-cover transition-transform duration-[650ms] ease-out motion-safe:group-hover/cat:scale-105"
+              />
+              {/* Voile de nuit renforcé : contraste AA garanti quelle que soit la photo */}
+              <div
                 aria-hidden="true"
-                viewBox="0 0 16 16"
-                className="h-3.5 w-3.5 shrink-0 text-foreground-muted transition-[transform,color] duration-fast ease-out group-hover/chip:text-accent-strong motion-safe:group-hover/chip:translate-x-0.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M6 3.5L10.5 8 6 12.5" />
-              </svg>
+                className="absolute inset-0 -z-10 bg-gradient-to-t from-night via-night/60 to-night/25"
+              />
+
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-night/75 shadow-1 backdrop-blur-md">
+                <TechniqueIcon technique={technique} />
+              </span>
+
+              <div className="flex items-end justify-between gap-2">
+                <div>
+                  <span className="block font-display text-lg font-extrabold leading-tight text-white">
+                    {label("technique", technique)}
+                  </span>
+                  <span className="mt-0.5 block text-xs font-medium text-night-muted transition-colors duration-fast group-hover/cat:text-white">
+                    {t("home.categories.explore")}
+                  </span>
+                </div>
+                <span
+                  aria-hidden="true"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-[transform,background-color,color] duration-fast ease-out group-hover/cat:border-white group-hover/cat:bg-white group-hover/cat:text-night motion-safe:group-hover/cat:translate-x-0.5"
+                >
+                  <svg
+                    viewBox="0 0 16 16"
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3.5 8h8.5M8.5 4.5L12 8l-3.5 3.5" />
+                  </svg>
+                </span>
+              </div>
             </Link>
           </li>
         ))}

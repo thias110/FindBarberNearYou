@@ -45,7 +45,7 @@ export function BarberResultCard({
       onMouseEnter={() => onHoverChange?.(true)}
       onMouseLeave={() => onHoverChange?.(false)}
       className={cn(
-        "relative p-4 transition-[transform,box-shadow,border-color] duration-base ease-out",
+        "relative rounded-2xl border-border/80 p-4 transition-[transform,box-shadow,border-color] duration-base ease-out",
         selected
           ? "border-accent ring-2 ring-accent shadow-2"
           : hovered
@@ -149,7 +149,7 @@ export function BarberResultCard({
           </Link>
           <Link
             to={`/barbers/${barber.id}#reserver`}
-            className={buttonClasses("primary", "sm", "pointer-events-auto flex-1")}
+            className={buttonClasses("primary", "sm", "pointer-events-auto flex-1 shadow-cta")}
           >
             {t("map.card.book")}
           </Link>

@@ -50,11 +50,18 @@
         "certified": "Profils vérifiés",
         "realtime": "Créneaux en direct",
         "express": "Réservation express"
+      },
+      "showcase": {
+        "modeBadge": "Salon · Studio · Domicile",
+        "slotTitle": "Créneaux en temps réel",
+        "slotMeta": "Sans télécharger d'application",
+        "confirmedChip": "Calendrier .ics inclus"
       }
     },
     "categories": {
       "title": "Prestations populaires",
-      "subtitle": "Explorez directement par spécialité."
+      "subtitle": "Explorez directement par spécialité.",
+      "explore": "Explorer"
     },
     "preview": {
       "atHome": "À domicile",
@@ -88,13 +95,21 @@
       "clientBadge": "Espace client",
       "clientPerks": {
         "favorites": "Vos barbers favoris accessibles en un clic",
-        "calendar": "Ajout instantané au calendrier (.ics) et suivi en direct"
+        "calendar": "Ajout instantané au calendrier (.ics) et suivi en direct",
+        "privacy": "Adresse exacte et itinéraire révélés après confirmation"
       },
       "barberBadge": "Espace professionnel",
       "barberPerks": {
         "agenda": "Agenda en ligne sans double réservation",
         "places": "Au salon, chez vous ou à domicile client",
         "payments": "Paiement sur place, acompte ou totalité en ligne"
+      },
+      "proPreview": {
+        "title": "Agenda & encaissements",
+        "slot1": "Coupe + barbe · En salon",
+        "slot2": "Dégradé · À domicile",
+        "confirmed": "Confirmé",
+        "protected": "Zéro chevauchement garanti"
       }
     },
     "steps": {
@@ -111,7 +126,28 @@
         "title": "Réservez",
         "description": "Choisissez un créneau et confirmez votre rendez-vous."
       },
-      "subtitle": "De la recherche à la confirmation, sans friction."
+      "subtitle": "De la recherche à la confirmation, sans friction.",
+      "stage": {
+        "search": {
+          "badge": "Carte interactive & filtres",
+          "headline": "Salon, studio privé ou à domicile",
+          "caption": "Filtrez par ville, rayon autour de vous, budget ou spécialité en un geste.",
+          "aroundPill": "Autour de moi · 10 km"
+        },
+        "compare": {
+          "badge": "Disponibilités vérifiées",
+          "headline": "Vrais créneaux sur 7 jours, tarifs affichés",
+          "caption": "Visualisez immédiatement le prochain créneau libre, la durée exacte et les avis clients vérifiés.",
+          "selectedPill": "Créneau sélectionné"
+        },
+        "book": {
+          "badge": "Réservation express ou compte",
+          "headline": "Réservé en 3 étapes, adresse débloquée",
+          "caption": "Réservez même sans compte préalable, ajoutez le rendez-vous à votre agenda (.ics) et recevez l'itinéraire après confirmation.",
+          "privacyPill": "Adresse révélée après confirmation",
+          "icsPill": "Export calendrier .ics"
+        }
+      }
     },
     "logout": "Se déconnecter"
   },

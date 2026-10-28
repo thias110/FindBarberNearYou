@@ -101,7 +101,7 @@ export function BarberPreviewCard({
       <div className="grid p-3 sm:p-3.5">
         <div
           aria-hidden="true"
-          className="relative -z-[5] rounded-2xl border border-white/15 bg-night/80 backdrop-blur-md transition-colors duration-base [grid-area:1/1] group-hover:border-white/25 group-hover:bg-night/85"
+          className="relative -z-[5] rounded-2xl border border-white/18 bg-night/85 shadow-[inset_0_1px_0_rgb(255_255_255/0.16),0_16px_36px_-14px_rgb(0_0_0/0.6)] backdrop-blur-md transition-colors duration-base [grid-area:1/1] group-hover:border-white/30 group-hover:bg-night/90"
         />
         <div className="p-3.5 [grid-area:1/1] sm:p-4">
           {barber.places.length > 0 && (
