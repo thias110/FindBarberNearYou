@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { buttonClasses } from "../ui/buttonStyles";
-import { FadeMotif } from "../ui/FadeMotif";
 import { useModalDialog } from "../ui/useModalDialog";
 
 // Menu plein écran du site public sur mobile (lot DS-4, plan §2.6.6) : fond
@@ -30,7 +29,10 @@ export function MobileMenu({
       }}
       className="m-0 h-dvh max-h-none w-full max-w-none bg-night p-0 text-white open:motion-safe:animate-fade-in [&:not([open])]:hidden"
     >
-      <FadeMotif className="pointer-events-none absolute inset-x-0 bottom-0 h-24 w-full text-white/5" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(75%_60%_at_85%_10%,rgb(var(--fb-cobalt)/0.26),transparent_70%)]"
+      />
       <div className="relative flex h-full flex-col px-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4">
         <div className="flex justify-end">
           <button

@@ -4,13 +4,11 @@ import { resolveUploadUrl } from "../../lib/apiClient";
 import { cn } from "../../lib/cn";
 import { formatCurrency, formatRating } from "../../lib/formatters";
 import { describeNextSlot } from "../../lib/nextSlot";
-import { FadeMotif } from "../ui/FadeMotif";
 
 // Éléments communs aux cartes de barber (résultat, fiche carte, accueil) :
 // photo, note et prix « à partir de » issus de la recherche publique (#48).
-// Aucune donnée inventée : sans photo → initiale sur le motif « dégradé », sans
-// avis → « Nouveau sur FindBarber » (jamais « 0,0 »), sans service actif → pas
-// de prix.
+// Aucune donnée inventée : sans photo → monogramme studio, sans avis →
+// « Nouveau sur FindBarber » (jamais « 0,0 »), sans service actif → pas de prix.
 //
 // `tone="onNight"` : texte clair et repli photo studio sombre, pour les cartes
 // vitrine posées sur un fond de nuit.
@@ -42,7 +40,7 @@ export function StarIcon({ className }: { className?: string }) {
 }
 
 /**
- * Photo du barber ou visuel par défaut (initiale sur le motif « dégradé »).
+ * Photo du barber ou visuel par défaut (monogramme).
  * `className` fixe la taille ; l'image est `lazy` et ses dimensions sont
  * réservées par l'appelant (pas de saut de mise en page).
  * En `tone="onNight"`, le repli sans photo adopte une toile nuit éclairée au
@@ -75,12 +73,11 @@ export function BarberPhoto({
         aria-hidden="true"
         className={cn(
           "grid shrink-0 place-items-center overflow-hidden bg-night-2 font-display font-bold text-white",
-          "bg-[radial-gradient(85%_70%_at_78%_18%,rgb(var(--fb-cobalt)/0.36),transparent_68%),radial-gradient(70%_60%_at_18%_82%,rgb(var(--fb-brass)/0.2),transparent_70%)]",
+          "bg-[radial-gradient(85%_70%_at_78%_18%,rgb(var(--fb-cobalt)/0.38),transparent_68%),radial-gradient(70%_60%_at_18%_82%,rgb(var(--fb-brass)/0.2),transparent_70%)]",
           className,
         )}
       >
-        <FadeMotif className="h-2/5 w-full self-end text-cobalt/25 [grid-area:1/1]" />
-        <span className="mb-8 flex h-24 w-24 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-4xl font-extrabold tracking-tight text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.16)] backdrop-blur-sm [grid-area:1/1]">
+        <span className="mb-8 flex h-24 w-24 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-4xl font-extrabold tracking-tight text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.16)] backdrop-blur-sm">
           {initial}
         </span>
       </div>
@@ -89,15 +86,12 @@ export function BarberPhoto({
   return (
     <div
       aria-hidden="true"
-      // Empilement en grille (et non en `absolute`) : l'appelant reste libre de
-      // positionner la photo (ex. `absolute inset-0` dans la carte vitrine).
       className={cn(
         "grid shrink-0 place-items-center overflow-hidden bg-accent-soft font-display font-bold text-accent-strong",
         className,
       )}
     >
-      <FadeMotif className="h-1/2 w-full self-end text-accent/15 [grid-area:1/1]" />
-      <span className="[grid-area:1/1]">{initial}</span>
+      <span>{initial}</span>
     </div>
   );
 }

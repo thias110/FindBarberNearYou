@@ -5,7 +5,6 @@ import { cn } from "../../lib/cn";
 import { formatCurrency, formatDuration } from "../../lib/formatters";
 import { label } from "../../lib/labels";
 import { formatMinutes } from "../../lib/time";
-import { FadeMotif } from "../ui/FadeMotif";
 import { formatDayLong } from "./format";
 
 export interface BookingSummaryData {
@@ -119,17 +118,14 @@ export function BookingSummaryAside({
     <aside
       aria-label={t("booking.flow.summary.title")}
       className={cn(
-        "hidden overflow-hidden rounded-2xl border border-border bg-surface shadow-card-sm lg:sticky lg:top-24 lg:block",
+        "hidden rounded-2xl border border-border bg-surface p-5 shadow-card-sm lg:sticky lg:top-24 lg:block",
         className,
       )}
     >
-      <FadeMotif className="h-2.5 w-full text-accent/20" />
-      <div className="p-5">
-        <h3 className="mb-1 text-h4 font-bold text-foreground">
-          {t("booking.flow.summary.title")}
-        </h3>
-        <SummaryList data={data} />
-      </div>
+      <h3 className="mb-1 text-h4 font-bold text-foreground">
+        {t("booking.flow.summary.title")}
+      </h3>
+      <SummaryList data={data} />
     </aside>
   );
 }

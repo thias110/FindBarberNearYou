@@ -9,7 +9,6 @@ import { cn } from "../../lib/cn";
 import { useSignatureOnce } from "../../lib/useSignatureOnce";
 import { Button } from "../ui/Button";
 import { buttonClasses } from "../ui/buttonStyles";
-import { FadeMotif } from "../ui/FadeMotif";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { CityCombobox } from "../search/CityCombobox";
 
@@ -35,11 +34,9 @@ function greetingFor(user: PublicUser | null, t: TFunction<"client">): string {
     : t("home.hero.welcome");
 }
 
-// Hero de nuit de l'accueil (lot P-1, plan §2.4, §2.5 et §2.6.2) : l'endroit
-// où le design system dépense son audace. Éclairage studio cobalt et laiton,
-// titre d'affichage bicolore, capsule de recherche encadrée de verre (ville,
-// lieu, CTA), accès direct « Autour de moi » et motif « dégradé » en bas, qui
-// se met en paliers une fois par session (rien ne bouge si reduced-motion).
+// Hero de nuit de l'accueil : éclairage studio cobalt et laiton, titre
+// d'affichage bicolore, capsule de recherche encadrée de verre (ville, lieu,
+// CTA) et accès direct « Autour de moi ».
 export function HomeHero({
   user,
   onSearch,
@@ -69,11 +66,11 @@ export function HomeHero({
     <section
       aria-labelledby={titleId}
       className={cn(
-        "relative isolate overflow-hidden bg-night text-white",
+        "relative isolate overflow-hidden bg-night text-white shadow-[inset_0_-1px_0_rgb(255_255_255/0.08)]",
         fullBleed
           ? // Glisse sous la barre flottante (4,5 rem) : la nuit commence en haut.
-            "-mt-[4.5rem] rounded-b-4xl px-4 pb-28 pt-[calc(4.5rem+2.5rem)] sm:px-8 sm:pb-36 lg:pt-[calc(4.5rem+5rem)]"
-          : "rounded-4xl px-5 pb-28 pt-10 shadow-[inset_0_1px_0_rgb(255_255_255/0.1)] sm:px-10 sm:pb-32",
+            "-mt-[4.5rem] rounded-b-4xl px-4 pb-14 pt-[calc(4.5rem+2.5rem)] sm:px-8 sm:pb-20 lg:pt-[calc(4.5rem+4.5rem)]"
+          : "rounded-4xl px-5 pb-12 pt-10 shadow-[inset_0_1px_0_rgb(255_255_255/0.1)] sm:px-10 sm:pb-16",
       )}
     >
       {/* Halos d'atelier (cobalt et laiton) : profondeur sans image à charger. */}
@@ -309,12 +306,6 @@ export function HomeHero({
           </ul>
         </div>
       </div>
-
-      {/* Motif « dégradé » : seule occurrence décorative de l'écran. */}
-      <FadeMotif
-        animate={playSignature}
-        className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-20 w-full text-cobalt/35 sm:h-24"
-      />
     </section>
   );
 }

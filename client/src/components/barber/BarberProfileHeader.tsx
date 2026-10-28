@@ -7,7 +7,6 @@ import { label } from "../../lib/labels";
 import { FavoriteButton } from "../client/FavoriteButton";
 import { StarIcon } from "../search/BarberHighlights";
 import { Badge } from "../ui/Badge";
-import { FadeMotif } from "../ui/FadeMotif";
 import { CertifiedBadge } from "./CertifiedBadge";
 import { Card } from "../ui/Card";
 
@@ -29,13 +28,12 @@ export function BarberProfileHeader({
 
   return (
     <Card className="overflow-hidden p-0 shadow-card">
-      {/* Bandeau studio « Nuit / Dégradé » purement décoratif */}
+      {/* Bandeau studio « Nuit » purement décoratif */}
       <div
         aria-hidden="true"
-        className="relative flex h-28 flex-col justify-end overflow-hidden bg-night sm:h-36"
+        className="relative h-28 overflow-hidden bg-night sm:h-36"
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(65%_110%_at_85%_0%,rgb(var(--fb-cobalt)/0.38),transparent_70%),radial-gradient(45%_95%_at_10%_100%,rgb(var(--fb-brass)/0.22),transparent_70%)]" />
-        <FadeMotif className="relative h-8 w-full text-cobalt/25" />
       </div>
 
       <div className="px-5 pb-6 sm:px-8 sm:pb-8">
@@ -51,10 +49,7 @@ export function BarberProfileHeader({
               aria-hidden="true"
               className="relative z-10 grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-surface bg-accent-soft font-display text-3xl font-extrabold text-accent-strong shadow-2 sm:h-28 sm:w-28 sm:text-4xl"
             >
-              <FadeMotif className="h-1/2 w-full self-end text-accent/15 [grid-area:1/1]" />
-              <span className="[grid-area:1/1]">
-                {profile.displayName.charAt(0).toUpperCase()}
-              </span>
+              <span>{profile.displayName.charAt(0).toUpperCase()}</span>
             </div>
           )}
 

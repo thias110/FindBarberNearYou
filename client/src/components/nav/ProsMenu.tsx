@@ -2,7 +2,6 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { cn } from "../../lib/cn";
-import { FadeMotif } from "../ui/FadeMotif";
 
 // Menu « Pour les pros » de la barre publique (lot DS-4, plan §2.6.6) :
 // ouvert au clic ou au clavier (pas au survol seul), tuile illustrée et liens
@@ -81,7 +80,10 @@ export function ProsMenu({ onNight = false }: { onNight?: boolean }) {
         className="absolute left-0 top-full z-50 mt-3 w-[22rem] rounded-2xl border border-border bg-surface p-2 shadow-3 motion-safe:animate-fade-in"
       >
         <div className="relative overflow-hidden rounded-xl bg-night p-4 text-white">
-          <FadeMotif className="absolute inset-x-0 bottom-0 h-8 w-full text-white/10" />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_90%_at_90%_10%,rgb(var(--fb-cobalt)/0.35),transparent_70%)]"
+          />
           <p className="relative font-display text-base font-bold leading-snug">
             {t("nav.prosTileTitle")}
           </p>
