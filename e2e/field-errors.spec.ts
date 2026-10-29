@@ -15,7 +15,10 @@ async function expectDescribedBy(field: Locator, message: RegExp): Promise<void>
   expect(texts.join(" ")).toMatch(message);
 }
 
-test("inscription : email déjà utilisé affiché sous le champ, focus dessus", async ({
+// Audit de sécurité : l'inscription ne révèle jamais qu'une adresse a déjà un
+// compte. La personne voit le même écran qu'après une inscription neuve, et
+// le titulaire reçoit un email l'invitant à se connecter.
+test("inscription : un email déjà inscrit n'est pas signalé (aucune fuite)", async ({
   page,
 }) => {
   await page.goto("/register");
@@ -23,9 +26,8 @@ test("inscription : email déjà utilisé affiché sous le champ, focus dessus",
   await page.getByLabel("Mot de passe", { exact: true }).fill("MotDePasse123!");
   await page.getByRole("button", { name: "Créer mon compte" }).click();
 
-  const email = page.getByRole("textbox", { name: "Email" });
-  await expectDescribedBy(email, /existe déjà/);
-  await expect(email).toBeFocused();
+  await expect(page.getByRole("heading", { name: "Vérifiez votre adresse email." })).toBeVisible();
+  await expect(page.getByText(/existe déjà/)).toHaveCount(0);
 });
 
 test("connexion : champs vides, focus sur le premier en erreur", async ({ page }) => {
